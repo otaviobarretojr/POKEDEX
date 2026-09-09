@@ -1,14 +1,10 @@
 package com.otaviobarreto.pokedex.data
 
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * Remote source used while the full offline database is being assembled.
- * UI code never talks to the network directly; this class can later be
- * replaced by a Room/asset-backed implementation without changing screens.
- */
 object PokeApiService {
     private const val API = "https://pokeapi.co/api/v2"
 
@@ -40,27 +36,54 @@ object PokeApiService {
             get() = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
     }
 
+    data class SpeciesInfo(
+        val captureRate: Int,
+        val baseHappiness: Int,
+        val habitat: String?,
+        val growthRate: String?,
+        val eggGroups: List<String>,
+        val flavorText: String?,
+        val evolutionChainUrl: String?
+    )
+
+    data class EvolutionStage(
+        val pokemonId: Int,
+        val name: String,
+        val requirement: String?
+    )
+
+    data class EncounterLocation(
+        val location: String,
+        val versions: List<String>
+    )
+
     fun loadNationalDex(limit: Int = 1025): List<DexIndexEntry> {
         val json = getJson("$API/pokemon?limit=$limit&offset=0")
         val results = json.getJSONArray("results")
         return buildList(results.length()) {
             for (i in 0 until results.length()) {
                 val item = results.getJSONObject(i)
-                val id = item.getString("url").trimEnd('/').substringAfterLast('/').toInt()
-                add(
-                    DexIndexEntry(
-                        id = id,
-                        name = item.getString("name").toDisplayName(),
-                        generation = generationForNationalDexId(id)
-                    )
-                )
+                val id = idFromUrl(item.getString("url"))
+                if (id in 1..limit) {
+                    add(DexIndexEntry(id, item.getString("name").toDisplayName(), generationForNationalDexId(id)))
+                }
             }
         }.sortedBy { it.id }
     }
 
+    fun loadPokemonIdsForType(type: String): Set<Int> {
+        val json = getJson("$API/type/${type.lowercase()}")
+        val array = json.getJSONArray("pokemon")
+        return buildSet {
+            for (i in 0 until array.length()) {
+                val id = idFromUrl(array.getJSONObject(i).getJSONObject("pokemon").getString("url"))
+                if (id in 1..1025) add(id)
+            }
+        }
+    }
+
     fun loadPokemon(id: Int): RemotePokemonDetail {
         val json = getJson("$API/pokemon/$id")
-
         val typesJson = json.getJSONArray("types")
         val types = buildList(typesJson.length()) {
             for (i in 0 until typesJson.length()) {
@@ -79,8 +102,8 @@ object PokeApiService {
         val abilities = buildList(abilitiesJson.length()) {
             for (i in 0 until abilitiesJson.length()) {
                 val item = abilitiesJson.getJSONObject(i)
-                val abilityName = item.getJSONObject("ability").getString("name").toDisplayName()
-                add(if (item.optBoolean("is_hidden")) "$abilityName (Oculta)" else abilityName)
+                val name = item.getJSONObject("ability").getString("name").toDisplayName()
+                add(if (item.optBoolean("is_hidden")) "$name (Oculta)" else name)
             }
         }
 
@@ -91,11 +114,10 @@ object PokeApiService {
                 val methods = linkedSetOf<String>()
                 val details = move.getJSONArray("version_group_details")
                 for (j in 0 until details.length()) {
-                    val method = details.getJSONObject(j)
+                    methods += details.getJSONObject(j)
                         .getJSONObject("move_learn_method")
                         .getString("name")
                         .toDisplayName()
-                    methods += method
                 }
                 add(RemoteMove(move.getJSONObject("move").getString("name").toDisplayName(), methods.toList()))
             }
@@ -120,7 +142,82 @@ object PokeApiService {
         )
     }
 
-    private fun getJson(url: String): JSONObject {
+    fun loadSpecies(id: Int): SpeciesInfo {
+        val json = getJson("$API/pokemon-species/$id")
+        val flavorEntries = json.getJSONArray("flavor_text_entries")
+        var flavor: String? = null
+        for (i in 0 until flavorEntries.length()) {
+            val entry = flavorEntries.getJSONObject(i)
+            if (entry.getJSONObject("language").getString("name") == "en") {
+                flavor = entry.getString("flavor_text").replace('\n', ' ').replace('\u000c', ' ').replace(Regex("\\s+"), " ").trim()
+                break
+            }
+        }
+        return SpeciesInfo(
+            captureRate = json.optInt("capture_rate"),
+            baseHappiness = json.optInt("base_happiness"),
+            habitat = json.optJSONObject("habitat")?.optString("name")?.toDisplayName(),
+            growthRate = json.optJSONObject("growth_rate")?.optString("name")?.toDisplayName(),
+            eggGroups = json.getJSONArray("egg_groups").namesFromNamedResources(),
+            flavorText = flavor,
+            evolutionChainUrl = json.optJSONObject("evolution_chain")?.optString("url")
+        )
+    }
+
+    fun loadEvolutionChain(url: String): List<EvolutionStage> {
+        val root = getJson(url).getJSONObject("chain")
+        val result = mutableListOf<EvolutionStage>()
+        fun walk(node: JSONObject) {
+            val species = node.getJSONObject("species")
+            val details = node.optJSONArray("evolution_details")
+            result += EvolutionStage(
+                pokemonId = idFromUrl(species.getString("url")),
+                name = species.getString("name").toDisplayName(),
+                requirement = details?.takeIf { it.length() > 0 }?.getJSONObject(0)?.let(::evolutionRequirement)
+            )
+            val evolvesTo = node.getJSONArray("evolves_to")
+            for (i in 0 until evolvesTo.length()) walk(evolvesTo.getJSONObject(i))
+        }
+        walk(root)
+        return result
+    }
+
+    fun loadEncounters(id: Int): List<EncounterLocation> {
+        val array = getJsonArray("$API/pokemon/$id/encounters")
+        return buildList(array.length()) {
+            for (i in 0 until array.length()) {
+                val item = array.getJSONObject(i)
+                val versions = item.getJSONArray("version_details")
+                val versionNames = buildList(versions.length()) {
+                    for (j in 0 until versions.length()) {
+                        add(versions.getJSONObject(j).getJSONObject("version").getString("name").toDisplayName())
+                    }
+                }.distinct()
+                add(
+                    EncounterLocation(
+                        location = item.getJSONObject("location_area").getString("name").toDisplayName(),
+                        versions = versionNames
+                    )
+                )
+            }
+        }.distinctBy { it.location }
+    }
+
+    private fun evolutionRequirement(detail: JSONObject): String? {
+        val pieces = mutableListOf<String>()
+        detail.optInt("min_level").takeIf { it > 0 }?.let { pieces += "Nível $it" }
+        detail.optJSONObject("item")?.optString("name")?.takeIf { it.isNotBlank() }?.let { pieces += it.toDisplayName() }
+        detail.optJSONObject("held_item")?.optString("name")?.takeIf { it.isNotBlank() }?.let { pieces += "Segurando ${it.toDisplayName()}" }
+        detail.optInt("min_happiness").takeIf { it > 0 }?.let { pieces += "Amizade $it+" }
+        detail.optString("time_of_day").takeIf { it.isNotBlank() }?.let { pieces += it.toDisplayName() }
+        detail.optJSONObject("trigger")?.optString("name")?.takeIf { it.isNotBlank() && pieces.isEmpty() }?.let { pieces += it.toDisplayName() }
+        return pieces.takeIf { it.isNotEmpty() }?.joinToString(" • ")
+    }
+
+    private fun getJson(url: String): JSONObject = JSONObject(getText(url))
+    private fun getJsonArray(url: String): JSONArray = JSONArray(getText(url))
+
+    private fun getText(url: String): String {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.connectTimeout = 12_000
         connection.readTimeout = 12_000
@@ -128,14 +225,14 @@ object PokeApiService {
         connection.setRequestProperty("Accept", "application/json")
         connection.connect()
         return try {
-            if (connection.responseCode !in 200..299) {
-                error("HTTP ${connection.responseCode} while loading $url")
-            }
-            JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            if (connection.responseCode !in 200..299) error("HTTP ${connection.responseCode} while loading $url")
+            connection.inputStream.bufferedReader().use { it.readText() }
         } finally {
             connection.disconnect()
         }
     }
+
+    private fun idFromUrl(url: String): Int = url.trimEnd('/').substringAfterLast('/').toInt()
 }
 
 fun generationForNationalDexId(id: Int): Int = when (id) {
@@ -149,6 +246,10 @@ fun generationForNationalDexId(id: Int): Int = when (id) {
     in 810..905 -> 8
     in 906..1025 -> 9
     else -> 0
+}
+
+private fun JSONArray.namesFromNamedResources(): List<String> = buildList(length()) {
+    for (i in 0 until length()) add(getJSONObject(i).getString("name").toDisplayName())
 }
 
 private fun String.toDisplayName(): String =
