@@ -1,6 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -38,7 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.otaviobarreto.pokedex.data.PokemonCatalog
+import com.otaviobarreto.pokedex.data.PokemonFilter
+import com.otaviobarreto.pokedex.data.PokemonRepository
 import com.otaviobarreto.pokedex.data.PokemonSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,15 +49,16 @@ import com.otaviobarreto.pokedex.data.PokemonSummary
 fun PokedexScreen(onPokemonClick: (Int) -> Unit) {
     var query by remember { mutableStateOf("") }
     var generation by remember { mutableIntStateOf(0) }
+    var selectedType by remember { mutableStateOf<String?>(null) }
 
-    val filtered = remember(query, generation) {
-        PokemonCatalog.all.filter { pokemon ->
-            val matchesQuery = query.isBlank() ||
-                pokemon.name.contains(query, ignoreCase = true) ||
-                pokemon.id.toString() == query.trim().removePrefix("#")
-            val matchesGeneration = generation == 0 || pokemon.generation == generation
-            matchesQuery && matchesGeneration
-        }
+    val filtered = remember(query, generation, selectedType) {
+        PokemonRepository.search(
+            PokemonFilter(
+                query = query,
+                generation = generation.takeIf { it != 0 },
+                type = selectedType
+            )
+        )
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -78,13 +82,34 @@ fun PokedexScreen(onPokemonClick: (Int) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Default.FilterList, contentDescription = null)
-            LazyGenerationChips(selected = generation, onSelect = { generation = it })
+            GenerationChips(selected = generation, onSelect = { generation = it })
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AssistChip(
+                onClick = { selectedType = null },
+                label = { Text("Todos os tipos") },
+                leadingIcon = if (selectedType == null) ({ Text("✓") }) else null
+            )
+            PokemonRepository.types().forEach { type ->
+                AssistChip(
+                    onClick = { selectedType = type },
+                    label = { Text(type) },
+                    leadingIcon = if (selectedType == type) ({ Text("✓") }) else null
+                )
+            }
         }
 
         Text(
             text = "${filtered.size} Pokémon encontrados",
             style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
         LazyColumn(
@@ -100,9 +125,13 @@ fun PokedexScreen(onPokemonClick: (Int) -> Unit) {
 }
 
 @Composable
-private fun LazyGenerationChips(selected: Int, onSelect: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(0, 1, 2, 3, 4).forEach { gen ->
+private fun GenerationChips(selected: Int, onSelect: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        listOf(0) + PokemonRepository.generations().forEachGeneration { }
+        (listOf(0) + PokemonRepository.generations()).forEach { gen ->
             AssistChip(
                 onClick = { onSelect(gen) },
                 label = { Text(if (gen == 0) "Todas" else "G$gen") },
@@ -110,6 +139,11 @@ private fun LazyGenerationChips(selected: Int, onSelect: (Int) -> Unit) {
             )
         }
     }
+}
+
+private fun List<Int>.forEachGeneration(block: (Int) -> Unit): List<Int> {
+    forEach(block)
+    return this
 }
 
 @Composable
@@ -155,7 +189,7 @@ private fun PokemonRow(pokemon: PokemonSummary, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PokemonDetailScreen(id: Int, onBack: () -> Unit) {
-    val pokemon = PokemonCatalog.find(id)
+    val pokemon = PokemonRepository.byId(id)
 
     Scaffold(
         topBar = {
