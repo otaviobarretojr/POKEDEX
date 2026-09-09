@@ -130,7 +130,6 @@ private fun GenerationChips(selected: Int, onSelect: (Int) -> Unit) {
         modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        listOf(0) + PokemonRepository.generations().forEachGeneration { }
         (listOf(0) + PokemonRepository.generations()).forEach { gen ->
             AssistChip(
                 onClick = { onSelect(gen) },
@@ -139,11 +138,6 @@ private fun GenerationChips(selected: Int, onSelect: (Int) -> Unit) {
             )
         }
     }
-}
-
-private fun List<Int>.forEachGeneration(block: (Int) -> Unit): List<Int> {
-    forEach(block)
-    return this
 }
 
 @Composable
