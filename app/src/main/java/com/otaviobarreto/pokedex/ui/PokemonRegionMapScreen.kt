@@ -45,11 +45,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.PokeApiService
@@ -137,7 +140,7 @@ fun PokemonRegionMapScreen(
             }
 
             else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                modifier = Modifier.fillMaxSize().padding(innerPadding).background(Color(0xFFF8F8FC)),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
@@ -146,13 +149,15 @@ fun PokemonRegionMapScreen(
                             AsyncImage(
                                 model = pokemon?.spriteUrl,
                                 contentDescription = pokemon?.name,
-                                modifier = Modifier.size(88.dp)
+                                modifier = Modifier.size(88.dp).padding(4.dp),
+                                contentScale = ContentScale.Fit
                             )
                             Column(Modifier.padding(start = 12.dp)) {
                                 Text(
                                     pokemon?.name ?: "Pokémon #$pokemonId",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color(0xFF151426)
                                 )
                                 Text("${context?.label ?: source} · ${context?.regionLabel ?: ""}")
                                 Text(
@@ -266,8 +271,10 @@ private fun SpatialRegionMap(
 
         Surface(
             modifier = Modifier.fillMaxWidth().height(460.dp),
-            shape = RoundedCornerShape(24.dp),
-            tonalElevation = 2.dp
+            shape = RoundedCornerShape(28.dp),
+            color = Color(0xFFF1F0F8),
+            tonalElevation = 0.dp,
+            shadowElevation = 2.dp
         ) {
             Box(
                 modifier = Modifier
@@ -311,9 +318,9 @@ private fun SpatialRegionMap(
                     )
 
                     Text(
-                        regionLabel,
+                        regionLabel.uppercase(),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         modifier = Modifier.align(Alignment.Center)
                     )
 
@@ -331,7 +338,8 @@ private fun SpatialRegionMap(
                                 .width(markerWidth)
                                 .height(markerHeight)
                                 .clickable { onSelect(zone) },
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.Transparent)
                         ) {
                             Column(
                                 modifier = Modifier
