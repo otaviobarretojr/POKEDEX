@@ -1,10 +1,13 @@
 package com.otaviobarreto.pokedex.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,15 +15,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
@@ -123,30 +134,63 @@ fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
     var idText by remember { mutableStateOf("") }
     val boxes = CollectionStore.boxes
     val ids = boxes[selectedBox].orEmpty().sorted()
+    val slots = List(30) { index -> ids.getOrNull(index) }
 
     Column(Modifier.fillMaxSize()) {
-        Text(
-            "Boxes",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(16.dp)
-        )
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text("Boxes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Organize sua coleção como no Pokémon HOME",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
 
         Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CollectionStore.defaultBoxes.forEach { box ->
+                val count = boxes[box].orEmpty().size
                 AssistChip(
                     onClick = { selectedBox = box },
-                    label = { Text(box) },
+                    label = { Text("$box · $count") },
                     leadingIcon = if (selectedBox == box) ({ Text("✓") }) else null
                 )
             }
         }
 
-        Row(
+        Card(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(Modifier.padding(14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(selectedBox, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("${ids.size}/30 slots ocupados", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Text(
+                        "${(ids.size / 30f * 100).toInt().coerceIn(0, 100)}%",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                LinearProgressIndicator(
+                    progress = { (ids.size / 30f).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -157,51 +201,86 @@ fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
                 singleLine = true,
                 label = { Text("Nº National Dex") }
             )
-            Button(
+            FilledTonalIconButton(
+                enabled = ids.size < 30,
                 onClick = {
                     idText.toIntOrNull()?.takeIf { it in 1..1025 }?.let { id ->
                         CollectionStore.addToBox(selectedBox, id)
                         idText = ""
                     }
                 }
-            ) { Text("Adicionar") }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Adicionar")
+            }
         }
 
-        Text(
-            "$selectedBox • ${ids.size} Pokémon",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-        )
-
-        if (ids.isEmpty()) {
-            Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text("Essa Box ainda está vazia.")
-                Text("Adicione pelo número da National Dex.", style = MaterialTheme.typography.bodySmall)
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(5),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            itemsIndexed(slots) { index, pokemonId ->
+                BoxSlot(
+                    index = index,
+                    pokemonId = pokemonId,
+                    onPokemonClick = onPokemonClick,
+                    onRemove = { id -> CollectionStore.removeFromBox(selectedBox, id) }
+                )
             }
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(ids, key = { it }) { id ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png",
-                                contentDescription = "Pokémon #$id",
-                                modifier = Modifier.size(64.dp).clickable { onPokemonClick(id) }
-                            )
-                            Column(Modifier.weight(1f).clickable { onPokemonClick(id) }) {
-                                Text("#${id.toString().padStart(4, '0')}", fontWeight = FontWeight.SemiBold)
-                                Text("Marcado como capturado no Living Dex", style = MaterialTheme.typography.bodySmall)
-                            }
-                            OutlinedButton(onClick = { CollectionStore.removeFromBox(selectedBox, id) }) {
-                                Text("Remover")
-                            }
-                        }
-                    }
+        }
+    }
+}
+
+@Composable
+private fun BoxSlot(
+    index: Int,
+    pokemonId: Int?,
+    onPokemonClick: (Int) -> Unit,
+    onRemove: (Int) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.82f)
+            .then(if (pokemonId != null) Modifier.clickable { onPokemonClick(pokemonId) } else Modifier),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (pokemonId == null) 0.dp else 1.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (pokemonId == null) {
+                Text(
+                    text = (index + 1).toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    AsyncImage(
+                        model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$pokemonId.png",
+                        contentDescription = "Pokémon #$pokemonId",
+                        modifier = Modifier.size(54.dp)
+                    )
+                    Text(
+                        "#${pokemonId.toString().padStart(4, '0')}",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
                 }
-                item { Spacer(Modifier.height(16.dp)) }
+                Icon(
+                    imageVector = Icons.Default.DeleteOutline,
+                    contentDescription = "Remover",
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(18.dp)
+                        .clickable { onRemove(pokemonId) }
+                )
             }
         }
     }
