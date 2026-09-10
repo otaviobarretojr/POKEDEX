@@ -137,7 +137,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
 }
 
 @Composable
-fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
+fun BoxesScreen(onPokemonClick: (Int, String?) -> Unit) {
     val boxNames = CollectionStore.boxNames
     val boxes = CollectionStore.boxes
     var selectedBox by remember { mutableStateOf(boxNames.firstOrNull().orEmpty()) }
@@ -254,7 +254,7 @@ fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
                 BoxSlot(
                     index = index,
                     pokemonId = pokemonId,
-                    onPokemonClick = onPokemonClick,
+                    onPokemonClick = { id -> onPokemonClick(id, selectedBox) },
                     onMove = { movePokemonId = it },
                     onRemove = { id -> CollectionStore.removeFromBox(selectedBox, id) }
                 )
