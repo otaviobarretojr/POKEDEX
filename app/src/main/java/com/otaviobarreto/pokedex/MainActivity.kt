@@ -44,7 +44,7 @@ import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
 import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
 import com.otaviobarreto.pokedex.ui.PokemonLocationScreen
 import com.otaviobarreto.pokedex.ui.PokemonRegionMapScreen
-import com.otaviobarreto.pokedex.ui.RegionExplorerV2Screen
+import com.otaviobarreto.pokedex.ui.RegionExplorerV3Screen
 import com.otaviobarreto.pokedex.ui.TeamBuilderScreen
 
 class MainActivity : ComponentActivity() {
@@ -147,7 +147,7 @@ fun PokedexApp() {
                 arguments = listOf(navArgument("source") { type = NavType.StringType; nullable = false })
             ) { entry ->
                 val source = entry.arguments?.getString("source")?.let(Uri::decode).orEmpty()
-                RegionExplorerV2Screen(
+                RegionExplorerV3Screen(
                     source = source,
                     onBack = { navController.popBackStack() },
                     onPokemonClick = { id, gameSource -> openPokemon(id, gameSource) }
