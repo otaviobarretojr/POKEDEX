@@ -60,8 +60,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     }
 
     LaunchedEffect(scope.source) {
-        regional = emptyList()
-        val source = scope.source ?: return@LaunchedEffect
+        val source = scope.source ?: run { regional = emptyList(); return@LaunchedEffect }
         val context = GameContext.fromSource(source) ?: return@LaunchedEffect
         loading = true
         regional = runCatching { withContext(Dispatchers.IO) { GameDexService.loadGameDex(context) } }.getOrElse { emptyList() }
@@ -87,6 +86,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     val progress = if (total == 0) 0f else caughtInScope.toFloat() / total
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))) {
+        if (loading && national.isNotEmpty()) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Color(0xFF5B55E7), trackColor = Color.Transparent)
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
@@ -157,7 +157,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
             }
         }
 
-        if (loading) {
+        if (loading && national.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         } else if (filtered.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -171,6 +171,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(filtered, key = { it.id }) { p ->
+                    LaunchedEffect(p.id) { PokedexDataStore.prefetchDetails(p.id) }
                     val caught = p.id in captured
                     Card(
                         Modifier.fillMaxWidth().aspectRatio(.78f).clickable { onPokemonClick(p.id) },
