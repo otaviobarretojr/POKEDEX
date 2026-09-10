@@ -57,7 +57,8 @@ fun PokemonLocationScreen(
     onOpenMap: (() -> Unit)? = null
 ) {
     val gameContext = remember(source) { GameContext.fromSource(source) }
-    val hasVisualMap = remember(gameContext) { RegionMapCatalog.zones(gameContext).isNotEmpty() }
+    val mapCapabilities = remember(gameContext) { RegionMapCatalog.capabilities(gameContext) }
+    val hasVisualMap = mapCapabilities.hasVisualMap
     var pokemon by remember(pokemonId) { mutableStateOf(PokedexDataStore.cachedPokemon(pokemonId)) }
     var encounters by remember(pokemonId) { mutableStateOf(PokedexDataStore.cachedEncounters(pokemonId).orEmpty()) }
     var loading by remember(pokemonId, source) { mutableStateOf(pokemon == null && PokedexDataStore.cachedEncounters(pokemonId) == null) }
@@ -170,7 +171,7 @@ fun PokemonLocationScreen(
                         )
                         if (hasVisualMap && onOpenMap != null) {
                             Text(
-                                "Use o ícone de mapa no topo para visualizar os encontros por zona.",
+                                "Use o ícone de mapa no topo para visualizar os encontros por zona · " + mapCapabilities.engineLabel,
                                 style = MaterialTheme.typography.labelMedium,
                                 modifier = Modifier.padding(top = 6.dp)
                             )
