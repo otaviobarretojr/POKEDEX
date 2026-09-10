@@ -12,8 +12,23 @@ android {
         applicationId = "com.otaviobarreto.pokedex"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "0.21.0"
+        versionCode = 22
+        versionName = "0.22.0"
+    }
+
+    signingConfigs {
+        create("stableDebug") {
+            storeFile = rootProject.file("signing/pokedex-release.jks")
+            storePassword = "pokedex-local-2026"
+            keyAlias = "pokedex"
+            keyPassword = "pokedex-local-2026"
+        }
+    }
+
+    buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("stableDebug")
+        }
     }
 
     buildFeatures { compose = true }
