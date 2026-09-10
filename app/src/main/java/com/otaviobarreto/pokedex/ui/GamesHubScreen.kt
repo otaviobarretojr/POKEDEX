@@ -80,11 +80,12 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                 Text(
                                     when {
                                         active -> current?.label ?: "Preparando download…"
-                                        status.downloaded -> "Offline · " + status.pokemonCount + " Pokémon salvos"
+                                        status.verified -> "Offline verificado · " + status.pokemonCount + " Pokémon + imagens"
+                                        status.downloaded -> "Pacote incompleto · toque para atualizar"
                                         else -> if(game.regions.size>1) game.regions.size.toString() + " regiões / conteúdos" else "Disponível para download offline"
                                     },
                                     style=MaterialTheme.typography.labelMedium,
-                                    color=if(status.downloaded) Color(0xFF2C8B65) else MaterialTheme.colorScheme.primary
+                                    color=if(status.verified) Color(0xFF2C8B65) else MaterialTheme.colorScheme.primary
                                 )
                             }
                             IconButton(
@@ -107,9 +108,9 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                 }
                             ){
                                 Icon(
-                                    if(status.downloaded) Icons.Default.OfflinePin else Icons.Default.DownloadForOffline,
-                                    contentDescription=if(status.downloaded)"Atualizar dados offline" else "Baixar dados offline",
-                                    tint=if(status.downloaded) Color(0xFF2C8B65) else Color(0xFF5B55E7)
+                                    if(status.verified) Icons.Default.OfflinePin else Icons.Default.DownloadForOffline,
+                                    contentDescription=if(status.verified)"Atualizar dados offline" else "Baixar dados offline",
+                                    tint=if(status.verified) Color(0xFF2C8B65) else Color(0xFF5B55E7)
                                 )
                             }
                         }
