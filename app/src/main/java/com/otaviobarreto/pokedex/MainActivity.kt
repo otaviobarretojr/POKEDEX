@@ -42,6 +42,7 @@ import com.otaviobarreto.pokedex.ui.LivingDexScreen
 import com.otaviobarreto.pokedex.ui.PokedexScreen
 import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
 import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
+import com.otaviobarreto.pokedex.ui.PokemonLocationScreen
 import com.otaviobarreto.pokedex.ui.TeamBuilderScreen
 
 class MainActivity : ComponentActivity() {
@@ -77,7 +78,9 @@ fun PokedexApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val isSecondaryScreen = currentRoute == "pokemon/{id}?source={source}" || currentRoute == "gameDex?source={source}"
+    val isSecondaryScreen = currentRoute == "pokemon/{id}?source={source}" ||
+        currentRoute == "gameDex?source={source}" ||
+        currentRoute == "location/{id}?source={source}"
 
     fun openPokemon(id: Int, source: String? = null) {
         val route = if (source.isNullOrBlank()) {
@@ -90,6 +93,15 @@ fun PokedexApp() {
 
     fun openGameDex(source: String) {
         navController.navigate("gameDex?source=${Uri.encode(source)}")
+    }
+
+    fun openLocation(id: Int, source: String? = null) {
+        val route = if (source.isNullOrBlank()) {
+            "location/$id"
+        } else {
+            "location/$id?source=${Uri.encode(source)}"
+        }
+        navController.navigate(route)
     }
 
     Scaffold(
@@ -172,7 +184,27 @@ fun PokedexApp() {
                 GameDexScreen(
                     source = source,
                     onBack = { navController.popBackStack() },
-                    onPokemonClick = { id, gameSource -> openPokemon(id, gameSource) }
+                    onPokemonClick = { id, gameSource -> openPokemon(id, gameSource) },
+                    onLocationClick = { id, gameSource -> openLocation(id, gameSource) }
+                )
+            }
+            composable(
+                route = "location/{id}?source={source}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.IntType },
+                    navArgument("source") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { entry ->
+                val pokemonId = entry.arguments?.getInt("id") ?: -1
+                val source = entry.arguments?.getString("source")?.let(Uri::decode)
+                PokemonLocationScreen(
+                    pokemonId = pokemonId,
+                    source = source,
+                    onBack = { navController.popBackStack() }
                 )
             }
             composable("teams") {
