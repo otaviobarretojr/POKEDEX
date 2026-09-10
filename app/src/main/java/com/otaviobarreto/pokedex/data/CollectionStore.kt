@@ -44,6 +44,15 @@ object CollectionStore {
     fun toggleCaptured(id: Int) { capturedIds = if (id in capturedIds) capturedIds - id else capturedIds + id; persistCaptured() }
     fun markCaptured(id: Int) { if (id !in capturedIds) { capturedIds = capturedIds + id; persistCaptured() } }
 
+    fun ensureBox(name: String): String? {
+        val clean = sanitizeBoxName(name)
+        if (clean.isBlank()) return null
+        val existing = boxNames.firstOrNull { it.equals(clean, true) }
+        if (existing != null) return existing
+        if (!createBox(clean)) return null
+        return clean
+    }
+
     fun createBox(name: String): Boolean {
         val cleanName = sanitizeBoxName(name); if (cleanName.isBlank() || boxNames.any { it.equals(cleanName, true) }) return false
         boxNames = boxNames + cleanName; boxes = boxes + (cleanName to emptySet()); persistBoxOrder(); persistBox(cleanName); return true
@@ -70,8 +79,20 @@ object CollectionStore {
     }
 
     fun addToBox(box: String, id: Int): Boolean {
-        if (box !in boxNames) return false; val current = boxes[box].orEmpty(); if (id in current) return true; if (current.size >= MAX_BOX_SIZE) return false
-        boxes = boxes + (box to (current + id)); markCaptured(id); persistBox(box); return true
+        val resolved = ensureBox(box) ?: return false
+        val current = boxes[resolved].orEmpty(); if (id in current) return true; if (current.size >= MAX_BOX_SIZE) return false
+        boxes = boxes + (resolved to (current + id)); markCaptured(id); persistBox(resolved); return true
+    }
+
+    /** Used only to repair old versions where a Pokémon was marked captured but had no Box placement. */
+    fun migrateCapturedToBox(box: String, ids: Collection<Int>) {
+        val resolved = ensureBox(box) ?: return
+        val current = boxes[resolved].orEmpty().toMutableSet()
+        ids.filter { it in capturedIds && boxesForPokemon(it).isEmpty() }
+            .take((MAX_BOX_SIZE - current.size).coerceAtLeast(0))
+            .forEach(current::add)
+        boxes = boxes + (resolved to current.toSet())
+        persistBox(resolved)
     }
 
     fun removeFromBox(box: String, id: Int) {
@@ -88,7 +109,7 @@ object CollectionStore {
         if (boxes.values.none { id in it } && id in capturedIds) { capturedIds = capturedIds - id; persistCaptured() }
         else if (boxes.values.any { id in it } && id !in capturedIds) { capturedIds = capturedIds + id; persistCaptured() }
     }
-    private fun sanitizeBoxName(name: String) = name.trim().replace(Regex("\\s+"), " ").take(32)
+    private fun sanitizeBoxName(name: String) = name.trim().replace(Regex("\\s+"), " ").take(48)
     private fun persistCaptured() { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putStringSet(KEY_CAPTURED, capturedIds.map(Int::toString).toSet())?.apply() }
     private fun persistBox(box: String) { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putStringSet(KEY_BOX_PREFIX + box, boxes[box].orEmpty().map(Int::toString).toSet())?.apply() }
     private fun persistBoxOrder() { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putString(KEY_BOX_ORDER, JSONArray(boxNames).toString())?.apply() }
