@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private data class LivingDexScope(val label: String, val source: String?)
+private enum class LivingCollectionFilter { ALL, OWNED, MISSING, UNBOXED }
 private val livingDexScopes = listOf(LivingDexScope("Nacional", null)) +
     AppGameCatalog.games.flatMap { game -> game.regions.map { LivingDexScope("${game.label} · ${it.label}", it.source) } }
 
@@ -47,7 +48,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     var regional by remember { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var query by remember { mutableStateOf("") }
-    var onlyMissing by remember { mutableStateOf(false) }
+    var collectionFilter by remember { mutableStateOf(LivingCollectionFilter.ALL) }
     var generation by remember { mutableIntStateOf(0) }
     var scope by remember { mutableStateOf(livingDexScopes.first()) }
     var scopeMenu by remember { mutableStateOf(false) }
@@ -72,16 +73,23 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     val scoped = remember(national, regionalIds, scope.source) {
         if (scope.source == null) national else national.filter { it.id in regionalIds }
     }
-    val filtered = remember(scoped, query, onlyMissing, generation, captured) {
+    val filtered = remember(scoped, query, collectionFilter, generation, captured, CollectionStore.boxes) {
         val q = query.trim().removePrefix("#")
         scoped.filter { p ->
             val queryOk = q.isBlank() || p.name.contains(q, true) || p.id.toString() == q || regionalNumbers[p.id]?.toString() == q
             val generationOk = generation == 0 || p.generation == generation
-            val collectionOk = !onlyMissing || p.id !in captured
+            val collectionOk = when (collectionFilter) {
+                LivingCollectionFilter.ALL -> true
+                LivingCollectionFilter.OWNED -> p.id in captured
+                LivingCollectionFilter.MISSING -> p.id !in captured
+                LivingCollectionFilter.UNBOXED -> p.id in captured && CollectionStore.boxesForPokemon(p.id).isEmpty()
+            }
             queryOk && generationOk && collectionOk
         }
     }
     val caughtInScope = scoped.count { it.id in captured }
+    val boxedInScope = scoped.count { CollectionStore.boxesForPokemon(it.id).isNotEmpty() }
+    val unboxedInScope = (caughtInScope - boxedInScope).coerceAtLeast(0)
     val total = scoped.size
     val progress = if (total == 0) 0f else caughtInScope.toFloat() / total
 
@@ -112,6 +120,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text("${(total - caughtInScope).coerceAtLeast(0)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("restantes", style = MaterialTheme.typography.labelSmall)
+                        if (unboxedInScope > 0) Text("$unboxedInScope sem Box", style = MaterialTheme.typography.labelSmall, color = Color(0xFFB26A00))
                     }
                 }
             }
@@ -150,7 +159,14 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
 
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.FilterAlt, null, modifier = Modifier.size(20.dp))
-                AssistChip(onClick = { onlyMissing = !onlyMissing }, label = { Text(if (onlyMissing) "Só faltantes" else "Todos") }, leadingIcon = if (onlyMissing) ({ Text("✓") }) else null)
+                listOf(
+                    LivingCollectionFilter.ALL to "Todos",
+                    LivingCollectionFilter.OWNED to "Capturados",
+                    LivingCollectionFilter.MISSING to "Faltantes",
+                    LivingCollectionFilter.UNBOXED to "Sem Box"
+                ).forEach { (filter, label) ->
+                    AssistChip(onClick = { collectionFilter = filter }, label = { Text(label) }, leadingIcon = if (collectionFilter == filter) ({ Text("✓") }) else null)
+                }
                 (0..9).forEach { gen ->
                     AssistChip(onClick = { generation = gen }, label = { Text(if (gen == 0) "Todas Gerações" else "G$gen") }, leadingIcon = if (generation == gen) ({ Text("✓") }) else null)
                 }
@@ -188,7 +204,8 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                             )
                             Text(p.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
-                                regionalNumbers[p.id]?.let { "#${it.toString().padStart(3, '0')} regional · #${p.id.toString().padStart(4, '0')}" }
+                                if (caught && CollectionStore.boxesForPokemon(p.id).isNotEmpty()) "${CollectionStore.boxesForPokemon(p.id).size} Box · #${p.id.toString().padStart(4, '0')}"
+                                else regionalNumbers[p.id]?.let { "#${it.toString().padStart(3, '0')} regional · #${p.id.toString().padStart(4, '0')}" }
                                     ?: "#${p.id.toString().padStart(4, '0')}",
                                 style = MaterialTheme.typography.labelSmall,
                                 textAlign = TextAlign.Center,
