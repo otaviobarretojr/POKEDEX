@@ -110,12 +110,12 @@ private fun RecreatedRegionExplorer(
     onPokemonClick: (Int, String) -> Unit
 ) {
     val zones = remember(context) { RegionMapCatalog.zones(context) }
-    var dex by remember(source) { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
+    var dex by remember(source) { mutableStateOf(GameDexService.cached(context).orEmpty()) }
     var selectedPokemon by remember { mutableStateOf<GameDexService.GameDexEntry?>(null) }
     var encounters by remember { mutableStateOf<List<PokeApiService.EncounterLocation>>(emptyList()) }
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(V4Filter.ALL) }
-    var loading by remember(source) { mutableStateOf(true) }
+    var loading by remember(source) { mutableStateOf(dex.isEmpty()) }
     var loadingEncounters by remember { mutableStateOf(false) }
     var error by remember(source) { mutableStateOf<String?>(null) }
     var selectedZone by remember(source) { mutableStateOf<RegionMapZone?>(null) }
