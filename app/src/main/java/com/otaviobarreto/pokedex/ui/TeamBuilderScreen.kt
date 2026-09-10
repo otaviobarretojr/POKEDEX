@@ -81,10 +81,17 @@ fun TeamBuilderScreen(onPokemonClick: (Int) -> Unit) {
     val weakCounts=(results.flatMap{it.quadrupleWeak+it.doubleWeak}).groupingBy{it}.eachCount().toList().sortedWith(compareByDescending<Pair<String,Int>>{it.second}.thenBy{it.first})
     val resistCounts=(results.flatMap{it.halfResist+it.quarterResist+it.immune}).groupingBy{it}.eachCount()
     val exposed=weakCounts.filter{(type,count)->count>(resistCounts[type]?:0)}
+    val stabTypes=valid.flatten().distinct()
+    val offense=TypeMatchup.offensiveCoverageFor(stabTypes)
+    val score=((offense.covered.size.toFloat()/TypeMatchup.allTypes().size)*100).toInt()
     Column(Modifier.fillMaxWidth().padding(top=10.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
         HorizontalDivider();Text("Análise defensiva",fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=6.dp));Text("Fraquezas compartilhadas do time",style=MaterialTheme.typography.bodySmall)
         if(weakCounts.isEmpty())Text("Nenhuma fraqueza registrada.",style=MaterialTheme.typography.labelMedium) else Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){weakCounts.take(8).forEach{(type,count)->AssistChip({}, {Text("$type · $count")})}}
         if(exposed.isNotEmpty()){Text("Pontos sem cobertura defensiva suficiente",style=MaterialTheme.typography.bodySmall);Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){exposed.take(8).forEach{(type,count)->val cover=resistCounts[type]?:0;SuggestionChip({}, {Text("$type $count× / cobre $cover")})}}}
+        HorizontalDivider(Modifier.padding(top=5.dp));Text("Cobertura ofensiva por STAB",fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=4.dp));Text("$score% dos tipos podem ser atingidos com dano super efetivo usando os tipos naturais do time.",style=MaterialTheme.typography.bodySmall)
+        LinearProgressIndicator(progress={score/100f},modifier=Modifier.fillMaxWidth())
+        if(offense.covered.isNotEmpty()){Text("Cobertos",style=MaterialTheme.typography.labelLarge);Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){offense.covered.forEach{type->AssistChip({}, {Text(type)})}}}
+        if(offense.uncovered.isNotEmpty()){Text("Sem cobertura STAB",style=MaterialTheme.typography.labelLarge);Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){offense.uncovered.forEach{type->SuggestionChip({}, {Text(type)})}};Text("Esses tipos podem ainda ser cobertos por golpes de cobertura; esta análise considera somente STAB.",style=MaterialTheme.typography.bodySmall)}
     }
 }
 
