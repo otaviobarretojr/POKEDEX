@@ -1,178 +1,198 @@
 package com.otaviobarreto.pokedex.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
+import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.PokeApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-@Composable
-fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
-    var dex by remember { mutableStateOf<List<PokeApiService.DexIndexEntry>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
-    var query by remember { mutableStateOf("") }
-    var onlyMissing by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        dex = runCatching { withContext(Dispatchers.IO) { PokeApiService.loadNationalDex() } }.getOrElse { emptyList() }
-        loading = false
-    }
-    val captured = CollectionStore.capturedIds
-    val filtered = dex.filter { p ->
-        val q = query.trim().removePrefix("#")
-        (q.isBlank() || p.name.contains(q, true) || p.id.toString() == q) && (!onlyMissing || p.id !in captured)
-    }
-    Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Living Dex", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("${captured.size} de ${dex.size.coerceAtLeast(1025)} capturados")
-            OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(top = 12.dp), singleLine = true, label = { Text("Pesquisar Pokémon") })
-            AssistChip({ onlyMissing = !onlyMissing }, { Text(if (onlyMissing) "Mostrando faltantes" else "Mostrar só faltantes") }, leadingIcon = if (onlyMissing) ({ Text("✓") }) else null, modifier = Modifier.padding(top = 8.dp))
-        }
-        if (loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        else LazyVerticalGrid(GridCells.Fixed(4), Modifier.fillMaxSize().padding(horizontal = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(filtered, key = { it.id }) { p ->
-                val caught = p.id in captured
-                Card(Modifier.aspectRatio(.85f).clickable { onPokemonClick(p.id) }) {
-                    Column(Modifier.fillMaxSize().padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        AsyncImage(p.spriteUrl, p.name, Modifier.size(64.dp).alpha(if (caught) 1f else .24f), colorFilter = if (caught) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }))
-                        Text("#${p.id.toString().padStart(4, '0')}", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private data class BoxGame(val label: String, val source: String)
-private val boxGames = listOf(
-    BoxGame("Scarlet / Violet", "Scarlet / Violet · Paldea"),
-    BoxGame("Kitakami", "Scarlet / Violet · Kitakami"),
-    BoxGame("Blueberry", "Scarlet / Violet · Blueberry"),
-    BoxGame("Sword / Shield", "Sword / Shield · Galar"),
-    BoxGame("Let's Go", "Let's Go Pikachu / Eevee · Kanto"),
-    BoxGame("Legends Arceus", "Legends Arceus · Hisui")
-)
+private data class LivingDexScope(val label: String, val source: String?)
+private val livingDexScopes = listOf(LivingDexScope("Nacional", null)) +
+    AppGameCatalog.games.flatMap { game -> game.regions.map { LivingDexScope("${game.label} · ${it.label}", it.source) } }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BoxesScreen(onPokemonClick: (Int, String?) -> Unit) {
-    var game by remember { mutableStateOf(boxGames.first()) }
-    var dex by remember { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
+fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
+    var national by remember { mutableStateOf<List<PokeApiService.DexIndexEntry>>(emptyList()) }
+    var regional by remember { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var query by remember { mutableStateOf("") }
-    var gameMenu by remember { mutableStateOf(false) }
-    var allBoxesOpen by remember { mutableStateOf(false) }
+    var onlyMissing by remember { mutableStateOf(false) }
+    var generation by remember { mutableIntStateOf(0) }
+    var scope by remember { mutableStateOf(livingDexScopes.first()) }
+    var scopeMenu by remember { mutableStateOf(false) }
     val captured = CollectionStore.capturedIds
 
-    LaunchedEffect(game.source) {
+    LaunchedEffect(Unit) {
         loading = true
-        val context = GameContext.fromSource(game.source)
-        dex = if (context == null) emptyList() else runCatching { withContext(Dispatchers.IO) { GameDexService.loadGameDex(context) } }.getOrElse { emptyList() }
+        national = runCatching { withContext(Dispatchers.IO) { PokedexDataStore.nationalDex() } }.getOrElse { emptyList() }
         loading = false
     }
-    val q = query.trim().removePrefix("#")
-    val visible = if (q.isBlank()) dex else dex.filter { it.name.contains(q, true) || it.gameNumber.toString() == q || it.nationalId.toString() == q }
-    val pageCount = (dex.size + 29) / 30
+
+    LaunchedEffect(scope.source) {
+        regional = emptyList()
+        val source = scope.source ?: return@LaunchedEffect
+        val context = GameContext.fromSource(source) ?: return@LaunchedEffect
+        loading = true
+        regional = runCatching { withContext(Dispatchers.IO) { GameDexService.loadGameDex(context) } }.getOrElse { emptyList() }
+        loading = false
+    }
+
+    val regionalIds = remember(regional) { regional.map { it.nationalId }.toSet() }
+    val regionalNumbers = remember(regional) { regional.associate { it.nationalId to it.gameNumber } }
+    val scoped = remember(national, regionalIds, scope.source) {
+        if (scope.source == null) national else national.filter { it.id in regionalIds }
+    }
+    val filtered = remember(scoped, query, onlyMissing, generation, captured) {
+        val q = query.trim().removePrefix("#")
+        scoped.filter { p ->
+            val queryOk = q.isBlank() || p.name.contains(q, true) || p.id.toString() == q || regionalNumbers[p.id]?.toString() == q
+            val generationOk = generation == 0 || p.generation == generation
+            val collectionOk = !onlyMissing || p.id !in captured
+            queryOk && generationOk && collectionOk
+        }
+    }
+    val caughtInScope = scoped.count { it.id in captured }
+    val total = scoped.size
+    val progress = if (total == 0) 0f else caughtInScope.toFloat() / total
 
     Column(Modifier.fillMaxSize()) {
-        ExposedDropdownMenuBox(expanded = gameMenu, onExpandedChange = { gameMenu = !gameMenu }, modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-            OutlinedTextField(game.label, {}, readOnly = true, label = { Text("Pokédex / jogo") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(gameMenu) }, modifier = Modifier.menuAnchor().fillMaxWidth())
-            ExposedDropdownMenu(gameMenu, { gameMenu = false }) { boxGames.forEach { option -> DropdownMenuItem({ Text(option.label) }, { game = option; query = ""; gameMenu = false }) } }
-        }
-
-        Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp), shape = RoundedCornerShape(20.dp)) {
-            Column(Modifier.padding(12.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(game.label, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text("${captured.count { id -> dex.any { it.nationalId == id } }} / ${dex.size} capturados · $pageCount Boxes", style = MaterialTheme.typography.bodySmall)
-                    }
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Living Dex", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("Coleção completa e progresso por jogo/região", style = MaterialTheme.typography.bodySmall)
                 }
-                OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(top = 8.dp), leadingIcon = { Icon(Icons.Default.Search, null) }, label = { Text("Pesquisar Pokémon") }, singleLine = true)
             }
-        }
 
-        if (loading) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        else if (dex.isEmpty()) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { Text("Não foi possível carregar esta Pokédex regional.") }
-        else LazyVerticalGrid(
-            columns = GridCells.Fixed(6),
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            items(visible, key = { it.gameNumber }) { pokemon ->
-                RegionalDexSlot(pokemon, pokemon.nationalId in captured) { onPokemonClick(pokemon.nationalId, game.source) }
-            }
-        }
-
-        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            FilledTonalButton({ allBoxesOpen = true }, Modifier.weight(1f)) { Icon(Icons.Default.GridView, null); Spacer(Modifier.width(8.dp)); Text("Todas as Boxes") }
-            FilledTonalButton({}, Modifier.weight(1f)) { Icon(Icons.Default.Search, null); Spacer(Modifier.width(8.dp)); Text("Pesquisar") }
-        }
-    }
-
-    if (allBoxesOpen) ModalBottomSheet(onDismissRequest = { allBoxesOpen = false }) {
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Text("Todas as Boxes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("${game.label} · $pageCount páginas de até 30 posições", modifier = Modifier.padding(bottom = 12.dp))
-            for (page in 0 until pageCount) {
-                val start = page * 30
-                val pageEntries = dex.drop(start).take(30)
-                val caught = pageEntries.count { it.nationalId in captured }
-                Card(Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { allBoxesOpen = false }) {
-                    Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Box ${page + 1}", fontWeight = FontWeight.SemiBold)
-                        Text("${start + 1}–${(start + pageEntries.size)} · $caught/${pageEntries.size}")
+            Card(
+                Modifier.fillMaxWidth().padding(top = 10.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(58.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxSize(), strokeWidth = 6.dp)
+                        Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    }
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text("$caughtInScope / $total", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(if (scope.source == null) "Pokédex Nacional" else scope.label, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("${(total - caughtInScope).coerceAtLeast(0)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("restantes", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
-            Spacer(Modifier.height(24.dp))
-        }
-    }
-}
 
-@Composable
-private fun RegionalDexSlot(pokemon: GameDexService.GameDexEntry, captured: Boolean, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().aspectRatio(.82f).clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = if (captured) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Box(Modifier.fillMaxSize().padding(2.dp)) {
-            AsyncImage(
-                model = pokemon.spriteUrl,
-                contentDescription = pokemon.name,
-                modifier = Modifier.align(Alignment.Center).fillMaxWidth(.92f).aspectRatio(1f).alpha(if (captured) 1f else .20f),
-                colorFilter = if (captured) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+            ExposedDropdownMenuBox(expanded = scopeMenu, onExpandedChange = { scopeMenu = !scopeMenu }, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                OutlinedTextField(
+                    value = scope.label,
+                    onValueChange = {},
+                    readOnly = true,
+                    singleLine = true,
+                    label = { Text("Visualização") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(scopeMenu) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(expanded = scopeMenu, onDismissRequest = { scopeMenu = false }) {
+                    livingDexScopes.forEach { item ->
+                        DropdownMenuItem(text = { Text(item.label) }, onClick = {
+                            scope = item
+                            scopeMenu = false
+                            query = ""
+                        })
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                placeholder = { Text("Nome, Nº Nacional ou Nº regional") },
+                label = { Text("Pesquisar") }
             )
-            Text(
-                pokemon.gameNumber.toString().padStart(3, '0'),
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
-                color = if (captured) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.FilterAlt, null, modifier = Modifier.size(20.dp))
+                AssistChip(onClick = { onlyMissing = !onlyMissing }, label = { Text(if (onlyMissing) "Só faltantes" else "Todos") }, leadingIcon = if (onlyMissing) ({ Text("✓") }) else null)
+                (0..9).forEach { gen ->
+                    AssistChip(onClick = { generation = gen }, label = { Text(if (gen == 0) "Todas Gerações" else "G$gen") }, leadingIcon = if (generation == gen) ({ Text("✓") }) else null)
+                }
+            }
+        }
+
+        if (loading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        } else if (filtered.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                Text("Nenhum Pokémon corresponde aos filtros selecionados.", textAlign = TextAlign.Center)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(filtered, key = { it.id }) { p ->
+                    val caught = p.id in captured
+                    Card(
+                        Modifier.fillMaxWidth().aspectRatio(.78f).clickable { onPokemonClick(p.id) },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = if (caught) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(Modifier.fillMaxSize().padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            AsyncImage(
+                                model = p.spriteUrl,
+                                contentDescription = p.name,
+                                modifier = Modifier.weight(1f).fillMaxWidth(.90f).alpha(if (caught) 1f else .22f),
+                                colorFilter = if (caught) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+                            )
+                            Text(p.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                regionalNumbers[p.id]?.let { "#${it.toString().padStart(3, '0')} regional · #${p.id.toString().padStart(4, '0')}" }
+                                    ?: "#${p.id.toString().padStart(4, '0')}",
+                                style = MaterialTheme.typography.labelSmall,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                item { Spacer(Modifier.height(12.dp)) }
+            }
         }
     }
 }
