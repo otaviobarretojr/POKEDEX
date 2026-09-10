@@ -28,10 +28,12 @@ private data class GameShortcut(
 )
 
 private val gameShortcuts = listOf(
-    GameShortcut("Scarlet / Violet", "Scarlet / Violet", "Pokédex de Paldea"),
-    GameShortcut("Sword / Shield", "Sword / Shield", "Pokédex de Galar"),
-    GameShortcut("Legends Arceus", "Legends Arceus", "Pokédex de Hisui"),
-    GameShortcut("Let's Go Pikachu / Eevee", "Let's Go Pikachu / Eevee", "Pokédex de Kanto – Let's Go")
+    GameShortcut("Scarlet / Violet · Paldea", "Paldea", "Scarlet / Violet · Pokédex principal"),
+    GameShortcut("Scarlet / Violet · Kitakami", "Kitakami", "Scarlet / Violet · The Teal Mask"),
+    GameShortcut("Scarlet / Violet · Blueberry", "Blueberry", "Scarlet / Violet · The Indigo Disk"),
+    GameShortcut("Sword / Shield · Galar", "Galar", "Sword / Shield · Pokédex regional"),
+    GameShortcut("Legends Arceus · Hisui", "Hisui", "Legends Arceus · Pokédex regional"),
+    GameShortcut("Let's Go Pikachu / Eevee · Kanto", "Kanto", "Let's Go Pikachu / Eevee")
 )
 
 @Composable
@@ -40,7 +42,7 @@ fun GamesHubScreen(onOpenGame: (String) -> Unit) {
         Column(Modifier.padding(16.dp)) {
             Text("Jogos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                "Pokédex, progresso e localização separados por jogo",
+                "Pokédex, progresso e localização separados por região e jogo",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
