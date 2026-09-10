@@ -14,11 +14,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -49,7 +51,8 @@ import kotlinx.coroutines.withContext
 fun GameDexScreen(
     source: String,
     onBack: () -> Unit,
-    onPokemonClick: (Int, String) -> Unit
+    onPokemonClick: (Int, String) -> Unit,
+    onLocationClick: (Int, String) -> Unit
 ) {
     val context = remember(source) { GameContext.fromSource(source) }
     var entries by remember(source) { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
@@ -129,10 +132,7 @@ fun GameDexScreen(
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        context?.label ?: source,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Text(context?.label ?: source, style = MaterialTheme.typography.bodyMedium)
                     Text("$capturedInGame de ${entries.size} capturados nesta Pokédex")
                     LinearProgressIndicator(
                         progress = { progress },
@@ -197,8 +197,13 @@ fun GameDexScreen(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
-                                Button(onClick = { CollectionStore.toggleCaptured(pokemon.nationalId) }) {
-                                    Text(if (isCaptured) "✓" else "+")
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    FilledTonalIconButton(onClick = { onLocationClick(pokemon.nationalId, source) }) {
+                                        Icon(Icons.Default.LocationOn, contentDescription = "Localizações")
+                                    }
+                                    Button(onClick = { CollectionStore.toggleCaptured(pokemon.nationalId) }) {
+                                        Text(if (isCaptured) "✓" else "+")
+                                    }
                                 }
                             }
                         }
