@@ -12,8 +12,8 @@ android {
         applicationId = "com.otaviobarreto.pokedex"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "0.23.0"
+        versionCode = 24
+        versionName = "0.24.0"
     }
 
     signingConfigs {
@@ -49,5 +49,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
