@@ -49,6 +49,7 @@ import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
+import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -186,6 +187,7 @@ fun GameDexScreen(
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(filtered, key = { it.gameNumber }) { pokemon ->
+                        LaunchedEffect(pokemon.nationalId) { PokedexDataStore.prefetchDetails(pokemon.nationalId) }
                         val isCaptured = pokemon.nationalId in captured
                         val pokemonBoxes = CollectionStore.boxesForPokemon(pokemon.nationalId)
                         val isInBox = pokemonBoxes.isNotEmpty()
