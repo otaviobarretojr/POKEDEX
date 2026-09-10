@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 private data class GameHubRegion(val source:String,val title:String,val subtitle:String)
 private data class GameHubEntry(val title:String,val subtitle:String,val regions:List<GameHubRegion>)
@@ -40,9 +40,7 @@ private val gameHubEntries=listOf(
 @Composable
 fun GamesHubScreen(onOpenGame:(String)->Unit){
     var regionPicker by remember{mutableStateOf<GameHubEntry?>(null)}
-    val scope=rememberCoroutineScope()
-    val progress=remember{mutableStateMapOf<String,OfflineGamePackManager.Progress>()}
-    val downloading=remember{mutableStateMapOf<String,Boolean>()}
+    LaunchedEffect(Unit){ while(true){ delay(700); refreshToken++ } }
     var refreshToken by remember{mutableIntStateOf(0)}
     var message by remember{mutableStateOf<String?>(null)}
 
@@ -57,8 +55,8 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
             items(gameHubEntries,key={it.title}){game->
                 val catalogGame=remember(game.title){AppGameCatalog.games.firstOrNull{it.label==game.title}}
                 val status=remember(game.title,refreshToken){OfflineGamePackManager.status(game.title)}
-                val active=downloading[game.title]==true
-                val current=progress[game.title]
+                val current=remember(game.title,refreshToken){OfflineGamePackManager.runtimeProgress(game.title)}
+                val active=current!=null
 
                 Card(
                     Modifier.fillMaxWidth().padding(horizontal=16.dp).clickable{
@@ -92,20 +90,9 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                             IconButton(
                                 enabled=!active && catalogGame!=null,
                                 onClick={
-                                    val target=catalogGame ?: return@IconButton
-                                    downloading[game.title]=true
-                                    progress[game.title]=OfflineGamePackManager.Progress(0,1,"Preparando…")
-                                    scope.launch{
-                                        runCatching{
-                                            OfflineGamePackManager.download(target){p->progress[game.title]=p}
-                                        }.onSuccess{
-                                            message=game.title + " está disponível offline."
-                                        }.onFailure{
-                                            message="Não foi possível concluir o download de " + game.title + "."
-                                        }
-                                        downloading[game.title]=false
-                                        refreshToken++
-                                    }
+                                    if(catalogGame==null) return@IconButton
+                                    OfflineGamePackManager.enqueue(game.title)
+                                    refreshToken++
                                 }
                             ){
                                 Icon(
