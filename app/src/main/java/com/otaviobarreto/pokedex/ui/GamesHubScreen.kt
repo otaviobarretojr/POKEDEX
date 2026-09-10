@@ -34,9 +34,14 @@ private val gameHubEntries=listOf(
         GameHubRegion("Scarlet / Violet · Kitakami","Kitakami","DLC · The Teal Mask"),
         GameHubRegion("Scarlet / Violet · Blueberry","Blueberry","DLC · The Indigo Disk")
     )),
-    GameHubEntry("Sword / Shield","Galar",listOf(GameHubRegion("Sword / Shield · Galar","Galar","Pokédex regional"))),
+    GameHubEntry("Sword / Shield","Galar + Expansion Pass",listOf(
+        GameHubRegion("Sword / Shield · Galar","Galar","Jogo base"),
+        GameHubRegion("Sword / Shield · Isle of Armor","Isle of Armor","DLC · The Isle of Armor"),
+        GameHubRegion("Sword / Shield · Crown Tundra","Crown Tundra","DLC · The Crown Tundra")
+    )),
     GameHubEntry("Legends Arceus","Hisui",listOf(GameHubRegion("Legends Arceus · Hisui","Hisui","Pokédex regional"))),
-    GameHubEntry("Let's Go Pikachu / Eevee","Kanto",listOf(GameHubRegion("Let's Go Pikachu / Eevee · Kanto","Kanto","Pokédex regional")))
+    GameHubEntry("Let's Go Pikachu / Eevee","Kanto",listOf(GameHubRegion("Let's Go Pikachu / Eevee · Kanto","Kanto","Pokédex regional"))),
+    GameHubEntry("Brilliant Diamond / Shining Pearl","Sinnoh",listOf(GameHubRegion("Brilliant Diamond / Shining Pearl · Sinnoh","Sinnoh","Pokédex regional")))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
