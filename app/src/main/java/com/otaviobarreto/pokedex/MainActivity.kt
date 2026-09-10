@@ -33,12 +33,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.ui.BoxesScreen
+import com.otaviobarreto.pokedex.ui.LivingDexScreen
 import com.otaviobarreto.pokedex.ui.PokedexScreen
 import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CollectionStore.initialize(this)
         setContent {
             MaterialTheme {
                 PokedexApp()
@@ -114,9 +118,15 @@ fun PokedexApp() {
                     onBack = { navController.popBackStack() }
                 )
             }
-            composable("livingdex") { PlaceholderScreen("Living Dex", "Progresso de captura e coleção.") }
-            composable("teams") { PlaceholderScreen("Team Builder", "Criação e análise de times.") }
-            composable("boxes") { PlaceholderScreen("Boxes", "Organização por jogo e coleção.") }
+            composable("livingdex") {
+                LivingDexScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
+            }
+            composable("teams") {
+                PlaceholderScreen("Team Builder", "Criação e análise de times.")
+            }
+            composable("boxes") {
+                BoxesScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
+            }
         }
     }
 }
