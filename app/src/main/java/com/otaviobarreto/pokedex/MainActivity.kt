@@ -49,7 +49,7 @@ fun PokedexApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val isSecondaryScreen = currentRoute == "pokemon/{id}?source={source}" || currentRoute == "gameDex?source={source}" || currentRoute == "location/{id}?source={source}" || currentRoute == "regionMap/{id}?source={source}" || currentRoute == "regionExplorer?source={source}" || currentRoute == "reference"
+    val isSecondaryScreen = currentRoute == "pokemon/{id}?source={source}" || currentRoute == "gameDex?source={source}" || currentRoute == "location/{id}?source={source}" || currentRoute == "regionMap/{id}?source={source}" || currentRoute == "regionExplorer?source={source}" || currentRoute == "reference?kind={kind}&name={name}"
     val useCompactOwnHeader = currentRoute == "boxes"
 
     fun openPokemon(id: Int, source: String? = null) { navController.navigate(if (source.isNullOrBlank()) "pokemon/$id" else "pokemon/$id?source=${Uri.encode(source)}") }
@@ -57,17 +57,23 @@ fun PokedexApp() {
     fun openLocation(id: Int, source: String? = null) { navController.navigate(if (source.isNullOrBlank()) "location/$id" else "location/$id?source=${Uri.encode(source)}") }
     fun openRegionMap(id: Int, source: String) { navController.navigate("regionMap/$id?source=${Uri.encode(source)}") }
     fun openRegionExplorer(source: String) { navController.navigate("regionExplorer?source=${Uri.encode(source)}") }
+    fun openReference(kind:String?=null,name:String?=null){
+        navController.navigate(if(kind.isNullOrBlank()||name.isNullOrBlank()) "reference" else "reference?kind=${Uri.encode(kind)}&name=${Uri.encode(name)}")
+    }
 
     Scaffold(
         topBar = { if (!isSecondaryScreen && !useCompactOwnHeader) TopAppBar(title = { Text("POKEDEX") }) },
         bottomBar = { if (!isSecondaryScreen) { NavigationBar { mainDestinations.forEach { destination -> NavigationBarItem(selected = currentRoute == destination.route,onClick = { navController.navigate(destination.route) { popUpTo(navController.graph.findStartDestination().id) { saveState = true }; launchSingleTop = true; restoreState = true } },icon = { Icon(destination.icon, contentDescription = destination.label) },label = { Text(destination.label) }) } } } }
     ) { innerPadding ->
         NavHost(navController, "pokedex", Modifier.padding(innerPadding)) {
-            composable("pokedex") { PokedexV2Screen(onPokemonClick = { openPokemon(it) }, onOpenReference = { navController.navigate("reference") }) }
-            composable("reference") { ReferenceHubScreen { navController.popBackStack() } }
+            composable("pokedex") { PokedexV2Screen(onPokemonClick = { openPokemon(it) }, onOpenReference = { openReference() }) }
+            composable("reference?kind={kind}&name={name}",arguments=listOf(navArgument("kind"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("name"){type=NavType.StringType;nullable=true;defaultValue=null})) { entry ->
+                val kind=entry.arguments?.getString("kind")?.let(Uri::decode);val name=entry.arguments?.getString("name")?.let(Uri::decode)
+                ReferenceHubScreen(onBack={navController.popBackStack()},initialKind=kind,initialName=name,onPokemonClick={openPokemon(it)})
+            }
             composable("pokemon/{id}?source={source}",arguments = listOf(navArgument("id") { type = NavType.IntType },navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
                 val id = entry.arguments?.getInt("id") ?: -1; val source = entry.arguments?.getString("source")?.let(Uri::decode)
-                Column(Modifier.fillMaxSize()) { PokemonCollectionActions(id); Box(Modifier.weight(1f).fillMaxWidth()) { PokemonDetailV2Screen(id = id,source = source,onBack = { navController.popBackStack() },onOpenLocation = { openLocation(id, source) }) } }
+                Column(Modifier.fillMaxSize()) { PokemonCollectionActions(id); Box(Modifier.weight(1f).fillMaxWidth()) { PokemonDetailV2Screen(id = id,source = source,onBack = { navController.popBackStack() },onOpenLocation = { openLocation(id, source) },onOpenReference={kind,name->openReference(kind,name)}) } }
             }
             composable("livingdex") { LivingDexScreen(onPokemonClick = { openPokemon(it) }) }
             composable("games") { GamesHubScreen(onOpenGame = ::openGameDex) }
