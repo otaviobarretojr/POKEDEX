@@ -61,7 +61,7 @@ fun GameDexScreen(
     LaunchedEffect(source) {
         val game = context
         if (game == null) {
-            error = "Esta Box não está vinculada a um jogo reconhecido."
+            error = "Este contexto não está vinculado a um jogo reconhecido."
             loading = false
         } else {
             runCatching {
@@ -70,14 +70,15 @@ fun GameDexScreen(
                 entries = it
                 loading = false
             }.onFailure {
-                error = "Não foi possível carregar a Pokédex deste jogo."
+                error = "Não foi possível carregar a Pokédex desta região."
                 loading = false
             }
         }
     }
 
     val captured = CollectionStore.capturedIds
-    val boxPokemon = CollectionStore.boxes[source].orEmpty()
+    val relatedBox = context?.label
+    val boxPokemon = relatedBox?.let { CollectionStore.boxes[it].orEmpty() }.orEmpty()
     val capturedInGame = entries.count { it.nationalId in captured }
     val progress = if (entries.isEmpty()) 0f else capturedInGame.toFloat() / entries.size
     val normalized = query.trim().removePrefix("#")
@@ -93,7 +94,7 @@ fun GameDexScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(context?.label ?: "Pokédex do jogo") },
+                title = { Text(context?.regionLabel ?: "Pokédex do jogo") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -110,7 +111,7 @@ fun GameDexScreen(
             ) {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(12.dp))
-                Text("Carregando Pokédex do jogo…")
+                Text("Carregando Pokédex regional…")
             }
 
             error != null -> Column(
@@ -124,11 +125,15 @@ fun GameDexScreen(
             else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(
-                        "Pokédex regional",
+                        context?.regionLabel ?: "Pokédex regional",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Text("$capturedInGame de ${entries.size} capturados neste jogo")
+                    Text(
+                        context?.label ?: source,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text("$capturedInGame de ${entries.size} capturados nesta Pokédex")
                     LinearProgressIndicator(
                         progress = { progress },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -175,10 +180,14 @@ fun GameDexScreen(
                                 )
                                 Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                                     Text(
-                                        "#${pokemon.gameNumber.toString().padStart(3, '0')} no jogo · National #${pokemon.nationalId.toString().padStart(4, '0')}",
+                                        "#${pokemon.gameNumber.toString().padStart(3, '0')} · National #${pokemon.nationalId.toString().padStart(4, '0')}",
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                     Text(pokemon.name, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "Disponível em ${context?.regionLabel ?: "esta Pokédex"}",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
                                     Text(
                                         when {
                                             isInBox -> "Na Box · ${if (isCaptured) "Capturado" else "Não marcado"}"
