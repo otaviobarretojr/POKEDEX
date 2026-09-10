@@ -1,6 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
@@ -51,13 +52,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.CommunityAreaEncounter
@@ -160,15 +164,16 @@ private fun RecreatedRegionExplorer(
         when {
             loading -> Box(Modifier.fillMaxSize().padding(inner), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             error != null -> Box(Modifier.fillMaxSize().padding(inner).padding(24.dp), contentAlignment = Alignment.Center) { Text(error!!) }
-            else -> LazyColumn(Modifier.fillMaxSize().padding(inner), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            else -> LazyColumn(Modifier.fillMaxSize().padding(inner).background(Color(0xFFF8F8FC)), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                         Text(
                             if (context.regionLabel == "Blueberry") "Terarium · Blueberry Academy" else "Kitakami",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color(0xFF151426)
                         )
-                        Text("$regionCaptured de ${dex.size} capturados")
+                        Text("$regionCaptured de ${dex.size} capturados", color = Color(0xFF72778B), style = MaterialTheme.typography.bodySmall)
                         Text(
                             "Base cartográfica recriada a partir da geografia do jogo. Não é um screenshot nem um asset oficial.",
                             style = MaterialTheme.typography.bodySmall,
@@ -184,7 +189,8 @@ private fun RecreatedRegionExplorer(
                             onValueChange = { query = it; if (selectedPokemon?.name?.equals(it, true) != true) selectedPokemon = null },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                             leadingIcon = { Icon(Icons.Default.Search, null) },
-                            label = { Text("Buscar Pokémon") },
+                            placeholder = { Text("Buscar Pokémon") },
+                            shape = RoundedCornerShape(18.dp),
                             singleLine = true
                         )
                     }
@@ -192,9 +198,9 @@ private fun RecreatedRegionExplorer(
 
                 if (query.isNotBlank() && selectedPokemon == null) {
                     items(results, key = { it.nationalId }) { pokemon ->
-                        Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable { selectedPokemon = pokemon; query = pokemon.name }) {
+                        Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable { selectedPokemon = pokemon; query = pokemon.name }, shape = RoundedCornerShape(18.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFFF1F0F8))) {
                             Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(pokemon.spriteUrl, pokemon.name, Modifier.size(48.dp))
+                                AsyncImage(model=pokemon.spriteUrl, contentDescription=pokemon.name, contentScale=ContentScale.Fit, modifier=Modifier.size(48.dp).padding(2.dp))
                                 Column(Modifier.weight(1f).padding(start = 10.dp)) {
                                     Text(pokemon.name, fontWeight = FontWeight.SemiBold)
                                     Text("#${pokemon.gameNumber.toString().padStart(3, '0')} regional · #${pokemon.nationalId.toString().padStart(4, '0')} nacional", style = MaterialTheme.typography.bodySmall)
@@ -207,9 +213,9 @@ private fun RecreatedRegionExplorer(
 
                 selectedPokemon?.let { pokemon ->
                     item {
-                        Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(20.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFFF1F0F8))) {
                             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(pokemon.spriteUrl, pokemon.name, Modifier.size(64.dp))
+                                AsyncImage(model=pokemon.spriteUrl, contentDescription=pokemon.name, contentScale=ContentScale.Fit, modifier=Modifier.size(64.dp).padding(3.dp))
                                 Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                                     Text(pokemon.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                     Text(if (pokemon.nationalId in captured) "Capturado" else "Faltando")
@@ -311,14 +317,14 @@ private fun RecreatedGameMap(
     var translation by remember(regionLabel) { mutableStateOf(Offset.Zero) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             FilledTonalButton(onClick = { scale = (scale - .25f).coerceAtLeast(1f) }) { Text("−") }
             FilledTonalButton(onClick = { scale = (scale + .25f).coerceAtMost(4f) }) { Text("+") }
             FilledTonalButton(onClick = { scale = 1f; translation = Offset.Zero }) { Text("Centralizar") }
             Text("${(scale * 100).toInt()}%", style = MaterialTheme.typography.labelLarge)
         }
         Spacer(Modifier.size(8.dp))
-        Surface(Modifier.fillMaxWidth().aspectRatio(1f), shape = RoundedCornerShape(24.dp), tonalElevation = 2.dp) {
+        Surface(Modifier.fillMaxWidth().aspectRatio(1f), shape = RoundedCornerShape(28.dp), color = Color(0xFFF1F0F8), tonalElevation = 0.dp, shadowElevation = 2.dp) {
             Box(Modifier.fillMaxSize().pointerInput(regionLabel) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     scale = (scale * zoom).coerceIn(1f, 4f)
@@ -369,7 +375,7 @@ private fun RecreatedGameMap(
                 }
             }
         }
-        Text("Zoom até 400% · toque nos marcadores para abrir as áreas.", Modifier.fillMaxWidth().padding(top = 8.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
+        Text("Pinça para zoom · arraste para explorar · toque nos marcadores.", Modifier.fillMaxWidth().padding(top = 8.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall, color = Color(0xFF72778B))
     }
 }
 
