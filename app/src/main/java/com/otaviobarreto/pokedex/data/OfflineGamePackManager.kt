@@ -11,6 +11,12 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
@@ -40,6 +46,17 @@ object OfflineGamePackManager {
     fun initialize(context: Context) {
         if (this.context != null) return
         this.context = context.applicationContext
+    }
+
+    fun workName(gameLabel: String): String = "offline-pack-" + key(gameLabel, "download")
+
+    fun enqueue(gameLabel: String) {
+        val appContext = requireNotNull(context)
+        val request = OneTimeWorkRequestBuilder<OfflineGamePackWorker>()
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setInputData(workDataOf(OfflineGamePackWorker.KEY_GAME to gameLabel))
+            .build()
+        WorkManager.getInstance(appContext).enqueueUniqueWork(workName(gameLabel), ExistingWorkPolicy.KEEP, request)
     }
 
     fun status(gameLabel: String): PackStatus {
