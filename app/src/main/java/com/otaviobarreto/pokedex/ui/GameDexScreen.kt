@@ -1,5 +1,6 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -38,9 +41,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.GameContext
@@ -130,7 +136,7 @@ fun GameDexScreen(
                 Text(error!!, style = MaterialTheme.typography.bodyLarge)
             }
 
-            else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding).background(Color(0xFFF8F8FC))) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -140,10 +146,11 @@ fun GameDexScreen(
                         Column(Modifier.weight(1f)) {
                             Text(
                                 context?.regionLabel ?: "Pokédex regional",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 27.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFF151426)
                             )
-                            Text(context?.label ?: source, style = MaterialTheme.typography.bodyMedium)
+                            Text((context?.label ?: source).uppercase(), fontSize=8.sp, color=Color(0xFF72778B))
                         }
                         if (hasRegionalMap) {
                             FilledTonalButton(onClick = { onOpenRegionExplorer(source) }) {
@@ -155,14 +162,17 @@ fun GameDexScreen(
                     Text("$capturedInGame de ${entries.size} capturados nesta Pokédex")
                     LinearProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        color = Color(0xFF5B55E7),
+                        trackColor = Color(0xFF5B55E7).copy(alpha=.12f)
                     )
                     OutlinedTextField(
                         value = query,
                         onValueChange = { query = it },
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                         singleLine = true,
-                        label = { Text("Nome, nº regional ou National Dex") }
+                        placeholder = { Text("Nome, nº regional ou National Dex") },
+                        shape = RoundedCornerShape(18.dp)
                     )
                     AssistChip(
                         onClick = { onlyMissing = !onlyMissing },
@@ -186,7 +196,9 @@ fun GameDexScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
-                                .clickable { onPokemonClick(pokemon.nationalId, source) }
+                                .clickable { onPokemonClick(pokemon.nationalId, source) },
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = if(isCaptured) Color(0xFFEAE8FB) else Color(0xFFF1F0F8))
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(10.dp),
@@ -195,7 +207,8 @@ fun GameDexScreen(
                                 AsyncImage(
                                     model = pokemon.spriteUrl,
                                     contentDescription = pokemon.name,
-                                    modifier = Modifier.size(64.dp)
+                                    modifier = Modifier.size(64.dp).padding(3.dp),
+                                    contentScale = ContentScale.Fit
                                 )
                                 Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                                     Text(
