@@ -61,7 +61,7 @@ object TeamStore {
     }
 
     fun addPokemon(teamId: Long, pokemonId: Int): Boolean {
-        if (pokemonId !in 1..1025) return false
+        if (pokemonId !in 1..PokeApiService.MAX_NATIONAL_DEX_ID) return false
         val team = teams.firstOrNull { it.id == teamId } ?: return false
         if (pokemonId in team.members) return true
         if (team.members.size >= MAX_TEAM_SIZE) return false
@@ -75,7 +75,7 @@ object TeamStore {
     }
 
     fun replacePokemon(teamId: Long, oldId: Int, newId: Int): Boolean {
-        if (newId !in 1..1025) return false
+        if (newId !in 1..PokeApiService.MAX_NATIONAL_DEX_ID) return false
         val team = teams.firstOrNull { it.id == teamId } ?: return false
         val index = team.members.indexOf(oldId)
         if (index == -1) return false
@@ -129,7 +129,7 @@ object TeamStore {
                 val members = buildList {
                     for (j in 0 until membersArray.length()) {
                         val id = membersArray.optInt(j)
-                        if (id in 1..1025 && id !in this) add(id)
+                        if (id in 1..PokeApiService.MAX_NATIONAL_DEX_ID && id !in this) add(id)
                     }
                 }.take(MAX_TEAM_SIZE)
                 add(
