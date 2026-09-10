@@ -32,13 +32,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable private fun PokedexRoot(){
-    var bootReady by remember { mutableStateOf(false) }
-    if(!bootReady) BootExperienceScreen { bootReady=true } else PokedexApp()
-}
-
-data class MainDestination(val route: String, val label: String, val icon: ImageVector)
-private val mainDestinations = listOf(MainDestination("pokedex","Pokédex",Icons.Default.CatchingPokemon),MainDestination("livingdex","Living Dex",Icons.Default.ListAlt),MainDestination("games","Jogos",Icons.Default.Map),MainDestination("teams","Times",Icons.Default.Groups),MainDestination("boxes","Boxes",Icons.Default.GridView))
+@Composable private fun PokedexRoot(){var bootReady by remember{mutableStateOf(false)};if(!bootReady)BootExperienceScreen{bootReady=true}else PokedexApp()}
+data class MainDestination(val route:String,val label:String,val icon:ImageVector)
+private val mainDestinations=listOf(MainDestination("pokedex","Pokédex",Icons.Default.CatchingPokemon),MainDestination("livingdex","Living Dex",Icons.Default.ListAlt),MainDestination("games","Jogos",Icons.Default.Map),MainDestination("teams","Times",Icons.Default.Groups),MainDestination("boxes","Boxes",Icons.Default.GridView))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun PokedexApp(){
@@ -50,7 +46,7 @@ private val mainDestinations = listOf(MainDestination("pokedex","Pokédex",Icons
   NavHost(navController,"pokedex",Modifier.padding(innerPadding)){
    composable("pokedex"){PokedexV2Screen(onPokemonClick={openPokemon(it)},onOpenReference={openReference()})}
    composable("reference?kind={kind}&name={name}",arguments=listOf(navArgument("kind"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("name"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val kind=entry.arguments?.getString("kind")?.let(Uri::decode);val name=entry.arguments?.getString("name")?.let(Uri::decode);ReferenceHubScreen(onBack={navController.popBackStack()},initialKind=kind,initialName=name,onPokemonClick={openPokemon(it)})}
-   composable("pokemon/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode);Column(Modifier.fillMaxSize()){PokemonCollectionActions(id);Box(Modifier.weight(1f).fillMaxWidth()){PokemonDetailV2Screen(id=id,source=source,onBack={navController.popBackStack()},onOpenLocation={openLocation(id,source)},onOpenReference={kind,name->openReference(kind,name)},onOpenPokemon={nextId->openPokemon(nextId,source)})}}}
+   composable("pokemon/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode);PokemonDetailV2Screen(id=id,source=source,onBack={navController.popBackStack()},onOpenLocation={openLocation(id,source)},onOpenReference={kind,name->openReference(kind,name)},onOpenPokemon={nextId->openPokemon(nextId,source)})}
    composable("livingdex"){LivingDexScreen(onPokemonClick={openPokemon(it)})};composable("games"){GamesHubScreen(onOpenGame=::openGameDex)}
    composable("gameDex?source={source}",arguments=listOf(navArgument("source"){type=NavType.StringType;nullable=false})){entry->val source=entry.arguments?.getString("source")?.let(Uri::decode).orEmpty();GameDexScreen(source,{navController.popBackStack()},{id,gameSource->openPokemon(id,gameSource)},{id,gameSource->openLocation(id,gameSource)},::openRegionExplorer)}
    composable("regionExplorer?source={source}",arguments=listOf(navArgument("source"){type=NavType.StringType;nullable=false})){entry->val source=entry.arguments?.getString("source")?.let(Uri::decode).orEmpty();RegionExplorerV4Screen(source,{navController.popBackStack()},{id,gameSource->openPokemon(id,gameSource)})}
