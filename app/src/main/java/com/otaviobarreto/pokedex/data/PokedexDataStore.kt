@@ -6,11 +6,6 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Shared in-memory read-through cache.
- * Different Pokémon can now warm concurrently; only the National Dex uses
- * a tiny dedicated lock during first initialization.
- */
 object PokedexDataStore {
     @Volatile private var nationalDexCache: List<PokeApiService.DexIndexEntry>? = null
     private val nationalDexLock = Any()
@@ -45,6 +40,11 @@ object PokedexDataStore {
         val key = type.lowercase()
         return typeCache.computeIfAbsent(key) { PokeApiService.loadPokemonIdsForType(type) }
     }
+
+    fun cachedPokemon(id: Int) = pokemonCache[id]
+    fun cachedSpecies(id: Int) = speciesCache[id]
+    fun cachedEncounters(id: Int) = encounterCache[id]
+    fun cachedEvolutions(url: String?) = url?.let { evolutionCache[it] }
 
     suspend fun prefetchDetails(id: Int) {
         if (pokemonCache.containsKey(id) && speciesCache.containsKey(id) && encounterCache.containsKey(id)) return
