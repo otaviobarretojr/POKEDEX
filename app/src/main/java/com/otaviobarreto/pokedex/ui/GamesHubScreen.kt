@@ -64,6 +64,7 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                 val catalogGame=remember(game.title){AppGameCatalog.games.firstOrNull{it.label==game.title}}
                 val status=remember(game.title,refreshToken){OfflineGamePackManager.status(game.title)}
                 val current=remember(game.title,refreshToken){OfflineGamePackManager.runtimeProgress(game.title)}
+                val audit=remember(game.title,refreshToken){OfflineGamePackManager.audit(game.title)}
                 val active=current!=null
 
                 Card(
@@ -115,6 +116,13 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                     contentDescription=if(status.verified)"Atualizar dados offline" else "Baixar dados offline",
                                     tint=if(status.verified) Color(0xFF2C8B65) else Color(0xFF5B55E7)
                                 )
+                            }
+                        }
+                        if(status.pokemonCount>0 && !active){
+                            Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.End){
+                                Text(audit.summary,style=MaterialTheme.typography.labelSmall,color=if(audit.valid)Color(0xFF2C8B65)else Color(0xFFB26A00),modifier=Modifier.align(Alignment.CenterVertically))
+                                Spacer(Modifier.width(8.dp))
+                                TextButton(onClick={OfflineGamePackManager.repair(game.title);refreshToken++}){Text(if(audit.valid)"Verificar/Atualizar" else "Reparar")}
                             }
                         }
                         if(active){
