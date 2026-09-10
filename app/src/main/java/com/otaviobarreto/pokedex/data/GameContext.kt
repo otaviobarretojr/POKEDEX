@@ -48,12 +48,33 @@ data class GameContext(
                     regionLabel = "Kanto",
                     versionGroups = setOf("lets go pikachu lets go eevee")
                 )
+                "isle of armor" in normalized -> GameContext(
+                    label = "Sword / Shield",
+                    versions = setOf("sword", "shield"),
+                    pokedexSlug = "isle-of-armor",
+                    regionLabel = "Isle of Armor",
+                    versionGroups = setOf("sword shield")
+                )
+                "crown tundra" in normalized -> GameContext(
+                    label = "Sword / Shield",
+                    versions = setOf("sword", "shield"),
+                    pokedexSlug = "crown-tundra",
+                    regionLabel = "Crown Tundra",
+                    versionGroups = setOf("sword shield")
+                )
                 "sword" in normalized || "shield" in normalized || "galar" in normalized -> GameContext(
                     label = "Sword / Shield",
                     versions = setOf("sword", "shield"),
                     pokedexSlug = "galar",
                     regionLabel = "Galar",
                     versionGroups = setOf("sword shield")
+                )
+                "brilliant diamond" in normalized || "shining pearl" in normalized || "sinnoh" in normalized -> GameContext(
+                    label = "Brilliant Diamond / Shining Pearl",
+                    versions = setOf("brilliant diamond", "shining pearl"),
+                    pokedexSlug = "original-sinnoh",
+                    regionLabel = "Sinnoh",
+                    versionGroups = setOf("brilliant diamond and shining pearl")
                 )
                 "arceus" in normalized || "hisui" in normalized -> GameContext(
                     label = "Legends Arceus",
