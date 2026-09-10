@@ -12,8 +12,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -29,8 +28,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CollectionStore.initialize(this)
         TeamStore.initialize(this)
-        setContent { MaterialTheme { PokedexApp() } }
+        setContent { MaterialTheme { PokedexRoot() } }
     }
+}
+
+@Composable private fun PokedexRoot(){
+    var bootReady by remember { mutableStateOf(false) }
+    if(!bootReady) BootExperienceScreen { bootReady=true } else PokedexApp()
 }
 
 data class MainDestination(val route: String, val label: String, val icon: ImageVector)
