@@ -29,73 +29,311 @@ import com.otaviobarreto.pokedex.data.TeamStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private data class TeamScope(val label:String,val source:String?)
-private val teamScopes=listOf(TeamScope("Pokédex Nacional",null))+AppGameCatalog.games.flatMap{g->g.regions.map{TeamScope("${g.label} · ${it.label}",it.source)}}
+private data class TeamScope(val label: String, val source: String?)
+
+private val teamScopes = listOf(TeamScope("Pokédex Nacional", null)) +
+    AppGameCatalog.games.flatMap { game ->
+        game.regions.map { region -> TeamScope("${game.label} · ${region.label}", region.source) }
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeamBuilderScreen(onPokemonClick:(Int)->Unit){
- val teams=TeamStore.teams
- var selectedTeamId by remember{mutableStateOf(teams.firstOrNull()?.id)}
- var query by remember{mutableStateOf("")}
- var national by remember{mutableStateOf<List<PokeApiService.DexIndexEntry>>(emptyList())}
- var regionalIds by remember{mutableStateOf<Set<Int>?>(null)}
- var scope by remember{mutableStateOf(teamScopes.first())}
- var scopeMenu by remember{mutableStateOf(false)}
- var showCreate by remember{mutableStateOf(false)}
- var showRename by remember{mutableStateOf(false)}
- var showDelete by remember{mutableStateOf(false)}
- var replacePokemonId by remember{mutableStateOf<Int?>(null)}
- var memberTypes by remember{mutableStateOf<Map<Int,List<String>>>(emptyMap())}
- var loadingDex by remember{mutableStateOf(true)}
+fun TeamBuilderScreen(onPokemonClick: (Int) -> Unit) {
+    val teams = TeamStore.teams
+    var selectedTeamId by remember { mutableStateOf(teams.firstOrNull()?.id) }
+    var query by remember { mutableStateOf("") }
+    var national by remember { mutableStateOf<List<PokeApiService.DexIndexEntry>>(emptyList()) }
+    var regionalIds by remember { mutableStateOf<Set<Int>?>(null) }
+    var scope by remember { mutableStateOf(teamScopes.first()) }
+    var scopeMenu by remember { mutableStateOf(false) }
+    var showCreate by remember { mutableStateOf(false) }
+    var showRename by remember { mutableStateOf(false) }
+    var showDelete by remember { mutableStateOf(false) }
+    var replacePokemonId by remember { mutableStateOf<Int?>(null) }
+    var memberTypes by remember { mutableStateOf<Map<Int, List<String>>>(emptyMap()) }
+    var loadingDex by remember { mutableStateOf(true) }
 
- LaunchedEffect(Unit){loadingDex=true;national=runCatching{withContext(Dispatchers.IO){PokedexDataStore.nationalDex()}}.getOrElse{emptyList()};loadingDex=false}
- LaunchedEffect(scope.source){val s=scope.source;if(s==null){regionalIds=null}else{val c=GameContext.fromSource(s);regionalIds=if(c==null)emptySet()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(c).map{it.nationalId}.toSet()}}.getOrElse{emptySet()}}}
- LaunchedEffect(teams){if(teams.none{it.id==selectedTeamId})selectedTeamId=teams.firstOrNull()?.id}
- val selectedTeam=teams.firstOrNull{it.id==selectedTeamId}?:teams.firstOrNull()
- LaunchedEffect(selectedTeam?.members){val ids=selectedTeam?.members.orEmpty();memberTypes=withContext(Dispatchers.IO){ids.associateWith{id->runCatching{PokedexDataStore.pokemon(id).types}.getOrDefault(emptyList())}}}
+    LaunchedEffect(Unit) {
+        loadingDex = true
+        national = runCatching { withContext(Dispatchers.IO) { PokedexDataStore.nationalDex() } }.getOrElse { emptyList() }
+        loadingDex = false
+    }
 
- val q=query.trim().removePrefix("#")
- val allowed=regionalIds
- val suggestions=if(q.isBlank())emptyList()else national.asSequence().filter{p->(allowed==null||p.id in allowed)&&(p.name.contains(q,true)||p.id.toString()==q)}.take(8).toList()
- val coverage=memberTypes.values.flatten().map{it.lowercase()}.distinct().sorted()
+    LaunchedEffect(scope.source) {
+        val source = scope.source
+        regionalIds = if (source == null) {
+            null
+        } else {
+            val context = GameContext.fromSource(source)
+            if (context == null) emptySet()
+            else runCatching { withContext(Dispatchers.IO) { GameDexService.loadGameDex(context).map { it.nationalId }.toSet() } }.getOrElse { emptySet() }
+        }
+    }
 
- Column(Modifier.fillMaxSize()){
-  Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("Times",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text("Monte equipes e confira a cobertura de tipos",style=MaterialTheme.typography.bodySmall)};FilledTonalIconButton({showCreate=true}){Icon(Icons.Default.Add,"Novo time")}}
+    LaunchedEffect(teams) {
+        if (teams.none { it.id == selectedTeamId }) selectedTeamId = teams.firstOrNull()?.id
+    }
 
-  ExposedDropdownMenuBox(scopeMenu,{scopeMenu=!scopeMenu},Modifier.fillMaxWidth().padding(horizontal=16.dp)){
-   OutlinedTextField(scope.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo / região")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(scopeMenu)})
-   ExposedDropdownMenu(scopeMenu,{scopeMenu=false}){teamScopes.forEach{s->DropdownMenuItem({Text(s.label)},{scope=s;scopeMenu=false;query=""})}}
-  }
+    val selectedTeam = teams.firstOrNull { it.id == selectedTeamId } ?: teams.firstOrNull()
 
-  Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=16.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){teams.forEach{t->AssistChip({selectedTeamId=t.id},{Text("${t.name} · ${t.members.size}/6")},leadingIcon=if(t.id==selectedTeamId)({Text("✓")})else null)}}
+    LaunchedEffect(selectedTeam?.members) {
+        val ids = selectedTeam?.members.orEmpty()
+        memberTypes = withContext(Dispatchers.IO) {
+            ids.associateWith { id -> runCatching { PokedexDataStore.pokemon(id).types }.getOrDefault(emptyList()) }
+        }
+    }
 
-  selectedTeam?.let{team->
-   Card(Modifier.fillMaxWidth().padding(horizontal=16.dp),shape=RoundedCornerShape(20.dp)){Column(Modifier.fillMaxWidth().padding(14.dp)){Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(team.name,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);Text("${team.members.size} de 6 integrantes",style=MaterialTheme.typography.bodySmall)};IconButton({showRename=true}){Icon(Icons.Default.Edit,"Renomear")};IconButton({showDelete=true},enabled=teams.size>1){Icon(Icons.Default.DeleteOutline,"Excluir")}}
-    if(team.members.isNotEmpty()){HorizontalDivider(Modifier.padding(vertical=10.dp));Text("Cobertura de tipos",fontWeight=FontWeight.SemiBold);if(coverage.isEmpty())LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=6.dp)) else Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top=5.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){coverage.forEach{type->SuggestionChip({}, {Text(type.replaceFirstChar{it.uppercase()})})}}}
-   }}
+    val normalized = query.trim().removePrefix("#")
+    val allowed = regionalIds
+    val suggestions = remember(national, normalized, allowed) {
+        if (normalized.isBlank()) emptyList()
+        else national.asSequence()
+            .filter { p ->
+                (allowed == null || p.id in allowed) &&
+                    (p.name.contains(normalized, true) || p.id.toString() == normalized)
+            }
+            .take(8)
+            .toList()
+    }
+    val coverage = memberTypes.values.flatten().map { it.lowercase() }.distinct().sorted()
 
-   OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text(if(replacePokemonId==null)"Adicionar Pokémon" else "Escolher substituto")},supportingText={Text(if(scope.source==null)"Busca na Pokédex Nacional" else scope.label)})
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Times", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("Monte equipes e confira a cobertura de tipos", style = MaterialTheme.typography.bodySmall)
+            }
+            FilledTonalIconButton(onClick = { showCreate = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Novo time")
+            }
+        }
 
-   if(loadingDex) LinearProgressIndicator(Modifier.fillMaxWidth())
-   if(suggestions.isNotEmpty()) LazyColumn(Modifier.fillMaxWidth().heightIn(max=250.dp).padding(horizontal=16.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
-    items(suggestions,key={it.id}){p->Card(Modifier.fillMaxWidth().clickable{val old=replacePokemonId;if(old==null)TeamStore.addPokemon(team.id,p.id)else TeamStore.replacePokemon(team.id,old,p.id);replacePokemonId=null;query=""}){Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage(p.spriteUrl,p.name,Modifier.size(46.dp));Column(Modifier.weight(1f).padding(start=8.dp)){Text(p.name,fontWeight=FontWeight.SemiBold);Text("#${p.id.toString().padStart(4,'0')}",style=MaterialTheme.typography.bodySmall)};Icon(Icons.Default.AddCircle,null)}}}
-   }
+        ExposedDropdownMenuBox(
+            expanded = scopeMenu,
+            onExpandedChange = { scopeMenu = !scopeMenu },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        ) {
+            OutlinedTextField(
+                value = scope.label,
+                onValueChange = {},
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                readOnly = true,
+                singleLine = true,
+                label = { Text("Jogo / região") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(scopeMenu) }
+            )
+            ExposedDropdownMenu(expanded = scopeMenu, onDismissRequest = { scopeMenu = false }) {
+                teamScopes.forEach { item ->
+                    DropdownMenuItem(text = { Text(item.label) }, onClick = {
+                        scope = item
+                        scopeMenu = false
+                        query = ""
+                    })
+                }
+            }
+        }
 
-   val slots=List(6){team.members.getOrNull(it)}
-   LazyVerticalGrid(GridCells.Fixed(3),Modifier.fillMaxSize().padding(12.dp),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
-    itemsIndexed(slots){index,id->TeamSlotV2(index,id,onPokemonClick,{TeamStore.removePokemon(team.id,it)},{replacePokemonId=it;query=""},{TeamStore.moveMember(team.id,it,-1)},{TeamStore.moveMember(team.id,it,1)},memberTypes[id].orEmpty())}
-   }
-  }
- }
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            teams.forEach { team ->
+                AssistChip(
+                    onClick = { selectedTeamId = team.id },
+                    label = { Text("${team.name} · ${team.members.size}/6") },
+                    leadingIcon = if (team.id == selectedTeamId) ({ Text("✓") }) else null
+                )
+            }
+        }
 
- if(showCreate)TeamNameDialogV2("Novo time","","Criar",{showCreate=false}){name->TeamStore.createTeam(name)?.let{selectedTeamId=it};showCreate=false}
- if(showRename&&selectedTeam!=null)TeamNameDialogV2("Renomear time",selectedTeam.name,"Salvar",{showRename=false}){name->TeamStore.renameTeam(selectedTeam.id,name);showRename=false}
- if(showDelete&&selectedTeam!=null)AlertDialog(onDismissRequest={showDelete=false},title={Text("Excluir ${selectedTeam.name}?")},text={Text("O time será apagado, mas seus Pokémon continuam nas Boxes e no Living Dex.")},confirmButton={TextButton({TeamStore.deleteTeam(selectedTeam.id);showDelete=false}){Text("Excluir")}},dismissButton={TextButton({showDelete=false}){Text("Cancelar")}})
+        selectedTeam?.let { team ->
+            Card(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(team.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("${team.members.size} de 6 integrantes", style = MaterialTheme.typography.bodySmall)
+                        }
+                        IconButton(onClick = { showRename = true }) { Icon(Icons.Default.Edit, "Renomear") }
+                        IconButton(onClick = { showDelete = true }, enabled = teams.size > 1) { Icon(Icons.Default.DeleteOutline, "Excluir") }
+                    }
+                    if (team.members.isNotEmpty()) {
+                        HorizontalDivider(Modifier.padding(vertical = 10.dp))
+                        Text("Cobertura de tipos", fontWeight = FontWeight.SemiBold)
+                        if (coverage.isEmpty()) {
+                            LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 6.dp))
+                        } else {
+                            Row(
+                                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 5.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                coverage.forEach { type ->
+                                    SuggestionChip(onClick = {}, label = { Text(type.replaceFirstChar { it.uppercase() }) })
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                label = { Text(if (replacePokemonId == null) "Adicionar Pokémon" else "Escolher substituto") },
+                supportingText = { Text(if (scope.source == null) "Busca na Pokédex Nacional" else scope.label) }
+            )
+
+            if (loadingDex) LinearProgressIndicator(Modifier.fillMaxWidth())
+
+            if (suggestions.isNotEmpty()) {
+                LazyColumn(
+                    Modifier.fillMaxWidth().heightIn(max = 250.dp).padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    items(suggestions, key = { it.id }) { pokemon ->
+                        Card(
+                            Modifier.fillMaxWidth().clickable {
+                                val old = replacePokemonId
+                                if (old == null) TeamStore.addPokemon(team.id, pokemon.id)
+                                else TeamStore.replacePokemon(team.id, old, pokemon.id)
+                                replacePokemonId = null
+                                query = ""
+                            }
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(pokemon.spriteUrl, pokemon.name, Modifier.size(46.dp))
+                                Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                                    Text(pokemon.name, fontWeight = FontWeight.SemiBold)
+                                    Text("#${pokemon.id.toString().padStart(4, '0')}", style = MaterialTheme.typography.bodySmall)
+                                }
+                                Icon(Icons.Default.AddCircle, null)
+                            }
+                        }
+                    }
+                }
+            }
+
+            val slots = List(6) { team.members.getOrNull(it) }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                itemsIndexed(slots) { index, pokemonId ->
+                    TeamSlotV2(
+                        index = index,
+                        pokemonId = pokemonId,
+                        open = onPokemonClick,
+                        remove = { TeamStore.removePokemon(team.id, it) },
+                        replace = { replacePokemonId = it; query = "" },
+                        moveLeft = { TeamStore.moveMember(team.id, it, -1) },
+                        moveRight = { TeamStore.moveMember(team.id, it, 1) },
+                        types = memberTypes[pokemonId].orEmpty()
+                    )
+                }
+            }
+        }
+    }
+
+    if (showCreate) {
+        TeamNameDialogV2("Novo time", "", "Criar", { showCreate = false }) { name ->
+            TeamStore.createTeam(name)?.let { selectedTeamId = it }
+            showCreate = false
+        }
+    }
+    if (showRename && selectedTeam != null) {
+        TeamNameDialogV2("Renomear time", selectedTeam.name, "Salvar", { showRename = false }) { name ->
+            TeamStore.renameTeam(selectedTeam.id, name)
+            showRename = false
+        }
+    }
+    if (showDelete && selectedTeam != null) {
+        AlertDialog(
+            onDismissRequest = { showDelete = false },
+            title = { Text("Excluir ${selectedTeam.name}?") },
+            text = { Text("O time será apagado, mas seus Pokémon continuam nas Boxes e no Living Dex.") },
+            confirmButton = { TextButton(onClick = { TeamStore.deleteTeam(selectedTeam.id); showDelete = false }) { Text("Excluir") } },
+            dismissButton = { TextButton(onClick = { showDelete = false }) { Text("Cancelar") } }
+        )
+    }
 }
 
-@Composable private fun TeamSlotV2(index:Int,pokemonId:Int?,open:(Int)->Unit,remove:(Int)->Unit,replace:(Int)->Unit,left:(Int)->Unit,right:(Int)->Unit,types:List<String>){
- Card(Modifier.fillMaxWidth().aspectRatio(.82f),shape=RoundedCornerShape(16.dp)){Box(Modifier.fillMaxSize().padding(7.dp),contentAlignment=Alignment.Center){if(pokemonId==null){Column(horizontalAlignment=Alignment.CenterHorizontally){Icon(Icons.Default.AddCircleOutline,null);Text("Slot ${index+1}",fontWeight=FontWeight.SemiBold);Text("Vazio",style=MaterialTheme.typography.bodySmall)}}else{Column(Modifier.fillMaxSize(),horizontalAlignment=Alignment.CenterHorizontally){AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$pokemonId.png","Pokémon #$pokemonId",Modifier.weight(1f).fillMaxWidth(.85f).clickable{open(pokemonId)});Text("#${pokemonId.toString().padStart(4,'0')}",fontWeight=FontWeight.Bold);Text(types.joinToString(" / ").ifBlank{"carregando…"},style=MaterialTheme.typography.labelSmall,maxLines=1,overflow=TextOverflow.Ellipsis);Row{IconButton({left(pokemonId)},enabled=index>0){Icon(Icons.Default.ChevronLeft,null)};IconButton({replace(pokemonId)}){Icon(Icons.Default.SwapHoriz,null)};IconButton({right(pokemonId)},enabled=index<5){Icon(Icons.Default.ChevronRight,null)}};TextButton({remove(pokemonId)}){Text("Remover")}}}}
+@Composable
+private fun TeamSlotV2(
+    index: Int,
+    pokemonId: Int?,
+    open: (Int) -> Unit,
+    remove: (Int) -> Unit,
+    replace: (Int) -> Unit,
+    moveLeft: (Int) -> Unit,
+    moveRight: (Int) -> Unit,
+    types: List<String>
+) {
+    Card(Modifier.fillMaxWidth().aspectRatio(.82f), shape = RoundedCornerShape(16.dp)) {
+        Box(Modifier.fillMaxSize().padding(7.dp), contentAlignment = Alignment.Center) {
+            if (pokemonId == null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.AddCircleOutline, null)
+                    Text("Slot ${index + 1}", fontWeight = FontWeight.SemiBold)
+                    Text("Vazio", style = MaterialTheme.typography.bodySmall)
+                }
+            } else {
+                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    AsyncImage(
+                        model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$pokemonId.png",
+                        contentDescription = "Pokémon #$pokemonId",
+                        modifier = Modifier.weight(1f).fillMaxWidth(.85f).clickable { open(pokemonId) }
+                    )
+                    Text("#${pokemonId.toString().padStart(4, '0')}", fontWeight = FontWeight.Bold)
+                    Text(
+                        types.joinToString(" / ").ifBlank { "carregando…" },
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Row {
+                        IconButton(onClick = { moveLeft(pokemonId) }, enabled = index > 0) { Icon(Icons.Default.ChevronLeft, null) }
+                        IconButton(onClick = { replace(pokemonId) }) { Icon(Icons.Default.SwapHoriz, null) }
+                        IconButton(onClick = { moveRight(pokemonId) }, enabled = index < 5) { Icon(Icons.Default.ChevronRight, null) }
+                    }
+                    TextButton(onClick = { remove(pokemonId) }) { Text("Remover") }
+                }
+            }
+        }
+    }
 }
 
-@Composable private fun TeamNameDialogV2(title:String,initial:String,confirmLabel:String,dismiss:()->Unit,confirm:(String)->Unit){var text by remember(initial){mutableStateOf(initial)};AlertDialog(onDismissRequest=dismiss,title={Text(title)},text={OutlinedTextField(text,{text=it.take(32)},singleLine=true,label={Text("Nome do time")})},confirmButton={Button({confirm(text)},enabled=text.trim().isNotBlank()){Text(confirmLabel)}},dismissButton={TextButton(dismiss){Text("Cancelar")}})}
+@Composable
+private fun TeamNameDialogV2(
+    title: String,
+    initial: String,
+    confirmLabel: String,
+    dismiss: () -> Unit,
+    confirm: (String) -> Unit
+) {
+    var text by remember(initial) { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = dismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(32) },
+                singleLine = true,
+                label = { Text("Nome do time") }
+            )
+        },
+        confirmButton = { Button(onClick = { confirm(text) }, enabled = text.trim().isNotBlank()) { Text(confirmLabel) } },
+        dismissButton = { TextButton(onClick = dismiss) { Text("Cancelar") } }
+    )
+}
