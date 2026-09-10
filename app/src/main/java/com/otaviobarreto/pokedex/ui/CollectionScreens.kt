@@ -37,7 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private data class LivingDexScope(val label: String, val source: String?)
-private enum class LivingCollectionFilter { ALL, OWNED, MISSING, UNBOXED }
+private enum class LivingCollectionFilter { ALL, OWNED, BOXED, MISSING, UNBOXED }
 private val livingDexScopes = listOf(LivingDexScope("Nacional", null)) +
     AppGameCatalog.games.flatMap { game -> game.regions.map { LivingDexScope("${game.label} · ${it.label}", it.source) } }
 
@@ -81,6 +81,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
             val collectionOk = when (collectionFilter) {
                 LivingCollectionFilter.ALL -> true
                 LivingCollectionFilter.OWNED -> p.id in captured
+                LivingCollectionFilter.BOXED -> p.id in captured && CollectionStore.boxesForPokemon(p.id).isNotEmpty()
                 LivingCollectionFilter.MISSING -> p.id !in captured
                 LivingCollectionFilter.UNBOXED -> p.id in captured && CollectionStore.boxesForPokemon(p.id).isEmpty()
             }
@@ -124,6 +125,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                     }
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text("$caughtInScope / $total", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("$boxedInScope organizados em Box", style = MaterialTheme.typography.labelSmall, color = Color(0xFF5B55E7))
                         Text(if (scope.source == null) "Pokédex Nacional" else scope.label, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     Column(horizontalAlignment = Alignment.End) {
@@ -171,6 +173,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                 listOf(
                     LivingCollectionFilter.ALL to "Todos",
                     LivingCollectionFilter.OWNED to "Capturados",
+                    LivingCollectionFilter.BOXED to "Na Box",
                     LivingCollectionFilter.MISSING to "Faltantes",
                     LivingCollectionFilter.UNBOXED to "Sem Box"
                 ).forEach { (filter, label) ->
