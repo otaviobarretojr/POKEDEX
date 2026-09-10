@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CatchingPokemon
 import androidx.compose.material.icons.filled.GridView
@@ -119,7 +118,7 @@ fun PokedexApp() {
                 val pokemonId = entry.arguments?.getInt("id") ?: -1
                 Column(modifier = Modifier.fillMaxSize()) {
                     PokemonCollectionActions(pokemonId = pokemonId)
-                    Box(modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         PokemonDetailScreen(
                             id = pokemonId,
                             onBack = { navController.popBackStack() }
