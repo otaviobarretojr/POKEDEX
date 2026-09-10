@@ -1,7 +1,9 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -9,9 +11,11 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 private data class GameHubRegion(val source:String,val title:String,val subtitle:String)
 private data class GameHubEntry(val title:String,val subtitle:String,val regions:List<GameHubRegion>)
@@ -31,18 +35,19 @@ private val gameHubEntries=listOf(
 @Composable
 fun GamesHubScreen(onOpenGame:(String)->Unit){
     var regionPicker by remember{mutableStateOf<GameHubEntry?>(null)}
-    Column(Modifier.fillMaxSize()){
+    Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
         Column(Modifier.padding(16.dp)){
-            Text("Jogos",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
-            Text("Cada jogo reúne sua Pokédex, regiões, mapas e conteúdos adicionais.",style=MaterialTheme.typography.bodyMedium)
+            Text("JOGOS",fontSize=29.sp,fontWeight=FontWeight.Black,color=Color(0xFF151426))
+            Text("S U A S  A V E N T U R A S  ·  R E G I Õ E S  E  D L C S",fontSize=7.sp,color=Color(0xFF72778B))
+            Text("Escolha um jogo para abrir Pokédex, mapa e progresso.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF72778B),modifier=Modifier.padding(top=7.dp))
         }
         LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){
             items(gameHubEntries,key={it.title}){game->
                 Card(Modifier.fillMaxWidth().padding(horizontal=16.dp).clickable{
                     if(game.regions.size==1) onOpenGame(game.regions.first().source) else regionPicker=game
-                }){
+                },shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=Color(0xFFF1F0F8))){
                     Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)){
-                        Icon(Icons.Default.Map,null)
+                        Surface(shape=RoundedCornerShape(16.dp),color=Color(0xFFEAE8FB)){Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){Icon(Icons.Default.Map,null,tint=Color(0xFF5B55E7))}}
                         Column(Modifier.weight(1f)){
                             Text(game.title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
                             Text(game.subtitle,style=MaterialTheme.typography.bodySmall)
