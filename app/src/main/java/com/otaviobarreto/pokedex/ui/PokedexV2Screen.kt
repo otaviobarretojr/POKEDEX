@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,7 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun PokedexV2Screen(onPokemonClick:(Int)->Unit){
+fun PokedexV2Screen(onPokemonClick:(Int)->Unit,onOpenReference:()->Unit={}){
  var query by remember{mutableStateOf("")}
  var generation by remember{mutableIntStateOf(0)}
  var status by remember{mutableIntStateOf(0)}
@@ -41,8 +42,7 @@ fun PokedexV2Screen(onPokemonClick:(Int)->Unit){
  val filtered=remember(dex,query,generation,status,captured){val q=query.trim().removePrefix("#");dex.filter{p->(q.isBlank()||p.name.contains(q,true)||p.id.toString()==q)&&(generation==0||p.generation==generation)&&when(status){1->p.id in captured;2->p.id !in captured;else->true}}}
  Column(Modifier.fillMaxSize()){
   Column(Modifier.padding(horizontal=16.dp,vertical=10.dp)){
-   Text("Pokédex Nacional",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
-   Text("${dex.size.coerceAtLeast(1025)} espécies · ${captured.size} registradas",style=MaterialTheme.typography.bodySmall)
+   Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("Pokédex Nacional",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text("${dex.size.coerceAtLeast(1025)} espécies · ${captured.size} registradas",style=MaterialTheme.typography.bodySmall)};FilledTonalButton(onOpenReference){Icon(Icons.Default.MenuBook,null);Spacer(Modifier.width(6.dp));Text("Dados")}}
    OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(top=10.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Pesquisar Pokémon")},placeholder={Text("Nome ou número nacional")})
    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top=7.dp),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.FilterAlt,null);FilterChip(selected=status==0,onClick={status=0},label={Text("Todos")});FilterChip(selected=status==1,onClick={status=1},label={Text("Capturados")});FilterChip(selected=status==2,onClick={status=2},label={Text("Faltantes")})}
    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top=5.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){(0..9).forEach{g->FilterChip(selected=generation==g,onClick={generation=g},label={Text(if(g==0)"Todas Gerações" else "G$g")})}}
