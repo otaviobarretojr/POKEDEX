@@ -3,9 +3,11 @@ package com.otaviobarreto.pokedex.data
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
 
 object GameDexService {
     private const val API = "https://pokeapi.co/api/v2"
+    private val cache = ConcurrentHashMap<String, List<GameDexEntry>>()
 
     data class GameDexEntry(
         val nationalId: Int,
@@ -17,9 +19,10 @@ object GameDexService {
     }
 
     fun loadGameDex(context: GameContext): List<GameDexEntry> {
+        cache[context.pokedexSlug]?.let { return it }
         val json = getJson("$API/pokedex/${context.pokedexSlug}")
         val entries = json.getJSONArray("pokemon_entries")
-        return buildList(entries.length()) {
+        val result = buildList(entries.length()) {
             for (i in 0 until entries.length()) {
                 val item = entries.getJSONObject(i)
                 val species = item.getJSONObject("pokemon_species")
@@ -35,7 +38,13 @@ object GameDexService {
                 }
             }
         }.sortedBy { it.gameNumber }
+        cache[context.pokedexSlug] = result
+        return result
     }
+
+    fun cached(context: GameContext): List<GameDexEntry>? = cache[context.pokedexSlug]
+
+    fun clearCache() = cache.clear()
 
     private fun getJson(url: String): JSONObject = JSONObject(getText(url))
 
