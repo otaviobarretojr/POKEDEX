@@ -55,7 +55,7 @@ object GameDexService {
         connection.requestMethod = "GET"
         connection.setRequestProperty("Accept", "application/json")
         connection.connect()
-        return try {
+        try {
             if (connection.responseCode !in 200..299) error("HTTP ${connection.responseCode} while loading $url")
             connection.inputStream.bufferedReader().use { it.readText() }
         } finally {
