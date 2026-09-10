@@ -4,48 +4,25 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CatchingPokemon
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.TeamStore
-import com.otaviobarreto.pokedex.ui.BoxesV2Screen
-import com.otaviobarreto.pokedex.ui.GameDexScreen
-import com.otaviobarreto.pokedex.ui.GamesHubScreen
-import com.otaviobarreto.pokedex.ui.LivingDexScreen
-import com.otaviobarreto.pokedex.ui.PokedexScreen
-import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
-import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
-import com.otaviobarreto.pokedex.ui.PokemonLocationScreen
-import com.otaviobarreto.pokedex.ui.PokemonRegionMapScreen
-import com.otaviobarreto.pokedex.ui.RegionExplorerV4Screen
-import com.otaviobarreto.pokedex.ui.TeamBuilderScreen
+import com.otaviobarreto.pokedex.ui.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,11 +90,27 @@ fun PokedexApp() {
         }
     ) { innerPadding ->
         NavHost(navController, "pokedex", Modifier.padding(innerPadding)) {
-            composable("pokedex") { PokedexScreen(onPokemonClick = { openPokemon(it) }) }
-            composable("pokemon/{id}?source={source}", arguments = listOf(navArgument("id") { type = NavType.IntType }, navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
+            composable("pokedex") { PokedexV2Screen(onPokemonClick = { openPokemon(it) }) }
+            composable(
+                "pokemon/{id}?source={source}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.IntType },
+                    navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null }
+                )
+            ) { entry ->
                 val id = entry.arguments?.getInt("id") ?: -1
                 val source = entry.arguments?.getString("source")?.let(Uri::decode)
-                Column(Modifier.fillMaxSize()) { PokemonCollectionActions(id); Box(Modifier.fillMaxSize()) { PokemonDetailScreen(id, source) { navController.popBackStack() } } }
+                Column(Modifier.fillMaxSize()) {
+                    PokemonCollectionActions(id)
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        PokemonDetailV2Screen(
+                            id = id,
+                            source = source,
+                            onBack = { navController.popBackStack() },
+                            onOpenLocation = { openLocation(id, source) }
+                        )
+                    }
+                }
             }
             composable("livingdex") { LivingDexScreen(onPokemonClick = { openPokemon(it) }) }
             composable("games") { GamesHubScreen(onOpenGame = ::openGameDex) }
@@ -129,7 +122,13 @@ fun PokedexApp() {
                 val source = entry.arguments?.getString("source")?.let(Uri::decode).orEmpty()
                 RegionExplorerV4Screen(source, { navController.popBackStack() }, { id, gameSource -> openPokemon(id, gameSource) })
             }
-            composable("location/{id}?source={source}", arguments = listOf(navArgument("id") { type = NavType.IntType }, navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
+            composable(
+                "location/{id}?source={source}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.IntType },
+                    navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null }
+                )
+            ) { entry ->
                 val id = entry.arguments?.getInt("id") ?: -1
                 val source = entry.arguments?.getString("source")?.let(Uri::decode)
                 PokemonLocationScreen(id, source, { navController.popBackStack() }, source?.let { gameSource -> { openRegionMap(id, gameSource) } })
