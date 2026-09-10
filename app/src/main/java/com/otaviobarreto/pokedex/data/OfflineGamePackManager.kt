@@ -94,10 +94,24 @@ object OfflineGamePackManager {
 
         val ids = regionalDexes.flatten().map { it.nationalId }.distinct().sorted()
         val total = ids.size.coerceAtLeast(1)
+        val completedKey = key(game.label, "completed_ids")
+        val alreadyCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
+            .mapNotNull { it.toIntOrNull() }
+            .filter { it in ids }
+            .toMutableSet()
+        val pendingIds = ids.filterNot { it in alreadyCompleted }
         val semaphore = Semaphore(permits = 6)
-        var completed = 0
+        var completed = alreadyCompleted.size
         val failedIds = mutableListOf<Int>()
         val lock = Any()
+
+        onProgress(
+            Progress(
+                completed,
+                total,
+                if (completed > 0) "Retomando de $completed / $total" else "Iniciando pacote offline"
+            )
+        )
 
         suspend fun downloadPokemon(id: Int): Boolean {
             repeat(2) { attempt ->
@@ -128,13 +142,24 @@ object OfflineGamePackManager {
         }
 
         coroutineScope {
-            ids.map { id ->
+            pendingIds.map { id ->
                 async {
                     semaphore.withPermit {
                         val ok = downloadPokemon(id)
                         val done = synchronized(lock) {
-                            if (!ok) failedIds += id
-                            ++completed
+                            if (!ok) {
+                                failedIds += id
+                            } else {
+                                alreadyCompleted += id
+                                prefs().edit()
+                                    .putStringSet(completedKey, alreadyCompleted.map(Int::toString).toSet())
+                                    .putInt(key(game.label, "complete"), alreadyCompleted.size)
+                                    .putInt(key(game.label, "count"), ids.size)
+                                    .putInt(key(game.label, "version"), PACK_VERSION)
+                                    .apply()
+                            }
+                            completed = alreadyCompleted.size
+                            completed
                         }
                         onProgress(Progress(done, total, "Dados + imagens dos Pokémon"))
                     }
@@ -146,7 +171,7 @@ object OfflineGamePackManager {
             prefs().edit()
                 .putBoolean(key(game.label, "ready"), false)
                 .putInt(key(game.label, "count"), ids.size)
-                .putInt(key(game.label, "complete"), ids.size - failedIds.size)
+                .putInt(key(game.label, "complete"), alreadyCompleted.size)
                 .putInt(key(game.label, "version"), PACK_VERSION)
                 .apply()
             error("Falha ao salvar ${failedIds.size} de ${ids.size} Pokémon. Tente atualizar o pacote.")
@@ -159,6 +184,7 @@ object OfflineGamePackManager {
             .putInt(key(game.label, "complete"), ids.size)
             .putInt(key(game.label, "version"), PACK_VERSION)
             .putString(key(game.label, "regions"), contexts.joinToString("|") { it.pokedexSlug })
+            .putStringSet(completedKey, ids.map(Int::toString).toSet())
             .apply()
 
         onProgress(Progress(total, total, "Pacote offline verificado"))
@@ -172,6 +198,7 @@ object OfflineGamePackManager {
             .remove(key(gameLabel, "complete"))
             .remove(key(gameLabel, "version"))
             .remove(key(gameLabel, "regions"))
+            .remove(key(gameLabel, "completed_ids"))
             .apply()
     }
 
