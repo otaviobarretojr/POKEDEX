@@ -81,6 +81,7 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                     when {
                                         active -> current?.label ?: "Preparando download…"
                                         status.verified -> "Offline verificado · " + status.pokemonCount + " Pokémon + imagens"
+                                        status.completeCount > 0 -> "Pacote parcial · " + status.completeCount + " / " + status.pokemonCount + " Pokémon"
                                         status.downloaded -> "Pacote incompleto · toque para atualizar"
                                         else -> if(game.regions.size>1) game.regions.size.toString() + " regiões / conteúdos" else "Disponível para download offline"
                                     },
