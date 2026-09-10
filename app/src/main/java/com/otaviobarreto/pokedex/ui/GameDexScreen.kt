@@ -19,13 +19,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -90,8 +88,6 @@ fun GameDexScreen(
     }
 
     val captured = CollectionStore.capturedIds
-    val relatedBox = context?.label
-    val boxPokemon = relatedBox?.let { CollectionStore.boxes[it].orEmpty() }.orEmpty()
     val capturedInGame = entries.count { it.nationalId in captured }
     val progress = if (entries.isEmpty()) 0f else capturedInGame.toFloat() / entries.size
     val normalized = query.trim().removePrefix("#")
@@ -191,7 +187,8 @@ fun GameDexScreen(
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(filtered, key = { it.gameNumber }) { pokemon ->
                         val isCaptured = pokemon.nationalId in captured
-                        val isInBox = pokemon.nationalId in boxPokemon
+                        val pokemonBoxes = CollectionStore.boxesForPokemon(pokemon.nationalId)
+                        val isInBox = pokemonBoxes.isNotEmpty()
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -222,20 +219,14 @@ fun GameDexScreen(
                                     )
                                     Text(
                                         when {
-                                            isInBox -> "Na Box · ${if (isCaptured) "Capturado" else "Não marcado"}"
-                                            isCaptured -> "Capturado"
+                                            isInBox -> pokemonBoxes.joinToString(" · ") { it.substringAfterLast("· ").trim() }
                                             else -> "Faltando"
                                         },
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    FilledTonalIconButton(onClick = { onLocationClick(pokemon.nationalId, source) }) {
-                                        Icon(Icons.Default.LocationOn, contentDescription = "Localizações")
-                                    }
-                                    Button(onClick = { CollectionStore.toggleCaptured(pokemon.nationalId) }) {
-                                        Text(if (isCaptured) "✓" else "+")
-                                    }
+                                IconButton(onClick = { onLocationClick(pokemon.nationalId, source) }) {
+                                    Icon(Icons.Default.LocationOn, contentDescription = "Localizações")
                                 }
                             }
                         }
