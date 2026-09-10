@@ -43,6 +43,7 @@ import com.otaviobarreto.pokedex.ui.PokedexScreen
 import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
 import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
 import com.otaviobarreto.pokedex.ui.PokemonLocationScreen
+import com.otaviobarreto.pokedex.ui.PokemonRegionMapScreen
 import com.otaviobarreto.pokedex.ui.TeamBuilderScreen
 
 class MainActivity : ComponentActivity() {
@@ -80,7 +81,8 @@ fun PokedexApp() {
     val currentRoute = backStackEntry?.destination?.route
     val isSecondaryScreen = currentRoute == "pokemon/{id}?source={source}" ||
         currentRoute == "gameDex?source={source}" ||
-        currentRoute == "location/{id}?source={source}"
+        currentRoute == "location/{id}?source={source}" ||
+        currentRoute == "regionMap/{id}?source={source}"
 
     fun openPokemon(id: Int, source: String? = null) {
         val route = if (source.isNullOrBlank()) {
@@ -102,6 +104,10 @@ fun PokedexApp() {
             "location/$id?source=${Uri.encode(source)}"
         }
         navController.navigate(route)
+    }
+
+    fun openRegionMap(id: Int, source: String) {
+        navController.navigate("regionMap/$id?source=${Uri.encode(source)}")
     }
 
     Scaffold(
@@ -202,6 +208,27 @@ fun PokedexApp() {
                 val pokemonId = entry.arguments?.getInt("id") ?: -1
                 val source = entry.arguments?.getString("source")?.let(Uri::decode)
                 PokemonLocationScreen(
+                    pokemonId = pokemonId,
+                    source = source,
+                    onBack = { navController.popBackStack() },
+                    onOpenMap = source?.let { gameSource ->
+                        { openRegionMap(pokemonId, gameSource) }
+                    }
+                )
+            }
+            composable(
+                route = "regionMap/{id}?source={source}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.IntType },
+                    navArgument("source") {
+                        type = NavType.StringType
+                        nullable = false
+                    }
+                )
+            ) { entry ->
+                val pokemonId = entry.arguments?.getInt("id") ?: -1
+                val source = entry.arguments?.getString("source")?.let(Uri::decode).orEmpty()
+                PokemonRegionMapScreen(
                     pokemonId = pokemonId,
                     source = source,
                     onBack = { navController.popBackStack() }
