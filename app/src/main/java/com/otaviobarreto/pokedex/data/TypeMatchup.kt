@@ -9,6 +9,12 @@ data class TypeMatchupResult(
     val immune: List<String>
 )
 
+data class OffensiveCoverageResult(
+    val covered: List<String>,
+    val uncovered: List<String>,
+    val coverageByAttackType: Map<String, List<String>>
+)
+
 object TypeMatchup {
     private val types = listOf("Normal","Fire","Water","Electric","Grass","Ice","Fighting","Poison","Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel","Fairy")
 
@@ -48,6 +54,21 @@ object TypeMatchup {
             immune = names(0.0)
         )
     }
+
+    fun superEffectiveAgainst(attackingType: String): List<String> {
+        val attack = canonical(attackingType)
+        return types.filter { defender -> (chart[attack]?.get(defender) ?: 1.0) > 1.0 }
+    }
+
+    fun offensiveCoverageFor(attackingTypes: List<String>): OffensiveCoverageResult {
+        val normalized = attackingTypes.map(::canonical).filter { it in types }.distinct()
+        val byType = normalized.associateWith(::superEffectiveAgainst)
+        val covered = byType.values.flatten().distinct().sorted()
+        val uncovered = types.filterNot { it in covered }
+        return OffensiveCoverageResult(covered, uncovered, byType)
+    }
+
+    fun allTypes(): List<String> = types
 
     private fun canonical(value:String):String = value.trim().replaceFirstChar { it.uppercase() }
 }
