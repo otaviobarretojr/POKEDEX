@@ -27,7 +27,7 @@ object GameDexService {
                 val item = entries.getJSONObject(i)
                 val species = item.getJSONObject("pokemon_species")
                 val nationalId = idFromUrl(species.getString("url"))
-                if (nationalId in 1..1025) {
+                if (nationalId in 1..PokeApiService.MAX_NATIONAL_DEX_ID) {
                     add(
                         GameDexEntry(
                             nationalId = nationalId,
@@ -48,7 +48,7 @@ object GameDexService {
 
     private fun getJson(url: String): JSONObject = JSONObject(getText(url))
 
-    private fun getText(url: String): String {
+    private fun getText(url: String): String = PersistentApiCache.getOrFetch(url) {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.connectTimeout = 12_000
         connection.readTimeout = 12_000
