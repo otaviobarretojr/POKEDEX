@@ -22,6 +22,23 @@ data class RegionMapZone(
 }
 
 object RegionMapCatalog {
+    data class Capabilities(
+        val hasVisualMap: Boolean,
+        val engineLabel: String,
+        val regionLabel: String
+    )
+
+    fun capabilities(context: GameContext?): Capabilities {
+        val region = context?.regionLabel ?: "Região"
+        val visual = zones(context).isNotEmpty()
+        val engine = when (region) {
+            "Paldea" -> "Paldea Engine"
+            "Kitakami", "Blueberry" -> "Recreated Map Engine"
+            else -> "Regional Explorer"
+        }
+        return Capabilities(visual, engine, region)
+    }
+
     fun zones(context: GameContext?): List<RegionMapZone> = when (context?.regionLabel) {
         "Paldea" -> paldea
         "Kitakami" -> kitakami
