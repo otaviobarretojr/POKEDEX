@@ -35,7 +35,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.TeamStore
-import com.otaviobarreto.pokedex.ui.BoxesScreen
+import com.otaviobarreto.pokedex.ui.BoxesV2Screen
 import com.otaviobarreto.pokedex.ui.GameDexScreen
 import com.otaviobarreto.pokedex.ui.GamesHubScreen
 import com.otaviobarreto.pokedex.ui.LivingDexScreen
@@ -181,7 +181,7 @@ fun PokedexApp() {
                 PokemonRegionMapScreen(id, source) { navController.popBackStack() }
             }
             composable("teams") { TeamBuilderScreen(onPokemonClick = { openPokemon(it) }) }
-            composable("boxes") { BoxesScreen(onPokemonClick = { id, source -> openPokemon(id, source) }) }
+            composable("boxes") { BoxesV2Screen(onPokemonClick = { id, source -> openPokemon(id, source) }) }
         }
     }
 }
