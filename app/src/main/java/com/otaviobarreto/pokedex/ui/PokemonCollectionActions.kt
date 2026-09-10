@@ -25,8 +25,9 @@ fun PokemonCollectionActions(
 ) {
     val capturedIds = CollectionStore.capturedIds
     val boxes = CollectionStore.boxes
+    val boxNames = CollectionStore.boxNames
     val captured = pokemonId in capturedIds
-    val pokemonBoxes = boxes.filterValues { pokemonId in it }.keys
+    val pokemonBoxes = boxNames.filter { pokemonId in boxes[it].orEmpty() }
 
     Card(
         modifier = modifier
@@ -75,7 +76,7 @@ fun PokemonCollectionActions(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                CollectionStore.defaultBoxes.forEach { box ->
+                boxNames.forEach { box ->
                     val selected = pokemonId in boxes[box].orEmpty()
                     AssistChip(
                         onClick = {
