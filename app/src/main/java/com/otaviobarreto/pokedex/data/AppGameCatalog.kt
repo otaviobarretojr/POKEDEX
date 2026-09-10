@@ -21,8 +21,16 @@ object AppGameCatalog {
                 AppRegion("Blueberry", "Scarlet / Violet · Blueberry", "DLC · The Indigo Disk")
             )
         ),
-        AppGame("Sword / Shield", listOf(AppRegion("Galar", "Sword / Shield · Galar", "Jogo base"))),
+        AppGame(
+            "Sword / Shield",
+            listOf(
+                AppRegion("Galar", "Sword / Shield · Galar", "Jogo base"),
+                AppRegion("Isle of Armor", "Sword / Shield · Isle of Armor", "DLC · The Isle of Armor"),
+                AppRegion("Crown Tundra", "Sword / Shield · Crown Tundra", "DLC · The Crown Tundra")
+            )
+        ),
         AppGame("Let's Go Pikachu / Eevee", listOf(AppRegion("Kanto", "Let's Go Pikachu / Eevee · Kanto", "Jogo base"))),
-        AppGame("Legends Arceus", listOf(AppRegion("Hisui", "Legends Arceus · Hisui", "Jogo base")))
+        AppGame("Legends Arceus", listOf(AppRegion("Hisui", "Legends Arceus · Hisui", "Jogo base"))),
+        AppGame("Brilliant Diamond / Shining Pearl", listOf(AppRegion("Sinnoh", "Brilliant Diamond / Shining Pearl · Sinnoh", "Jogo base")))
     )
 }
