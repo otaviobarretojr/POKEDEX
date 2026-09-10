@@ -6,11 +6,13 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import com.otaviobarreto.pokedex.data.PersistentApiCache
 import java.io.File
 
 class PokedexApplication : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
+        PersistentApiCache.initialize(this)
         runCatching {
             HttpResponseCache.install(File(cacheDir, "pokeapi-http"), 32L * 1024L * 1024L)
         }
