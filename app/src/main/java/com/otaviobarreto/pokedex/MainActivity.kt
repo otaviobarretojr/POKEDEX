@@ -4,9 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CatchingPokemon
 import androidx.compose.material.icons.filled.GridView
@@ -37,6 +39,7 @@ import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.ui.BoxesScreen
 import com.otaviobarreto.pokedex.ui.LivingDexScreen
 import com.otaviobarreto.pokedex.ui.PokedexScreen
+import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
 import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
 
 class MainActivity : ComponentActivity() {
@@ -113,10 +116,16 @@ fun PokedexApp() {
                 route = "pokemon/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.IntType })
             ) { entry ->
-                PokemonDetailScreen(
-                    id = entry.arguments?.getInt("id") ?: -1,
-                    onBack = { navController.popBackStack() }
-                )
+                val pokemonId = entry.arguments?.getInt("id") ?: -1
+                Column(modifier = Modifier.fillMaxSize()) {
+                    PokemonCollectionActions(pokemonId = pokemonId)
+                    Box(modifier = Modifier.weight(1f)) {
+                        PokemonDetailScreen(
+                            id = pokemonId,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                }
             }
             composable("livingdex") {
                 LivingDexScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
