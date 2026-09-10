@@ -69,6 +69,41 @@ data class GameContext(
                     regionLabel = "Galar",
                     versionGroups = setOf("sword shield")
                 )
+                "black" in normalized || "white" in normalized || "unova" in normalized -> GameContext(
+                    label = "Black / White",
+                    versions = setOf("black", "white"),
+                    pokedexSlug = "original-unova",
+                    regionLabel = "Unova",
+                    versionGroups = setOf("black white")
+                )
+                "kalos central" in normalized -> GameContext(
+                    label = "X / Y",
+                    versions = setOf("x", "y"),
+                    pokedexSlug = "kalos-central",
+                    regionLabel = "Central Kalos",
+                    versionGroups = setOf("x y")
+                )
+                "kalos coastal" in normalized -> GameContext(
+                    label = "X / Y",
+                    versions = setOf("x", "y"),
+                    pokedexSlug = "kalos-coastal",
+                    regionLabel = "Coastal Kalos",
+                    versionGroups = setOf("x y")
+                )
+                "kalos mountain" in normalized -> GameContext(
+                    label = "X / Y",
+                    versions = setOf("x", "y"),
+                    pokedexSlug = "kalos-mountain",
+                    regionLabel = "Mountain Kalos",
+                    versionGroups = setOf("x y")
+                )
+                "omega ruby" in normalized || "alpha sapphire" in normalized || "hoenn" in normalized -> GameContext(
+                    label = "Omega Ruby / Alpha Sapphire",
+                    versions = setOf("omega ruby", "alpha sapphire"),
+                    pokedexSlug = "updated-hoenn",
+                    regionLabel = "Hoenn",
+                    versionGroups = setOf("omega ruby alpha sapphire")
+                )
                 "brilliant diamond" in normalized || "shining pearl" in normalized || "sinnoh" in normalized -> GameContext(
                     label = "Brilliant Diamond / Shining Pearl",
                     versions = setOf("brilliant diamond", "shining pearl"),
