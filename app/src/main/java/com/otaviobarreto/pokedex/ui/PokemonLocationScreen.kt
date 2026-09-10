@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.PokeApiService
+import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -44,9 +46,11 @@ import kotlinx.coroutines.withContext
 fun PokemonLocationScreen(
     pokemonId: Int,
     source: String? = null,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenMap: (() -> Unit)? = null
 ) {
     val gameContext = remember(source) { GameContext.fromSource(source) }
+    val hasVisualMap = remember(gameContext) { RegionMapCatalog.zones(gameContext).isNotEmpty() }
     var pokemon by remember(pokemonId) { mutableStateOf<PokeApiService.RemotePokemonDetail?>(null) }
     var encounters by remember(pokemonId) { mutableStateOf<List<PokeApiService.EncounterLocation>>(emptyList()) }
     var loading by remember(pokemonId, source) { mutableStateOf(true) }
@@ -85,6 +89,13 @@ fun PokemonLocationScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                    }
+                },
+                actions = {
+                    if (hasVisualMap && onOpenMap != null) {
+                        IconButton(onClick = onOpenMap) {
+                            Icon(Icons.Default.Map, contentDescription = "Abrir mapa visual")
+                        }
                     }
                 }
             )
@@ -148,6 +159,13 @@ fun PokemonLocationScreen(
                             },
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        if (hasVisualMap && onOpenMap != null) {
+                            Text(
+                                "Use o ícone de mapa no topo para visualizar os encontros por zona.",
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                        }
                     }
                 }
 
