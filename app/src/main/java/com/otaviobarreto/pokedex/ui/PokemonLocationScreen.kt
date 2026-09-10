@@ -58,13 +58,13 @@ fun PokemonLocationScreen(
 ) {
     val gameContext = remember(source) { GameContext.fromSource(source) }
     val hasVisualMap = remember(gameContext) { RegionMapCatalog.zones(gameContext).isNotEmpty() }
-    var pokemon by remember(pokemonId) { mutableStateOf<PokeApiService.RemotePokemonDetail?>(null) }
-    var encounters by remember(pokemonId) { mutableStateOf<List<PokeApiService.EncounterLocation>>(emptyList()) }
-    var loading by remember(pokemonId, source) { mutableStateOf(true) }
+    var pokemon by remember(pokemonId) { mutableStateOf(PokedexDataStore.cachedPokemon(pokemonId)) }
+    var encounters by remember(pokemonId) { mutableStateOf(PokedexDataStore.cachedEncounters(pokemonId).orEmpty()) }
+    var loading by remember(pokemonId, source) { mutableStateOf(pokemon == null && PokedexDataStore.cachedEncounters(pokemonId) == null) }
     var error by remember(pokemonId, source) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(pokemonId, source) {
-        loading = true
+        loading = pokemon == null && PokedexDataStore.cachedEncounters(pokemonId) == null
         error = null
         runCatching {
             withContext(Dispatchers.IO) {
