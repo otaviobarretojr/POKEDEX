@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CollectionStore.initialize(this)
         TeamStore.initialize(this)
-        setContent { MaterialTheme { PokedexRoot() } }
+        setContent { PokedexTheme { PokedexRoot() } }
     }
 }
 
