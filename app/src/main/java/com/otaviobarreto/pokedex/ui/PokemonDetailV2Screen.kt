@@ -43,7 +43,7 @@ fun PokemonDetailV2Screen(id:Int,source:String?=null,onBack:()->Unit,onOpenLocat
  Column(modifier.fillMaxSize()){
   Row(Modifier.fillMaxWidth().padding(horizontal=18.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage(b.pokemon.spriteUrl,b.pokemon.name,Modifier.size(128.dp));Column(Modifier.weight(1f)){Text("#${b.pokemon.id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelLarge);Text(b.pokemon.types.joinToString(" / "),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold);Text("${String.format("%.1f",b.pokemon.heightDecimeters/10.0)} m · ${String.format("%.1f",b.pokemon.weightHectograms/10.0)} kg",style=MaterialTheme.typography.bodyMedium);context?.let{AssistChip({}, {Text(it.regionLabel)})}}}
   ScrollableTabRow(selectedTabIndex=tab,edgePadding=8.dp){tabs.forEachIndexed{i,t->Tab(tab==i,{setTab(i)},text={Text(t)})}}
-  when(tab){0->V2Info(b,openRef);1->V2Stats(b.pokemon.stats);2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon);3->V2Moves(b.pokemon.moves,openRef);else->V2Locations(b.encounters,context,openLocation)}
+  when(tab){0->V2Info(b,openRef);1->V2Stats(b.pokemon.stats);2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon);3->V2Moves(b.pokemon.moves,context,openRef);else->V2Locations(b.encounters,context,openLocation)}
  }
 }
 
@@ -54,22 +54,36 @@ fun PokemonDetailV2Screen(id:Int,source:String?=null,onBack:()->Unit,onOpenLocat
 @Composable private fun V2Evolution(e:List<PokeApiService.EvolutionStage>,currentId:Int,openPokemon:((Int)->Unit)?){
  LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
   item{Column{Text("Família evolutiva",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);Text("Toque em qualquer estágio para abrir a ficha.",style=MaterialTheme.typography.bodySmall)}}
-  if(e.isEmpty()){
-   item{Text("Nenhuma evolução encontrada.")}
-  }else{
-   items(e,key={it.pokemonId}){stage->
-    val active=stage.pokemonId==currentId
-    Card(Modifier.fillMaxWidth().then(if(openPokemon!=null&&!active)Modifier.clickable{openPokemon(stage.pokemonId)}else Modifier)){
-     Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
-      AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${stage.pokemonId}.png",stage.name,Modifier.size(70.dp))
-      Column(Modifier.weight(1f).padding(start=10.dp)){Text(stage.name,fontWeight=FontWeight.Bold);Text(stage.requirement?:"Forma inicial",style=MaterialTheme.typography.bodySmall);if(active)Text("Pokémon atual",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)}
-      if(openPokemon!=null&&!active)Icon(Icons.Default.ChevronRight,null)
-     }
-    }
+  if(e.isEmpty())item{Text("Nenhuma evolução encontrada.")}else items(e,key={it.pokemonId}){stage->
+   val active=stage.pokemonId==currentId
+   Card(Modifier.fillMaxWidth().then(if(openPokemon!=null&&!active)Modifier.clickable{openPokemon(stage.pokemonId)}else Modifier)){
+    Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${stage.pokemonId}.png",stage.name,Modifier.size(70.dp));Column(Modifier.weight(1f).padding(start=10.dp)){Text(stage.name,fontWeight=FontWeight.Bold);Text(stage.requirement?:"Forma inicial",style=MaterialTheme.typography.bodySmall);if(active)Text("Pokémon atual",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)};if(openPokemon!=null&&!active)Icon(Icons.Default.ChevronRight,null)}
    }
   }
  }
 }
 
-@Composable private fun V2Moves(moves:List<PokeApiService.RemoteMove>,openRef:((String,String)->Unit)?){LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){items(moves,key={it.name}){m->Card(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",m.name)}else Modifier)){Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(m.name,fontWeight=FontWeight.SemiBold);Text(m.methods.joinToString(" · ").ifBlank{"Método não informado"},style=MaterialTheme.typography.bodySmall)};if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}}}}
+@Composable private fun V2Moves(moves:List<PokeApiService.RemoteMove>,context:GameContext?,openRef:((String,String)->Unit)?){
+ val visible=remember(moves,context){
+  if(context==null)moves.map{it to it.learnDetails}
+  else moves.mapNotNull{move->move.learnDetails.filter{context.matchesVersionGroup(it.versionGroup)}.takeIf{it.isNotEmpty()}?.let{move to it}}
+ }
+ LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+  item{Column{Text("Golpes",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);Text(if(context==null)"Todos os jogos disponíveis na PokéAPI" else "${context.label} · ${context.regionLabel}",style=MaterialTheme.typography.bodySmall);Text("${visible.size} golpes disponíveis",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=4.dp))}}
+  if(visible.isEmpty())item{Text("Nenhum dado de aprendizado disponível para este jogo.")}
+  else items(visible,key={it.first.name}){(move,details)->
+   val labels=if(context==null)move.methods else details.map{learnLabel(it)}.distinct()
+   Card(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",move.name)}else Modifier)){
+    Row(Modifier.fillMaxWidth().padding(11.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(move.name,fontWeight=FontWeight.SemiBold);Text(labels.joinToString(" · ").ifBlank{"Método não informado"},style=MaterialTheme.typography.bodySmall)};if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}
+   }
+  }
+  item{Spacer(Modifier.height(16.dp))}
+ }
+}
+
+private fun learnLabel(detail:PokeApiService.MoveLearnDetail):String{
+ val method=when(detail.method.lowercase()){ "level up"->"Nível";"machine"->"TM";"egg"->"Ovo";"tutor"->"Tutor";else->detail.method }
+ return if(detail.level>0 && detail.method.equals("Level Up",true))"Nível ${detail.level}" else method
+}
+
 @Composable private fun V2Locations(encounters:List<PokeApiService.EncounterLocation>,context:GameContext?,openLocation:(()->Unit)?){val visible=if(context==null)encounters else encounters.mapNotNull{e->val versions=e.versions.filter(context::matchesVersion);val details=e.details.filter{context.matchesVersion(it.version)};if(versions.isEmpty()&&details.isEmpty())null else e.copy(versions=versions,details=details)};LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){item{if(openLocation!=null)Button(openLocation,Modifier.fillMaxWidth()){Icon(Icons.Default.LocationOn,null);Spacer(Modifier.width(8.dp));Text("Abrir localização / mapa")};Text(if(context==null)"Todas as versões" else "${context.label} · ${context.regionLabel}",style=MaterialTheme.typography.labelLarge,modifier=Modifier.padding(top=8.dp))};if(visible.isEmpty())item{Text("A PokéAPI não possui encontros detalhados para este contexto. O mapa regional pode conter dados complementares quando disponíveis.")}else items(visible,key={it.location}){e->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(10.dp)){Text(e.location,fontWeight=FontWeight.Bold);e.details.take(4).forEach{d->val lv=when{d.minLevel>0&&d.maxLevel>d.minLevel->"Nv. ${d.minLevel}–${d.maxLevel}";d.minLevel>0->"Nv. ${d.minLevel}";else->null};Text(listOfNotNull(d.method,lv).joinToString(" · "),style=MaterialTheme.typography.bodySmall)}}}}}}
