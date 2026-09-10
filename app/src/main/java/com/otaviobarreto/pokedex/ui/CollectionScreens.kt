@@ -92,6 +92,15 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     val unboxedInScope = (caughtInScope - boxedInScope).coerceAtLeast(0)
     val total = scoped.size
     val progress = if (total == 0) 0f else caughtInScope.toFloat() / total
+    val nextMissing = remember(scoped, captured, generation) {
+        scoped.firstOrNull { it.id !in captured && (generation == 0 || it.generation == generation) }
+    }
+    val generationCounts = remember(scoped, captured) {
+        (1..9).associateWith { gen ->
+            val genItems = scoped.filter { it.generation == gen }
+            genItems.count { it.id in captured } to genItems.size
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))) {
         if (loading && national.isNotEmpty()) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Color(0xFF5B55E7), trackColor = Color.Transparent)
@@ -168,7 +177,18 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                     AssistChip(onClick = { collectionFilter = filter }, label = { Text(label) }, leadingIcon = if (collectionFilter == filter) ({ Text("✓") }) else null)
                 }
                 (0..9).forEach { gen ->
-                    AssistChip(onClick = { generation = gen }, label = { Text(if (gen == 0) "Todas Gerações" else "G$gen") }, leadingIcon = if (generation == gen) ({ Text("✓") }) else null)
+                    val genLabel = if (gen == 0) "Todas Gerações" else {
+                        val counts = generationCounts[gen] ?: (0 to 0)
+                        "G$gen ${counts.first}/${counts.second}"
+                    }
+                    AssistChip(onClick = { generation = gen }, label = { Text(genLabel) }, leadingIcon = if (generation == gen) ({ Text("✓") }) else null)
+                }
+            }
+            if (nextMissing != null) {
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { onPokemonClick(nextMissing.id) }) {
+                        Text("Próximo faltante · #${nextMissing.id.toString().padStart(4, '0')} ${nextMissing.name}")
+                    }
                 }
             }
         }
