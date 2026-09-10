@@ -84,7 +84,7 @@ object CollectionStore {
         boxes = boxes + (resolved to (current + id)); markCaptured(id); persistBox(resolved); return true
     }
 
-    /** Used only to repair old versions where a Pokémon was marked captured but had no Box placement. */
+    /** Repairs old versions where entries were captured without a concrete numbered Box. */
     fun migrateCapturedToBox(box: String, ids: Collection<Int>) {
         val resolved = ensureBox(box) ?: return
         val current = boxes[resolved].orEmpty().toMutableSet()
@@ -93,6 +93,21 @@ object CollectionStore {
             .forEach(current::add)
         boxes = boxes + (resolved to current.toSet())
         persistBox(resolved)
+    }
+
+    /** Splits the old game-level bucket into the numbered Box matching the regional page. */
+    fun migrateLegacyGameBox(legacyBox: String, numberedBox: String, pageIds: Collection<Int>) {
+        if (legacyBox == numberedBox) return
+        val legacy = boxes[legacyBox].orEmpty()
+        val moving = legacy.intersect(pageIds.toSet())
+        if (moving.isEmpty()) return
+        val target = ensureBox(numberedBox) ?: return
+        val targetSet = boxes[target].orEmpty().toMutableSet()
+        moving.take((MAX_BOX_SIZE - targetSet.size).coerceAtLeast(0)).forEach(targetSet::add)
+        val moved = targetSet.intersect(moving)
+        boxes = boxes + (target to targetSet.toSet()) + (legacyBox to (legacy - moved))
+        persistBox(target)
+        persistBox(legacyBox)
     }
 
     fun removeFromBox(box: String, id: Int) {
