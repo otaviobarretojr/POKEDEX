@@ -4,10 +4,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,27 +65,41 @@ fun PokemonDetailV2Screen(id:Int,source:String?=null,onBack:()->Unit,onOpenLocat
  }
 }
 
+private data class MoveView(val move:PokeApiService.RemoteMove,val details:List<PokeApiService.MoveLearnDetail>)
+
 @Composable private fun V2Moves(moves:List<PokeApiService.RemoteMove>,context:GameContext?,openRef:((String,String)->Unit)?){
- val visible=remember(moves,context){
-  if(context==null)moves.map{it to it.learnDetails}
-  else moves.mapNotNull{move->move.learnDetails.filter{context.matchesVersionGroup(it.versionGroup)}.takeIf{it.isNotEmpty()}?.let{move to it}}
+ var query by remember(moves,context){mutableStateOf("")}
+ var methodFilter by remember(moves,context){mutableStateOf("Todos")}
+ val base=remember(moves,context){
+  if(context==null)moves.map{MoveView(it,it.learnDetails)}
+  else moves.mapNotNull{move->move.learnDetails.filter{context.matchesVersionGroup(it.versionGroup)}.takeIf{it.isNotEmpty()}?.let{MoveView(move,it)}}
  }
- LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
-  item{Column{Text("Golpes",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);Text(if(context==null)"Todos os jogos disponíveis na PokéAPI" else "${context.label} · ${context.regionLabel}",style=MaterialTheme.typography.bodySmall);Text("${visible.size} golpes disponíveis",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=4.dp))}}
-  if(visible.isEmpty())item{Text("Nenhum dado de aprendizado disponível para este jogo.")}
-  else items(visible,key={it.first.name}){(move,details)->
-   val labels=if(context==null)move.methods else details.map{learnLabel(it)}.distinct()
-   Card(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",move.name)}else Modifier)){
-    Row(Modifier.fillMaxWidth().padding(11.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(move.name,fontWeight=FontWeight.SemiBold);Text(labels.joinToString(" · ").ifBlank{"Método não informado"},style=MaterialTheme.typography.bodySmall)};if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}
+ val methods=remember(base){base.flatMap{it.details}.map{methodLabel(it.method)}.distinct().sorted()}
+ val counts=remember(base,methods){methods.associateWith{label->base.count{v->v.details.any{methodLabel(it.method)==label}}}}
+ val visible=remember(base,query,methodFilter){
+  base.filter{v->
+   val queryOk=query.isBlank()||v.move.name.contains(query,true)
+   val methodOk=methodFilter=="Todos"||v.details.any{methodLabel(it.method)==methodFilter}
+   queryOk&&methodOk
+  }.sortedWith(compareBy<MoveView>{v->
+   if(methodFilter=="Nível")v.details.filter{methodLabel(it.method)=="Nível"}.minOfOrNull{it.level.takeIf{n->n>0}?:999}?:999 else 0
+  }.thenBy{it.move.name})
+ }
+ LazyColumn(Modifier.fillMaxSize().padding(horizontal=16.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+  item{Column(Modifier.padding(top=14.dp)){Text("Golpes",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);Text(if(context==null)"Todos os jogos disponíveis na PokéAPI" else "${context.label} · ${context.regionLabel}",style=MaterialTheme.typography.bodySmall);Text("${base.size} golpes disponíveis",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=4.dp));OutlinedTextField(value=query,onValueChange={query=it},modifier=Modifier.fillMaxWidth().padding(top=10.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Buscar golpe")});LazyRow(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){item{FilterChip(selected=methodFilter=="Todos",onClick={methodFilter="Todos"},label={Text("Todos ${base.size}")})};items(methods,key={it}){label->FilterChip(selected=methodFilter==label,onClick={methodFilter=label},label={Text("$label ${counts[label]?:0}")})}};Text("${visible.size} resultados",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=4.dp))}}
+  if(visible.isEmpty())item{Text("Nenhum golpe encontrado para este filtro.",modifier=Modifier.padding(vertical=12.dp))}
+  else items(visible,key={it.move.name}){view->
+   val filteredDetails=if(methodFilter=="Todos")view.details else view.details.filter{methodLabel(it.method)==methodFilter}
+   val labels=if(context==null&&filteredDetails.isEmpty())view.move.methods else filteredDetails.map{learnLabel(it)}.distinct()
+   Card(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",view.move.name)}else Modifier)){
+    Row(Modifier.fillMaxWidth().padding(11.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(view.move.name,fontWeight=FontWeight.SemiBold);Text(labels.joinToString(" · ").ifBlank{"Método não informado"},style=MaterialTheme.typography.bodySmall)};if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}
    }
   }
   item{Spacer(Modifier.height(16.dp))}
  }
 }
 
-private fun learnLabel(detail:PokeApiService.MoveLearnDetail):String{
- val method=when(detail.method.lowercase()){ "level up"->"Nível";"machine"->"TM";"egg"->"Ovo";"tutor"->"Tutor";else->detail.method }
- return if(detail.level>0 && detail.method.equals("Level Up",true))"Nível ${detail.level}" else method
-}
+private fun methodLabel(method:String):String=when(method.lowercase()){ "level up"->"Nível";"machine"->"TM";"egg"->"Ovo";"tutor"->"Tutor";else->method }
+private fun learnLabel(detail:PokeApiService.MoveLearnDetail):String=if(detail.level>0&&methodLabel(detail.method)=="Nível")"Nível ${detail.level}" else methodLabel(detail.method)
 
 @Composable private fun V2Locations(encounters:List<PokeApiService.EncounterLocation>,context:GameContext?,openLocation:(()->Unit)?){val visible=if(context==null)encounters else encounters.mapNotNull{e->val versions=e.versions.filter(context::matchesVersion);val details=e.details.filter{context.matchesVersion(it.version)};if(versions.isEmpty()&&details.isEmpty())null else e.copy(versions=versions,details=details)};LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){item{if(openLocation!=null)Button(openLocation,Modifier.fillMaxWidth()){Icon(Icons.Default.LocationOn,null);Spacer(Modifier.width(8.dp));Text("Abrir localização / mapa")};Text(if(context==null)"Todas as versões" else "${context.label} · ${context.regionLabel}",style=MaterialTheme.typography.labelLarge,modifier=Modifier.padding(top=8.dp))};if(visible.isEmpty())item{Text("A PokéAPI não possui encontros detalhados para este contexto. O mapa regional pode conter dados complementares quando disponíveis.")}else items(visible,key={it.location}){e->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(10.dp)){Text(e.location,fontWeight=FontWeight.Bold);e.details.take(4).forEach{d->val lv=when{d.minLevel>0&&d.maxLevel>d.minLevel->"Nv. ${d.minLevel}–${d.maxLevel}";d.minLevel>0->"Nv. ${d.minLevel}";else->null};Text(listOfNotNull(d.method,lv).joinToString(" · "),style=MaterialTheme.typography.bodySmall)}}}}}}
