@@ -16,12 +16,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.CollectionStore
@@ -82,23 +85,23 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     val total = scoped.size
     val progress = if (total == 0) 0f else caughtInScope.toFloat() / total
 
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Living Dex", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("Coleção completa e progresso por jogo/região", style = MaterialTheme.typography.bodySmall)
+                    Text("LIVING DEX", fontSize = 27.sp, fontWeight = FontWeight.Black, color = Color(0xFF151426))
+                    Text("S U A  C O L E Ç Ã O  ·  P O R  J O G O  E  R E G I Ã O", fontSize = 7.sp, color = Color(0xFF72778B))
                 }
             }
 
             Card(
                 Modifier.fillMaxWidth().padding(top = 10.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F0F8))
             ) {
                 Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(58.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxSize(), strokeWidth = 6.dp)
+                        CircularProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxSize(), strokeWidth = 6.dp, color = Color(0xFF5B55E7), trackColor = Color(0xFF5B55E7).copy(alpha=.12f))
                         Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     }
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
@@ -120,7 +123,8 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                     singleLine = true,
                     label = { Text("Visualização") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(scopeMenu) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp)
                 )
                 ExposedDropdownMenu(expanded = scopeMenu, onDismissRequest = { scopeMenu = false }) {
                     livingDexScopes.forEach { item ->
@@ -140,7 +144,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 placeholder = { Text("Nome, Nº Nacional ou Nº regional") },
-                label = { Text("Pesquisar") }
+                shape = RoundedCornerShape(18.dp)
             )
 
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -169,14 +173,15 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                     val caught = p.id in captured
                     Card(
                         Modifier.fillMaxWidth().aspectRatio(.78f).clickable { onPokemonClick(p.id) },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = if (caught) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+                        shape = RoundedCornerShape(15.dp),
+                        colors = CardDefaults.cardColors(containerColor = if (caught) Color(0xFFEAE8FB) else Color(0xFFF1F0F8))
                     ) {
                         Column(Modifier.fillMaxSize().padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             AsyncImage(
                                 model = p.spriteUrl,
                                 contentDescription = p.name,
-                                modifier = Modifier.weight(1f).fillMaxWidth(.90f).alpha(if (caught) 1f else .22f),
+                                modifier = Modifier.weight(1f).fillMaxWidth(.90f).padding(3.dp).alpha(if (caught) 1f else .24f),
+                                contentScale = ContentScale.Fit,
                                 colorFilter = if (caught) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
                             )
                             Text(p.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
