@@ -23,10 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -35,16 +33,19 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.ui.BoxesScreen
 import com.otaviobarreto.pokedex.ui.LivingDexScreen
 import com.otaviobarreto.pokedex.ui.PokedexScreen
 import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
 import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
+import com.otaviobarreto.pokedex.ui.TeamBuilderScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CollectionStore.initialize(this)
+        TeamStore.initialize(this)
         setContent {
             MaterialTheme {
                 PokedexApp()
@@ -130,29 +131,11 @@ fun PokedexApp() {
                 LivingDexScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
             }
             composable("teams") {
-                PlaceholderScreen("Team Builder", "Criação e análise de times.")
+                TeamBuilderScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
             }
             composable("boxes") {
                 BoxesScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
             }
         }
-    }
-}
-
-@Composable
-private fun PlaceholderScreen(title: String, subtitle: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = title, style = MaterialTheme.typography.headlineMedium)
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = 8.dp)
-        )
     }
 }
