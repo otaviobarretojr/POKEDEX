@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
+import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.GameContext
+import com.otaviobarreto.pokedex.data.GameDexService
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -66,6 +69,13 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                 val current=remember(game.title,refreshToken){OfflineGamePackManager.runtimeProgress(game.title)}
                 val audit=remember(game.title,refreshToken){OfflineGamePackManager.audit(game.title)}
                 val active=current!=null
+                val capturedIds=CollectionStore.capturedIds
+                val gameIds=remember(game.title,refreshToken,capturedIds){
+                    catalogGame?.regions.orEmpty().flatMap { region ->
+                        GameContext.fromSource(region.source)?.let { GameDexService.cached(it).orEmpty() }.orEmpty()
+                    }.map { it.nationalId }.distinct()
+                }
+                val gameCaptured=gameIds.count { it in capturedIds }
 
                 Card(
                     Modifier.fillMaxWidth().padding(horizontal=16.dp).clickable{
@@ -84,6 +94,9 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                             Column(Modifier.weight(1f)){
                                 Text(game.title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
                                 Text(game.subtitle,style=MaterialTheme.typography.bodySmall)
+                                if(gameIds.isNotEmpty()){
+                                    Text("$gameCaptured / ${gameIds.size} na coleção",style=MaterialTheme.typography.labelMedium,color=Color(0xFF5B55E7))
+                                }
                                 Text(
                                     when {
                                         active -> current?.label ?: "Preparando download…"
@@ -150,10 +163,14 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
         Column(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp)){
             Text(game.title,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
             Text("Escolha a região ou DLC",modifier=Modifier.padding(bottom=12.dp))
-            game.regions.forEach{region-> Card(Modifier.fillMaxWidth().padding(vertical=5.dp).clickable{regionPicker=null;onOpenGame(region.source)}){
+            game.regions.forEach{region->
+                val regionContext=remember(region.source){GameContext.fromSource(region.source)}
+                val regionDex=remember(region.source){regionContext?.let{GameDexService.cached(it).orEmpty()}.orEmpty()}
+                val regionCaptured=regionDex.count{it.nationalId in CollectionStore.capturedIds}
+                Card(Modifier.fillMaxWidth().padding(vertical=5.dp).clickable{regionPicker=null;onOpenGame(region.source)}){
                 Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
                     Icon(Icons.Default.Map,null)
-                    Column(Modifier.weight(1f).padding(start=12.dp)){Text(region.title,fontWeight=FontWeight.Bold);Text(region.subtitle,style=MaterialTheme.typography.bodySmall)}
+                    Column(Modifier.weight(1f).padding(start=12.dp)){Text(region.title,fontWeight=FontWeight.Bold);Text(region.subtitle,style=MaterialTheme.typography.bodySmall);if(regionDex.isNotEmpty())Text("$regionCaptured / ${regionDex.size} capturados",style=MaterialTheme.typography.labelSmall,color=Color(0xFF5B55E7))}
                     Text("›")
                 }
             }}
