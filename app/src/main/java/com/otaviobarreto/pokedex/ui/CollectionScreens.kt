@@ -22,6 +22,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -29,10 +34,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -130,29 +138,42 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
 
 @Composable
 fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
-    var selectedBox by remember { mutableStateOf(CollectionStore.defaultBoxes.first()) }
-    var idText by remember { mutableStateOf("") }
+    val boxNames = CollectionStore.boxNames
     val boxes = CollectionStore.boxes
+    var selectedBox by remember { mutableStateOf(boxNames.firstOrNull().orEmpty()) }
+    var idText by remember { mutableStateOf("") }
+    var createOpen by remember { mutableStateOf(false) }
+    var renameOpen by remember { mutableStateOf(false) }
+    var deleteOpen by remember { mutableStateOf(false) }
+    var movePokemonId by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(boxNames) {
+        if (selectedBox !in boxNames) selectedBox = boxNames.firstOrNull().orEmpty()
+    }
+
     val ids = boxes[selectedBox].orEmpty().sorted()
     val slots = List(30) { index -> ids.getOrNull(index) }
 
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Text("Boxes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(
-                "Organize sua coleção como no Pokémon HOME",
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text("Boxes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("Organize sua coleção como no Pokémon HOME", style = MaterialTheme.typography.bodyMedium)
+            }
+            FilledTonalIconButton(onClick = { createOpen = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Nova Box")
+            }
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            CollectionStore.defaultBoxes.forEach { box ->
+            boxNames.forEach { box ->
                 val count = boxes[box].orEmpty().size
                 AssistChip(
                     onClick = { selectedBox = box },
@@ -172,15 +193,25 @@ fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(Modifier.weight(1f)) {
                         Text(selectedBox, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text("${ids.size}/30 slots ocupados", style = MaterialTheme.typography.bodySmall)
                     }
-                    Text(
-                        "${(ids.size / 30f * 100).toInt().coerceIn(0, 100)}%",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    IconButton(onClick = { CollectionStore.moveBox(selectedBox, -1) }) {
+                        Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Mover Box para esquerda")
+                    }
+                    IconButton(onClick = { CollectionStore.moveBox(selectedBox, 1) }) {
+                        Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Mover Box para direita")
+                    }
+                    IconButton(onClick = { renameOpen = true }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Renomear Box")
+                    }
+                    IconButton(
+                        enabled = boxNames.size > 1,
+                        onClick = { deleteOpen = true }
+                    ) {
+                        Icon(Icons.Default.DeleteOutline, contentDescription = "Excluir Box")
+                    }
                 }
                 LinearProgressIndicator(
                     progress = { (ids.size / 30f).coerceIn(0f, 1f) },
@@ -205,8 +236,7 @@ fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
                 enabled = ids.size < 30,
                 onClick = {
                     idText.toIntOrNull()?.takeIf { it in 1..1025 }?.let { id ->
-                        CollectionStore.addToBox(selectedBox, id)
-                        idText = ""
+                        if (CollectionStore.addToBox(selectedBox, id)) idText = ""
                     }
                 }
             ) {
@@ -225,11 +255,110 @@ fun BoxesScreen(onPokemonClick: (Int) -> Unit) {
                     index = index,
                     pokemonId = pokemonId,
                     onPokemonClick = onPokemonClick,
+                    onMove = { movePokemonId = it },
                     onRemove = { id -> CollectionStore.removeFromBox(selectedBox, id) }
                 )
             }
         }
     }
+
+    if (createOpen) {
+        BoxNameDialog(
+            title = "Nova Box",
+            initialValue = "",
+            confirmLabel = "Criar",
+            onDismiss = { createOpen = false },
+            onConfirm = { name ->
+                if (CollectionStore.createBox(name)) {
+                    selectedBox = CollectionStore.boxNames.last()
+                    createOpen = false
+                }
+            }
+        )
+    }
+
+    if (renameOpen) {
+        BoxNameDialog(
+            title = "Renomear Box",
+            initialValue = selectedBox,
+            confirmLabel = "Salvar",
+            onDismiss = { renameOpen = false },
+            onConfirm = { name ->
+                val oldName = selectedBox
+                if (CollectionStore.renameBox(oldName, name)) {
+                    selectedBox = CollectionStore.boxNames.firstOrNull { it.equals(name.trim(), true) }
+                        ?: CollectionStore.boxNames.firstOrNull().orEmpty()
+                    renameOpen = false
+                }
+            }
+        )
+    }
+
+    if (deleteOpen) {
+        AlertDialog(
+            onDismissRequest = { deleteOpen = false },
+            title = { Text("Excluir $selectedBox?") },
+            text = { Text("Os Pokémon sairão desta Box, mas continuarão marcados como capturados no Living Dex.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    CollectionStore.deleteBox(selectedBox)
+                    selectedBox = CollectionStore.boxNames.firstOrNull().orEmpty()
+                    deleteOpen = false
+                }) { Text("Excluir") }
+            },
+            dismissButton = { TextButton(onClick = { deleteOpen = false }) { Text("Cancelar") } }
+        )
+    }
+
+    movePokemonId?.let { pokemonId ->
+        AlertDialog(
+            onDismissRequest = { movePokemonId = null },
+            title = { Text("Mover Pokémon #${pokemonId.toString().padStart(4, '0')}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    boxNames.filter { it != selectedBox }.forEach { target ->
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = boxes[target].orEmpty().size < 30,
+                            onClick = {
+                                CollectionStore.movePokemon(selectedBox, target, pokemonId)
+                                movePokemonId = null
+                            }
+                        ) { Text(target) }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { movePokemonId = null }) { Text("Cancelar") } }
+        )
+    }
+}
+
+@Composable
+private fun BoxNameDialog(
+    title: String,
+    initialValue: String,
+    confirmLabel: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var value by remember(initialValue) { mutableStateOf(initialValue) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = value,
+                onValueChange = { value = it.take(32) },
+                singleLine = true,
+                label = { Text("Nome da Box") }
+            )
+        },
+        confirmButton = {
+            TextButton(enabled = value.isNotBlank(), onClick = { onConfirm(value) }) { Text(confirmLabel) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }
 
 @Composable
@@ -237,6 +366,7 @@ private fun BoxSlot(
     index: Int,
     pokemonId: Int?,
     onPokemonClick: (Int) -> Unit,
+    onMove: (Int) -> Unit,
     onRemove: (Int) -> Unit
 ) {
     Card(
@@ -246,16 +376,9 @@ private fun BoxSlot(
             .then(if (pokemonId != null) Modifier.clickable { onPokemonClick(pokemonId) } else Modifier),
         elevation = CardDefaults.cardElevation(defaultElevation = if (pokemonId == null) 0.dp else 1.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize().padding(4.dp),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(Modifier.fillMaxSize().padding(4.dp), contentAlignment = Alignment.Center) {
             if (pokemonId == null) {
-                Text(
-                    text = (index + 1).toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center
-                )
+                Text((index + 1).toString(), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
             } else {
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -265,21 +388,19 @@ private fun BoxSlot(
                     AsyncImage(
                         model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$pokemonId.png",
                         contentDescription = "Pokémon #$pokemonId",
-                        modifier = Modifier.size(54.dp)
+                        modifier = Modifier.size(50.dp)
                     )
-                    Text(
-                        "#${pokemonId.toString().padStart(4, '0')}",
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1
-                    )
+                    Text("#${pokemonId.toString().padStart(4, '0')}", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
+                Icon(
+                    imageVector = Icons.Default.SwapHoriz,
+                    contentDescription = "Mover",
+                    modifier = Modifier.align(Alignment.BottomStart).size(18.dp).clickable { onMove(pokemonId) }
+                )
                 Icon(
                     imageVector = Icons.Default.DeleteOutline,
                     contentDescription = "Remover",
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(18.dp)
-                        .clickable { onRemove(pokemonId) }
+                    modifier = Modifier.align(Alignment.TopEnd).size(18.dp).clickable { onRemove(pokemonId) }
                 )
             }
         }
