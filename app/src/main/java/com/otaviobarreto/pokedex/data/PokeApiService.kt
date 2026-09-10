@@ -52,9 +52,19 @@ object PokeApiService {
         val requirement: String?
     )
 
+    data class EncounterDetail(
+        val version: String,
+        val method: String,
+        val minLevel: Int,
+        val maxLevel: Int,
+        val chance: Int,
+        val conditions: List<String>
+    )
+
     data class EncounterLocation(
         val location: String,
-        val versions: List<String>
+        val versions: List<String>,
+        val details: List<EncounterDetail> = emptyList()
     )
 
     fun loadNationalDex(limit: Int = 1025): List<DexIndexEntry> {
@@ -187,16 +197,39 @@ object PokeApiService {
         return buildList(array.length()) {
             for (i in 0 until array.length()) {
                 val item = array.getJSONObject(i)
-                val versions = item.getJSONArray("version_details")
-                val versionNames = buildList(versions.length()) {
-                    for (j in 0 until versions.length()) {
-                        add(versions.getJSONObject(j).getJSONObject("version").getString("name").toDisplayName())
+                val versionDetails = item.getJSONArray("version_details")
+                val versionNames = mutableListOf<String>()
+                val encounterDetails = mutableListOf<EncounterDetail>()
+
+                for (j in 0 until versionDetails.length()) {
+                    val versionDetail = versionDetails.getJSONObject(j)
+                    val versionName = versionDetail.getJSONObject("version").getString("name").toDisplayName()
+                    versionNames += versionName
+                    val encounters = versionDetail.optJSONArray("encounter_details") ?: JSONArray()
+                    for (k in 0 until encounters.length()) {
+                        val encounter = encounters.getJSONObject(k)
+                        val conditionsJson = encounter.optJSONArray("condition_values") ?: JSONArray()
+                        val conditions = buildList(conditionsJson.length()) {
+                            for (c in 0 until conditionsJson.length()) {
+                                add(conditionsJson.getJSONObject(c).getString("name").toDisplayName())
+                            }
+                        }
+                        encounterDetails += EncounterDetail(
+                            version = versionName,
+                            method = encounter.optJSONObject("method")?.optString("name")?.toDisplayName().orEmpty().ifBlank { "Encontro" },
+                            minLevel = encounter.optInt("min_level", 0),
+                            maxLevel = encounter.optInt("max_level", 0),
+                            chance = encounter.optInt("chance", 0),
+                            conditions = conditions
+                        )
                     }
-                }.distinct()
+                }
+
                 add(
                     EncounterLocation(
                         location = item.getJSONObject("location_area").getString("name").toDisplayName(),
-                        versions = versionNames
+                        versions = versionNames.distinct(),
+                        details = encounterDetails.distinct()
                     )
                 )
             }
