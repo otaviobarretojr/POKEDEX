@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.sp
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private data class GameHubRegion(val source:String,val title:String,val subtitle:String)
 private data class GameHubEntry(val title:String,val subtitle:String,val regions:List<GameHubRegion>)
@@ -86,6 +89,13 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                     style=MaterialTheme.typography.labelMedium,
                                     color=if(status.verified) Color(0xFF2C8B65) else MaterialTheme.colorScheme.primary
                                 )
+                                if(status.downloadedAt>0L){
+                                    Text(
+                                        "Atualizado em " + SimpleDateFormat("dd/MM · HH:mm",Locale.getDefault()).format(Date(status.downloadedAt)),
+                                        style=MaterialTheme.typography.labelSmall,
+                                        color=Color(0xFF72778B)
+                                    )
+                                }
                             }
                             IconButton(
                                 enabled=!active && catalogGame!=null,
@@ -110,7 +120,7 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                 trackColor=Color(0xFF5B55E7).copy(alpha=.12f)
                             )
                             Text(
-                                (current?.done?:0).toString() + " / " + (current?.total?:0),
+                                (current?.done?:0).toString() + " / " + (current?.total?:0) + " · " + (((current?.fraction?:0f)*100).toInt()) + "%",
                                 style=MaterialTheme.typography.labelSmall,
                                 color=Color(0xFF72778B),
                                 modifier=Modifier.align(Alignment.End).padding(top=4.dp)
