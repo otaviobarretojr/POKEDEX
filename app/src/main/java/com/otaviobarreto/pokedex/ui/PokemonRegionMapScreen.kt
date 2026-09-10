@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.PokeApiService
+import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import com.otaviobarreto.pokedex.data.RegionMapZone
 import kotlinx.coroutines.Dispatchers
@@ -81,7 +82,7 @@ fun PokemonRegionMapScreen(
         error = null
         runCatching {
             withContext(Dispatchers.IO) {
-                PokeApiService.loadPokemon(pokemonId) to PokeApiService.loadEncounters(pokemonId)
+                PokedexDataStore.pokemon(pokemonId) to PokedexDataStore.encounters(pokemonId)
             }
         }.onSuccess { (loadedPokemon, loadedEncounters) ->
             pokemon = loadedPokemon
