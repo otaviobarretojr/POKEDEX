@@ -96,7 +96,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
             Spacer(Modifier.height(38.dp))
-            Text("POKEDEX  ·  v0.78", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
+            Text("POKEDEX  ·  v0.79", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
         }
         if(finished) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha=glow*.15f)))
