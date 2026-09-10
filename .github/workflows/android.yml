@@ -26,6 +26,16 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Restore stable signing key
+        run: |
+          mkdir -p signing
+          base64 -d ci/pokedex-release.jks.b64 > signing/pokedex-release.jks
+
+      - name: Restore launcher icon
+        run: |
+          mkdir -p app/src/main/res/drawable
+          base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
+
       - name: Build debug APK
         run: gradle assembleDebug
 
