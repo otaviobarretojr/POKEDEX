@@ -1,9 +1,9 @@
 package com.otaviobarreto.pokedex
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,7 +73,16 @@ fun PokedexApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val isDetail = currentRoute == "pokemon/{id}"
+    val isDetail = currentRoute == "pokemon/{id}?source={source}"
+
+    fun openPokemon(id: Int, source: String? = null) {
+        val route = if (source.isNullOrBlank()) {
+            "pokemon/$id"
+        } else {
+            "pokemon/$id?source=${Uri.encode(source)}"
+        }
+        navController.navigate(route)
+    }
 
     Scaffold(
         topBar = {
@@ -110,31 +119,40 @@ fun PokedexApp() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("pokedex") {
-                PokedexScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
+                PokedexScreen(onPokemonClick = { id -> openPokemon(id) })
             }
             composable(
-                route = "pokemon/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.IntType })
+                route = "pokemon/{id}?source={source}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.IntType },
+                    navArgument("source") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
             ) { entry ->
                 val pokemonId = entry.arguments?.getInt("id") ?: -1
+                val source = entry.arguments?.getString("source")?.let(Uri::decode)
                 Column(modifier = Modifier.fillMaxSize()) {
                     PokemonCollectionActions(pokemonId = pokemonId)
                     Box(modifier = Modifier.fillMaxSize()) {
                         PokemonDetailScreen(
                             id = pokemonId,
+                            source = source,
                             onBack = { navController.popBackStack() }
                         )
                     }
                 }
             }
             composable("livingdex") {
-                LivingDexScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
+                LivingDexScreen(onPokemonClick = { id -> openPokemon(id) })
             }
             composable("teams") {
-                TeamBuilderScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
+                TeamBuilderScreen(onPokemonClick = { id -> openPokemon(id) })
             }
             composable("boxes") {
-                BoxesScreen(onPokemonClick = { id -> navController.navigate("pokemon/$id") })
+                BoxesScreen(onPokemonClick = { id, source -> openPokemon(id, source) })
             }
         }
     }
