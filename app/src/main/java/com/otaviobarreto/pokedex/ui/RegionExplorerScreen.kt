@@ -1,7 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -19,13 +19,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CatchingPokemon
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -47,12 +51,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokeApiService
@@ -60,6 +66,8 @@ import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import com.otaviobarreto.pokedex.data.RegionMapZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+private enum class ExplorerCaptureFilter { ALL, CAPTURED, MISSING }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,6 +85,7 @@ fun RegionExplorerScreen(
     var loadingDex by remember(source) { mutableStateOf(true) }
     var loadingEncounters by remember { mutableStateOf(false) }
     var error by remember(source) { mutableStateOf<String?>(null) }
+    var captureFilter by remember { mutableStateOf(ExplorerCaptureFilter.ALL) }
 
     LaunchedEffect(source) {
         val game = context
@@ -109,13 +118,21 @@ fun RegionExplorerScreen(
         loadingEncounters = false
     }
 
-    val filteredDex = remember(dex, query) {
+    val captured = CollectionStore.capturedIds
+    val regionCaptured = dex.count { it.nationalId in captured }
+    val filteredDex = remember(dex, query, captureFilter, captured) {
         val q = query.trim().removePrefix("#")
         if (q.isBlank()) emptyList()
-        else dex.filter {
-            it.name.contains(q, ignoreCase = true) ||
-                it.nationalId.toString() == q ||
-                it.gameNumber.toString() == q
+        else dex.filter { pokemon ->
+            val queryOk = pokemon.name.contains(q, ignoreCase = true) ||
+                pokemon.nationalId.toString() == q ||
+                pokemon.gameNumber.toString() == q
+            val captureOk = when (captureFilter) {
+                ExplorerCaptureFilter.ALL -> true
+                ExplorerCaptureFilter.CAPTURED -> pokemon.nationalId in captured
+                ExplorerCaptureFilter.MISSING -> pokemon.nationalId !in captured
+            }
+            queryOk && captureOk
         }.take(8)
     }
 
@@ -166,11 +183,38 @@ fun RegionExplorerScreen(
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
-                        Text("Pesquise um Pokémon desta Pokédex para destacar as zonas de encontro.")
+                        Text("$regionCaptured de ${dex.size} capturados nesta Pokédex")
+                        Text(
+                            "Pesquise um Pokémon e o mapa destaca as zonas de encontro disponíveis na fonte.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AssistChip(
+                                onClick = { captureFilter = ExplorerCaptureFilter.ALL },
+                                label = { Text("Todos") },
+                                leadingIcon = if (captureFilter == ExplorerCaptureFilter.ALL) ({ Text("✓") }) else null
+                            )
+                            AssistChip(
+                                onClick = { captureFilter = ExplorerCaptureFilter.CAPTURED },
+                                label = { Text("Capturados") },
+                                leadingIcon = if (captureFilter == ExplorerCaptureFilter.CAPTURED) ({ Text("✓") }) else null
+                            )
+                            AssistChip(
+                                onClick = { captureFilter = ExplorerCaptureFilter.MISSING },
+                                label = { Text("Faltantes") },
+                                leadingIcon = if (captureFilter == ExplorerCaptureFilter.MISSING) ({ Text("✓") }) else null
+                            )
+                        }
                         OutlinedTextField(
                             value = query,
-                            onValueChange = { query = it },
-                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                            onValueChange = {
+                                query = it
+                                if (selectedPokemon?.name?.equals(it, ignoreCase = true) != true) selectedPokemon = null
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                             label = { Text("Pokémon, nº regional ou National Dex") }
@@ -179,22 +223,37 @@ fun RegionExplorerScreen(
                 }
 
                 if (query.isNotBlank() && selectedPokemon == null) {
-                    items(filteredDex, key = { it.nationalId }) { pokemon ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-                                .clickable {
-                                    selectedPokemon = pokemon
-                                    query = pokemon.name
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                    if (filteredDex.isEmpty()) {
+                        item {
+                            Text(
+                                "Nenhum Pokémon corresponde à busca e ao filtro selecionado.",
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    } else {
+                        items(filteredDex, key = { it.nationalId }) { pokemon ->
+                            val isCaptured = pokemon.nationalId in captured
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                                    .clickable {
+                                        selectedPokemon = pokemon
+                                        query = pokemon.name
+                                    }
                             ) {
-                                AsyncImage(pokemon.spriteUrl, pokemon.name, Modifier.size(52.dp))
-                                Column(Modifier.padding(start = 10.dp)) {
-                                    Text(pokemon.name, fontWeight = FontWeight.SemiBold)
-                                    Text("Regional #${pokemon.gameNumber.toString().padStart(3, '0')} · National #${pokemon.nationalId.toString().padStart(4, '0')}", style = MaterialTheme.typography.bodySmall)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AsyncImage(pokemon.spriteUrl, pokemon.name, Modifier.size(52.dp))
+                                    Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                        Text(pokemon.name, fontWeight = FontWeight.SemiBold)
+                                        Text(
+                                            "Regional #${pokemon.gameNumber.toString().padStart(3, '0')} · National #${pokemon.nationalId.toString().padStart(4, '0')}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                    Text(if (isCaptured) "✓ Capturado" else "Faltando", style = MaterialTheme.typography.labelMedium)
                                 }
                             }
                         }
@@ -202,6 +261,7 @@ fun RegionExplorerScreen(
                 }
 
                 selectedPokemon?.let { pokemon ->
+                    val isCaptured = pokemon.nationalId in captured
                     item {
                         Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                             Row(
@@ -211,6 +271,7 @@ fun RegionExplorerScreen(
                                 AsyncImage(pokemon.spriteUrl, pokemon.name, Modifier.size(72.dp))
                                 Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                                     Text(pokemon.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    Text(if (isCaptured) "Capturado" else "Ainda faltando", style = MaterialTheme.typography.labelMedium)
                                     Text(
                                         when {
                                             loadingEncounters -> "Carregando encontros…"
@@ -236,18 +297,6 @@ fun RegionExplorerScreen(
                     )
                 }
 
-                if (selectedPokemon != null && !loadingEncounters) {
-                    val matchedZones = zones.filter { zone -> encounters.any { zone.matches(it.location) } }
-                    item {
-                        Text(
-                            if (matchedZones.isEmpty()) "Nenhuma zona destacada com os dados atuais."
-                            else "Zonas encontradas: ${matchedZones.joinToString { it.label }}",
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-
                 item { Spacer(Modifier.height(20.dp)) }
             }
         }
@@ -264,8 +313,17 @@ private fun ExplorerMap(
     var translation by remember(regionLabel) { mutableStateOf(Offset.Zero) }
     var selectedZone by remember(regionLabel) { mutableStateOf<RegionMapZone?>(null) }
 
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val outline = MaterialTheme.colorScheme.outlineVariant
+    val land = MaterialTheme.colorScheme.surfaceContainerHigh
+
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             FilledTonalButton(onClick = { scale = (scale - 0.25f).coerceAtLeast(1f) }) { Text("−") }
             FilledTonalButton(onClick = { scale = (scale + 0.25f).coerceAtMost(3f) }) { Text("+") }
             FilledTonalButton(onClick = { scale = 1f; translation = Offset.Zero }) { Text("Centralizar") }
@@ -273,7 +331,7 @@ private fun ExplorerMap(
         }
         Spacer(Modifier.height(8.dp))
         Surface(
-            modifier = Modifier.fillMaxWidth().height(480.dp),
+            modifier = Modifier.fillMaxWidth().height(500.dp),
             shape = RoundedCornerShape(24.dp),
             tonalElevation = 2.dp
         ) {
@@ -296,50 +354,64 @@ private fun ExplorerMap(
                 ) {
                     val mapHeight = maxHeight
                     val mapWidth = maxWidth
-                    Box(
-                        Modifier.align(Alignment.Center)
-                            .width(mapWidth * 0.80f)
-                            .height(mapHeight * 0.84f)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(54.dp))
-                            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(54.dp))
-                    )
+                    Canvas(
+                        modifier = Modifier.align(Alignment.Center)
+                            .width(mapWidth * 0.84f)
+                            .height(mapHeight * 0.86f)
+                    ) {
+                        val w = size.width
+                        val h = size.height
+                        val path = Path().apply {
+                            moveTo(w * 0.50f, h * 0.03f)
+                            quadraticBezierTo(w * 0.72f, h * 0.04f, w * 0.84f, h * 0.20f)
+                            quadraticBezierTo(w * 0.98f, h * 0.34f, w * 0.88f, h * 0.51f)
+                            quadraticBezierTo(w * 0.96f, h * 0.69f, w * 0.74f, h * 0.78f)
+                            quadraticBezierTo(w * 0.65f, h * 0.96f, w * 0.48f, h * 0.91f)
+                            quadraticBezierTo(w * 0.27f, h * 0.98f, w * 0.20f, h * 0.77f)
+                            quadraticBezierTo(w * 0.03f, h * 0.64f, w * 0.14f, h * 0.45f)
+                            quadraticBezierTo(w * 0.03f, h * 0.25f, w * 0.25f, h * 0.17f)
+                            quadraticBezierTo(w * 0.34f, h * 0.02f, w * 0.50f, h * 0.03f)
+                            close()
+                        }
+                        drawPath(path = path, color = land)
+                        drawPath(path = path, color = outline, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
+                    }
+
                     Text(
                         regionLabel,
                         modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
+
                     zones.forEach { zone ->
                         val highlighted = encounters.any { zone.matches(it.location) }
                         val selected = selectedZone?.id == zone.id
-                        val markerWidth = 110.dp
-                        val markerHeight = 60.dp
-                        val x = (mapWidth * zone.x) - markerWidth / 2
-                        val y = (mapHeight * zone.y) - markerHeight / 2
-                        Card(
+                        val markerSize = if (highlighted || selected) 38.dp else 30.dp
+                        val x = (mapWidth * zone.x) - markerSize / 2
+                        val y = (mapHeight * zone.y) - markerSize / 2
+                        Surface(
                             modifier = Modifier.offset(x = x, y = y)
-                                .width(markerWidth).height(markerHeight)
+                                .size(markerSize)
                                 .clickable { selectedZone = zone },
-                            shape = RoundedCornerShape(16.dp)
+                            shape = CircleShape,
+                            color = when {
+                                selected -> primary
+                                highlighted -> secondary
+                                else -> MaterialTheme.colorScheme.surface
+                            },
+                            shadowElevation = if (highlighted || selected) 6.dp else 2.dp
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize().background(
-                                    when {
-                                        selected -> MaterialTheme.colorScheme.primaryContainer
-                                        highlighted -> MaterialTheme.colorScheme.secondaryContainer
-                                        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (highlighted) Icons.Default.CatchingPokemon else Icons.Default.LocationOn,
+                                    contentDescription = zone.label,
+                                    modifier = Modifier.size(if (highlighted || selected) 20.dp else 16.dp),
+                                    tint = when {
+                                        selected -> MaterialTheme.colorScheme.onPrimary
+                                        highlighted -> MaterialTheme.colorScheme.onSecondary
+                                        else -> MaterialTheme.colorScheme.onSurface
                                     }
-                                ).padding(5.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                if (highlighted) Icon(Icons.Default.LocationOn, contentDescription = null, Modifier.size(16.dp))
-                                Text(
-                                    zone.label,
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if (highlighted) FontWeight.Bold else FontWeight.Normal,
-                                    maxLines = 2
                                 )
                             }
                         }
@@ -347,14 +419,60 @@ private fun ExplorerMap(
                 }
             }
         }
+
         selectedZone?.let { zone ->
             val matching = encounters.filter { zone.matches(it.location) }
-            Text(zone.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
-            Text(
-                if (matching.isEmpty()) "Nenhum encontro associado a esta zona para o Pokémon selecionado."
-                else matching.joinToString(" · ") { it.location },
-                style = MaterialTheme.typography.bodySmall
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+            ) {
+                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocationOn, contentDescription = null)
+                        Text(
+                            zone.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                    if (matching.isEmpty()) {
+                        Text(
+                            "Nenhum encontro do Pokémon selecionado foi associado a esta zona.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 6.dp)
+                        )
+                    } else {
+                        matching.forEach { encounter ->
+                            Text(
+                                encounter.location,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                            encounter.details.take(3).forEach { detail ->
+                                val level = when {
+                                    detail.minLevel > 0 && detail.maxLevel > 0 && detail.minLevel != detail.maxLevel -> "Nv. ${detail.minLevel}–${detail.maxLevel}"
+                                    detail.minLevel > 0 -> "Nv. ${detail.minLevel}"
+                                    else -> null
+                                }
+                                val chance = detail.chance.takeIf { it > 0 }?.let { "$it%" }
+                                Text(
+                                    listOfNotNull(detail.method, level, chance).joinToString(" · "),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
+
+        Text(
+            "Marcadores destacados indicam zonas associadas aos encontros da fonte. O desenho é uma representação esquemática e não uma coordenada oficial de spawn.",
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
     }
 }
