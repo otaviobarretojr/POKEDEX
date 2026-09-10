@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.CatchingPokemon
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ListAlt
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,8 @@ import androidx.navigation.navArgument
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.ui.BoxesScreen
+import com.otaviobarreto.pokedex.ui.GameDexScreen
+import com.otaviobarreto.pokedex.ui.GamesHubScreen
 import com.otaviobarreto.pokedex.ui.LivingDexScreen
 import com.otaviobarreto.pokedex.ui.PokedexScreen
 import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
@@ -63,6 +66,7 @@ data class MainDestination(
 private val mainDestinations = listOf(
     MainDestination("pokedex", "Pokédex", Icons.Default.CatchingPokemon),
     MainDestination("livingdex", "Living Dex", Icons.Default.ListAlt),
+    MainDestination("games", "Jogos", Icons.Default.Map),
     MainDestination("teams", "Times", Icons.Default.Groups),
     MainDestination("boxes", "Boxes", Icons.Default.GridView)
 )
@@ -73,7 +77,7 @@ fun PokedexApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val isDetail = currentRoute == "pokemon/{id}?source={source}"
+    val isSecondaryScreen = currentRoute == "pokemon/{id}?source={source}" || currentRoute == "gameDex?source={source}"
 
     fun openPokemon(id: Int, source: String? = null) {
         val route = if (source.isNullOrBlank()) {
@@ -84,14 +88,18 @@ fun PokedexApp() {
         navController.navigate(route)
     }
 
+    fun openGameDex(source: String) {
+        navController.navigate("gameDex?source=${Uri.encode(source)}")
+    }
+
     Scaffold(
         topBar = {
-            if (!isDetail) {
+            if (!isSecondaryScreen) {
                 TopAppBar(title = { Text("POKEDEX") })
             }
         },
         bottomBar = {
-            if (!isDetail) {
+            if (!isSecondaryScreen) {
                 NavigationBar {
                     mainDestinations.forEach { destination ->
                         NavigationBarItem(
@@ -147,6 +155,25 @@ fun PokedexApp() {
             }
             composable("livingdex") {
                 LivingDexScreen(onPokemonClick = { id -> openPokemon(id) })
+            }
+            composable("games") {
+                GamesHubScreen(onOpenGame = ::openGameDex)
+            }
+            composable(
+                route = "gameDex?source={source}",
+                arguments = listOf(
+                    navArgument("source") {
+                        type = NavType.StringType
+                        nullable = false
+                    }
+                )
+            ) { entry ->
+                val source = entry.arguments?.getString("source")?.let(Uri::decode).orEmpty()
+                GameDexScreen(
+                    source = source,
+                    onBack = { navController.popBackStack() },
+                    onPokemonClick = { id, gameSource -> openPokemon(id, gameSource) }
+                )
             }
             composable("teams") {
                 TeamBuilderScreen(onPokemonClick = { id -> openPokemon(id) })
