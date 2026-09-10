@@ -28,6 +28,24 @@ object OfflineGamePackManager {
             get() = downloaded && packVersion == PACK_VERSION && pokemonCount > 0 && completeCount == pokemonCount
     }
 
+    data class PackAudit(
+        val valid: Boolean,
+        val completedIds: Int,
+        val expectedCount: Int,
+        val currentVersion: Boolean,
+        val hasRegionManifest: Boolean
+    ) {
+        val summary: String
+            get() = when {
+                valid -> "Pacote íntegro"
+                expectedCount == 0 -> "Pacote ainda não iniciado"
+                completedIds < expectedCount -> "Faltam ${expectedCount - completedIds} Pokémon"
+                !currentVersion -> "Pacote precisa ser atualizado"
+                !hasRegionManifest -> "Manifesto regional incompleto"
+                else -> "Pacote precisa de reparo"
+            }
+    }
+
     data class Progress(
         val done: Int,
         val total: Int,
@@ -69,6 +87,21 @@ object OfflineGamePackManager {
         }
         edit.apply()
     }
+
+    fun audit(gameLabel: String): PackAudit {
+        val p = prefs()
+        val expected = p.getInt(key(gameLabel, "count"), 0)
+        val completed = p.getStringSet(key(gameLabel, "completed_ids"), emptySet()).orEmpty()
+            .mapNotNull { it.toIntOrNull() }
+            .distinct()
+            .size
+        val current = p.getInt(key(gameLabel, "version"), 0) == PACK_VERSION
+        val regions = !p.getString(key(gameLabel, "regions"), null).isNullOrBlank()
+        val valid = expected > 0 && completed == expected && current && regions
+        return PackAudit(valid, completed, expected, current, regions)
+    }
+
+    fun repair(gameLabel: String) = enqueue(gameLabel)
 
     fun status(gameLabel: String): PackStatus {
         val prefs = prefs()
