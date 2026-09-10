@@ -11,12 +11,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import androidx.work.Constraints
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
@@ -48,15 +42,32 @@ object OfflineGamePackManager {
         this.context = context.applicationContext
     }
 
-    fun workName(gameLabel: String): String = "offline-pack-" + key(gameLabel, "download")
-
     fun enqueue(gameLabel: String) {
         val appContext = requireNotNull(context)
-        val request = OneTimeWorkRequestBuilder<OfflineGamePackWorker>()
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .setInputData(workDataOf(OfflineGamePackWorker.KEY_GAME to gameLabel))
-            .build()
-        WorkManager.getInstance(appContext).enqueueUniqueWork(workName(gameLabel), ExistingWorkPolicy.KEEP, request)
+        val intent = android.content.Intent(appContext, OfflineGameDownloadService::class.java)
+            .putExtra(OfflineGameDownloadService.EXTRA_GAME, gameLabel)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) appContext.startForegroundService(intent)
+        else appContext.startService(intent)
+    }
+
+    fun runtimeProgress(gameLabel: String): Progress? {
+        val p = prefs()
+        if (!p.getBoolean(key(gameLabel, "running"), false)) return null
+        return Progress(
+            p.getInt(key(gameLabel, "runtime_done"), 0),
+            p.getInt(key(gameLabel, "runtime_total"), 1),
+            p.getString(key(gameLabel, "runtime_label"), "Preparando download…") ?: "Preparando download…"
+        )
+    }
+
+    fun setRuntimeProgress(gameLabel: String, progress: Progress?, running: Boolean) {
+        val edit = prefs().edit().putBoolean(key(gameLabel, "running"), running)
+        if (progress != null) {
+            edit.putInt(key(gameLabel, "runtime_done"), progress.done)
+                .putInt(key(gameLabel, "runtime_total"), progress.total)
+                .putString(key(gameLabel, "runtime_label"), progress.label)
+        }
+        edit.apply()
     }
 
     fun status(gameLabel: String): PackStatus {
