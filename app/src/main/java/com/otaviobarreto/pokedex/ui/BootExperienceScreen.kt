@@ -43,9 +43,9 @@ fun BootExperienceScreen(onReady: () -> Unit) {
     val glow by infinite.animateFloat(.18f, .42f, infiniteRepeatable(tween(1900), RepeatMode.Reverse), label = "glow")
 
     LaunchedEffect(Unit) {
-        state = BootState(.10f, "Carregando Pokédex Nacional")
+        state = BootState(.10f, "Preparando dados locais")
         runCatching { withContext(Dispatchers.IO) { PokedexDataStore.nationalDex() } }
-        state = BootState(.34f, "Preparando regiões e jogos")
+        state = BootState(.34f, "Sincronizando regiões e jogos")
         runCatching { withContext(Dispatchers.IO) {
             coroutineScope {
                 AppGameCatalog.games.flatMap { it.regions }.map { region ->
@@ -53,7 +53,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
                 }.forEach { it.await() }
             }
         } }
-        state = BootState(.67f, "Organizando referências")
+        state = BootState(.67f, "Atualizando dados de referência")
         runCatching { withContext(Dispatchers.IO) {
             coroutineScope {
                 listOf("move", "ability", "item").map { kind -> async { ReferenceCatalogService.load(kind) } }.forEach { it.await() }
@@ -114,7 +114,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
             Spacer(Modifier.height(38.dp))
-            Text("POKEDEX  ·  v0.41", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
+            Text("POKEDEX  ·  v0.54", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
         }
         if(finished) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha=glow*.15f)))
