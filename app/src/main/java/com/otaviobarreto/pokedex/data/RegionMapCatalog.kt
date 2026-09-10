@@ -30,17 +30,17 @@ object RegionMapCatalog {
     }
 
     private val paldea = listOf(
-        RegionMapZone("north", "North Province", 0, 1, 0.52f, 0.13f, listOf("north province")),
-        RegionMapZone("glaseado", "Glaseado Mountain", 0, 2, 0.77f, 0.17f, listOf("glaseado")),
-        RegionMapZone("casseroya", "Casseroya Lake", 1, 0, 0.22f, 0.30f, listOf("casseroya")),
-        RegionMapZone("tagtree", "Tagtree Thicket", 1, 1, 0.58f, 0.31f, listOf("tagtree")),
-        RegionMapZone("east", "East Province", 1, 2, 0.82f, 0.46f, listOf("east province")),
-        RegionMapZone("west", "West Province", 2, 0, 0.18f, 0.52f, listOf("west province")),
-        RegionMapZone("mesagoza", "Central Paldea", 2, 1, 0.50f, 0.56f, listOf("mesagoza", "south province area one", "south province area three")),
-        RegionMapZone("asado", "Asado Desert", 2, 2, 0.29f, 0.68f, listOf("asado")),
-        RegionMapZone("south", "South Province", 3, 0, 0.50f, 0.79f, listOf("south province")),
-        RegionMapZone("poco", "Poco Path / Coast", 3, 1, 0.63f, 0.90f, listOf("poco path", "south paldean sea")),
-        RegionMapZone("zero", "Area Zero", 3, 2, 0.52f, 0.43f, listOf("area zero", "great crater"))
+        RegionMapZone("north", "North Province", 0, 1, 0.67f, 0.24f, listOf("north province")),
+        RegionMapZone("glaseado", "Glaseado Mountain", 0, 2, 0.54f, 0.18f, listOf("glaseado")),
+        RegionMapZone("casseroya", "Casseroya Lake", 1, 0, 0.27f, 0.29f, listOf("casseroya")),
+        RegionMapZone("tagtree", "Tagtree Thicket", 1, 1, 0.70f, 0.38f, listOf("tagtree")),
+        RegionMapZone("east", "East Province", 1, 2, 0.82f, 0.48f, listOf("east province")),
+        RegionMapZone("west", "West Province", 2, 0, 0.23f, 0.52f, listOf("west province")),
+        RegionMapZone("mesagoza", "Central Paldea", 2, 1, 0.50f, 0.70f, listOf("mesagoza", "south province area one", "south province area three")),
+        RegionMapZone("asado", "Asado Desert", 2, 2, 0.24f, 0.60f, listOf("asado")),
+        RegionMapZone("south", "South Province", 3, 0, 0.50f, 0.81f, listOf("south province")),
+        RegionMapZone("poco", "Poco Path / Coast", 3, 1, 0.57f, 0.90f, listOf("poco path", "south paldean sea")),
+        RegionMapZone("zero", "Area Zero", 3, 2, 0.49f, 0.52f, listOf("area zero", "great crater"))
     )
 
     private val kitakami = listOf(
