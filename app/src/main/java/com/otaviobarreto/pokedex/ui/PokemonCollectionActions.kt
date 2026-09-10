@@ -13,7 +13,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,8 +23,8 @@ fun PokemonCollectionActions(
     pokemonId: Int,
     modifier: Modifier = Modifier
 ) {
-    val capturedIds by CollectionStore::capturedIds
-    val boxes by CollectionStore::boxes
+    val capturedIds = CollectionStore.capturedIds
+    val boxes = CollectionStore.boxes
     val captured = pokemonId in capturedIds
     val pokemonBoxes = boxes.filterValues { pokemonId in it }.keys
 
