@@ -37,12 +37,27 @@ private val qbGames=listOf(
  QBGame("Let's Go Pikachu / Eevee",Color(0xFFE0A929),listOf(QBRegion("Kanto","Let's Go Pikachu / Eevee · Kanto","Jogo base"))),
  QBGame("Legends Arceus",Color(0xFF527F7C),listOf(QBRegion("Hisui","Legends Arceus · Hisui","Jogo base"))))
 
+private fun numberedBox(game:String,page:Int)="$game · Box ${page+1}"
+
 @OptIn(ExperimentalMaterial3Api::class,ExperimentalFoundationApi::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
  var game by remember{mutableStateOf(qbGames.first())};var region by remember{mutableStateOf(game.regions.first())};var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by remember{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var quick by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)};var search by remember{mutableStateOf(false)}
- val captured=CollectionStore.capturedIds
- LaunchedEffect(region.source){loading=true;page=0;val ctx=GameContext.fromSource(region.source);dex=if(ctx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}}.getOrElse{emptyList()};loading=false}
- val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);val caught=dex.count{it.nationalId in captured};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ LaunchedEffect(region.source,game.label){
+  loading=true;page=0
+  val ctx=GameContext.fromSource(region.source)
+  dex=if(ctx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}}.getOrElse{emptyList()}
+  if(dex.isNotEmpty()){
+   val pageCount=((dex.size+29)/30).coerceAtLeast(1)
+   repeat(pageCount){pg->
+    val ids=dex.drop(pg*30).take(30).map{it.nationalId}
+    val box=numberedBox(game.label,pg)
+    CollectionStore.migrateLegacyGameBox(game.label,box,ids)
+    CollectionStore.migrateCapturedToBox(box,ids)
+   }
+  }
+  loading=false
+ }
+ val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);val activeBox=numberedBox(game.label,current);val boxedNow=CollectionStore.boxes[activeBox].orEmpty();val caught=dex.count{entry->CollectionStore.boxesForPokemon(entry.nationalId).any{it.startsWith(game.label)}};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=12.dp)){
   Column(Modifier.padding(top=5.dp,bottom=5.dp)){Text("POKEDEX",fontSize=27.sp,lineHeight=28.sp,fontWeight=FontWeight.Black,color=QBink);Text("C A T C H  E M  ·  T O D A S  A S  R E G I Õ E S",fontSize=7.sp,color=QBmuted)}
   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
@@ -51,17 +66,17 @@ private val qbGames=listOf(
   }
   Card(Modifier.fillMaxWidth().padding(top=7.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=QBsurface)){Row(Modifier.fillMaxWidth().height(68.dp).padding(horizontal=13.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){CircularProgressIndicator({progress},Modifier.fillMaxSize(),color=game.accent,trackColor=game.accent.copy(alpha=.12f),strokeWidth=5.dp);Text("${(progress*100).toInt()}%",fontSize=10.sp,fontWeight=FontWeight.Black)};Spacer(Modifier.width(14.dp));QBStat("${dex.size}","Total",Modifier.weight(1f));QBStat("$caught","Capturados",Modifier.weight(1f),QBmint);QBStat("${(dex.size-caught).coerceAtLeast(0)}","Restantes",Modifier.weight(1f));Surface(shape=RoundedCornerShape(10.dp),color=Color.White.copy(alpha=.7f)){Column(Modifier.padding(horizontal=9.dp,vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(Icons.Default.Landscape,null,tint=game.accent,modifier=Modifier.size(14.dp));Text(region.label,fontSize=8.sp,fontWeight=FontWeight.Bold,maxLines=1)}}}}
   Row(Modifier.fillMaxWidth().height(50.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){FilledTonalIconButton({page=current-1},enabled=current>0){Icon(Icons.Default.ChevronLeft,"Anterior")};Surface(shape=RoundedCornerShape(13.dp),color=QBsurface){Row(Modifier.padding(horizontal=18.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Inventory2,null,tint=game.accent);Spacer(Modifier.width(7.dp));Text("Box ${current+1}",fontWeight=FontWeight.Black)}};FilledTonalIconButton({page=current+1},enabled=current<pages-1){Icon(Icons.Default.ChevronRight,"Próxima")}}
-  Box(Modifier.weight(1f).fillMaxWidth()){if(loading)Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}else if(dex.isEmpty())Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}else QBGrid(entries,captured,{onPokemonClick(it.nationalId,region.source)},{quick=it})}
+  Box(Modifier.weight(1f).fillMaxWidth()){if(loading)Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}else if(dex.isEmpty())Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}else QBGrid(entries,boxedNow,{onPokemonClick(it.nationalId,region.source)},{quick=it})}
   FilledTonalButton({search=true},Modifier.fillMaxWidth().height(50.dp).padding(bottom=3.dp),shape=RoundedCornerShape(18.dp)){Icon(Icons.Default.Search,null);Spacer(Modifier.width(8.dp));Text("Pesquisar",fontWeight=FontWeight.Bold)}
  }
- quick?.let{pk->val inGameBox=pk.nationalId in CollectionStore.boxes[game.label].orEmpty();QBQuickDialog(pk,inGameBox,{quick=null}){if(inGameBox)CollectionStore.removeFromBox(game.label,pk.nationalId)else CollectionStore.addToBox(game.label,pk.nationalId);quick=null}}
- if(search)QBSearch(dex,captured,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
+ quick?.let{pk->val inBox=pk.nationalId in CollectionStore.boxes[activeBox].orEmpty();QBQuickDialog(pk,inBox,{quick=null}){if(inBox)CollectionStore.removeFromBox(activeBox,pk.nationalId)else CollectionStore.addToBox(activeBox,pk.nationalId);quick=null}}
+ if(search)QBSearch(dex,CollectionStore.capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
 }
 
 @Composable private fun QBStat(value:String,label:String,modifier:Modifier,color:Color=QBink){Column(modifier,horizontalAlignment=Alignment.CenterHorizontally){Text(value,fontWeight=FontWeight.Black,fontSize=12.sp,color=color);Text(label,fontSize=8.sp,color=QBmuted,maxLines=1)}}
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable private fun QBGrid(entries:List<GameDexService.GameDexEntry>,captured:Set<Int>,open:(GameDexService.GameDexEntry)->Unit,longPress:(GameDexService.GameDexEntry)->Unit){Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(4.dp)){repeat(5){r->Row(Modifier.weight(1f).fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){repeat(6){col->val pk=entries.getOrNull(r*6+col);if(pk==null)Surface(Modifier.weight(1f).fillMaxHeight(),RoundedCornerShape(11.dp),color=QBsurface){}else Box(Modifier.weight(1f).fillMaxHeight()){QBSlot(pk,pk.nationalId in captured,{open(pk)},{longPress(pk)})}}}}}}
+@Composable private fun QBGrid(entries:List<GameDexService.GameDexEntry>,boxed:Set<Int>,open:(GameDexService.GameDexEntry)->Unit,longPress:(GameDexService.GameDexEntry)->Unit){Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(4.dp)){repeat(5){r->Row(Modifier.weight(1f).fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){repeat(6){col->val pk=entries.getOrNull(r*6+col);if(pk==null)Surface(Modifier.weight(1f).fillMaxHeight(),RoundedCornerShape(11.dp),color=QBsurface){}else Box(Modifier.weight(1f).fillMaxHeight()){QBSlot(pk,pk.nationalId in boxed,{open(pk)},{longPress(pk)})}}}}}}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable private fun QBSlot(pk:GameDexService.GameDexEntry,captured:Boolean,open:()->Unit,longPress:()->Unit){val haptic=LocalHapticFeedback.current;Surface(Modifier.fillMaxSize().combinedClickable(onClick=open,onLongClick={haptic.performHapticFeedback(HapticFeedbackType.LongPress);longPress()}),shape=RoundedCornerShape(11.dp),color=if(captured)Color(0xFFEAE6FA)else QBsurface){Column(Modifier.fillMaxSize().padding(2.dp),horizontalAlignment=Alignment.CenterHorizontally){AsyncImage(pk.spriteUrl,pk.name,Modifier.weight(1f).fillMaxWidth(.94f).alpha(if(captured)1f else .24f),colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)}));Text(pretty(pk.name),fontSize=8.sp,lineHeight=8.sp,maxLines=1,overflow=TextOverflow.Ellipsis,color=if(captured)QBink else QBmuted);Text("#${pk.gameNumber.toString().padStart(3,'0')}",fontSize=8.sp,color=QBmuted)}}}
