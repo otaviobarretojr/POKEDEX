@@ -132,10 +132,12 @@ object ReferenceCatalogService {
     }
 
     private fun getJson(url: String): JSONObject {
-        val request = Request.Builder().url(url).header("User-Agent", "POKEDEX-Android").build()
-        val body = client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) error("HTTP ${response.code}")
-            response.body?.string() ?: error("Resposta vazia")
+        val body = PersistentApiCache.getOrFetch(url) {
+            val request = Request.Builder().url(url).header("User-Agent", "POKEDEX-Android").build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) error("HTTP ${response.code}")
+                response.body?.string() ?: error("Resposta vazia")
+            }
         }
         return JSONObject(body)
     }
