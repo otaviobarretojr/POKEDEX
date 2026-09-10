@@ -44,7 +44,7 @@ import com.otaviobarreto.pokedex.ui.PokemonCollectionActions
 import com.otaviobarreto.pokedex.ui.PokemonDetailScreen
 import com.otaviobarreto.pokedex.ui.PokemonLocationScreen
 import com.otaviobarreto.pokedex.ui.PokemonRegionMapScreen
-import com.otaviobarreto.pokedex.ui.RegionExplorerScreen
+import com.otaviobarreto.pokedex.ui.RegionExplorerV2Screen
 import com.otaviobarreto.pokedex.ui.TeamBuilderScreen
 
 class MainActivity : ComponentActivity() {
@@ -52,19 +52,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CollectionStore.initialize(this)
         TeamStore.initialize(this)
-        setContent {
-            MaterialTheme {
-                PokedexApp()
-            }
-        }
+        setContent { MaterialTheme { PokedexApp() } }
     }
 }
 
-data class MainDestination(
-    val route: String,
-    val label: String,
-    val icon: ImageVector
-)
+data class MainDestination(val route: String, val label: String, val icon: ImageVector)
 
 private val mainDestinations = listOf(
     MainDestination("pokedex", "Pokédex", Icons.Default.CatchingPokemon),
@@ -87,41 +79,17 @@ fun PokedexApp() {
         currentRoute == "regionExplorer?source={source}"
 
     fun openPokemon(id: Int, source: String? = null) {
-        val route = if (source.isNullOrBlank()) {
-            "pokemon/$id"
-        } else {
-            "pokemon/$id?source=${Uri.encode(source)}"
-        }
-        navController.navigate(route)
+        navController.navigate(if (source.isNullOrBlank()) "pokemon/$id" else "pokemon/$id?source=${Uri.encode(source)}")
     }
-
-    fun openGameDex(source: String) {
-        navController.navigate("gameDex?source=${Uri.encode(source)}")
-    }
-
+    fun openGameDex(source: String) { navController.navigate("gameDex?source=${Uri.encode(source)}") }
     fun openLocation(id: Int, source: String? = null) {
-        val route = if (source.isNullOrBlank()) {
-            "location/$id"
-        } else {
-            "location/$id?source=${Uri.encode(source)}"
-        }
-        navController.navigate(route)
+        navController.navigate(if (source.isNullOrBlank()) "location/$id" else "location/$id?source=${Uri.encode(source)}")
     }
-
-    fun openRegionMap(id: Int, source: String) {
-        navController.navigate("regionMap/$id?source=${Uri.encode(source)}")
-    }
-
-    fun openRegionExplorer(source: String) {
-        navController.navigate("regionExplorer?source=${Uri.encode(source)}")
-    }
+    fun openRegionMap(id: Int, source: String) { navController.navigate("regionMap/$id?source=${Uri.encode(source)}") }
+    fun openRegionExplorer(source: String) { navController.navigate("regionExplorer?source=${Uri.encode(source)}") }
 
     Scaffold(
-        topBar = {
-            if (!isSecondaryScreen) {
-                TopAppBar(title = { Text("POKEDEX") })
-            }
-        },
+        topBar = { if (!isSecondaryScreen) TopAppBar(title = { Text("POKEDEX") }) },
         bottomBar = {
             if (!isSecondaryScreen) {
                 NavigationBar {
@@ -130,9 +98,7 @@ fun PokedexApp() {
                             selected = currentRoute == destination.route,
                             onClick = {
                                 navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -145,52 +111,27 @@ fun PokedexApp() {
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "pokedex",
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable("pokedex") {
-                PokedexScreen(onPokemonClick = { id -> openPokemon(id) })
-            }
+        NavHost(navController, "pokedex", Modifier.padding(innerPadding)) {
+            composable("pokedex") { PokedexScreen(onPokemonClick = { openPokemon(it) }) }
             composable(
-                route = "pokemon/{id}?source={source}",
+                "pokemon/{id}?source={source}",
                 arguments = listOf(
                     navArgument("id") { type = NavType.IntType },
-                    navArgument("source") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
+                    navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null }
                 )
             ) { entry ->
-                val pokemonId = entry.arguments?.getInt("id") ?: -1
+                val id = entry.arguments?.getInt("id") ?: -1
                 val source = entry.arguments?.getString("source")?.let(Uri::decode)
-                Column(modifier = Modifier.fillMaxSize()) {
-                    PokemonCollectionActions(pokemonId = pokemonId)
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        PokemonDetailScreen(
-                            id = pokemonId,
-                            source = source,
-                            onBack = { navController.popBackStack() }
-                        )
-                    }
+                Column(Modifier.fillMaxSize()) {
+                    PokemonCollectionActions(id)
+                    Box(Modifier.fillMaxSize()) { PokemonDetailScreen(id, source) { navController.popBackStack() } }
                 }
             }
-            composable("livingdex") {
-                LivingDexScreen(onPokemonClick = { id -> openPokemon(id) })
-            }
-            composable("games") {
-                GamesHubScreen(onOpenGame = ::openGameDex)
-            }
+            composable("livingdex") { LivingDexScreen(onPokemonClick = { openPokemon(it) }) }
+            composable("games") { GamesHubScreen(onOpenGame = ::openGameDex) }
             composable(
-                route = "gameDex?source={source}",
-                arguments = listOf(
-                    navArgument("source") {
-                        type = NavType.StringType
-                        nullable = false
-                    }
-                )
+                "gameDex?source={source}",
+                arguments = listOf(navArgument("source") { type = NavType.StringType; nullable = false })
             ) { entry ->
                 val source = entry.arguments?.getString("source")?.let(Uri::decode).orEmpty()
                 GameDexScreen(
@@ -202,67 +143,45 @@ fun PokedexApp() {
                 )
             }
             composable(
-                route = "regionExplorer?source={source}",
-                arguments = listOf(
-                    navArgument("source") {
-                        type = NavType.StringType
-                        nullable = false
-                    }
-                )
+                "regionExplorer?source={source}",
+                arguments = listOf(navArgument("source") { type = NavType.StringType; nullable = false })
             ) { entry ->
                 val source = entry.arguments?.getString("source")?.let(Uri::decode).orEmpty()
-                RegionExplorerScreen(
+                RegionExplorerV2Screen(
                     source = source,
                     onBack = { navController.popBackStack() },
                     onPokemonClick = { id, gameSource -> openPokemon(id, gameSource) }
                 )
             }
             composable(
-                route = "location/{id}?source={source}",
+                "location/{id}?source={source}",
                 arguments = listOf(
                     navArgument("id") { type = NavType.IntType },
-                    navArgument("source") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
+                    navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null }
                 )
             ) { entry ->
-                val pokemonId = entry.arguments?.getInt("id") ?: -1
+                val id = entry.arguments?.getInt("id") ?: -1
                 val source = entry.arguments?.getString("source")?.let(Uri::decode)
                 PokemonLocationScreen(
-                    pokemonId = pokemonId,
+                    pokemonId = id,
                     source = source,
                     onBack = { navController.popBackStack() },
-                    onOpenMap = source?.let { gameSource ->
-                        { openRegionMap(pokemonId, gameSource) }
-                    }
+                    onOpenMap = source?.let { gameSource -> { openRegionMap(id, gameSource) } }
                 )
             }
             composable(
-                route = "regionMap/{id}?source={source}",
+                "regionMap/{id}?source={source}",
                 arguments = listOf(
                     navArgument("id") { type = NavType.IntType },
-                    navArgument("source") {
-                        type = NavType.StringType
-                        nullable = false
-                    }
+                    navArgument("source") { type = NavType.StringType; nullable = false }
                 )
             ) { entry ->
-                val pokemonId = entry.arguments?.getInt("id") ?: -1
+                val id = entry.arguments?.getInt("id") ?: -1
                 val source = entry.arguments?.getString("source")?.let(Uri::decode).orEmpty()
-                PokemonRegionMapScreen(
-                    pokemonId = pokemonId,
-                    source = source,
-                    onBack = { navController.popBackStack() }
-                )
+                PokemonRegionMapScreen(id, source) { navController.popBackStack() }
             }
-            composable("teams") {
-                TeamBuilderScreen(onPokemonClick = { id -> openPokemon(id) })
-            }
-            composable("boxes") {
-                BoxesScreen(onPokemonClick = { id, source -> openPokemon(id, source) })
-            }
+            composable("teams") { TeamBuilderScreen(onPokemonClick = { openPokemon(it) }) }
+            composable("boxes") { BoxesScreen(onPokemonClick = { id, source -> openPokemon(id, source) }) }
         }
     }
 }
