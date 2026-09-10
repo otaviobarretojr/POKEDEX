@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.PokeApiService
 import com.otaviobarreto.pokedex.data.PokemonRepository
 import kotlinx.coroutines.Dispatchers
@@ -220,11 +221,12 @@ private data class DetailBundle(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PokemonDetailScreen(id: Int, onBack: () -> Unit) {
+fun PokemonDetailScreen(id: Int, source: String? = null, onBack: () -> Unit) {
     var bundle by remember(id) { mutableStateOf<DetailBundle?>(null) }
     var error by remember(id) { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var selectedTab by remember(id) { mutableIntStateOf(0) }
+    val gameContext = remember(source) { GameContext.fromSource(source) }
 
     LaunchedEffect(id, reload) {
         error = null
@@ -257,6 +259,7 @@ fun PokemonDetailScreen(id: Int, onBack: () -> Unit) {
             bundle != null -> PokemonDetailContent(
                 bundle = bundle!!,
                 selectedTab = selectedTab,
+                gameContext = gameContext,
                 onTabSelected = { selectedTab = it },
                 modifier = Modifier.padding(innerPadding)
             )
@@ -286,6 +289,7 @@ fun PokemonDetailScreen(id: Int, onBack: () -> Unit) {
 private fun PokemonDetailContent(
     bundle: DetailBundle,
     selectedTab: Int,
+    gameContext: GameContext?,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -299,8 +303,16 @@ private fun PokemonDetailContent(
         Text(
             "#${bundle.pokemon.id.toString().padStart(4, '0')}  •  ${bundle.pokemon.types.joinToString(" / ")}",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp)
         )
+        gameContext?.let {
+            Text(
+                "Contexto: ${it.label}",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
+            )
+        }
         ScrollableTabRow(selectedTabIndex = selectedTab, edgePadding = 12.dp) {
             tabs.forEachIndexed { index, title ->
                 Tab(selected = selectedTab == index, onClick = { onTabSelected(index) }, text = { Text(title) })
@@ -311,7 +323,7 @@ private fun PokemonDetailContent(
             1 -> StatsTab(bundle.pokemon.stats)
             2 -> EvolutionTab(bundle.evolutions)
             3 -> MovesTab(bundle.pokemon.moves)
-            else -> LocationTab(bundle.encounters)
+            else -> LocationTab(bundle.encounters, gameContext)
         }
     }
 }
@@ -405,13 +417,40 @@ private fun MovesTab(moves: List<PokeApiService.RemoteMove>) {
 }
 
 @Composable
-private fun LocationTab(encounters: List<PokeApiService.EncounterLocation>) {
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        item { SectionTitle("Onde encontrar") }
-        if (encounters.isEmpty()) {
-            item { Text("Não há encontros selvagens registrados para este Pokémon.") }
+private fun LocationTab(
+    encounters: List<PokeApiService.EncounterLocation>,
+    gameContext: GameContext?
+) {
+    val filtered = remember(encounters, gameContext) {
+        if (gameContext == null) {
+            encounters
         } else {
-            items(encounters, key = { it.location }) { encounter ->
+            encounters.mapNotNull { encounter ->
+                val versions = encounter.versions.filter(gameContext::matchesVersion)
+                if (versions.isEmpty()) null else encounter.copy(versions = versions)
+            }
+        }
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item {
+            SectionTitle(
+                if (gameContext == null) "Onde encontrar"
+                else "Onde encontrar em ${gameContext.label}"
+            )
+        }
+        if (filtered.isEmpty()) {
+            item {
+                Text(
+                    if (gameContext == null) {
+                        "Não há encontros selvagens registrados para este Pokémon."
+                    } else {
+                        "A fonte atual não possui localização específica deste Pokémon para ${gameContext.label}."
+                    }
+                )
+            }
+        } else {
+            items(filtered, key = { it.location }) { encounter ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(encounter.location, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
