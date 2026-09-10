@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -62,6 +63,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.CommunityAreaEncounter
+import com.otaviobarreto.pokedex.data.CommunityEncounterIndex
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokeApiService
@@ -69,8 +72,14 @@ import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import com.otaviobarreto.pokedex.data.RegionMapZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.text.Normalizer
 
 private enum class MapCaptureFilter { ALL, CAPTURED, MISSING }
+
+private data class ZonePokemon(
+    val pokemon: GameDexService.GameDexEntry,
+    val areas: List<CommunityAreaEncounter>
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,6 +142,11 @@ fun RegionExplorerV2Screen(
         }.take(8)
     }
 
+    val reverseZones = remember(context, zones) {
+        val region = context?.regionLabel.orEmpty()
+        zones.filter { CommunityEncounterIndex.entriesForZone(region, it).isNotEmpty() }.map { it.id }.toSet()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -150,6 +164,11 @@ fun RegionExplorerV2Screen(
                     Column(Modifier.padding(16.dp)) {
                         Text(context?.regionLabel ?: "Região", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                         Text("$regionCaptured de ${dex.size} capturados")
+                        Text(
+                            "Toque numa zona para ver Pokémon da área, ou pesquise uma espécie para destacar onde encontrá-la.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                         Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             AssistChip({ filter = MapCaptureFilter.ALL }, { Text("Todos") }, leadingIcon = if (filter == MapCaptureFilter.ALL) ({ Text("✓") }) else null)
                             AssistChip({ filter = MapCaptureFilter.CAPTURED }, { Text("Capturados") }, leadingIcon = if (filter == MapCaptureFilter.CAPTURED) ({ Text("✓") }) else null)
@@ -189,7 +208,7 @@ fun RegionExplorerV2Screen(
                                 Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                                     Text(pokemon.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                     Text(if (pokemon.nationalId in captured) "Capturado" else "Faltando", style = MaterialTheme.typography.labelMedium)
-                                    Text(if (loadingEncounters) "Carregando encontros…" else if (encounters.isEmpty()) "Sem spawn detalhado" else "${encounters.size} áreas registradas", style = MaterialTheme.typography.bodySmall)
+                                    Text(if (loadingEncounters) "Carregando encontros…" else if (encounters.isEmpty()) "Sem spawn detalhado na PokéAPI" else "${encounters.size} áreas registradas", style = MaterialTheme.typography.bodySmall)
                                 }
                                 FilledTonalButton(onClick = { onPokemonClick(pokemon.nationalId, source) }) { Text("Ficha") }
                             }
@@ -202,6 +221,7 @@ fun RegionExplorerV2Screen(
                         regionLabel = context?.regionLabel ?: "Região",
                         zones = zones,
                         encounters = encounters,
+                        reverseZones = reverseZones,
                         onZoneClick = { selectedZone = it }
                     )
                 }
@@ -213,17 +233,89 @@ fun RegionExplorerV2Screen(
     selectedZone?.let { zone ->
         ModalBottomSheet(onDismissRequest = { selectedZone = null }) {
             val matching = encounters.filter { zone.matches(it.location) }
+            val communityAreas = CommunityEncounterIndex.entriesForZone(context?.regionLabel.orEmpty(), zone)
+            val zonePokemon = resolveZonePokemon(dex, communityAreas).filter { item ->
+                when (filter) {
+                    MapCaptureFilter.ALL -> true
+                    MapCaptureFilter.CAPTURED -> item.pokemon.nationalId in captured
+                    MapCaptureFilter.MISSING -> item.pokemon.nationalId !in captured
+                }
+            }
+
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.LocationOn, null)
                     Text(zone.label, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
                 }
                 Spacer(Modifier.height(8.dp))
+
                 if (selectedPokemon == null) {
-                    Text("Selecione um Pokémon para cruzar esta zona com os encontros registrados.")
+                    Text(
+                        "Pokémon da zona · amostra comunitária",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        "Este índice complementa a PokéAPI e não representa uma tabela oficial ou exaustiva de spawns.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 3.dp, bottom = 8.dp)
+                    )
+                    if (communityAreas.isEmpty()) {
+                        Text("Ainda não há índice reverso disponível para esta zona.")
+                    } else if (zonePokemon.isEmpty()) {
+                        Text("Nenhum Pokémon desta zona corresponde ao filtro atual.")
+                    } else {
+                        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 500.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(zonePokemon, key = { it.pokemon.nationalId }) { item ->
+                                val pokemon = item.pokemon
+                                Card(
+                                    Modifier.fillMaxWidth().clickable {
+                                        selectedZone = null
+                                        onPokemonClick(pokemon.nationalId, source)
+                                    }
+                                ) {
+                                    Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        AsyncImage(pokemon.spriteUrl, pokemon.name, Modifier.size(54.dp))
+                                        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                                            Text(pokemon.name, fontWeight = FontWeight.SemiBold)
+                                            Text(
+                                                "#${pokemon.gameNumber.toString().padStart(3, '0')} regional · ${if (pokemon.nationalId in captured) "Capturado" else "Faltando"}",
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                            Text(
+                                                item.areas.joinToString(" • ") { area ->
+                                                    buildString {
+                                                        append(area.area)
+                                                        area.levels?.let { append(" · Nv. $it") }
+                                                    }
+                                                },
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                            item.areas.mapNotNull { it.versionNote }.distinct().takeIf { it.isNotEmpty() }?.let { notes ->
+                                                Text(notes.joinToString(" • "), style = MaterialTheme.typography.labelSmall)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else if (matching.isEmpty()) {
-                    Text("Nenhum encontro do Pokémon selecionado foi associado a esta zona pela fonte atual.")
+                    Text("Nenhum encontro detalhado do Pokémon selecionado foi associado a esta zona pela PokéAPI.")
+                    val fallback = zonePokemon.firstOrNull { it.pokemon.nationalId == selectedPokemon?.nationalId }
+                    if (fallback != null) {
+                        Text(
+                            "O índice comunitário registra esta espécie na zona.",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 10.dp)
+                        )
+                        fallback.areas.forEach { area ->
+                            Text("${area.area}${area.levels?.let { " · Nv. $it" } ?: ""}", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                 } else {
+                    Text("Encontros detalhados · PokéAPI", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     matching.forEach { encounter ->
                         Text(encounter.location, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 10.dp))
                         encounter.details.take(4).forEach { detail ->
@@ -242,11 +334,34 @@ fun RegionExplorerV2Screen(
     }
 }
 
+private fun resolveZonePokemon(
+    dex: List<GameDexService.GameDexEntry>,
+    areas: List<CommunityAreaEncounter>
+): List<ZonePokemon> {
+    val byName = dex.associateBy { normalizePokemonName(it.name) }
+    val grouped = linkedMapOf<Int, Pair<GameDexService.GameDexEntry, MutableList<CommunityAreaEncounter>>>()
+    areas.forEach { area ->
+        area.pokemonNames.forEach { rawName ->
+            val pokemon = byName[normalizePokemonName(rawName)] ?: return@forEach
+            grouped.getOrPut(pokemon.nationalId) { pokemon to mutableListOf() }.second += area
+        }
+    }
+    return grouped.values.map { (pokemon, pokemonAreas) -> ZonePokemon(pokemon, pokemonAreas) }
+        .sortedBy { it.pokemon.gameNumber }
+}
+
+private fun normalizePokemonName(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFD)
+    .replace(Regex("\\p{M}+"), "")
+    .replace("’", "'")
+    .lowercase()
+    .replace(Regex("[^a-z0-9]+"), "")
+
 @Composable
 private fun RefinedRegionMap(
     regionLabel: String,
     zones: List<RegionMapZone>,
     encounters: List<PokeApiService.EncounterLocation>,
+    reverseZones: Set<String>,
     onZoneClick: (RegionMapZone) -> Unit
 ) {
     var scale by remember(regionLabel) { mutableFloatStateOf(1f) }
@@ -278,24 +393,39 @@ private fun RefinedRegionMap(
                     Text(regionLabel, Modifier.align(Alignment.Center), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     zones.forEach { zone ->
                         val highlighted = encounters.any { zone.matches(it.location) }
-                        val marker = if (highlighted) 34.dp else 26.dp
+                        val indexed = zone.id in reverseZones
+                        val marker = if (highlighted) 34.dp else if (indexed) 30.dp else 26.dp
                         val x = mapWidth * zone.x - marker / 2
                         val y = mapHeight * zone.y - marker / 2
                         Surface(
                             modifier = Modifier.offset(x, y).size(marker).clickable { onZoneClick(zone) },
                             shape = CircleShape,
-                            color = if (highlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                            shadowElevation = if (highlighted) 6.dp else 2.dp
+                            color = when {
+                                highlighted -> MaterialTheme.colorScheme.primary
+                                indexed -> MaterialTheme.colorScheme.secondaryContainer
+                                else -> MaterialTheme.colorScheme.surface
+                            },
+                            shadowElevation = if (highlighted || indexed) 6.dp else 2.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(if (highlighted) Icons.Default.CatchingPokemon else Icons.Default.LocationOn, zone.label, Modifier.size(if (highlighted) 18.dp else 14.dp), tint = if (highlighted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+                                Icon(
+                                    if (highlighted) Icons.Default.CatchingPokemon else Icons.Default.LocationOn,
+                                    zone.label,
+                                    Modifier.size(if (highlighted) 18.dp else 14.dp),
+                                    tint = if (highlighted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
                 }
             }
         }
-        Text("Toque em um ponto para abrir os detalhes da zona.", Modifier.fillMaxWidth().padding(top = 8.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
+        Text(
+            "Pontos suaves possuem índice por área. Pontos destacados indicam o Pokémon pesquisado.",
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }
 
