@@ -15,11 +15,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +45,7 @@ import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
+import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -52,7 +55,8 @@ fun GameDexScreen(
     source: String,
     onBack: () -> Unit,
     onPokemonClick: (Int, String) -> Unit,
-    onLocationClick: (Int, String) -> Unit
+    onLocationClick: (Int, String) -> Unit,
+    onOpenRegionExplorer: (String) -> Unit
 ) {
     val context = remember(source) { GameContext.fromSource(source) }
     var entries by remember(source) { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
@@ -93,6 +97,7 @@ fun GameDexScreen(
         val statusOk = !onlyMissing || entry.nationalId !in captured
         queryOk && statusOk
     }
+    val hasRegionalMap = RegionMapCatalog.zones(context).isNotEmpty()
 
     Scaffold(
         topBar = {
@@ -127,12 +132,26 @@ fun GameDexScreen(
 
             else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(
-                        context?.regionLabel ?: "Pokédex regional",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(context?.label ?: source, style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                context?.regionLabel ?: "Pokédex regional",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(context?.label ?: source, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        if (hasRegionalMap) {
+                            FilledTonalButton(onClick = { onOpenRegionExplorer(source) }) {
+                                Icon(Icons.Default.Map, contentDescription = null)
+                                Text("Mapa", modifier = Modifier.padding(start = 6.dp))
+                            }
+                        }
+                    }
                     Text("$capturedInGame de ${entries.size} capturados nesta Pokédex")
                     LinearProgressIndicator(
                         progress = { progress },
