@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
@@ -32,11 +33,20 @@ import kotlinx.coroutines.withContext
 private val QBbg=Color(0xFFFBF8FF);private val QBsurface=Color(0xFFF1EEFA);private val QBink=Color(0xFF171522);private val QBmuted=Color(0xFF777286);private val QBmint=Color(0xFF67D7CB)
 private data class QBRegion(val label:String,val source:String,val badge:String)
 private data class QBGame(val label:String,val accent:Color,val regions:List<QBRegion>)
-private val qbGames=listOf(
- QBGame("Scarlet / Violet",Color(0xFFB54C5D),listOf(QBRegion("Paldea","Scarlet / Violet · Paldea","Jogo base"),QBRegion("Kitakami","Scarlet / Violet · Kitakami","DLC · The Teal Mask"),QBRegion("Blueberry","Scarlet / Violet · Blueberry","DLC · The Indigo Disk"))),
- QBGame("Sword / Shield",Color(0xFF35A9C7),listOf(QBRegion("Galar","Sword / Shield · Galar","Jogo base"))),
- QBGame("Let's Go Pikachu / Eevee",Color(0xFFE0A929),listOf(QBRegion("Kanto","Let's Go Pikachu / Eevee · Kanto","Jogo base"))),
- QBGame("Legends Arceus",Color(0xFF527F7C),listOf(QBRegion("Hisui","Legends Arceus · Hisui","Jogo base"))))
+private fun qbAccent(game:String):Color=when(game){
+ "Scarlet / Violet"->Color(0xFFB54C5D)
+ "Sword / Shield"->Color(0xFF35A9C7)
+ "Let's Go Pikachu / Eevee"->Color(0xFFE0A929)
+ "Legends Arceus"->Color(0xFF527F7C)
+ "Brilliant Diamond / Shining Pearl"->Color(0xFF5968C7)
+ "Black / White"->Color(0xFF4D4D55)
+ "X / Y"->Color(0xFF486BC5)
+ "Omega Ruby / Alpha Sapphire"->Color(0xFFC95757)
+ else->Color(0xFF5B55E7)
+}
+private val qbGames=AppGameCatalog.games.map{game->
+ QBGame(game.label,qbAccent(game.label),game.regions.map{QBRegion(it.label,it.source,it.subtitle)})
+}
 
 private fun numberedBox(game:String,page:Int)="$game · Box ${page+1}"
 
