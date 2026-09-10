@@ -6,6 +6,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 object PokeApiService {
+    const val MAX_NATIONAL_DEX_ID = 1025
     private const val API = "https://pokeapi.co/api/v2"
     data class DexIndexEntry(val id:Int,val name:String,val generation:Int){val spriteUrl:String get()="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"}
     data class MoveLearnDetail(val versionGroup:String,val method:String,val level:Int)
@@ -16,8 +17,8 @@ object PokeApiService {
     data class EncounterDetail(val version:String,val method:String,val minLevel:Int,val maxLevel:Int,val chance:Int,val conditions:List<String>)
     data class EncounterLocation(val location:String,val versions:List<String>,val details:List<EncounterDetail> = emptyList())
 
-    fun loadNationalDex(limit:Int=1025):List<DexIndexEntry>{val json=getJson("$API/pokemon?limit=$limit&offset=0");val results=json.getJSONArray("results");return buildList(results.length()){for(i in 0 until results.length()){val item=results.getJSONObject(i);val id=idFromUrl(item.getString("url"));if(id in 1..limit)add(DexIndexEntry(id,item.getString("name").toDisplayName(),generationForNationalDexId(id)))}}.sortedBy{it.id}}
-    fun loadPokemonIdsForType(type:String):Set<Int>{val json=getJson("$API/type/${type.lowercase()}");val array=json.getJSONArray("pokemon");return buildSet{for(i in 0 until array.length()){val id=idFromUrl(array.getJSONObject(i).getJSONObject("pokemon").getString("url"));if(id in 1..1025)add(id)}}}
+    fun loadNationalDex(limit:Int=MAX_NATIONAL_DEX_ID):List<DexIndexEntry>{val json=getJson("$API/pokemon?limit=$limit&offset=0");val results=json.getJSONArray("results");return buildList(results.length()){for(i in 0 until results.length()){val item=results.getJSONObject(i);val id=idFromUrl(item.getString("url"));if(id in 1..limit)add(DexIndexEntry(id,item.getString("name").toDisplayName(),generationForNationalDexId(id)))}}.sortedBy{it.id}}
+    fun loadPokemonIdsForType(type:String):Set<Int>{val json=getJson("$API/type/${type.lowercase()}");val array=json.getJSONArray("pokemon");return buildSet{for(i in 0 until array.length()){val id=idFromUrl(array.getJSONObject(i).getJSONObject("pokemon").getString("url"));if(id in 1..MAX_NATIONAL_DEX_ID)add(id)}}}
 
     fun loadPokemon(id:Int):RemotePokemonDetail{
         val json=getJson("$API/pokemon/$id");val typesJson=json.getJSONArray("types");val types=buildList(typesJson.length()){for(i in 0 until typesJson.length())add(typesJson.getJSONObject(i).getJSONObject("type").getString("name").toDisplayName())}
