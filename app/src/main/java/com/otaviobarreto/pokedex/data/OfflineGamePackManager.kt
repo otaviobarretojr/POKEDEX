@@ -46,26 +46,21 @@ object OfflineGamePackManager {
         val total = ids.size.coerceAtLeast(1)
         val semaphore = Semaphore(permits = 4)
         var completed = 0
+        var failures = 0
         val lock = Any()
 
         coroutineScope {
             ids.map { id ->
                 async {
                     semaphore.withPermit {
-                        runCatching {
-                            val species = PokedexDataStore.species(id)
-                            PokedexDataStore.pokemon(id)
-                            PokedexDataStore.encounters(id)
-                            species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it) }
-                        }
-                        val done = synchronized(lock) { ++completed }
+                        val ok = runCatching {\n                            val species = PokedexDataStore.species(id)\n                            PokedexDataStore.pokemon(id)\n                            PokedexDataStore.encounters(id)\n                            species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it) }\n                        }.isSuccess\n                        val done = synchronized(lock) {\n                            if (!ok) failures++\n                            ++completed\n                        }
                         onProgress(Progress(done, total, "Salvando dados dos Pokémon"))
                     }
                 }
             }.awaitAll()
         }
 
-        prefs().edit()
+        if (failures > 0) error("Falha ao salvar " + failures + " de " + ids.size + " Pokémon. Tente novamente.")\n\n        prefs().edit()
             .putBoolean(key(game.label, "ready"), true)
             .putLong(key(game.label, "at"), System.currentTimeMillis())
             .putInt(key(game.label, "count"), ids.size)
