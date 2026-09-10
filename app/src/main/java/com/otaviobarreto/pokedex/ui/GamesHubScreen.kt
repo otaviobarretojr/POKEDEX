@@ -44,7 +44,14 @@ private val gameHubEntries=listOf(
     )),
     GameHubEntry("Legends Arceus","Hisui",listOf(GameHubRegion("Legends Arceus · Hisui","Hisui","Pokédex regional"))),
     GameHubEntry("Let's Go Pikachu / Eevee","Kanto",listOf(GameHubRegion("Let's Go Pikachu / Eevee · Kanto","Kanto","Pokédex regional"))),
-    GameHubEntry("Brilliant Diamond / Shining Pearl","Sinnoh",listOf(GameHubRegion("Brilliant Diamond / Shining Pearl · Sinnoh","Sinnoh","Pokédex regional")))
+    GameHubEntry("Brilliant Diamond / Shining Pearl","Sinnoh",listOf(GameHubRegion("Brilliant Diamond / Shining Pearl · Sinnoh","Sinnoh","Pokédex regional"))),
+    GameHubEntry("Black / White","Unova",listOf(GameHubRegion("Black / White · Unova","Unova","Pokédex regional"))),
+    GameHubEntry("X / Y","Kalos",listOf(
+        GameHubRegion("X / Y · Kalos Central","Central Kalos","Pokédex Central"),
+        GameHubRegion("X / Y · Kalos Coastal","Coastal Kalos","Pokédex Costeira"),
+        GameHubRegion("X / Y · Kalos Mountain","Mountain Kalos","Pokédex Montanhosa")
+    )),
+    GameHubEntry("Omega Ruby / Alpha Sapphire","Hoenn",listOf(GameHubRegion("Omega Ruby / Alpha Sapphire · Hoenn","Hoenn","Pokédex regional")))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
