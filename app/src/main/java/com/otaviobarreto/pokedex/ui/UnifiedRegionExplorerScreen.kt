@@ -4,10 +4,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otaviobarreto.pokedex.data.GameContext
 
+private enum class RegionExplorerEngine {
+    PALDEA,
+    RECREATED_DLC,
+    LEGACY_REGIONAL
+}
+
+private fun resolveRegionEngine(context: GameContext?): RegionExplorerEngine =
+    when (context?.regionLabel) {
+        "Paldea" -> RegionExplorerEngine.PALDEA
+        "Kitakami", "Blueberry" -> RegionExplorerEngine.RECREATED_DLC
+        else -> RegionExplorerEngine.LEGACY_REGIONAL
+    }
+
 /**
- * Single routing point for regional map implementations.
- * Legacy engines remain available while regions are migrated, but callers
- * no longer need to know which generation of the explorer serves a region.
+ * Single public entry point for every regional explorer.
+ * The concrete engines can be migrated independently without changing navigation.
  */
 @Composable
 fun UnifiedRegionExplorerScreen(
@@ -16,9 +28,16 @@ fun UnifiedRegionExplorerScreen(
     onPokemonClick: (Int, String) -> Unit
 ) {
     val context = remember(source) { GameContext.fromSource(source) }
-    when (context?.regionLabel) {
-        "Paldea" -> RegionExplorerV3Screen(source, onBack, onPokemonClick)
-        "Kitakami", "Blueberry" -> RegionExplorerV4Screen(source, onBack, onPokemonClick)
-        else -> RegionExplorerV2Screen(source, onBack, onPokemonClick)
+    val engine = remember(context) { resolveRegionEngine(context) }
+
+    when (engine) {
+        RegionExplorerEngine.PALDEA ->
+            RegionExplorerV3Screen(source, onBack, onPokemonClick)
+
+        RegionExplorerEngine.RECREATED_DLC ->
+            RegionExplorerV4Screen(source, onBack, onPokemonClick)
+
+        RegionExplorerEngine.LEGACY_REGIONAL ->
+            RegionExplorerV2Screen(source, onBack, onPokemonClick)
     }
 }
