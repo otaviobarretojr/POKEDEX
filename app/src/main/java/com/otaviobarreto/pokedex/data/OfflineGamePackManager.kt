@@ -139,10 +139,11 @@ object OfflineGamePackManager {
         onProgress(Progress(0, 1, "Preparando ${game.label}"))
         val regionalDexes = contexts.mapIndexed { index, ctx ->
             onProgress(Progress(index, contexts.size.coerceAtLeast(1), "Baixando ${ctx.regionLabel}"))
-            GameDexService.loadGameDex(ctx)
+            GameDexService.loadGameDex(ctx).also { PersistentApiCache.pin(GameDexService.cacheUrl(ctx)) }
         }
 
         val ids = regionalDexes.flatten().map { it.nationalId }.distinct().sorted()
+        prefs().edit().putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet()).apply()
         val total = ids.size.coerceAtLeast(1)
         val completedKey = key(game.label, "completed_ids")
         val alreadyCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
