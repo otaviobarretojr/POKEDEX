@@ -1,6 +1,6 @@
 package com.otaviobarreto.pokedex.data
 
-enum class JourneyVisualRole { GYM_LEADER, TEAM_STAR_BOSS, TITAN, STORY, TOURNAMENT, RAID, EXPLORATION }
+enum class JourneyVisualRole { GYM_LEADER, TEAM_STAR_BOSS, TITAN, STORY, TOURNAMENT, RAID, EXPLORATION, DLC_CHARACTER, LEGENDARY, EPILOGUE }
 
 data class JourneyVisualAsset(
     val stepId:String,
@@ -16,6 +16,7 @@ object JourneyVisualAssetCatalog {
 
     private const val OFFICIAL="https://www.pokemon.co.jp/ex/sv/ja/assets/img/character/"
     private const val ART="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"
+    private const val DLC_OFFICIAL="https://www.pokemon.co.jp/ex/sv_dlc/assets/img/character/"
 
     private val assets=mapOf(
         "sv-01" to JourneyVisualAsset("sv-01",JourneyVisualRole.GYM_LEADER,"Katy",OFFICIAL+"chara_katy.png","Bug Gym"),
@@ -43,6 +44,26 @@ object JourneyVisualAssetCatalog {
         "sv-pg-05" to JourneyVisualAsset("sv-pg-05",JourneyVisualRole.GYM_LEADER,"Gym Leaders",OFFICIAL+"chara_aoki.png","8 Gym Rematches"),
         "sv-pg-06" to JourneyVisualAsset("sv-pg-06",JourneyVisualRole.TOURNAMENT,"Academy Ace Tournament",OFFICIAL+"chara_nemo.png","Academy Tournament"),
         "sv-pg-07" to JourneyVisualAsset("sv-pg-07",JourneyVisualRole.RAID,"Black Crystal Tera Raid",ART+"1000.png","6★ Tera Raids"),
-        "sv-pg-08" to JourneyVisualAsset("sv-pg-08",JourneyVisualRole.EXPLORATION,"Treasures of Ruin",ART+"1004.png","Paldea Endgame")
+        "sv-pg-08" to JourneyVisualAsset("sv-pg-08",JourneyVisualRole.EXPLORATION,"Treasures of Ruin",ART+"1004.png","Paldea Endgame"),
+        "sv-dlc-01" to JourneyVisualAsset("sv-dlc-01",JourneyVisualRole.DLC_CHARACTER,"Carmine",DLC_OFFICIAL+"230228_02.png","The Teal Mask"),
+        "sv-dlc-02" to JourneyVisualAsset("sv-dlc-02",JourneyVisualRole.LEGENDARY,"Ogerpon",ART+"1017.png","Festival of Masks"),
+        "sv-dlc-03" to JourneyVisualAsset("sv-dlc-03",JourneyVisualRole.DLC_CHARACTER,"Kieran",DLC_OFFICIAL+"230228_03.png","Crystal Pool"),
+        "sv-dlc-04" to JourneyVisualAsset("sv-dlc-04",JourneyVisualRole.DLC_CHARACTER,"Kieran",DLC_OFFICIAL+"230228_03.png","Loyalty Plaza"),
+        "sv-dlc-05" to JourneyVisualAsset("sv-dlc-05",JourneyVisualRole.LEGENDARY,"The Loyal Three",ART+"1014.png","Okidogi · Munkidori · Fezandipiti"),
+        "sv-dlc-06" to JourneyVisualAsset("sv-dlc-06",JourneyVisualRole.LEGENDARY,"Ogerpon",ART+"1017.png","Final de The Teal Mask"),
+        "sv-dlc-07" to JourneyVisualAsset("sv-dlc-07",JourneyVisualRole.DLC_CHARACTER,"Perrin",DLC_OFFICIAL+"230808_05.png","Bloodmoon Ursaluna"),
+        "sv-dlc-08" to JourneyVisualAsset("sv-dlc-08",JourneyVisualRole.DLC_CHARACTER,"Briar",DLC_OFFICIAL+"230808_01.png","Blueberry Academy"),
+        "sv-dlc-09" to JourneyVisualAsset("sv-dlc-09",JourneyVisualRole.DLC_CHARACTER,"Crispin",DLC_OFFICIAL+"230808_02.png?v=230813","BB Elite Four"),
+        "sv-dlc-10" to JourneyVisualAsset("sv-dlc-10",JourneyVisualRole.DLC_CHARACTER,"Amarys",DLC_OFFICIAL+"230808_03.png","BB Elite Four"),
+        "sv-dlc-11" to JourneyVisualAsset("sv-dlc-11",JourneyVisualRole.DLC_CHARACTER,"Lacey",DLC_OFFICIAL+"230622_02.png","BB Elite Four"),
+        "sv-dlc-12" to JourneyVisualAsset("sv-dlc-12",JourneyVisualRole.DLC_CHARACTER,"Drayton",DLC_OFFICIAL+"230808_04.png","BB Elite Four"),
+        "sv-dlc-13" to JourneyVisualAsset("sv-dlc-13",JourneyVisualRole.DLC_CHARACTER,"Kieran",DLC_OFFICIAL+"230228_03.png","BB League Champion"),
+        "sv-dlc-14" to JourneyVisualAsset("sv-dlc-14",JourneyVisualRole.DLC_CHARACTER,"Briar",DLC_OFFICIAL+"230808_01.png","Area Zero Underdepths"),
+        "sv-dlc-15" to JourneyVisualAsset("sv-dlc-15",JourneyVisualRole.LEGENDARY,"Terapagos",ART+"1024.png","Final de The Indigo Disk"),
+        "sv-dlc-16" to JourneyVisualAsset("sv-dlc-16",JourneyVisualRole.EXPLORATION,"Blueberry Endgame",ART+"1024.png","League Club · Lendários"),
+        "sv-epi-01" to JourneyVisualAsset("sv-epi-01",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Mochi Mayhem"),
+        "sv-epi-02" to JourneyVisualAsset("sv-epi-02",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Mochi Mayhem"),
+        "sv-epi-03" to JourneyVisualAsset("sv-epi-03",JourneyVisualRole.DLC_CHARACTER,"Nemona",OFFICIAL+"chara_nemo.png","Mochi Mayhem"),
+        "sv-epi-04" to JourneyVisualAsset("sv-epi-04",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Final do epílogo")
     )
 }
