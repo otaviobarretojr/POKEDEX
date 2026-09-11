@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.8.0"' not in workflow or "versionCode = 680" not in workflow:
-    violations.append("CI v6.8.0 version stamping missing")
+if 'versionName = "6.9.0"' not in workflow or "versionCode = 690" not in workflow:
+    violations.append("CI v6.9.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -474,7 +474,7 @@ for required in ("adjustedSlots", "CollectionStore.capturedIds", "adjustSlots"):
 for required in ("TIME DINÂMICO DA JORNADA", "displaySlots", "JourneyDynamicTeamCatalog.suggestion"):
     if required not in team_guide:
         violations.append(f"Dynamic team guide UI missing {required}")
-if "Campanha + pós-jogo · ordem recomendada · sem level scaling" not in journey_catalog:
+if "Campanha + pós-jogo + DLC · rota completa" not in journey_catalog:
     violations.append("Scarlet/Violet curated route annotation missing")
 
 if violations:
@@ -517,6 +517,31 @@ for required in ("sv-pg-01","sv-pg-04","sv-pg-07","sv-pg-08"):
         violations.append(f"Post-game preparation missing {required}")
 if visual_catalog.count("JourneyVisualAsset(") < 27:
     violations.append("Journey visual catalog does not cover campaign + 8 post-game objectives")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.9.0 Hidden Treasure + Mochi Mayhem guards
+for required in ("sv-dlc-01","sv-dlc-07","sv-dlc-08","sv-dlc-15","sv-dlc-16","sv-epi-01","sv-epi-04","DLC","EPILOGUE"):
+    if required not in journey_catalog:
+        violations.append(f"DLC Journey catalog missing {required}")
+for required in ("Carmine","Kieran","Crispin","Amarys","Lacey","Drayton","Terapagos","Pecharunt","230228_02.png","230622_02.png","230808_04.png"):
+    if required not in visual_catalog:
+        violations.append(f"DLC visual coverage missing {required}")
+for required in ("sv-dlc-05","sv-dlc-06","sv-dlc-13","sv-dlc-15","sv-epi-04"):
+    if required not in objective_catalog:
+        violations.append(f"DLC objective detail missing {required}")
+    if required not in prep:
+        violations.append(f"DLC preparation missing {required}")
+for required in ("THE TEAL MASK","THE INDIGO DISK","MOCHI MAYHEM"):
+    if required not in journey:
+        violations.append(f"Journey section header missing {required}")
+if "The Teal Mask" not in smart or "The Indigo Disk" not in smart or "Mochi Mayhem" not in smart:
+    violations.append("Smart progress is not DLC-aware")
 
 if violations:
     print("Source verification failed:")
