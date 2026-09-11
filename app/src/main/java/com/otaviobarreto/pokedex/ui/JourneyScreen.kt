@@ -395,12 +395,14 @@ private fun JourneyStepCard(
         JourneyChallengeKind.TITAN->Icons.Default.Landscape
         JourneyChallengeKind.STAR->Icons.Default.Stars
         JourneyChallengeKind.STORY->Icons.Default.AutoStories
+        JourneyChallengeKind.POSTGAME->Icons.Default.AutoAwesome
     }
     val kindColor=when(step.kind){
         JourneyChallengeKind.GYM->MaterialTheme.colorScheme.primaryContainer
         JourneyChallengeKind.TITAN->MaterialTheme.colorScheme.secondaryContainer
         JourneyChallengeKind.STAR->MaterialTheme.colorScheme.tertiaryContainer
         JourneyChallengeKind.STORY->MaterialTheme.colorScheme.surfaceVariant
+        JourneyChallengeKind.POSTGAME->MaterialTheme.colorScheme.tertiaryContainer
     }
 
     Row(Modifier.fillMaxWidth()){
