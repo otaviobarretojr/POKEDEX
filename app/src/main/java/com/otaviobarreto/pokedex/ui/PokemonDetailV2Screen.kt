@@ -124,16 +124,86 @@ fun PokemonDetailV2Screen(
     }
 }
 
-@Composable private fun DetailV2Content(b:DetailV2Bundle,tab:Int,setTab:(Int)->Unit,context:GameContext?,back:()->Unit,openLocation:(()->Unit)?,openRef:((String,String)->Unit)?,openPokemon:((Int)->Unit)?){val primaryType=b.pokemon.types.firstOrNull().orEmpty();val accent=typeColor(primaryType);val boxes=CollectionStore.boxesForPokemon(b.pokemon.id);Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){HeroCard(b,context,accent,boxes,back);DetailTabs(tab,setTab);when(tab){0->InfoTab(b,accent,context,openRef);1->V2Stats(b.pokemon.stats);2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon);3->V2Moves(b.pokemon.moves,context,openRef);else->V2Locations(b.encounters,context,openLocation)}}}
+@Composable private fun DetailV2Content(
+    b:DetailV2Bundle,
+    tab:Int,
+    setTab:(Int)->Unit,
+    context:GameContext?,
+    back:()->Unit,
+    openLocation:(()->Unit)?,
+    openRef:((String,String)->Unit)?,
+    openPokemon:((Int)->Unit)?
+){
+    val primaryType=b.pokemon.types.firstOrNull().orEmpty()
+    val accent=typeColor(primaryType)
+    val legacyBoxes=CollectionStore.boxesForPokemon(b.pokemon.id)
+    val saveLocation=remember(b.pokemon.id,context,CollectionStore.capturedIds,legacyBoxes){
+        resolveSaveLocation(b.pokemon.id,context,legacyBoxes)
+    }
+    Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
+        HeroCard(b,context,accent,saveLocation,back)
+        DetailTabs(tab,setTab)
+        when(tab){
+            0->InfoTab(b,accent,context,openRef)
+            1->V2Stats(b.pokemon.stats)
+            2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
+            3->V2Moves(b.pokemon.moves,context,openRef)
+            else->V2Locations(b.encounters,context,openLocation)
+        }
+    }
+}
 
-@Composable private fun HeroCard(b:DetailV2Bundle,context:GameContext?,accent:Color,boxes:List<String>,back:()->Unit){val savedBox=boxes.firstOrNull();val savedGame=savedBox?.let(::gameFromBox)?:context?.label;val savedAccent=gameColor(savedGame);val inCollection=savedBox!=null;Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(accent.copy(alpha=.16f),Color(0xFFF8FBFF),Color.White)))){repeat(5){i->Box(Modifier.offset(x=(45+i*62).dp,y=(42+i*48).dp).size((30+i*6).dp).alpha(.08f).background(accent,CircleShape))};IconButton(back,Modifier.padding(16.dp).size(46.dp).background(Color.White.copy(alpha=.82f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")};Column(Modifier.align(Alignment.TopEnd).padding(top=14.dp,end=16.dp).widthIn(min=72.dp,max=132.dp),horizontalAlignment=Alignment.CenterHorizontally){Surface(shape=RoundedCornerShape(16.dp),color=Color.White.copy(alpha=.92f),modifier=Modifier.size(56.dp)){Box(contentAlignment=Alignment.Center){Icon(Icons.Default.CatchingPokemon,null,tint=savedAccent,modifier=Modifier.size(37.dp).alpha(if(inCollection)1f else .20f))}};Text(if(inCollection)savedGame?:"Coleção" else "Não salvo",fontSize=10.sp,fontWeight=FontWeight.Bold,color=if(inCollection)savedAccent else Color(0xFF9AA0AE),modifier=Modifier.padding(top=5.dp),maxLines=1,overflow=TextOverflow.Ellipsis);Text(if(inCollection)compactBoxName(savedBox!!) else "Segure na Box",fontSize=9.sp,color=if(inCollection)Color(0xFF50566A) else Color(0xFFA4A8B2),maxLines=1,overflow=TextOverflow.Ellipsis);Box(Modifier.padding(top=4.dp).width(54.dp).height(4.dp).background(if(inCollection)savedAccent else Color(0xFFD5D7DE),RoundedCornerShape(50)))};Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=48.dp).width(185.dp)){Text("#${b.pokemon.id.toString().padStart(4,'0')}",fontSize=15.sp,color=Color(0xFF56607A),fontWeight=FontWeight.SemiBold);Text(b.pokemon.name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=Color(0xFF11152A),maxLines=2);Text(b.species.genus?:"Pokémon",fontSize=15.sp,color=Color(0xFF667085),modifier=Modifier.padding(top=4.dp),maxLines=1,overflow=TextOverflow.Ellipsis);Row(Modifier.padding(top=12.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){b.pokemon.types.take(2).forEach{TypeBadge(it)}};Spacer(Modifier.height(14.dp));DetailMetric(Icons.Default.Height,"${String.format("%.1f",b.pokemon.heightDecimeters/10.0)} m");DetailMetric(Icons.Default.MonitorWeight,"${String.format("%.1f",b.pokemon.weightHectograms/10.0)} kg");DetailMetric(Icons.Default.LocationOn,context?.regionLabel?:"Nacional")};Box(Modifier.align(Alignment.CenterEnd).padding(end=20.dp,top=58.dp).size(width=190.dp,height=220.dp),contentAlignment=Alignment.Center){AsyncImage(model=b.pokemon.spriteUrl,contentDescription=b.pokemon.name,contentScale=ContentScale.Fit,modifier=Modifier.fillMaxSize().padding(8.dp))}}}
+private data class DetailSaveLocation(
+    val saved:Boolean,
+    val gameLabel:String?,
+    val boxLabel:String
+)
+
+private fun resolveSaveLocation(
+    pokemonId:Int,
+    context:GameContext?,
+    legacyBoxes:List<String>
+):DetailSaveLocation{
+    if(!CollectionStore.isCaptured(pokemonId)){
+        return DetailSaveLocation(false,null,"Segure na Box")
+    }
+
+    if(context!=null){
+        val regionalDex=GameDexService.cached(context).orEmpty()
+        val index=regionalDex.indexOfFirst{it.nationalId==pokemonId}
+        if(index>=0){
+            return DetailSaveLocation(
+                saved=true,
+                gameLabel=context.label,
+                boxLabel="Box "+(index/30+1)
+            )
+        }
+    }
+
+    val legacy=legacyBoxes.firstOrNull()
+    if(legacy!=null){
+        return DetailSaveLocation(
+            saved=true,
+            gameLabel=gameFromBox(legacy),
+            boxLabel=compactBoxName(legacy)
+        )
+    }
+
+    return DetailSaveLocation(
+        saved=true,
+        gameLabel=context?.label ?: "Living Dex",
+        boxLabel=if(context!=null)"Capturado" else "Living Dex"
+    )
+}
+
+@Composable private fun HeroCard(b:DetailV2Bundle,context:GameContext?,accent:Color,saveLocation:DetailSaveLocation,back:()->Unit){val savedGame=saveLocation.gameLabel;val savedAccent=gameColor(savedGame);val inCollection=saveLocation.saved;Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(accent.copy(alpha=.16f),Color(0xFFF8FBFF),Color.White)))){repeat(5){i->Box(Modifier.offset(x=(45+i*62).dp,y=(42+i*48).dp).size((30+i*6).dp).alpha(.08f).background(accent,CircleShape))};IconButton(back,Modifier.padding(16.dp).size(46.dp).background(Color.White.copy(alpha=.82f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")};Column(Modifier.align(Alignment.TopEnd).padding(top=14.dp,end=16.dp).widthIn(min=72.dp,max=132.dp),horizontalAlignment=Alignment.CenterHorizontally){Surface(shape=RoundedCornerShape(16.dp),color=Color.White.copy(alpha=.92f),modifier=Modifier.size(56.dp)){Box(contentAlignment=Alignment.Center){Icon(Icons.Default.CatchingPokemon,null,tint=savedAccent,modifier=Modifier.size(37.dp).alpha(if(inCollection)1f else .20f))}};Text(if(inCollection)savedGame?:"Coleção" else "Não salvo",fontSize=10.sp,fontWeight=FontWeight.Bold,color=if(inCollection)savedAccent else Color(0xFF9AA0AE),modifier=Modifier.padding(top=5.dp),maxLines=1,overflow=TextOverflow.Ellipsis);Text(saveLocation.boxLabel,fontSize=9.sp,color=if(inCollection)Color(0xFF50566A) else Color(0xFFA4A8B2),maxLines=1,overflow=TextOverflow.Ellipsis);Box(Modifier.padding(top=4.dp).width(54.dp).height(4.dp).background(if(inCollection)savedAccent else Color(0xFFD5D7DE),RoundedCornerShape(50)))};Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=48.dp).width(185.dp)){Text("#${b.pokemon.id.toString().padStart(4,'0')}",fontSize=15.sp,color=Color(0xFF56607A),fontWeight=FontWeight.SemiBold);Text(b.pokemon.name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=Color(0xFF11152A),maxLines=2);Text(b.species.genus?:"Pokémon",fontSize=15.sp,color=Color(0xFF667085),modifier=Modifier.padding(top=4.dp),maxLines=1,overflow=TextOverflow.Ellipsis);Row(Modifier.padding(top=12.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){b.pokemon.types.take(2).forEach{TypeBadge(it)}};Spacer(Modifier.height(14.dp));DetailMetric(Icons.Default.Height,"${String.format("%.1f",b.pokemon.heightDecimeters/10.0)} m");DetailMetric(Icons.Default.MonitorWeight,"${String.format("%.1f",b.pokemon.weightHectograms/10.0)} kg");DetailMetric(Icons.Default.LocationOn,context?.regionLabel?:"Nacional")};Box(Modifier.align(Alignment.CenterEnd).padding(end=20.dp,top=58.dp).size(width=190.dp,height=220.dp),contentAlignment=Alignment.Center){AsyncImage(model=b.pokemon.spriteUrl,contentDescription=b.pokemon.name,contentScale=ContentScale.Fit,modifier=Modifier.fillMaxSize().padding(8.dp))}}}
 
 @Composable private fun TypeBadge(type:String){Surface(shape=RoundedCornerShape(11.dp),color=typeColor(type),modifier=Modifier.wrapContentWidth()){Row(Modifier.padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Eco,null,tint=Color.White,modifier=Modifier.size(15.dp));Spacer(Modifier.width(5.dp));Text(type.uppercase(),color=Color.White,fontWeight=FontWeight.Bold,fontSize=12.sp,maxLines=1)}}}
 private fun gameFromBox(box:String):String=when{box.contains("Scarlet / Violet",true)->"Scarlet / Violet";box.contains("Sword / Shield",true)->"Sword / Shield";box.contains("Let's Go",true)->"Let's Go Pikachu / Eevee";box.contains("Arceus",true)->"Legends Arceus";box.contains("HOME",true)->"Pokémon HOME";else->box.substringBefore(" · Box").substringBefore(" Box ").trim()}
 private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->box.substringAfter("· ").trim();Regex("Box \\d+",RegexOption.IGNORE_CASE).containsMatchIn(box)->Regex("Box \\d+",RegexOption.IGNORE_CASE).find(box)?.value?:box;else->box}
 @Composable private fun DetailMetric(icon:androidx.compose.ui.graphics.vector.ImageVector,text:String){Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(vertical=4.dp)){Icon(icon,null,tint=Color(0xFF243477),modifier=Modifier.size(19.dp));Spacer(Modifier.width(9.dp));Text(text,fontWeight=FontWeight.SemiBold,color=Color(0xFF2F3650),maxLines=1,overflow=TextOverflow.Ellipsis)}}
 @Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit){val tabs=listOf("Info" to Icons.Default.Info,"Stats" to Icons.Default.BarChart,"Evolução" to Icons.Default.AccountTree,"Golpes" to Icons.Default.AutoAwesome,"Localização" to Icons.Default.LocationOn);Surface(color=Color.White,shadowElevation=4.dp){Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)){tabs.forEachIndexed{i,(label,icon)->val active=i==selected;Surface(Modifier.weight(1f).clickable{setSelected(i)},shape=RoundedCornerShape(24.dp),color=if(active)Color(0xFF5B55E7)else Color.Transparent){Column(Modifier.padding(vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(icon,null,tint=if(active)Color.White else Color(0xFF243477),modifier=Modifier.size(18.dp));Text(label,fontSize=10.sp,fontWeight=FontWeight.Bold,color=if(active)Color.White else Color(0xFF1E2A55),maxLines=1)}}}}}}
-@Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,openRef:((String,String)->Unit)?){val captured=CollectionStore.isCaptured(b.pokemon.id);LazyColumn(Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){item{SectionCard("Coleção",Icons.Default.CatchingPokemon){Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(if(captured)"Capturado" else "Ainda não capturado",fontWeight=FontWeight.Bold);Text(if(captured)"Sincronizado com Living Dex e Boxes." else "Marque como capturado para refletir no Living Dex.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))};FilledTonalButton(onClick={CollectionStore.toggleCaptured(b.pokemon.id)}){Text(if(captured)"Remover" else "Capturar")}}}};if(context!=null)item{SectionCard("Contexto do jogo",Icons.Default.SportsEsports){Column(verticalArrangement=Arrangement.spacedBy(6.dp)){Text(context.label,fontWeight=FontWeight.Bold);Text("Região: " + context.regionLabel,style=MaterialTheme.typography.bodyMedium);Text("Golpes e localizações são filtrados para este jogo.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))}}};item{SectionCard("Informações gerais",Icons.Default.Info){Column(verticalArrangement=Arrangement.spacedBy(8.dp)){Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Taxa de captura",b.species.captureRate.toString(),Modifier.weight(1f));InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f));InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))};Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Habitat",b.species.habitat?:"—",Modifier.weight(1f));InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.weight(2f))}}}};item{TypeMatchupCard(b.pokemon.types)};item{SectionCard("Habilidades",Icons.Default.Bolt){Column(verticalArrangement=Arrangement.spacedBy(7.dp)){b.pokemon.abilities.forEach{ability->Surface(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("ability",ability)}else Modifier),shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.08f)){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){Text(ability,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}}}}};item{Spacer(Modifier.height(12.dp))}}}
+@Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,openRef:((String,String)->Unit)?){LazyColumn(Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){if(context!=null)item{SectionCard("Contexto do jogo",Icons.Default.SportsEsports){Column(verticalArrangement=Arrangement.spacedBy(6.dp)){Text(context.label,fontWeight=FontWeight.Bold);Text("Região: " + context.regionLabel,style=MaterialTheme.typography.bodyMedium);Text("Golpes e localizações são filtrados para este jogo.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))}}};item{SectionCard("Informações gerais",Icons.Default.Info){Column(verticalArrangement=Arrangement.spacedBy(8.dp)){Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Taxa de captura",b.species.captureRate.toString(),Modifier.weight(1f));InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f));InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))};Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Habitat",b.species.habitat?:"—",Modifier.weight(1f));InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.weight(2f))}}}};item{TypeMatchupCard(b.pokemon.types)};item{SectionCard("Habilidades",Icons.Default.Bolt){Column(verticalArrangement=Arrangement.spacedBy(7.dp)){b.pokemon.abilities.forEach{ability->Surface(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("ability",ability)}else Modifier),shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.08f)){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){Text(ability,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}}}}};item{Spacer(Modifier.height(12.dp))}}}
 @Composable private fun SectionCard(title:String,icon:androidx.compose.ui.graphics.vector.ImageVector,content:@Composable ColumnScope.()->Unit){Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=Color.White)){Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){Row(verticalAlignment=Alignment.CenterVertically){Icon(icon,null,tint=Color(0xFF263C8C));Spacer(Modifier.width(9.dp));Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)};content()}}}
 @Composable private fun InfoMini(label:String,value:String,modifier:Modifier){Surface(modifier,shape=RoundedCornerShape(14.dp),color=Color(0xFFF4F5FA)){Column(Modifier.padding(11.dp)){Text(label,fontSize=10.sp,color=Color(0xFF6F7890));Text(value,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)}}}
 @Composable private fun V2Stats(s:PokemonStats){val rows=listOf("HP" to s.hp,"Ataque" to s.attack,"Defesa" to s.defense,"Ataque Esp." to s.specialAttack,"Defesa Esp." to s.specialDefense,"Velocidade" to s.speed);LazyColumn(Modifier.fillMaxSize().padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){items(rows){(name,v)->Column{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(name,fontWeight=FontWeight.SemiBold);Text(v.toString())};LinearProgressIndicator(progress={(v/200f).coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=4.dp))}};item{HorizontalDivider();InfoMini("Total",rows.sumOf{it.second}.toString(),Modifier.fillMaxWidth())}}}
