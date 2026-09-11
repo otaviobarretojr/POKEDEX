@@ -12,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -362,16 +361,11 @@ private fun JourneyStepCard(
                     }
                 }
             }
-            Box(
-                Modifier.width(2.dp).height(118.dp)
-                    .alpha(if(done).65f else .22f)
-                    .then(Modifier)
-            ){
-                HorizontalDivider(
-                    modifier=Modifier.fillMaxHeight().width(2.dp),
-                    color=if(done)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                )
-            }
+            VerticalDivider(
+                modifier=Modifier.height(118.dp).alpha(if(done).65f else .22f),
+                thickness=2.dp,
+                color=if(done)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            )
         }
 
         Card(
