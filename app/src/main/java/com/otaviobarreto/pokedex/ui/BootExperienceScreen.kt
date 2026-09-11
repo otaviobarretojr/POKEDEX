@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import com.otaviobarreto.pokedex.BuildConfig
 import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.delay
 
@@ -30,6 +32,7 @@ private data class BootState(val progress: Float, val label: String)
 
 @Composable
 fun BootExperienceScreen(onReady: () -> Unit) {
+    val context=LocalContext.current
     var state by remember { mutableStateOf(BootState(.04f, "Preparando sua Pokédex")) }
     var finished by remember { mutableStateOf(false) }
     val animatedProgress by animateFloatAsState(state.progress, tween(420), label = "bootProgress")
@@ -38,12 +41,20 @@ fun BootExperienceScreen(onReady: () -> Unit) {
     val pulse by infinite.animateFloat(.96f, 1.04f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
     val glow by infinite.animateFloat(.18f, .42f, infiniteRepeatable(tween(1900), RepeatMode.Reverse), label = "glow")
 
+    DisposableEffect(Unit){
+        AppSoundManager.playBootMusic()
+        onDispose{AppSoundManager.stopMusic()}
+    }
+
     LaunchedEffect(Unit) {
-        state = BootState(.55f, "Preparando dados locais")
-        delay(60)
-        state = BootState(1f, "Abrindo sua Pokédex")
-        delay(60)
-        finished = true
+        val started=System.currentTimeMillis()
+        SmartBootWarmup.run(context){progress,label->state=BootState(progress,label)}
+        val elapsed=System.currentTimeMillis()-started
+        if(elapsed<1800L)delay(1800L-elapsed)
+        state=BootState(1f,"Abrindo sua Pokédex")
+        AppSoundManager.play(AppSoundCue.OPEN)
+        delay(180)
+        finished=true
         onReady()
     }
 
@@ -94,7 +105,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
             Spacer(Modifier.height(38.dp))
-            Text("POKEDEX  ·  v6.3.8", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
+            Text("POKEDEX  ·  v"+BuildConfig.VERSION_NAME, style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
         }
         if(finished) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha=glow*.15f)))
