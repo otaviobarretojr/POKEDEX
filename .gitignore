@@ -1,0 +1,16 @@
+# Android / Gradle
+.gradle/
+build/
+**/build/
+local.properties
+.idea/
+*.iml
+
+# Signing material must never be committed
+signing/
+*.jks
+*.keystore
+
+# OS
+.DS_Store
+Thumbs.db
