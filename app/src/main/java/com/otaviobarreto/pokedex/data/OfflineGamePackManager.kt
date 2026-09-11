@@ -260,9 +260,19 @@ object OfflineGamePackManager {
     fun remove(gameLabel: String) {
         val urls = resourceUrls(gameLabel)
         val ids = manifestIds(gameLabel)
-        PersistentApiCache.unpinAll(urls, deleteFiles = true)
+        val sharedUrls = AppGameCatalog.games.asSequence()
+            .map { it.label }
+            .filter { it != gameLabel }
+            .flatMap { resourceUrls(it).asSequence() }
+            .toSet()
+        val sharedIds = AppGameCatalog.games.asSequence()
+            .map { it.label }
+            .filter { it != gameLabel }
+            .flatMap { manifestIds(it).asSequence() }
+            .toSet()
+        PersistentApiCache.unpinAll(urls - sharedUrls, deleteFiles = true)
         context?.imageLoader?.diskCache?.let { disk ->
-            ids.forEach { id -> runCatching { disk.remove("pokemon-offline-$id") } }
+            (ids - sharedIds).forEach { id -> runCatching { disk.remove("pokemon-offline-$id") } }
         }
         prefs().edit()
             .remove(key(gameLabel, "ready"))
