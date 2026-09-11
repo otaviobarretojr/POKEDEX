@@ -24,6 +24,9 @@ import sys
 import tempfile
 import urllib.request
 import zipfile
+
+import requests
+from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -36,6 +39,13 @@ except ImportError as exc:
 PACKAGE = "jp.pokemon.pokemonhome"
 VERSION = "4.0.3"
 EXPECTED_APK_SHA256 = "6446971e74862c84454c86482c8f5dcc902e257950eda225b9f023bcf3555308"
+APKMIRROR_APK_SHA256 = "d68d4fd6feea34f6ebb720c26052ce3f054cc9a318ba7446a58e6d784526e283"
+AUDIO_ASSET_SHA256 = {
+    "bgm_mt_ps_01": "1a4e6b2a8352dc64e61d6ea172ad6ff61c9c5b2fcf080c7620f619117d6cc989",
+    "bgm_mt_st_sys01": "a607b2c23fc289bfb6546628d06dd228b654c663cdd730a02afe68c8624adf06",
+    "bgm_mt_st_sys02": "7b7c0dcd48772136c4729814a1af46b72de359066e91840ec47e6f6db817f611",
+    "bgm_mt_st_sys03": "6df8baa90414e09725fa76cf1476276b4839f52e99555637cdd4e2db6f975cab",
+}
 API_BASE = "https://www.uptodown.app/eapi"
 API_SECRET = "$(=a%·!45J&S"
 UA = "Dalvik/2.1.0 (Linux; U; Android 14; SM-G955F Build/AP2A.240805.005)"
@@ -434,7 +444,16 @@ def request_json(url: str):
     with urllib.request.urlopen(req, timeout=60) as response:
         return json.load(response)
 
-def download_apk(destination: Path):
+def _stream_response(response, destination: Path) -> str:
+    hasher = hashlib.sha256()
+    with destination.open("wb") as out:
+        for chunk in response.iter_content(1024 * 1024):
+            if chunk:
+                out.write(chunk)
+                hasher.update(chunk)
+    return hasher.hexdigest()
+
+def download_from_uptodown(destination: Path):
     resolved = request_json(f"{API_BASE}/apps/byPackagename/{PACKAGE}")
     inner = resolved.get("data", resolved)
     app_id = str(inner.get("appID") or inner.get("id"))
@@ -445,19 +464,82 @@ def download_apk(destination: Path):
     file_id = str(target.get("fileID") or target.get("fileid"))
     url_data = request_json(f"{API_BASE}/apps/{app_id}/file/{file_id}/downloadUrl?update=0")
     download_url = url_data["data"]["downloadURL"]
-    req = urllib.request.Request(download_url, headers={"User-Agent": UA})
-    hasher = hashlib.sha256()
-    with urllib.request.urlopen(req, timeout=180) as response, destination.open("wb") as out:
-        while True:
-            chunk = response.read(1024 * 1024)
-            if not chunk:
-                break
-            out.write(chunk)
-            hasher.update(chunk)
-    digest = hasher.hexdigest()
+    with requests.get(download_url, headers={"User-Agent": UA}, stream=True, timeout=180) as response:
+        response.raise_for_status()
+        digest = _stream_response(response, destination)
     if digest != EXPECTED_APK_SHA256:
-        raise RuntimeError(f"HOME APK SHA-256 mismatch: {digest}")
-    print(f"Verified HOME {VERSION}: {digest}")
+        raise RuntimeError(f"Uptodown HOME APK SHA-256 mismatch: {digest}")
+    print(f"Verified HOME {VERSION} via Uptodown: {digest}")
+
+def download_from_apkmirror(destination: Path):
+    base = "https://www.apkmirror.com"
+    variant_url = (
+        base
+        + "/apk/the-pokemon-company/pokemon-home/"
+        + "pokemon-home-4-0-3-release/"
+        + "pokemon-home-4-0-3-android-apk-download/"
+    )
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+        )
+    }
+    session = requests.Session()
+    session.headers.update(headers)
+
+    first = session.get(variant_url, timeout=60)
+    first.raise_for_status()
+    soup = BeautifulSoup(first.content, "html.parser")
+    button = soup.select_one("a.downloadButton")
+    if button is None or not button.get("href"):
+        raise RuntimeError("APKMirror download button not found")
+    jump_url = requests.compat.urljoin(base, button["href"])
+
+    second = session.get(jump_url, timeout=60)
+    second.raise_for_status()
+    jump_soup = BeautifulSoup(second.content, "html.parser")
+    direct = jump_soup.select_one('a[rel="nofollow"]')
+    if direct is not None and direct.get("href"):
+        direct_url = requests.compat.urljoin(base, direct["href"])
+        response = session.get(direct_url, headers={"Referer": jump_url}, stream=True, timeout=180)
+    else:
+        id_input = jump_soup.select_one('input[name="id"]')
+        key_input = jump_soup.select_one('input[name="key"]')
+        if id_input is None or key_input is None:
+            raise RuntimeError("APKMirror direct download parameters not found")
+        response = session.get(
+            base + "/wp-content/themes/APKMirror/download.php",
+            params={
+                "id": id_input.get("value"),
+                "key": key_input.get("value"),
+                "forcebaseapk": "true",
+            },
+            headers={"Referer": jump_url},
+            stream=True,
+            timeout=180,
+        )
+    with response:
+        response.raise_for_status()
+        digest = _stream_response(response, destination)
+    if digest not in {EXPECTED_APK_SHA256, APKMIRROR_APK_SHA256}:
+        raise RuntimeError(f"APKMirror HOME APK SHA-256 mismatch: {digest}")
+    print(f"Verified HOME {VERSION} via APKMirror container: {digest}")
+
+def download_apk(destination: Path):
+    errors = []
+    try:
+        download_from_uptodown(destination)
+        return
+    except Exception as exc:
+        errors.append(f"Uptodown: {exc}")
+        print(f"Uptodown unavailable, trying APKMirror: {exc}", file=sys.stderr)
+    try:
+        download_from_apkmirror(destination)
+        return
+    except Exception as exc:
+        errors.append(f"APKMirror: {exc}")
+    raise RuntimeError("Unable to fetch HOME APK; " + " | ".join(errors))
 
 def import_audio(apk: Path, output_dir: Path, setup_packet: bytes):
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -465,6 +547,12 @@ def import_audio(apk: Path, output_dir: Path, setup_packet: bytes):
         for source_name, output_name in AUDIO_ASSETS.items():
             path = f"assets/AB/{source_name}.aba"
             encrypted = archive.read(path)
+            digest = hashlib.sha256(encrypted).hexdigest()
+            expected = AUDIO_ASSET_SHA256[source_name]
+            if digest != expected:
+                raise RuntimeError(
+                    f"HOME audio asset mismatch for {source_name}: {digest} != {expected}"
+                )
             unityfs = decrypt_aba(encrypted)
             fsb = extract_fsb_from_unityfs(unityfs)
             ogg = rebuild_ogg(fsb, setup_packet)
@@ -486,7 +574,7 @@ def main():
     if args.apk:
         apk = args.apk
         digest = hashlib.sha256(apk.read_bytes()).hexdigest()
-        if digest != EXPECTED_APK_SHA256:
+        if digest not in {EXPECTED_APK_SHA256, APKMIRROR_APK_SHA256}:
             raise RuntimeError(f"Local HOME APK SHA-256 mismatch: {digest}")
         import_audio(apk, args.output, setup_packet)
         return
