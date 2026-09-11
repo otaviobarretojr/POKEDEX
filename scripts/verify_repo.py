@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.11.1"' not in workflow or "versionCode = 6111" not in workflow:
-    violations.append("CI v6.11.1 version stamping missing")
+if 'versionName = "6.12.0"' not in workflow or "versionCode = 6120" not in workflow:
+    violations.append("CI v6.12.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -237,7 +237,7 @@ if "OfflineGamePackManager.manifestIds" not in games:
     violations.append("Games progress does not use persistent manifest")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-if "entries.take(12)" not in boxes or "entries.drop(12)" not in boxes:
+if "missingDetails.take(12)" not in boxes or "missingDetails.drop(12)" not in boxes:
     violations.append("Box smart preload priority missing")
 
 if violations:
@@ -613,13 +613,46 @@ if "KEY_ACTIVE_REGION" not in prefs_v611:
 # Legacy screens intentionally remain compiled as internal compatibility routes during migration.
 
 
-# v6.11.1 Android back navigation guards
+# v6.12.0 Android back navigation guards
 journey_back=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
 for required in ("BackHandler(enabled=view!=JourneyView.GAMES)","detailReturnView","JourneyView.MAP","JourneyView.ROUTE","selectedGame=null"):
     if required not in journey_back:
         violations.append(f"Android back hierarchy missing {required}")
 if "onBack={selectedStepId=null;view=detailReturnView}" not in journey_back:
     violations.append("Journey toolbar back does not match Android back origin")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.12.0 navigation/state hardening guards
+prefs_v612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+for required in ("activeRegionForGame", "setActiveRegionForGame", "boxPage", "setBoxPage", "KEY_BOX_PAGE_PREFIX"):
+    if required not in prefs_v612:
+        violations.append(f"Persistent navigation context missing {required}")
+
+boxes_v612 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("activeRegionForGame(game.label)", "CompanionPreferences.boxPage(regionSource)", "setBoxPage(region.source,current)", "missingDetails.take(12)", "missingDetails.drop(12)"):
+    if required not in boxes_v612:
+        violations.append(f"Box state/performance hardening missing {required}")
+
+journey_v612 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("rememberSaveable", "journeySourceForStep", "onPokemonClick:(Int,String?)->Unit", "activeRegionForGame(game.label)"):
+    if required not in journey_v612:
+        violations.append(f"Journey state/context hardening missing {required}")
+
+main_v612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for required in ("resolvedSource=source ?: CompanionPreferences.activeRegionForGame(resolvedGame)", "onPokemonClick={id,source->openPokemon(id,source)}"):
+    if required not in main_v612:
+        violations.append(f"Cross-route context preservation missing {required}")
+
+detail_v612 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+for required in ("contextDexRevision", "GameDexService.cached(context)==null", "GameDexService.loadGameDex(context)"):
+    if required not in detail_v612:
+        violations.append(f"Detail Box resolver hardening missing {required}")
 
 if violations:
     print("Source verification failed:")
