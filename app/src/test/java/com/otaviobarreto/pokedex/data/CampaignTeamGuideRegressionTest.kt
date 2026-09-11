@@ -19,7 +19,7 @@ class CampaignTeamGuideRegressionTest {
     }
 
     @Test fun switchGuideContainsLegendsZA() {
-        assertTrue("Legends Z-A" in TeamCampaignCatalog.switchGames)
-        assertEquals(setOf(152,498,158), TeamCampaignCatalog.starters("Legends Z-A").map { it.second }.toSet())
+        assertTrue("Pokémon Legends: Z-A" in TeamCampaignCatalog.switchGames)
+        assertEquals(setOf(152,498,158), TeamCampaignCatalog.starters("Pokémon Legends: Z-A").map { it.second }.toSet())
     }
 }

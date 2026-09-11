@@ -21,7 +21,7 @@ object CaptureGuideService {
     suspend fun find(pokemonId: Int): List<CaptureAvailability> = withContext(Dispatchers.IO) {
         val encounters = runCatching { PokedexDataStore.encounters(pokemonId) }.getOrDefault(emptyList())
         coroutineScope {
-            AppGameCatalog.games.flatMap { game ->
+            AppGameCatalog.adventureGames.flatMap { game ->
                 game.regions.map { region ->
                     async {
                         val context = GameContext.fromSource(region.source) ?: return@async null

@@ -32,7 +32,8 @@ object TeamCampaignCatalog {
         "Brilliant Diamond / Shining Pearl",
         "Legends Arceus",
         "Scarlet / Violet",
-        "Legends Z-A"
+        "Pokémon Legends: Z-A",
+        "FireRed / LeafGreen"
     )
 
     fun starters(game:String):List<Pair<String,Int>> = when(game){
@@ -41,7 +42,8 @@ object TeamCampaignCatalog {
         "Brilliant Diamond / Shining Pearl" -> listOf("Turtwig" to 387, "Chimchar" to 390, "Piplup" to 393)
         "Legends Arceus" -> listOf("Rowlet" to 722, "Cyndaquil" to 155, "Oshawott" to 501)
         "Scarlet / Violet" -> listOf("Sprigatito" to 906, "Fuecoco" to 909, "Quaxly" to 912)
-        "Legends Z-A" -> listOf("Chikorita" to 152, "Tepig" to 498, "Totodile" to 158)
+        "Pokémon Legends: Z-A" -> listOf("Chikorita" to 152, "Tepig" to 498, "Totodile" to 158)
+        "FireRed / LeafGreen" -> listOf("Bulbasaur" to 1, "Charmander" to 4, "Squirtle" to 7)
         else -> emptyList()
     }
 
@@ -53,7 +55,8 @@ object TeamCampaignCatalog {
             "Brilliant Diamond / Shining Pearl" -> bdsp(starterId,phase)
             "Legends Arceus" -> arceus(starterId,phase)
             "Scarlet / Violet" -> scarletViolet(starterId,phase)
-            "Legends Z-A" -> legendsZa(starterId,phase)
+            "Pokémon Legends: Z-A" -> legendsZa(starterId,phase)
+            "FireRed / LeafGreen" -> fireRedLeafGreen(starterId,phase)
             else -> emptyList()
         }
         if(slots.isEmpty())return null
@@ -66,7 +69,7 @@ object TeamCampaignCatalog {
             },
             sourceLabel=when(game){
                 "Let's Go Pikachu / Eevee"->"PokéBase · equipes in-game"
-                "Legends Z-A"->"Game8 · Story Progression / Starter Teams"
+                "Pokémon Legends: Z-A"->"Game8 · Story Progression / Starter Teams"
                 else->"Game8 · Best Team / Story Progression"
             }
         )
@@ -149,6 +152,24 @@ object TeamCampaignCatalog {
             CampaignPhase.EARLY->listOf(s(393),s(77),s(396),s(406),s(403),s(74))
             CampaignPhase.MID->listOf(s(394),s(78),s(397),s(315),s(404),s(443))
             CampaignPhase.LATE->listOf(s(395),s(78),s(445),s(448),s(407),s(398))
+        }
+    }
+
+    private fun fireRedLeafGreen(starter:Int,p:CampaignPhase)=when(starter){
+        1->when(p){
+            CampaignPhase.EARLY->listOf(s(1),s(16),s(19),s(25),s(129),s(32,29))
+            CampaignPhase.MID->listOf(s(2),s(17),s(20),s(26),s(130),s(33,30))
+            CampaignPhase.LATE->listOf(s(3),s(18),s(130),s(143),s(131),s(65))
+        }
+        4->when(p){
+            CampaignPhase.EARLY->listOf(s(4),s(16),s(25),s(129),s(43),s(32,29))
+            CampaignPhase.MID->listOf(s(5),s(17),s(26),s(130),s(44),s(33,30))
+            CampaignPhase.LATE->listOf(s(6),s(130),s(143),s(131),s(65),s(34))
+        }
+        else->when(p){
+            CampaignPhase.EARLY->listOf(s(7),s(16),s(25),s(43),s(32,29),s(129))
+            CampaignPhase.MID->listOf(s(8),s(17),s(26),s(44),s(33,30),s(130))
+            CampaignPhase.LATE->listOf(s(9),s(18),s(65),s(143),s(34),s(131))
         }
     }
 

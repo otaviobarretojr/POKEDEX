@@ -240,7 +240,7 @@ fun CompanionHubScreen(
             ExposedDropdownMenuBox(expanded=plannerMenu,onExpandedChange={plannerMenu=!plannerMenu},modifier=Modifier.fillMaxWidth().padding(top=8.dp)){
                 OutlinedTextField(plannerGame,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(plannerMenu)})
                 ExposedDropdownMenu(plannerMenu,{plannerMenu=false}){
-                    AppGameCatalog.games.forEach{game->DropdownMenuItem({Text(game.label)},{plannerGame=game.label;CompanionPreferences.activeGame=game.label;plannerMenu=false})}
+                    AppGameCatalog.adventureGames.forEach{game->DropdownMenuItem({Text(game.label)},{plannerGame=game.label;CompanionPreferences.activeGame=game.label;plannerMenu=false})}
                 }
             }
         }

@@ -20,6 +20,34 @@ data class GameContext(
             if (normalized.isBlank()) return null
 
             return when {
+                "hyperspace" in normalized -> GameContext(
+                    label = "Pokémon Legends: Z-A",
+                    versions = setOf("legends z a"),
+                    pokedexSlug = "hyperspace",
+                    regionLabel = "Hyperspace",
+                    versionGroups = setOf("legends z a")
+                )
+                "lumiose" in normalized || "legends z a" in normalized -> GameContext(
+                    label = "Pokémon Legends: Z-A",
+                    versions = setOf("legends z a"),
+                    pokedexSlug = "lumiose-city",
+                    regionLabel = "Lumiose",
+                    versionGroups = setOf("legends z a")
+                )
+                "firered" in normalized || "leafgreen" in normalized || "fire red" in normalized || "leaf green" in normalized -> GameContext(
+                    label = "FireRed / LeafGreen",
+                    versions = setOf("firered", "leafgreen", "fire red", "leaf green"),
+                    pokedexSlug = "kanto",
+                    regionLabel = "Kanto",
+                    versionGroups = setOf("firered leafgreen")
+                )
+                "champions" in normalized || "roster" in normalized -> GameContext(
+                    label = "Pokémon Champions",
+                    versions = setOf("champions"),
+                    pokedexSlug = "champions",
+                    regionLabel = "Roster",
+                    versionGroups = setOf("champions")
+                )
                 "kitakami" in normalized -> GameContext(
                     label = "Scarlet / Violet",
                     versions = setOf("scarlet", "violet"),
