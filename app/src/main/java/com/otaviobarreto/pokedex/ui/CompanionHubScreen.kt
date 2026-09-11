@@ -98,13 +98,13 @@ fun CompanionHubScreen(
             item { Text("Resultados",fontWeight=FontWeight.Bold) }
             items(pokemonResults+refs,key={it.kind+it.title+it.subtitle}){result->
                 Card(Modifier.fillMaxWidth().clickable{
-                    result.pokemonId?.let{selectedPokemon=it;onPokemonClick(it)}
-                    if(result.refKind!=null&&result.refName!=null)onReferenceClick(result.refKind,result.refName)
+                    if(result.pokemonId!=null) selectedPokemon=result.pokemonId
+                    else if(result.refKind!=null&&result.refName!=null)onReferenceClick(result.refKind,result.refName)
                 }){
                     Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
                         Icon(if(result.pokemonId!=null)Icons.Default.CatchingPokemon else Icons.Default.MenuBook,null)
                         Column(Modifier.weight(1f).padding(start=10.dp)){Text(result.title,fontWeight=FontWeight.SemiBold);Text(result.kind+" · "+result.subtitle,style=MaterialTheme.typography.bodySmall)}
-                        Icon(Icons.Default.ChevronRight,null)
+                        if(result.pokemonId!=null) TextButton(onClick={onPokemonClick(result.pokemonId)}){Text("Ficha")} else Icon(Icons.Default.ChevronRight,null)
                     }
                 }
             }
