@@ -554,7 +554,7 @@ if violations:
 journey_visual_catalog=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
 journey_map=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
 journey_ui=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
-for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/img_01.jpg","230112_07/img_01.jpg"):
+for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/ja/img_01.jpg","230112_07/img_01.jpg"):
     if required not in journey_visual_catalog:
         violations.append(f"Validated official Journey artwork missing {required}")
 if "story_img_01.jpg" not in journey_map or "backgroundUrl" not in journey_map:
