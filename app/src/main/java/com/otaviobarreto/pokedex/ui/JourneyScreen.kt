@@ -23,7 +23,7 @@ private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 @Composable
 fun JourneyScreen(
     onPokemonClick:(Int)->Unit,
-    onOpenTeamGuide:(String)->Unit,
+    onOpenTeamGuide:(String,String?)->Unit,
     onOpenGameDex:(String)->Unit
 ){
     var selectedGame by remember { mutableStateOf<String?>(null) }
@@ -39,14 +39,14 @@ fun JourneyScreen(
             game=game,
             onBack={view=JourneyView.GAMES},
             onRoute={view=JourneyView.ROUTE},
-            onTeam={onOpenTeamGuide(game.label)},
+            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
             onDex={game.regions.firstOrNull()?.source?.let(onOpenGameDex)},
             onRegion={onOpenGameDex}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
             game=game,
             onBack={view=JourneyView.GAME_MENU},
-            onTeam={onOpenTeamGuide(game.label)},
+            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
             onOpenStep={stepId->selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
         JourneyView.DETAIL -> if(game!=null && selectedStepId!=null){
@@ -55,7 +55,7 @@ fun JourneyScreen(
                 game=game,
                 step=step,
                 onBack={view=JourneyView.ROUTE},
-                onTeam={onOpenTeamGuide(game.label)}
+                onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)}
             ) else view=JourneyView.ROUTE
         } else { view=JourneyView.GAMES }
     }
@@ -195,6 +195,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
     val completedCount=completed.size.coerceAtMost(steps.size)
     val progress=if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
     val nextStep=steps.firstOrNull{it.id !in completed}
+    val smart=remember(game.label,revision){JourneySmartProgress.context(game.label)}
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -258,6 +259,25 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
                         JourneyCountPill(Icons.Default.Landscape,"5 Titãs")
                         JourneyCountPill(Icons.Default.Stars,"5 Team Star")
                     }
+                }
+            }
+        }
+
+        item{
+            Card(
+                shape=RoundedCornerShape(20.dp),
+                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
+                modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
+            ){
+                Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+                    Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)){
+                        Icon(Icons.Default.AutoAwesome,null,Modifier.padding(10.dp))
+                    }
+                    Column(Modifier.weight(1f).padding(start=10.dp)){
+                        Text("FASE AUTOMÁTICA · "+smart.phaseLabel.uppercase(),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
+                        Text(smart.recommendation,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=3.dp))
+                    }
+                    TextButton(onClick=onTeam){Text("Time ideal")}
                 }
             }
         }
@@ -599,6 +619,19 @@ private fun JourneyObjectiveDetailScreen(
                 Icon(if(done)Icons.Default.CheckCircle else Icons.Default.Done,null)
                 Spacer(Modifier.width(8.dp))
                 Text(if(done)"Marcar como pendente" else "Marcar como concluído")
+            }
+        }
+
+        if(!done){
+            item{
+                OutlinedButton(
+                    onClick={JourneyProgressStore.completeThrough(game.label,JourneyCatalog.steps(game.label).map{it.id},step.id)},
+                    modifier=Modifier.fillMaxWidth().height(50.dp)
+                ){
+                    Icon(Icons.Default.AutoAwesome,null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Concluir progresso até aqui")
+                }
             }
         }
 

@@ -27,6 +27,24 @@ object JourneyProgressStore {
         revision++
     }
 
+    fun setCompleted(game:String,stepId:String,completed:Boolean){
+        val next=this.completed(game).toMutableSet().apply{
+            if(completed)add(stepId) else remove(stepId)
+        }
+        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
+            ?.putStringSet(key(game),next)?.apply()
+        revision++
+    }
+
+    fun completeThrough(game:String,orderedStepIds:List<String>,stepId:String){
+        val index=orderedStepIds.indexOf(stepId)
+        if(index<0)return
+        val next=completed(game).toMutableSet().apply{addAll(orderedStepIds.take(index+1))}
+        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
+            ?.putStringSet(key(game),next)?.apply()
+        revision++
+    }
+
     fun clear(game:String){
         context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()?.remove(key(game))?.apply()
         revision++
