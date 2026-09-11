@@ -2,6 +2,9 @@ package com.otaviobarreto.pokedex.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 data class CaptureAvailability(
     val game: String,
@@ -12,20 +15,21 @@ data class CaptureAvailability(
 
 object CaptureGuideService {
     suspend fun find(pokemonId: Int): List<CaptureAvailability> = withContext(Dispatchers.IO) {
-        buildList {
-            AppGameCatalog.games.forEach { game ->
-                game.regions.forEach { region ->
-                    val context = GameContext.fromSource(region.source) ?: return@forEach
-                    val dex = runCatching { GameDexService.loadGameDex(context) }.getOrDefault(emptyList())
-                    if (dex.any { it.nationalId == pokemonId }) {
-                        val encounters = runCatching { PokedexDataStore.encounters(pokemonId) }.getOrDefault(emptyList())
+        val encounters = runCatching { PokedexDataStore.encounters(pokemonId) }.getOrDefault(emptyList())
+        coroutineScope {
+            AppGameCatalog.games.flatMap { game ->
+                game.regions.map { region ->
+                    async {
+                        val context = GameContext.fromSource(region.source) ?: return@async null
+                        val dex = runCatching { GameDexService.loadGameDex(context) }.getOrDefault(emptyList())
+                        if (dex.none { it.nationalId == pokemonId }) return@async null
                         val filtered = encounters.count { e ->
                             e.versions.any(context::matchesVersion) || e.details.any { context.matchesVersion(it.version) }
                         }
-                        add(CaptureAvailability(game.label, region.label, region.source, filtered))
+                        CaptureAvailability(game.label, region.label, region.source, filtered)
                     }
                 }
-            }
-        }.distinctBy { it.source }
+            }.awaitAll().filterNotNull().distinctBy { it.source }
+        }
     }
 }
