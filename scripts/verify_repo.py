@@ -51,7 +51,7 @@ if ".crossfade(false)" not in app or "384L * 1024L * 1024L" not in app:
     violations.append("Image engine v2 tuning missing")
 
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
-if "resolveSaveLocation" not in detail or "saveLocation.boxLabel" not in detail:
+if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
@@ -321,7 +321,7 @@ if violations:
 
 
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
-for required in ("resolveSaveLocation", 'boxLabel="Box "+(index/30+1)', "saveLocation.boxLabel"):
+for required in ("resolveSaveLocation", 'boxLabel="Box "+(index/30+1)', "saveLocation.saved"):
     if required not in detail:
         violations.append(f"Detail save-location resolver missing {required}")
 if 'SectionCard("Coleção"' in detail:
