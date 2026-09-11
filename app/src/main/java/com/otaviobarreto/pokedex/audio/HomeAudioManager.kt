@@ -5,14 +5,12 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import com.otaviobarreto.pokedex.R
 
-enum class HomeAudioScene(
+private enum class HomeAudioTrack(
     val rawResId: Int,
     val looping: Boolean
 ) {
-    BOOT(R.raw.pokehome_st_sys01, false),
-    JOURNEY(R.raw.pokehome_ps_01, true),
-    BOXES(R.raw.pokehome_st_sys02, true),
-    DETAIL(R.raw.pokehome_st_sys03, true)
+    BOOT(R.raw.pokehome_st_sys01, true),
+    APP(R.raw.pokehome_st_sys02, true)
 }
 
 object HomeAudioManager {
@@ -23,10 +21,9 @@ object HomeAudioManager {
 
     private var appContext: Context? = null
     private var player: MediaPlayer? = null
-    private var currentScene: HomeAudioScene? = null
-    private var loadedScene: HomeAudioScene? = null
+    private var currentTrack: HomeAudioTrack? = null
+    private var loadedTrack: HomeAudioTrack? = null
     private var appInForeground = true
-    private var pendingSceneAfterBoot: HomeAudioScene? = null
 
     fun initialize(context: Context) {
         if (appContext == null) appContext = context.applicationContext
@@ -48,69 +45,16 @@ object HomeAudioManager {
         if (!value) {
             releasePlayer()
         } else if (appInForeground) {
-            currentScene?.let(::playScene)
+            currentTrack?.let { playTrack(it) }
         }
     }
 
     fun playBoot() {
-        playScene(HomeAudioScene.BOOT, restart = true)
+        playTrack(HomeAudioTrack.BOOT, restart = true)
     }
 
-    fun playForRoute(route: String?) {
-        val scene = when (route) {
-            "boxes" -> HomeAudioScene.BOXES
-            "home", null -> HomeAudioScene.JOURNEY
-            else -> HomeAudioScene.DETAIL
-        }
-        if (loadedScene == HomeAudioScene.BOOT && player?.isPlaying == true) {
-            currentScene = scene
-            pendingSceneAfterBoot = scene
-            return
-        }
-        playScene(scene)
-    }
-
-    fun playScene(scene: HomeAudioScene, restart: Boolean = false) {
-        currentScene = scene
-        if (!enabled) return
-        if (!appInForeground) {
-            if (loadedScene != scene) releasePlayer(clearScene = false)
-            return
-        }
-        if (!restart && player != null && player?.isPlaying == true && loadedScene == scene) return
-
-        releasePlayer(clearScene = false)
-        val context = appContext ?: return
-        val descriptor = runCatching { context.resources.openRawResourceFd(scene.rawResId) }.getOrNull() ?: return
-        player = runCatching {
-            MediaPlayer().apply {
-                val attrs = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_GAME)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build()
-                setAudioAttributes(attrs)
-                setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
-                isLooping = scene.looping
-                val level = volume
-                setVolume(level, level)
-                setOnCompletionListener {
-                    if (!scene.looping) {
-                        it.release()
-                        if (player === it) player = null
-                        loadedScene = null
-                        val nextScene = pendingSceneAfterBoot
-                        pendingSceneAfterBoot = null
-                        if (nextScene != null && appInForeground && enabled) {
-                            playScene(nextScene, restart = true)
-                        }
-                    }
-                }
-                prepare()
-                start()
-            }
-        }.getOrNull()
-        loadedScene = if (player != null) scene else null
-        descriptor.close()
+    fun playMainTrack() {
+        playTrack(HomeAudioTrack.APP)
     }
 
     fun onAppBackgrounded() {
@@ -124,10 +68,10 @@ object HomeAudioManager {
         appInForeground = true
         if (!enabled) return
         val active = player
-        if (active != null && loadedScene == currentScene) {
+        if (active != null && loadedTrack == currentTrack) {
             runCatching { active.start() }
         } else {
-            currentScene?.let { playScene(it, restart = true) }
+            currentTrack?.let { playTrack(it, restart = true) }
         }
     }
 
@@ -136,13 +80,41 @@ object HomeAudioManager {
         appContext = null
     }
 
-    private fun releasePlayer(clearScene: Boolean = false) {
+    private fun playTrack(track: HomeAudioTrack, restart: Boolean = false) {
+        currentTrack = track
+        if (!enabled || !appInForeground) return
+        if (!restart && player != null && player?.isPlaying == true && loadedTrack == track) return
+
+        releasePlayer(clearTrack = false)
+        val context = appContext ?: return
+        val descriptor = runCatching { context.resources.openRawResourceFd(track.rawResId) }.getOrNull() ?: return
+        player = runCatching {
+            MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_GAME)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
+                isLooping = track.looping
+                val level = volume
+                setVolume(level, level)
+                prepare()
+                start()
+            }
+        }.getOrNull()
+        loadedTrack = if (player != null) track else null
+        descriptor.close()
+    }
+
+    private fun releasePlayer(clearTrack: Boolean = false) {
         runCatching { player?.stop() }
         runCatching { player?.reset() }
         runCatching { player?.release() }
         player = null
-        loadedScene = null
-        if (clearScene) currentScene = null
+        loadedTrack = null
+        if (clearTrack) currentTrack = null
     }
 
     private fun prefs() = appContext?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
