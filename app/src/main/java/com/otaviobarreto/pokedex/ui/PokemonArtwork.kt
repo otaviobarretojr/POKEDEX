@@ -2,10 +2,12 @@ package com.otaviobarreto.pokedex.ui
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
@@ -80,9 +82,11 @@ fun PokemonArtwork(
     model: Any?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    alignment: Alignment = Alignment.Center
+    alignment: Alignment = Alignment.Center,
+    pokemonId: Int? = null
 ) {
     val context = LocalContext.current
+    val tuning = remember(pokemonId) { ArtworkTuningCatalog.forPokemon(pokemonId) }
     val request = remember(model) {
         ImageRequest.Builder(context)
             .data(model)
@@ -91,11 +95,21 @@ fun PokemonArtwork(
             .build()
     }
 
-    AsyncImage(
-        model = request,
-        contentDescription = contentDescription,
-        modifier = modifier,
-        contentScale = ContentScale.Fit,
-        alignment = alignment
-    )
+    BoxWithConstraints(modifier) {
+        val dx = maxWidth * tuning.offsetX
+        val dy = maxHeight * tuning.offsetY
+        AsyncImage(
+            model = request,
+            contentDescription = contentDescription,
+            modifier = Modifier
+                .fillMaxSize()
+                .offset(x = dx, y = dy)
+                .graphicsLayer {
+                    scaleX = tuning.scale
+                    scaleY = tuning.scale
+                },
+            contentScale = ContentScale.Fit,
+            alignment = alignment
+        )
+    }
 }
