@@ -3,6 +3,7 @@ package com.otaviobarreto.pokedex.data
 import android.content.Context
 import java.io.File
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
@@ -14,6 +15,7 @@ import java.util.zip.GZIPOutputStream
 object PersistentApiCache {
     private const val DEFAULT_MAX_AGE_MS = 7L * 24L * 60L * 60L * 1000L
     private var directory: File? = null
+    private val memory = ConcurrentHashMap<String, String>()
 
     fun initialize(context: Context) {
         if (directory != null) return
@@ -25,22 +27,24 @@ object PersistentApiCache {
         maxAgeMs: Long = DEFAULT_MAX_AGE_MS,
         fetch: () -> String
     ): String {
+        memory[url]?.let { return it }
         val file = fileFor(url)
         val now = System.currentTimeMillis()
         if (file.exists() && now - file.lastModified() <= maxAgeMs) {
-            read(file)?.let { return it }
+            read(file)?.let { value -> memory[url] = value; return value }
         }
 
         return runCatching { fetch() }
-            .onSuccess { write(file, it) }
+            .onSuccess { memory[url] = it; write(file, it) }
             .getOrElse { error ->
-                read(file) ?: throw error
+                read(file)?.also { memory[url] = it } ?: throw error
             }
     }
 
     fun has(url: String): Boolean = fileFor(url).exists()
 
     fun clear() {
+        memory.clear()
         directory?.listFiles()?.forEach { it.delete() }
     }
 
