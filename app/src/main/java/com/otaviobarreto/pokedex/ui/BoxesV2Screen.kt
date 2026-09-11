@@ -1,8 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,8 +15,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,33 +47,23 @@ private val qbGames=AppGameCatalog.games.map{game->
  QBGame(game.label,qbAccent(game.label),game.regions.map{QBRegion(it.label,it.source,it.subtitle)})
 }
 
-private fun numberedBox(game:String,page:Int)="$game · Box ${page+1}"
 
-@OptIn(ExperimentalMaterial3Api::class,ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
  var gameLabel by rememberSaveable{mutableStateOf(qbGames.first().label)}
  val game=remember(gameLabel){qbGames.firstOrNull{it.label==gameLabel}?:qbGames.first()}
  var regionSource by rememberSaveable{mutableStateOf(game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var quick by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)};var search by remember{mutableStateOf(false)};var selectionMode by remember{mutableStateOf(false)};var selected by remember{mutableStateOf<Set<Int>>(emptySet())};var batchMove by remember{mutableStateOf(false)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)}
  LaunchedEffect(region.source,game.label){
   loading=true
   val ctx=GameContext.fromSource(region.source)
   dex=if(ctx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}}.getOrElse{emptyList()}
-  if(dex.isNotEmpty()){
-   val pageCount=((dex.size+29)/30).coerceAtLeast(1)
-   repeat(pageCount){pg->
-    val ids=dex.drop(pg*30).take(30).map{it.nationalId}
-    val box=numberedBox(game.label,pg)
-    CollectionStore.migrateLegacyGameBox(game.label,box,ids)
-    CollectionStore.migrateCapturedToBox(box,ids)
-   }
-  }
   val pageCount=((dex.size+29)/30).coerceAtLeast(1)
   if(page>=pageCount) page=pageCount-1
   loading=false
  }
- val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(350);entries.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val activeBox=numberedBox(game.label,current);val boxedNow=CollectionStore.boxes[activeBox].orEmpty();val caught=dex.count{entry->CollectionStore.boxesForPokemon(entry.nationalId).any{it.startsWith(game.label)}};val duplicateCount=dex.count{it.nationalId in CollectionStore.duplicateIds()};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(350);entries.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=12.dp)){
   Column(Modifier.padding(top=5.dp,bottom=5.dp)){Text("POKEDEX",fontSize=27.sp,lineHeight=28.sp,fontWeight=FontWeight.Black,color=QBink);Text("C A T C H  E M  ·  T O D A S  A S  R E G I Õ E S",fontSize=7.sp,color=QBmuted)}
   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
