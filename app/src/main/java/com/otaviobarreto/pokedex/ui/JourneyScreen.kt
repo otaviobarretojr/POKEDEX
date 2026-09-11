@@ -1,5 +1,6 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -42,7 +43,21 @@ fun JourneyScreen(
     var selectedGame by remember { mutableStateOf<String?>(null) }
     var view by remember { mutableStateOf(JourneyView.GAMES) }
     var selectedStepId by remember { mutableStateOf<String?>(null) }
+    var detailReturnView by remember { mutableStateOf(JourneyView.ROUTE) }
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
+
+    BackHandler(enabled=view!=JourneyView.GAMES){
+        when(view){
+            JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
+            JourneyView.ROUTE -> view=JourneyView.GAME_MENU
+            JourneyView.MAP -> view=JourneyView.GAME_MENU
+            JourneyView.DETAIL -> {
+                selectedStepId=null
+                view=detailReturnView
+            }
+            JourneyView.GAMES -> Unit
+        }
+    }
 
     when(view){
         JourneyView.GAMES -> JourneyGamePicker(
@@ -61,14 +76,14 @@ fun JourneyScreen(
             game=game,
             onBack={view=JourneyView.GAME_MENU},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
-            onOpenStep={stepId->selectedStepId=stepId;view=JourneyView.DETAIL}
+            onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
         JourneyView.DETAIL -> if(game!=null && selectedStepId!=null){
             val step=JourneyCatalog.steps(game.label).firstOrNull{it.id==selectedStepId}
             if(step!=null) JourneyObjectiveDetailScreen(
                 game=game,
                 step=step,
-                onBack={view=JourneyView.ROUTE},
+                onBack={selectedStepId=null;view=detailReturnView},
                 onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
                 onPokemonClick=onPokemonClick
             ) else view=JourneyView.ROUTE
@@ -76,7 +91,7 @@ fun JourneyScreen(
         JourneyView.MAP -> if(game!=null) JourneyMapScreen(
             game=game,
             onBack={view=JourneyView.GAME_MENU},
-            onOpenStep={stepId->selectedStepId=stepId;view=JourneyView.DETAIL}
+            onOpenStep={stepId->detailReturnView=JourneyView.MAP;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
     }
 }
