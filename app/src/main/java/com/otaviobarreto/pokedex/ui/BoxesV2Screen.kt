@@ -39,9 +39,9 @@ private fun qbAccent(game:String):Color=when(game){
  "Let's Go Pikachu / Eevee"->Color(0xFFE0A929)
  "Legends Arceus"->Color(0xFF527F7C)
  "Brilliant Diamond / Shining Pearl"->Color(0xFF5968C7)
- "Black / White"->Color(0xFF4D4D55)
- "X / Y"->Color(0xFF486BC5)
- "Omega Ruby / Alpha Sapphire"->Color(0xFFC95757)
+ "Pokémon Legends: Z-A"->Color(0xFF2D7F8E)
+ "FireRed / LeafGreen"->Color(0xFFCC5B43)
+ "Pokémon Champions"->Color(0xFF7857D8)
  else->Color(0xFF5B55E7)
 }
 private val qbGames=AppGameCatalog.games.map{game->
