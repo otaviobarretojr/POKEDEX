@@ -34,6 +34,8 @@ private val teamScopes = listOf(TeamScope("Pokédex Nacional", null)) + AppGameC
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamBuilderScreen(onPokemonClick: (Int) -> Unit) {
+    var campaignGuide by remember { mutableStateOf(false) }
+    if (campaignGuide) { CampaignTeamGuideScreen(onBackToMyTeams={campaignGuide=false},onPokemonClick=onPokemonClick); return }
     val teams = TeamStore.teams
     var selectedTeamId by remember { mutableStateOf(teams.firstOrNull()?.id) }
     var query by remember { mutableStateOf("") }
@@ -59,7 +61,7 @@ fun TeamBuilderScreen(onPokemonClick: (Int) -> Unit) {
     val coverage=memberTypes.values.flatten().map{it.lowercase()}.distinct().sorted()
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))) {
-        Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("TIMES",fontSize=29.sp,fontWeight=FontWeight.Black,color=Color(0xFF151426));Text("M O N T E  ·  A N A L I S E  ·  A J U S T E",fontSize=7.sp,color=Color(0xFF72778B))};FilledTonalIconButton({showCreate=true}){Icon(Icons.Default.Add,"Novo time")}}
+        Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("TIMES",fontSize=29.sp,fontWeight=FontWeight.Black,color=Color(0xFF151426));Text("M O N T E  ·  A N A L I S E  ·  A J U S T E",fontSize=7.sp,color=Color(0xFF72778B))};FilledTonalButton({campaignGuide=true}){Icon(Icons.Default.AutoAwesome,null);Spacer(Modifier.width(5.dp));Text("Guia")};Spacer(Modifier.width(6.dp));FilledTonalIconButton({showCreate=true}){Icon(Icons.Default.Add,"Novo time")}}
         ExposedDropdownMenuBox(expanded=scopeMenu,onExpandedChange={scopeMenu=!scopeMenu},modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp)){OutlinedTextField(scope.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo / região")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(scopeMenu)},shape=RoundedCornerShape(18.dp));ExposedDropdownMenu(scopeMenu,{scopeMenu=false}){teamScopes.forEach{item->DropdownMenuItem({Text(item.label)},{scope=item;scopeMenu=false;query=""})}}}
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=16.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){teams.forEach{team->AssistChip({selectedTeamId=team.id},{Text("${team.name} · ${team.members.size}/6")},leadingIcon=if(team.id==selectedTeamId)({Text("✓")})else null)}}
 
