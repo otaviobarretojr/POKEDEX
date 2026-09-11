@@ -76,7 +76,8 @@ object PersistentApiCache {
     fun promoteLocal(url: String): Boolean {
         val file = fileFor(url)
         if (!file.exists()) return false
-        file.setLastModified(System.currentTimeMillis())
+        // Keep the original fetch timestamp intact so normal TTL refresh still works.
+        // Pinned offline resources remain exempt from expiry in getOrFetch().
         return true
     }
 
