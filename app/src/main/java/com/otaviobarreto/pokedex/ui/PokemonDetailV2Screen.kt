@@ -49,6 +49,15 @@ fun PokemonDetailV2Screen(
     var retry by remember{ mutableIntStateOf(0) }
     var tab by remember(id){ mutableIntStateOf(0) }
     val context=remember(source){ GameContext.fromSource(source) }
+    var contextDexRevision by remember(id,source){ mutableIntStateOf(0) }
+
+    LaunchedEffect(context){
+        if(context!=null && GameDexService.cached(context)==null){
+            runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(context)}}.onSuccess{
+                contextDexRevision++
+            }
+        }
+    }
 
     LaunchedEffect(id,retry){
         error=null
@@ -93,7 +102,7 @@ fun PokemonDetailV2Screen(
 
     when{
         bundle!=null -> DetailV2Content(
-            bundle!!,tab,{tab=it},context,onBack,onOpenLocation,onOpenReference,onOpenPokemon
+            bundle!!,tab,{tab=it},context,contextDexRevision,onBack,onOpenLocation,onOpenReference,onOpenPokemon
         )
         error!=null -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
             Column(horizontalAlignment=Alignment.CenterHorizontally){
@@ -129,6 +138,7 @@ fun PokemonDetailV2Screen(
     tab:Int,
     setTab:(Int)->Unit,
     context:GameContext?,
+    contextDexRevision:Int,
     back:()->Unit,
     openLocation:(()->Unit)?,
     openRef:((String,String)->Unit)?,
@@ -137,7 +147,7 @@ fun PokemonDetailV2Screen(
     val primaryType=b.pokemon.types.firstOrNull().orEmpty()
     val accent=typeColor(primaryType)
     val legacyBoxes=CollectionStore.boxesForPokemon(b.pokemon.id)
-    val saveLocation=remember(b.pokemon.id,context,CollectionStore.capturedIds,legacyBoxes){
+    val saveLocation=remember(b.pokemon.id,context,contextDexRevision,CollectionStore.capturedIds,legacyBoxes){
         resolveSaveLocation(b.pokemon.id,context,legacyBoxes)
     }
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
