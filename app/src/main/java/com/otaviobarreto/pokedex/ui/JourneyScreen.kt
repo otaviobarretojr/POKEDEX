@@ -1,5 +1,6 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -361,10 +362,10 @@ private fun JourneyStepCard(
                     }
                 }
             }
-            VerticalDivider(
-                modifier=Modifier.height(118.dp).alpha(if(done).65f else .22f),
-                thickness=2.dp,
-                color=if(done)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            Box(
+                Modifier.width(2.dp).height(118.dp)
+                    .alpha(if(done).65f else .22f)
+                    .background(if(done)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
             )
         }
 
