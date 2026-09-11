@@ -35,7 +35,7 @@ private val teamScopes = listOf(TeamScope("Pokédex Nacional", null)) + AppGameC
 @Composable
 fun TeamBuilderScreen(onPokemonClick: (Int) -> Unit) {
     var campaignGuide by remember { mutableStateOf(false) }
-    if (campaignGuide) { CampaignTeamGuideScreen(onBackToMyTeams={campaignGuide=false},onPokemonClick=onPokemonClick); return }
+    if (campaignGuide) { CampaignTeamGuideScreen(onBackToMyTeams={campaignGuide=false},onPokemonClick={id,_->onPokemonClick(id)}); return }
     val teams = TeamStore.teams
     var selectedTeamId by remember { mutableStateOf(teams.firstOrNull()?.id) }
     var query by remember { mutableStateOf("") }
