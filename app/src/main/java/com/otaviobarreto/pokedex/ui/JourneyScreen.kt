@@ -99,7 +99,7 @@ fun JourneyScreen(
 
 @Composable
 private fun JourneyGamePicker(onSelect:(String)->Unit){
-    val captured=CollectionStore.capturedIds
+    val captured=CollectionStore.contextualCapturedIds
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding=PaddingValues(16.dp),
@@ -200,7 +200,7 @@ private fun JourneyGameMenu(
             )
         }
         item{
-            val captured=CollectionStore.capturedIds
+            val captured=CollectionStore.contextualCapturedIds
             val boxProgress by rememberJourneyCollectionProgress(game,captured)
             Card(
                 Modifier.fillMaxWidth().clickable(onClick=onBoxes),
@@ -258,7 +258,7 @@ private data class JourneyCollectionProgress(val captured:Int=0,val total:Int=0)
 @Composable
 private fun rememberJourneyCollectionProgress(
     game:AppGame,
-    capturedIds:Set<Int>
+    capturedBySource:Map<String,Set<Int>>
 ):State<JourneyCollectionProgress>{
     val ids by produceState<Set<Int>>(initialValue=emptySet(),game.label){
         value=withContext(Dispatchers.IO){
@@ -268,8 +268,11 @@ private fun rememberJourneyCollectionProgress(
             }.toSet()
         }
     }
-    return remember(ids,capturedIds){
-        mutableStateOf(JourneyCollectionProgress(ids.count{it in capturedIds},ids.size))
+    val registered=remember(game.label,capturedBySource){
+        game.regions.flatMap{capturedBySource[it.source].orEmpty()}.toSet()
+    }
+    return remember(ids,registered){
+        mutableStateOf(JourneyCollectionProgress(ids.count{it in registered},ids.size))
     }
 }
 
