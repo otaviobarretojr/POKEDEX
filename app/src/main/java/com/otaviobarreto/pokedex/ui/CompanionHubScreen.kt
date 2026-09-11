@@ -168,6 +168,15 @@ fun CompanionHubScreen(
             Text("Pesquise um Pokémon e toque nele para consultar disponibilidade nos jogos.",style=MaterialTheme.typography.bodySmall)
         }
         selectedPokemon?.let{id->
+            item {
+                val owned=id in CollectionStore.capturedIds
+                Surface(shape=RoundedCornerShape(16.dp),color=if(owned)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant){
+                    Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                        Icon(if(owned)Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,null)
+                        Text(if(owned)"Você já tem este Pokémon na coleção." else "Este Pokémon ainda falta na sua coleção.",Modifier.weight(1f).padding(start=10.dp),fontWeight=FontWeight.SemiBold)
+                    }
+                }
+            }
             if(loadingGuide)item{LinearProgressIndicator(Modifier.fillMaxWidth())}
             if(!loadingGuide && availability.isEmpty()) item { Text("Nenhuma disponibilidade regional encontrada para #"+id+".") }
             items(availability,key={it.source}){entry->
