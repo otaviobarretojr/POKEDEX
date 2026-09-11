@@ -119,7 +119,6 @@ private fun JourneyGamePicker(onSelect:(String)->Unit){
     val captured=CollectionStore.contextualCapturedIds
     LazyColumn(
         Modifier.fillMaxSize(),
-        state=listState,
         contentPadding=PaddingValues(16.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)
     ){
@@ -332,6 +331,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
 
     LazyColumn(
         Modifier.fillMaxSize(),
+        state=listState,
         contentPadding=PaddingValues(horizontal=16.dp,vertical=12.dp),
         verticalArrangement=Arrangement.spacedBy(0.dp)
     ){
