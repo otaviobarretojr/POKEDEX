@@ -63,19 +63,25 @@ private val qbGames=AppGameCatalog.games.map{game->
  val preferredGame=CompanionPreferences.activeGame.takeIf{g->qbGames.any{it.label==g}} ?: qbGames.first().label
  var gameLabel by rememberSaveable{mutableStateOf(preferredGame)}
  val game=remember(gameLabel){qbGames.firstOrNull{it.label==gameLabel}?:qbGames.first()}
- val preferredRegion=CompanionPreferences.activeRegionSource
+ val preferredRegion=CompanionPreferences.activeRegionForGame(game.label)
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(CompanionPreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  LaunchedEffect(region.source,game.label){
   loading=true
+  CompanionPreferences.activeGame=game.label
+  CompanionPreferences.setActiveRegionForGame(game.label,region.source)
+  page=CompanionPreferences.boxPage(region.source)
   val ctx=GameContext.fromSource(region.source)
   dex=if(ctx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}}.getOrElse{emptyList()}
   val pageCount=((dex.size+29)/30).coerceAtLeast(1)
   if(page>=pageCount) page=pageCount-1
+  CompanionPreferences.setBoxPage(region.source,page)
   loading=false
  }
- val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(350);entries.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
+ LaunchedEffect(region.source,current){CompanionPreferences.setBoxPage(region.source,current)}
+ val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null}.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(250);entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null}.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
@@ -93,7 +99,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      qbGames.forEach{g->
       DropdownMenuItem(
        text={Text(g.label,fontWeight=FontWeight.SemiBold)},
-       onClick={gameLabel=g.label;CompanionPreferences.activeGame=g.label;regionSource=g.regions.first().source;CompanionPreferences.activeRegionSource=regionSource;page=0;gameMenu=false}
+       onClick={gameLabel=g.label;CompanionPreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==CompanionPreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=CompanionPreferences.boxPage(regionSource);CompanionPreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
       )
      }
     }
@@ -114,7 +120,7 @@ private val qbGames=AppGameCatalog.games.map{game->
         Text(r.label,fontWeight=FontWeight.SemiBold)
         if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)
        }},
-       onClick={regionSource=r.source;CompanionPreferences.activeRegionSource=r.source;page=0;regionMenu=false}
+       onClick={regionSource=r.source;CompanionPreferences.setActiveRegionForGame(game.label,r.source);page=CompanionPreferences.boxPage(r.source);regionMenu=false}
       )
      }
     }
