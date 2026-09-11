@@ -41,7 +41,7 @@ if violations:
 print("Source verification passed.")
 
 
-# v2.0 release guards
+# v3.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 if "PACK_VERSION = 3" not in offline:
     violations.append("Offline pack version is not v3")
@@ -55,8 +55,28 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "2.0.0"' not in workflow or "versionCode = 200" not in workflow:
-    violations.append("CI v2.0 version stamping missing")
+if 'versionName = "3.0.0"' not in workflow or "versionCode = 300" not in workflow:
+    violations.append("CI v3.0 version stamping missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+companion = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
+for required in ("Busca universal", "Guia de captura", "Backup e restauração", "Progresso por jogo"):
+    if required not in companion:
+        violations.append(f"Companion Hub missing {required}")
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+if "movePokemon(activeBox,target" not in boxes:
+    violations.append("Box-to-Box move integration missing")
+
+backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
+if "pokedex-companion" not in backup:
+    violations.append("Backup format guard missing")
 
 if violations:
     print("Source verification failed:")

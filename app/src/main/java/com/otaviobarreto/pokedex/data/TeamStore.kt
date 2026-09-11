@@ -98,6 +98,32 @@ object TeamStore {
         return true
     }
 
+    fun exportSnapshot(): JSONArray {
+        val array = JSONArray()
+        teams.forEach { team ->
+            array.put(JSONObject().put("id", team.id).put("name", team.name).put("members", JSONArray(team.members)))
+        }
+        return array
+    }
+
+    fun importSnapshot(array: JSONArray): Boolean = runCatching {
+        val restored = buildList {
+            for (i in 0 until array.length()) {
+                val obj = array.optJSONObject(i) ?: continue
+                val membersArray = obj.optJSONArray("members") ?: JSONArray()
+                val members = buildList {
+                    for (j in 0 until membersArray.length()) {
+                        membersArray.optInt(j).takeIf { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID && it !in this }?.let(::add)
+                    }
+                }.take(MAX_TEAM_SIZE)
+                add(Team(obj.optLong("id", i.toLong()+1), sanitizeName(obj.optString("name", "Time " + (i+1))), members))
+            }
+        }
+        teams = restored.ifEmpty { listOf(Team(System.currentTimeMillis(), "Meu time", emptyList())) }
+        persist()
+        true
+    }.getOrDefault(false)
+
     private fun updateMembers(teamId: Long, members: List<Int>) {
         teams = teams.map { if (it.id == teamId) it.copy(members = members.take(MAX_TEAM_SIZE)) else it }
         persist()
