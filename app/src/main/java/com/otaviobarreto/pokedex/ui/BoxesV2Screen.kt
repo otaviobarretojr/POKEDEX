@@ -81,7 +81,7 @@ private val qbGames=AppGameCatalog.games.map{game->
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){CompanionPreferences.setBoxPage(region.source,current)}
- val entries=dex.drop(current*30).take(30);val missingDetails=entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null};LaunchedEffect(entries){missingDetails.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(250);missingDetails.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ val entries=dex.drop(current*30).take(30);val missingDetails=entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null};LaunchedEffect(entries){missingDetails.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(250);missingDetails.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty();val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
@@ -227,7 +227,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    }
   }
  }
- if(search)QBSearch(dex,CollectionStore.capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
+ if(search)QBSearch(dex,capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
  if(allBoxes)QBAllBoxes(
   dex=dex,
   current=current,
@@ -237,13 +237,13 @@ private val qbGames=AppGameCatalog.games.map{game->
   select={targetPage->page=targetPage;allBoxes=false}
  )
  captureTarget?.let{pk->
-  val already=pk.nationalId in CollectionStore.capturedIds
+  val already=CollectionStore.isCapturedIn(region.source,pk.nationalId)
   AlertDialog(
    onDismissRequest={captureTarget=null},
    title={Text(if(already)"Remover captura?" else "Capturar Pokémon?")},
    text={Text(pretty(pk.name)+(if(already)" será marcado como não capturado." else " será marcado como capturado."))},
    confirmButton={
-    Button(onClick={CollectionStore.toggleCaptured(pk.nationalId);captureTarget=null}){
+    Button(onClick={CollectionStore.toggleCapturedIn(region.source,pk.nationalId);captureTarget=null}){
      Text(if(already)"Remover" else "Capturar")
     }
    },
