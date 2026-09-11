@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 6
+    private const val PACK_VERSION = 7
     private var context: Context? = null
 
     data class PackStatus(
@@ -33,7 +33,9 @@ object OfflineGamePackManager {
         val completedIds: Int,
         val expectedCount: Int,
         val currentVersion: Boolean,
-        val hasRegionManifest: Boolean
+        val hasRegionManifest: Boolean,
+        val pinnedResources: Int,
+        val expectedResources: Int
     ) {
         val summary: String
             get() = when {
@@ -42,6 +44,7 @@ object OfflineGamePackManager {
                 completedIds < expectedCount -> "Faltam ${expectedCount - completedIds} Pokémon"
                 !currentVersion -> "Pacote precisa ser atualizado"
                 !hasRegionManifest -> "Manifesto regional incompleto"
+                pinnedResources < expectedResources -> "Recursos locais incompletos"
                 else -> "Pacote precisa de reparo"
             }
     }
@@ -97,11 +100,20 @@ object OfflineGamePackManager {
             .size
         val current = p.getInt(key(gameLabel, "version"), 0) == PACK_VERSION
         val regions = !p.getString(key(gameLabel, "regions"), null).isNullOrBlank()
-        val valid = expected > 0 && completed == expected && current && regions
-        return PackAudit(valid, completed, expected, current, regions)
+        val resources = p.getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
+        val pinned = resources.count { PersistentApiCache.has(it) && PersistentApiCache.isPinned(it) }
+        val valid = expected > 0 && completed == expected && current && regions && resources.isNotEmpty() && pinned == resources.size
+        return PackAudit(valid, completed, expected, current, regions, pinned, resources.size)
     }
 
     fun repair(gameLabel: String) = enqueue(gameLabel)
+
+    fun manifestIds(gameLabel: String): Set<Int> =
+        prefs().getStringSet(key(gameLabel, "manifest_ids"), emptySet()).orEmpty()
+            .mapNotNull { it.toIntOrNull() }.toSet()
+
+    fun resourceUrls(gameLabel: String): Set<String> =
+        prefs().getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
 
     fun status(gameLabel: String): PackStatus {
         val prefs = prefs()
