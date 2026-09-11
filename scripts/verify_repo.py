@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.22.0"' not in workflow or "versionCode = 6220" not in workflow:
+if 'versionName = "6.23.0"' not in workflow or "versionCode = 6230" not in workflow:
     violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.22.0",
+        "v6.23.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,7 +907,7 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "6.22.0"' not in local_gradle or "versionCode = 6220" not in local_gradle:
+if 'versionName = "6.23.0"' not in local_gradle or "versionCode = 6230" not in local_gradle:
     violations.append("Local build version is not aligned with v6.21.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -938,9 +938,37 @@ for required in ("JourneyGameCover", "GameCoverCatalog.coversFor", "AsyncImage",
         violations.append(f"Journey official cover rendering missing {required}")
 
 startup_v622 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
-for required in ("GameCoverCatalog.coversFor", "startup-game-cover", "Preparando capas dos jogos"):
+for required in ("GameCoverCatalog.coversFor", "startup-journey-art", "Preparando arte da Jornada"):
     if required not in startup_v622:
         violations.append(f"Journey cover preload missing {required}")
+
+
+# v6.23.0 Journey reference-card visual guards
+journey_visual_catalog = root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyGameVisualCatalog.kt"
+if not journey_visual_catalog.exists():
+    violations.append("Journey hero artwork catalog missing")
+else:
+    visual_source = journey_visual_catalog.read_text(encoding="utf-8")
+    for required in ("448", "1007", "1008", "888", "889", "25", "133", "493", "483", "484", "6", "3"):
+        if required not in visual_source:
+            violations.append(f"Journey hero artwork mapping missing {required}")
+
+journey_hub_v623 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in (
+    "JourneyGameReferenceCard",
+    "JourneyHeroArtwork",
+    "Brush.horizontalGradient",
+    "JourneyGameCover",
+    "compactJourneyRegionLabel",
+    "RoundedCornerShape(24.dp)",
+):
+    if required not in journey_hub_v623:
+        violations.append(f"Journey reference-card visual missing {required}")
+
+startup_v623 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+for required in ("JourneyGameVisualCatalog.forGame", "startup-journey-art", "Preparando arte da Jornada"):
+    if required not in startup_v623:
+        violations.append(f"Journey reference art preload missing {required}")
 
 if violations:
     print("Source verification failed:")
