@@ -153,6 +153,14 @@ object JourneyObjectiveDetailsCatalog {
             listOf("Psíquico","Voador","Fada"),
             "Psíquico e Voador têm ótimo valor, mas leve cobertura para Lucario e Annihilape. Recomenda-se nível 56 ou mais.",
             "Conclusão da última base principal e fechamento da rota Starfall Street."
-        )
+        ,
+        "sv-pg-01" to d("Fechamento da Victory Road: avaliação da Elite Four e batalha de Campeã.",listOf(p("Elite Four","Nv. 57–61"),p("Geeta","Nv. 61–62","Top Champion")),listOf("Cobertura variada"),"Leve seis Pokémon próximos do nível 62 com cobertura ampla e itens de cura.","Conclusão da Victory Road e avanço para o final das três rotas."),
+        "sv-pg-02" to d("Arven encerra Path of Legends em uma batalha completa.",listOf(p("Equipe de Arven","Nv. 58–63","6 Pokémon")),listOf("Cobertura variada"),"Prepare respostas para uma equipe diversificada e preserve seu núcleo mais forte.","Conclusão de Path of Legends."),
+        "sv-pg-03" to d("Fechamento de Starfall Street envolvendo Clavell e Cassiopeia.",listOf(p("Director Clavell","Nv. 60–61"),p("Cassiopeia","Nv. 62–63")),listOf("Cobertura variada"),"Equipe equilibrada na faixa de 63 facilita as duas batalhas.","Conclusão de Starfall Street."),
+        "sv-pg-04" to d("The Way Home leva o grupo à Area Zero e encerra a história principal.",listOf(p("Area Zero","Nv. 55–65"),p("Batalha final","Nv. 66–67")),listOf("Cobertura variada"),"Leve o time principal curado, com respostas para Paradox Pokémon e uma vaga flexível.","Créditos, acesso completo ao pós-jogo e exploração ampliada de Area Zero."),
+        "sv-pg-05" to d("Após os créditos, revisite os oito ginásios para as revanche de avaliação.",listOf(p("8 Gym Leaders","Nv. 65–66","Equipes reforçadas")),listOf("Cobertura dos 8 tipos"),"Use um time de nível 66+ e troque cobertura conforme cada ginásio.","Libera a etapa necessária para o Academy Ace Tournament."),
+        "sv-pg-06" to d("O Academy Ace Tournament reúne treinadores fortes da Academy em sequência.",listOf(p("4 treinadores","Nv. 65–70","Chave aleatória/variável")),listOf("Cobertura geral"),"Equipe 68–70, itens de cura e golpes consistentes reduzem o risco entre rodadas.","Conclusão do primeiro torneio e avanço para raids de alto nível."),
+        "sv-pg-07" to d("Black Crystal Tera Raids são o conteúdo de raid 6★ liberado no pós-jogo.",listOf(p("Tera Raid 6★","Nv. 75","Build específica por raid")),listOf("Depende do Tera Type"),"Monte Pokémon dedicados para raid; sobrevivência, STAB e sinergia importam mais que cobertura genérica.","Acesso regular às raids 6★ e preparação para eventos 7★."),
+        "sv-pg-08" to d("Checklist aberto do endgame de Paldea: Pokédex, Treasures of Ruin e exploração.",listOf(p("Wo-Chien / Chien-Pao / Ting-Lu / Chi-Yu","Nv. 60","Lendários opcionais")),listOf("Captura e exploração"),"Leve False Swipe, status e muitas Poké Balls para a etapa de coleção.","Fechamento do conteúdo base antes ou em paralelo aos DLCs.")
     )
 }
