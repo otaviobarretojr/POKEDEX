@@ -16,6 +16,11 @@ data class JourneyStep(
 )
 
 object JourneyCatalog {
+    fun routeLabel(game:String):String = when(game){
+        "Scarlet / Violet" -> "18 objetivos · ordem revisada por nível · sem level scaling"
+        else -> "Rota de campanha"
+    }
+
     fun steps(game:String):List<JourneyStep> = when(game){
         "Scarlet / Violet" -> scarletViolet
         else -> emptyList()
