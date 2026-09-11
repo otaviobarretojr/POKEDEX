@@ -39,12 +39,10 @@ fun BootExperienceScreen(onReady: () -> Unit) {
     val glow by infinite.animateFloat(.18f, .42f, infiniteRepeatable(tween(1900), RepeatMode.Reverse), label = "glow")
 
     LaunchedEffect(Unit) {
-        state = BootState(.36f, "Preparando dados locais")
-        delay(160)
-        state = BootState(.78f, "Abrindo sua Pokédex")
-        delay(180)
-        state = BootState(1f, "Tudo pronto")
-        delay(180)
+        state = BootState(.55f, "Preparando dados locais")
+        delay(60)
+        state = BootState(1f, "Abrindo sua Pokédex")
+        delay(60)
         finished = true
         onReady()
     }
@@ -96,7 +94,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
             Spacer(Modifier.height(38.dp))
-            Text("POKEDEX  ·  v1.0", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
+            Text("POKEDEX  ·  FAST START", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
         }
         if(finished) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha=glow*.15f)))
