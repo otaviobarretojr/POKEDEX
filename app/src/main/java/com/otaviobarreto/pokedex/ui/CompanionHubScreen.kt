@@ -23,6 +23,10 @@ import kotlinx.coroutines.withContext
 
 private data class UniversalResult(val kind:String,val title:String,val subtitle:String,val pokemonId:Int?=null,val refKind:String?=null,val refName:String?=null)
 private data class GameProgress(val game:String,val region:String,val source:String,val captured:Int,val total:Int)
+private fun smartSearchTerm(raw:String):String {
+    val stop = setOf("onde","pego","pegar","capturo","capturar","como","consigo","achar","encontro","no","na","em","scarlet","violet","pokemon","pokémon")
+    return raw.lowercase().replace("#"," ").split(Regex("\\s+")).filter { it.isNotBlank() && it !in stop }.joinToString(" ")
+}
 
 @Composable
 fun CompanionHubScreen(
@@ -40,17 +44,21 @@ fun CompanionHubScreen(
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var gameProgress by remember { mutableStateOf<List<GameProgress>>(emptyList()) }
     var loadingProgress by remember { mutableStateOf(false) }
+    var plannerGame by remember { mutableStateOf(AppGameCatalog.games.first().label) }
+    var plannerPlan by remember { mutableStateOf<CapturePlan?>(null) }
+    var plannerLoading by remember { mutableStateOf(false) }
+    var plannerMenu by remember { mutableStateOf(false) }
     val clipboard=LocalClipboardManager.current
     val dex=PokedexDataStore.cachedNationalDex().orEmpty()
     val captured=CollectionStore.capturedIds
     val pokemonResults=remember(query,dex){
-        val q=query.trim().removePrefix("#")
+        val q=smartSearchTerm(query).ifBlank { query.trim().removePrefix("#") }
         if(q.length<2) emptyList() else dex.asSequence().filter{it.name.contains(q,true)||it.id.toString()==q}.take(12)
             .map{UniversalResult("Pokémon",it.name,"#"+it.id.toString().padStart(4,'0')+" · G"+it.generation,pokemonId=it.id)}.toList()
     }
 
     LaunchedEffect(query){
-        val q=query.trim()
+        val q=smartSearchTerm(query).ifBlank { query.trim() }
         if(q.length<2){refs=emptyList();loadingRefs=false;return@LaunchedEffect}
         loadingRefs=true
         refs=withContext(Dispatchers.IO){
@@ -90,6 +98,12 @@ fun CompanionHubScreen(
         loadingGuide=true
         availability=CaptureGuideService.find(id)
         loadingGuide=false
+    }
+
+    LaunchedEffect(plannerGame){
+        plannerLoading=true
+        plannerPlan=CapturePlannerService.build(plannerGame)
+        plannerLoading=false
     }
 
     val progress=if(dex.isEmpty())0f else captured.size.toFloat()/dex.size
@@ -160,8 +174,49 @@ fun CompanionHubScreen(
                 Card(Modifier.fillMaxWidth().clickable{onOpenGame(entry.source)}){
                     Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
                         Icon(Icons.Default.LocationOn,null)
-                        Column(Modifier.weight(1f).padding(start=10.dp)){Text(entry.game,fontWeight=FontWeight.Bold);Text(entry.region+" · "+if(entry.encounterCount>0)entry.encounterCount.toString()+" áreas de encontro" else "Disponível nesta Pokédex",style=MaterialTheme.typography.bodySmall)}
+                        Column(Modifier.weight(1f).padding(start=10.dp)){
+                            Text(entry.game,fontWeight=FontWeight.Bold)
+                            Text(entry.region+" · "+if(entry.encounterCount>0)entry.encounterCount.toString()+" áreas de encontro" else "Disponível nesta Pokédex",style=MaterialTheme.typography.bodySmall)
+                            if(entry.sampleLocations.isNotEmpty()) Text(entry.sampleLocations.joinToString(" · "),style=MaterialTheme.typography.labelSmall)
+                            val methodText=listOfNotNull(entry.methods.takeIf{it.isNotEmpty()}?.joinToString("/"),entry.minLevel?.let{"Nv. "+it+(entry.maxLevel?.takeIf{m->m!=it}?.let{m->"–"+m}?:"")}).joinToString(" · ")
+                            if(methodText.isNotBlank()) Text(methodText,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+                        }
                         Icon(Icons.Default.ChevronRight,null)
+                    }
+                }
+            }
+        }
+        item {
+            HorizontalDivider()
+            Text("Planejador de captura",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
+            Text("Veja o que ainda falta e o que você consegue buscar no jogo escolhido.",style=MaterialTheme.typography.bodySmall)
+            ExposedDropdownMenuBox(expanded=plannerMenu,onExpandedChange={plannerMenu=!plannerMenu},modifier=Modifier.fillMaxWidth().padding(top=8.dp)){
+                OutlinedTextField(plannerGame,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(plannerMenu)})
+                ExposedDropdownMenu(plannerMenu,{plannerMenu=false}){
+                    AppGameCatalog.games.forEach{game->DropdownMenuItem({Text(game.label)},{plannerGame=game.label;plannerMenu=false})}
+                }
+            }
+        }
+        if(plannerLoading)item{LinearProgressIndicator(Modifier.fillMaxWidth())}
+        plannerPlan?.let{plan->
+            item {
+                Card(Modifier.fillMaxWidth()){
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Text(plan.game,fontWeight=FontWeight.Bold)
+                        Text(plan.obtainableMissing.size.toString()+" faltantes disponíveis neste jogo",color=MaterialTheme.colorScheme.primary)
+                        Text(plan.externalMissing.size.toString()+" faltantes dependem de outros jogos/trocas/HOME",style=MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            if(plan.obtainableMissing.isNotEmpty()) {
+                item { Text("Próximos para capturar",fontWeight=FontWeight.Bold) }
+                items(plan.obtainableMissing.take(12),key={"plan-"+it.id}){p->
+                    Card(Modifier.fillMaxWidth().clickable{selectedPokemon=p.id}){
+                        Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
+                            Icon(Icons.Default.CatchingPokemon,null)
+                            Column(Modifier.weight(1f).padding(start=10.dp)){Text(p.name,fontWeight=FontWeight.SemiBold);Text("#"+p.id.toString().padStart(4,'0'),style=MaterialTheme.typography.bodySmall)}
+                            TextButton({onPokemonClick(p.id)}){Text("Ficha")}
+                        }
                     }
                 }
             }
