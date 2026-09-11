@@ -15,19 +15,24 @@ object BackupService {
         .put("journey", JourneyProgressStore.exportSnapshot())
         .toString()
 
+    internal fun isPayloadShapeValid(parsed: JSONObject): Boolean {
+        if (parsed.optString("format") != "pokedex-companion") return false
+        val collection = parsed.optJSONObject("collection") ?: return false
+        val teams = parsed.optJSONArray("teams") ?: return false
+        if (!collection.has("captured") || !collection.has("boxes")) return false
+        if (teams.length() > 100) return false
+        return true
+    }
+
     fun importJson(raw: String): Boolean {
         val parsed = runCatching { JSONObject(raw) }.getOrNull() ?: return false
-        if (parsed.optString("format") != "pokedex-companion") return false
+        if (!isPayloadShapeValid(parsed)) return false
 
         val collection = parsed.optJSONObject("collection") ?: return false
         val teams = parsed.optJSONArray("teams") ?: return false
         val preferences = parsed.optJSONObject("preferences")
         val recent = parsed.optJSONObject("recent")
         val journey = parsed.optJSONObject("journey")
-
-        // Validate the payload shape before mutating any live store.
-        if (!collection.has("captured") || !collection.has("boxes")) return false
-        if (teams.length() > 100) return false
 
         val oldCollection = CollectionStore.exportSnapshot()
         val oldTeams = TeamStore.exportSnapshot()
