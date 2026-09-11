@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,6 +36,8 @@ import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.PokeApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 private data class LivingDexScope(val label: String, val source: String?)
 private enum class LivingCollectionFilter { ALL, OWNED, BOXED, MISSING, UNBOXED }
@@ -53,6 +56,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     var scope by remember { mutableStateOf(livingDexScopes.first()) }
     var scopeMenu by remember { mutableStateOf(false) }
     val captured = CollectionStore.capturedIds
+    val gridState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
         loading = true
@@ -101,6 +105,13 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
             val genItems = scoped.filter { it.generation == gen }
             genItems.count { it.id in captured } to genItems.size
         }
+    }
+
+    LaunchedEffect(gridState, filtered) {
+        snapshotFlow { gridState.layoutInfo.visibleItemsInfo.map { it.index } }
+            .map { indices -> indices.mapNotNull { filtered.getOrNull(it)?.id }.take(12) }
+            .distinctUntilChanged()
+            .collect { ids -> ids.forEach { id -> PokedexDataStore.prefetchDetails(id) } }
     }
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))) {
@@ -206,11 +217,11 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
                 modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+                state = gridState,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(filtered, key = { it.id }) { p ->
-                    LaunchedEffect(p.id) { PokedexDataStore.prefetchDetails(p.id) }
+                items(filtered, key = { it.id }, contentType = { "pokemon" }) { p ->
                     val caught = p.id in captured
                     Card(
                         Modifier.fillMaxWidth().aspectRatio(.78f).clickable { onPokemonClick(p.id) },

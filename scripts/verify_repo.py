@@ -23,6 +23,11 @@ for required in ("prefetchCoreDetails", "prefetchFullDetails", "cachedPokemon", 
     if required not in store:
         violations.append(f"PokedexDataStore missing {required}")
 
+for grid_name in ("PokedexV2Screen.kt", "CollectionScreens.kt"):
+    grid_text = (ui / grid_name).read_text(encoding="utf-8")
+    if "LaunchedEffect(p.id){PokedexDataStore.prefetchDetails(p.id)}" in grid_text or "LaunchedEffect(p.id) { PokedexDataStore.prefetchDetails(p.id) }" in grid_text:
+        violations.append(f"{grid_name}: per-card prefetch regression")
+
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
 if "Render as soon as the two core payloads are ready" not in detail:
     violations.append("progressive detail loading guard missing")
