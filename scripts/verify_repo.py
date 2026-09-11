@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.7.0"' not in workflow or "versionCode = 670" not in workflow:
-    violations.append("CI v6.7.0 version stamping missing")
+if 'versionName = "6.7.1"' not in workflow or "versionCode = 671" not in workflow:
+    violations.append("CI v6.7.1 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -476,6 +476,25 @@ for required in ("TIME DINÂMICO DA JORNADA", "displaySlots", "JourneyDynamicTea
         violations.append(f"Dynamic team guide UI missing {required}")
 if "18 objetivos · ordem revisada por nível · sem level scaling" not in journey_catalog:
     violations.append("Scarlet/Violet curated route annotation missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.7.1 Journey visual assets guards
+visual_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
+journey_ui = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("Katy","Brassius","Iono","Kofu","Larry","Ryme","Tulip","Grusha","Giacomo","Mela","Atticus","Ortega","Eri","Klawf","Bombirdier","Orthworm","Great Tusk / Iron Treads","Dondozo & Tatsugiri"):
+    if required not in visual_catalog:
+        violations.append(f"Journey visual asset missing {required}")
+for required in ("JourneyVisualThumb","JourneyVisualHero","JourneyVisualAssetCatalog.forStep"):
+    if required not in journey_ui:
+        violations.append(f"Journey visual rendering missing {required}")
+if visual_catalog.count("JourneyVisualAsset(") < 19:
+    violations.append("Journey visual catalog does not cover all 18 Scarlet/Violet objectives")
 
 if violations:
     print("Source verification failed:")
