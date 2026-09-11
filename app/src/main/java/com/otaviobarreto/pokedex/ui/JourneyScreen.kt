@@ -791,8 +791,18 @@ private fun JourneyMapScreen(
             colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)
         ){
             BoxWithConstraints(Modifier.fillMaxSize().padding(12.dp)){
-                Box(
+                JourneyMapCatalog.backgroundUrl(game.label)?.let{mapUrl->
+                    AsyncImage(
+                        model=mapUrl,
+                        contentDescription="Mapa oficial de Paldea",
+                        contentScale=ContentScale.Fit,
+                        modifier=Modifier.fillMaxSize().clip(RoundedCornerShape(22.dp))
+                    )
+                } ?: Box(
                     Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.22f),RoundedCornerShape(22.dp))
+                )
+                Box(
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha=.08f),RoundedCornerShape(22.dp))
                 )
                 points.forEach{point->
                     val step=steps.firstOrNull{it.id==point.stepId} ?: return@forEach
@@ -822,7 +832,7 @@ private fun JourneyMapScreen(
                 }
             }
         }
-        Text("Mapa esquemático da campanha principal de Paldea. Pós-jogo e DLCs seguem pela rota completa acima.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
+        Text("Mapa oficial de Paldea com os 18 objetivos principais posicionados por região. Toque em um ponto para abrir o objetivo.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
     }
 }
 
