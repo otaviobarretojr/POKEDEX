@@ -1,6 +1,6 @@
 package com.otaviobarreto.pokedex.data
 
-enum class JourneyChallengeKind(val label:String){ GYM("Ginásio"), TITAN("Titã"), STAR("Team Star"), STORY("História") }
+enum class JourneyChallengeKind(val label:String){ GYM("Ginásio"), TITAN("Titã"), STAR("Team Star"), STORY("História"), POSTGAME("Pós-jogo") }
 
 data class JourneyStep(
     val id:String,
@@ -17,7 +17,7 @@ data class JourneyStep(
 
 object JourneyCatalog {
     fun routeLabel(game:String):String = when(game){
-        "Scarlet / Violet" -> "18 objetivos · ordem revisada por nível · sem level scaling"
+        "Scarlet / Violet" -> "Campanha + pós-jogo · ordem recomendada · sem level scaling"
         else -> "Rota de campanha"
     }
 
@@ -44,6 +44,14 @@ object JourneyCatalog {
         JourneyStep("sv-15",15,"Grusha","Glaseado Gym","Nv. 47–48",JourneyChallengeKind.GYM,"Gelo","Glaseado"),
         JourneyStep("sv-16",16,"Ortega","Ruchbah Squad","Nv. 50–51",JourneyChallengeKind.STAR,"Fada","North Province (Area Three)"),
         JourneyStep("sv-17",17,"Dondozo / Tatsugiri","False Dragon Titan","Nv. 55",JourneyChallengeKind.TITAN,"Dragão","Casseroya Lake"),
-        JourneyStep("sv-18",18,"Eri","Caph Squad","Nv. 55–56",JourneyChallengeKind.STAR,"Lutador","North Province (Area Two)","Fechamento recomendado dos 18 objetivos principais.")
+        JourneyStep("sv-18",18,"Eri","Caph Squad","Nv. 55–56",JourneyChallengeKind.STAR,"Lutador","North Province (Area Two)","Fechamento recomendado dos 18 objetivos principais."),
+        JourneyStep("sv-pg-01",19,"Victory Road Finale","Elite Four + Champion","Nv. 57–62",JourneyChallengeKind.POSTGAME,"Liga","Pokémon League","Conclua a avaliação da Liga e a sequência final da Victory Road."),
+        JourneyStep("sv-pg-02",20,"Path of Legends Finale","Batalha final com Arven","Nv. 58–63",JourneyChallengeKind.POSTGAME,"História","Poco Path","Feche a história de Arven após os cinco Titãs."),
+        JourneyStep("sv-pg-03",21,"Starfall Street Finale","Clavell + Cassiopeia","Nv. 60–63",JourneyChallengeKind.POSTGAME,"História","Uva / Naranja Academy","Conclua a identidade de Cassiopeia e o arco Team Star."),
+        JourneyStep("sv-pg-04",22,"The Way Home","Area Zero","Nv. 62–67",JourneyChallengeKind.POSTGAME,"História","The Great Crater of Paldea","Reúna Nemona, Arven e Penny e conclua a campanha principal em Area Zero."),
+        JourneyStep("sv-pg-05",23,"Gym Leader Rematches","Revanche dos 8 ginásios","Nv. 65–66",JourneyChallengeKind.POSTGAME,"Misto","Paldea","Revise os oito ginásios para liberar o Academy Ace Tournament."),
+        JourneyStep("sv-pg-06",24,"Academy Ace Tournament","Primeiro torneio","Nv. 65–70",JourneyChallengeKind.POSTGAME,"Misto","Academy","Vença o primeiro Academy Ace Tournament e avance o pós-jogo."),
+        JourneyStep("sv-pg-07",25,"Black Crystal Raids","6★ Tera Raids","Nv. 75+",JourneyChallengeKind.POSTGAME,"Tera","Paldea","Complete raids suficientes após o torneio até Jacq liberar as Black Crystal 6★ raids."),
+        JourneyStep("sv-pg-08",26,"Paldea Endgame","Dex, lendários e exploração","Livre",JourneyChallengeKind.POSTGAME,"Exploração","Paldea","Complete a Pokédex, capture os Treasures of Ruin e finalize conteúdos opcionais antes ou junto dos DLCs.")
     )
 }
