@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 3
+    private const val PACK_VERSION = 4
     private var context: Context? = null
 
     data class PackStatus(
@@ -118,6 +118,11 @@ object OfflineGamePackManager {
         val appContext = requireNotNull(context)
         val contexts = game.regions.mapNotNull { GameContext.fromSource(it.source) }
         require(contexts.isNotEmpty()) { "Nenhuma região reconhecida para ${game.label}" }
+
+        onProgress(Progress(0, 1, "Preparando biblioteca offline"))
+        listOf("move", "ability", "item").forEach { kind ->
+            runCatching { ReferenceCatalogService.load(kind) }
+        }
 
         onProgress(Progress(0, 1, "Preparando ${game.label}"))
         val regionalDexes = contexts.mapIndexed { index, ctx ->
