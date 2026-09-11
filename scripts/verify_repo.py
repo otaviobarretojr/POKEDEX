@@ -605,7 +605,7 @@ for required in ('MainDestination("home","Jornada"','MainDestination("boxes","Bo
 for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.capturedIds","onOpenBoxes"):
     if required not in journey_v611:
         violations.append(f"Journey/Boxes consolidation missing {required}")
-for required in ("CompanionPreferences.activeGame","CompanionPreferences.activeRegionSource"):
+for required in ("CompanionPreferences.activeGame","CompanionPreferences.setActiveRegionForGame"):
     if required not in boxes_v611:
         violations.append(f"Boxes context handoff missing {required}")
 if "KEY_ACTIVE_REGION" not in prefs_v611:
