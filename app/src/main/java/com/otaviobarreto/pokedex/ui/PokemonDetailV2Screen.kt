@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -47,18 +48,8 @@ fun PokemonDetailV2Screen(
     var bundle by remember(id){ mutableStateOf(cachedDetailBundle(id)) }
     var error by remember(id){ mutableStateOf<String?>(null) }
     var retry by remember{ mutableIntStateOf(0) }
-    var tab by remember(id){ mutableIntStateOf(0) }
+    var tab by rememberSaveable(id){ mutableIntStateOf(0) }
     val context=remember(source){ GameContext.fromSource(source) }
-    var contextDexRevision by remember(id,source){ mutableIntStateOf(0) }
-
-    LaunchedEffect(context){
-        if(context!=null && GameDexService.cached(context)==null){
-            runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(context)}}.onSuccess{
-                contextDexRevision++
-            }
-        }
-    }
-
     LaunchedEffect(id,retry){
         error=null
 
@@ -102,7 +93,7 @@ fun PokemonDetailV2Screen(
 
     when{
         bundle!=null -> DetailV2Content(
-            bundle!!,tab,{tab=it},context,contextDexRevision,onBack,onOpenLocation,onOpenReference,onOpenPokemon
+            bundle!!,tab,{tab=it},context,source,onBack,onOpenLocation,onOpenReference,onOpenPokemon
         )
         error!=null -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
             Column(horizontalAlignment=Alignment.CenterHorizontally){
@@ -138,7 +129,7 @@ fun PokemonDetailV2Screen(
     tab:Int,
     setTab:(Int)->Unit,
     context:GameContext?,
-    contextDexRevision:Int,
+    source:String?,
     back:()->Unit,
     openLocation:(()->Unit)?,
     openRef:((String,String)->Unit)?,
@@ -147,8 +138,8 @@ fun PokemonDetailV2Screen(
     val primaryType=b.pokemon.types.firstOrNull().orEmpty()
     val accent=typeColor(primaryType)
     val legacyBoxes=CollectionStore.boxesForPokemon(b.pokemon.id)
-    val saveLocation=remember(b.pokemon.id,context,contextDexRevision,CollectionStore.capturedIds,legacyBoxes){
-        resolveSaveLocation(b.pokemon.id,context,legacyBoxes)
+    val saveLocation=remember(b.pokemon.id,context,source,CollectionStore.capturedIds,CollectionStore.contextualCapturedIds,legacyBoxes){
+        resolveSaveLocation(b.pokemon.id,context,source,legacyBoxes)
     }
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
         HeroCard(b,context,accent,saveLocation,back)
@@ -172,9 +163,11 @@ private data class DetailSaveLocation(
 private fun resolveSaveLocation(
     pokemonId:Int,
     context:GameContext?,
+    source:String?,
     legacyBoxes:List<String>
 ):DetailSaveLocation{
-    if(!CollectionStore.isCaptured(pokemonId)){
+    val registered = if(!source.isNullOrBlank()) CollectionStore.isCapturedIn(source,pokemonId) else CollectionStore.isCaptured(pokemonId)
+    if(!registered){
         return DetailSaveLocation(false,null,"Segure na Box")
     }
 

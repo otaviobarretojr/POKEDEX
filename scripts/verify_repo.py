@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.12.0"' not in workflow or "versionCode = 6120" not in workflow:
-    violations.append("CI v6.12.0 version stamping missing")
+if 'versionName = "6.13.0"' not in workflow or "versionCode = 6130" not in workflow:
+    violations.append("CI v6.13.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -122,7 +122,7 @@ if "DUPLICATES" not in living:
     violations.append("Living Dex duplicate intelligence missing")
 
 backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-if '.put("version", 6)' not in backup or "activeGame" not in backup:
+if '.put("version", 7)' not in backup or "preferences" not in backup:
     violations.append("Backup v5 context missing")
 
 if violations:
@@ -602,7 +602,7 @@ for forbidden in ('"Pokédex"','"Living Dex"','"Companion"'):
 for required in ('MainDestination("home","Jornada"','MainDestination("boxes","Boxes"'):
     if required not in main_line:
         violations.append(f"Primary navigation missing {required}")
-for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.capturedIds","onOpenBoxes"):
+for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.contextualCapturedIds","onOpenBoxes"):
     if required not in journey_v611:
         violations.append(f"Journey/Boxes consolidation missing {required}")
 for required in ("CompanionPreferences.activeGame","CompanionPreferences.setActiveRegionForGame"):
@@ -650,9 +650,68 @@ for required in ("resolvedSource=source ?: CompanionPreferences.activeRegionForG
         violations.append(f"Cross-route context preservation missing {required}")
 
 detail_v612 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
-for required in ("contextDexRevision", "GameDexService.cached(context)==null", "GameDexService.loadGameDex(context)"):
+for required in ("resolveSaveLocation", "CollectionStore.contextualCapturedIds"):
     if required not in detail_v612:
-        violations.append(f"Detail Box resolver hardening missing {required}")
+        violations.append(f"Detail contextual capture resolver missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.13.0 contextual collection + navigation continuity guards
+collection_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt").read_text(encoding="utf-8")
+for required in ("contextualCapturedIds", "capturedIn", "isCapturedIn", "toggleCapturedIn", "setCapturedIn", "migrateLegacyCapturedToSource", "contextualCaptured"):
+    if required not in collection_v613:
+        violations.append(f"Contextual collection missing {required}")
+
+boxes_v613 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("CollectionStore.contextualCapturedIds[region.source]", "CollectionStore.isCapturedIn(region.source", "CollectionStore.toggleCapturedIn(region.source"):
+    if required not in boxes_v613:
+        violations.append(f"Regional Box capture isolation missing {required}")
+if "val capturedIds=CollectionStore.capturedIds" in boxes_v613:
+    violations.append("Boxes must not use global capturedIds as regional progress")
+
+journey_v613 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("CollectionStore.contextualCapturedIds", "LazyListState", "state=listState", "mapZoom", "mapPanX", "onSelectedStepChange"):
+    if required not in journey_v613:
+        violations.append(f"Journey continuity/context missing {required}")
+
+main_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for required in ("migrateLegacyCapturedToSource", "source={source}", "openReference(kind,name,source)", "onPokemonClick={id,source->openPokemon(id,source)}"):
+    if required not in main_v613:
+        violations.append(f"Cross-screen source propagation missing {required}")
+
+campaign_v613 = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
+if "onPokemonClick:(Int,String?)->Unit" not in campaign_v613 or "onPokemonClick(slot.pokemonId,source)" not in campaign_v613:
+    violations.append("Campaign guide loses game source when opening Pokémon")
+
+reference_v613 = (ui / "ReferenceHubScreen.kt").read_text(encoding="utf-8")
+if "source:String?=null" not in reference_v613 or "onPokemonClick(id,source)" not in reference_v613:
+    violations.append("Reference hub loses game source when opening Pokémon")
+
+detail_v613 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+for required in ("rememberSaveable(id)", "CollectionStore.isCapturedIn(source,pokemonId)"):
+    if required not in detail_v613:
+        violations.append(f"Detail contextual state missing {required}")
+if "GameDexService.loadGameDex(context)" in detail_v613:
+    violations.append("Pokémon detail must not force-load GameDex only for capture indicator")
+
+prefs_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+for required in ("exportSnapshot", "importSnapshot", "boxPages", "regions"):
+    if required not in prefs_v613:
+        violations.append(f"Navigation backup missing {required}")
+
+backup_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
+if '.put("version", 7)' not in backup_v613 or 'put("preferences"' not in backup_v613:
+    violations.append("Backup v7 contextual state missing")
+
+cache_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt").read_text(encoding="utf-8")
+promote_body = cache_v613.split("fun promoteLocal",1)[1].split("fun clear",1)[0] if "fun promoteLocal" in cache_v613 else ""
+if "setLastModified" in promote_body:
+    violations.append("promoteLocal must not refresh TTL timestamps")
 
 if violations:
     print("Source verification failed:")

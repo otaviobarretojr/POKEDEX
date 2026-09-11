@@ -1,6 +1,7 @@
 package com.otaviobarreto.pokedex.data
 
 import android.content.Context
+import org.json.JSONObject
 
 object CompanionPreferences {
     private const val PREFS = "companion_preferences"
@@ -54,6 +55,33 @@ object CompanionPreferences {
     fun setBoxPage(source: String, page: Int) {
         context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()
             ?.putInt(KEY_BOX_PAGE_PREFIX + key(source), page.coerceAtLeast(0))?.apply()
+    }
+
+    fun exportSnapshot(): JSONObject {
+        val regions = JSONObject()
+        val pages = JSONObject()
+        AppGameCatalog.games.forEach { game ->
+            activeRegionForGame(game.label)?.let { regions.put(game.label, it) }
+            game.regions.forEach { region -> pages.put(region.source, boxPage(region.source)) }
+        }
+        return JSONObject()
+            .put("activeGame", activeGame)
+            .put("activeRegion", activeRegionSource)
+            .put("regions", regions)
+            .put("boxPages", pages)
+    }
+
+    fun importSnapshot(snapshot: JSONObject) {
+        snapshot.optString("activeGame").takeIf { it.isNotBlank() }?.let { activeGame = it }
+        val regions = snapshot.optJSONObject("regions")
+        AppGameCatalog.games.forEach { game ->
+            regions?.optString(game.label)?.takeIf { it.isNotBlank() }?.let { setActiveRegionForGame(game.label, it) }
+        }
+        val pages = snapshot.optJSONObject("boxPages")
+        AppGameCatalog.games.flatMap { it.regions }.forEach { region ->
+            if (pages?.has(region.source) == true) setBoxPage(region.source, pages.optInt(region.source, 0))
+        }
+        snapshot.optString("activeRegion").takeIf { it.isNotBlank() }?.let { activeRegionSource = it }
     }
 
     private fun key(value: String): String = value.lowercase()

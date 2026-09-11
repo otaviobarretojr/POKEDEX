@@ -23,7 +23,7 @@ import com.otaviobarreto.pokedex.data.*
 @Composable
 fun CampaignTeamGuideScreen(
     onBackToMyTeams:()->Unit,
-    onPokemonClick:(Int)->Unit,
+    onPokemonClick:(Int,String?)->Unit,
     initialGame:String?=null,
     initialPhase:String?=null
 ){
@@ -40,6 +40,7 @@ fun CampaignTeamGuideScreen(
     }
     val displaySlots=if(dynamic!=null && phase==dynamic.preset?.phase)dynamic.adjustedSlots else preset?.slots.orEmpty()
     val national=PokedexDataStore.cachedNationalDex().orEmpty()
+    val source=remember(game){CompanionPreferences.activeRegionForGame(game) ?: AppGameCatalog.games.firstOrNull{it.label==game}?.regions?.firstOrNull()?.source}
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -132,7 +133,7 @@ fun CampaignTeamGuideScreen(
             itemsIndexed(displaySlots,key={index,slot->index.toString()+"-"+slot.pokemonId}){index,slot->
                 val entry=national.firstOrNull{it.id==slot.pokemonId}
                 val build=TeamCampaignCatalog.buildFor(slot.pokemonId,game)
-                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(slot.pokemonId)},shape=RoundedCornerShape(20.dp)){
+                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(slot.pokemonId,source)},shape=RoundedCornerShape(20.dp)){
                     Column(Modifier.fillMaxWidth().padding(12.dp)){
                         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                             AsyncImage(
