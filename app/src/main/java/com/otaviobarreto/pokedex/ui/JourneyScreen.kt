@@ -337,17 +337,30 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
             }
         }
 
-        items(steps,key={it.id}){step->
+        itemsIndexed(steps,key={_,step->step.id}){index,step->
             val done=step.id in completed
             val isNext=nextStep?.id==step.id
-            JourneyStepCard(
-                step=step,
-                visual=JourneyVisualAssetCatalog.forStep(step.id),
-                done=done,
-                isNext=isNext,
-                onOpen={onOpenStep(step.id)},
-                onToggle={JourneyProgressStore.toggle(game.label,step.id)}
-            )
+            Column{
+                val section=when(index){
+                    0->"CAMPANHA PRINCIPAL · PALDEA"
+                    18->"PÓS-JOGO · PALDEA"
+                    26->"DLC · THE TEAL MASK"
+                    33->"DLC · THE INDIGO DISK"
+                    42->"EPÍLOGO · MOCHI MAYHEM"
+                    else->null
+                }
+                section?.let{
+                    Text(it,fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=42.dp))
+                }
+                JourneyStepCard(
+                    step=step,
+                    visual=JourneyVisualAssetCatalog.forStep(step.id),
+                    done=done,
+                    isNext=isNext,
+                    onOpen={onOpenStep(step.id)},
+                    onToggle={JourneyProgressStore.toggle(game.label,step.id)}
+                )
+            }
         }
 
         item{
@@ -757,7 +770,8 @@ private fun JourneyMapScreen(
     val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
     val steps=remember(game.label){JourneyCatalog.steps(game.label)}
     val points=remember(game.label){JourneyMapCatalog.points(game.label)}
-    val next=steps.firstOrNull{it.id !in completed}
+    val mappedSteps=steps.filter{step->points.any{it.stepId==step.id}}
+    val next=mappedSteps.firstOrNull{it.id !in completed}
 
     Column(Modifier.fillMaxSize().padding(16.dp)){
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
@@ -767,7 +781,7 @@ private fun JourneyMapScreen(
                 Text(game.label,style=MaterialTheme.typography.labelMedium)
             }
             Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer){
-                Text(completed.size.coerceAtMost(steps.size).toString()+"/"+steps.size,Modifier.padding(horizontal=10.dp,vertical=6.dp),fontWeight=FontWeight.Bold)
+                Text(completed.count{it in mappedSteps.map{step->step.id}}.toString()+"/"+mappedSteps.size,Modifier.padding(horizontal=10.dp,vertical=6.dp),fontWeight=FontWeight.Bold)
             }
         }
 
@@ -808,7 +822,7 @@ private fun JourneyMapScreen(
                 }
             }
         }
-        Text("Mapa esquemático de progressão: os pontos representam a posição relativa dos objetivos em Paldea.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
+        Text("Mapa esquemático da campanha principal de Paldea. Pós-jogo e DLCs seguem pela rota completa acima.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
     }
 }
 
