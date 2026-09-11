@@ -396,6 +396,8 @@ private fun JourneyStepCard(
         JourneyChallengeKind.STAR->Icons.Default.Stars
         JourneyChallengeKind.STORY->Icons.Default.AutoStories
         JourneyChallengeKind.POSTGAME->Icons.Default.AutoAwesome
+        JourneyChallengeKind.DLC->Icons.Default.TravelExplore
+        JourneyChallengeKind.EPILOGUE->Icons.Default.CatchingPokemon
     }
     val kindColor=when(step.kind){
         JourneyChallengeKind.GYM->MaterialTheme.colorScheme.primaryContainer
@@ -403,6 +405,8 @@ private fun JourneyStepCard(
         JourneyChallengeKind.STAR->MaterialTheme.colorScheme.tertiaryContainer
         JourneyChallengeKind.STORY->MaterialTheme.colorScheme.surfaceVariant
         JourneyChallengeKind.POSTGAME->MaterialTheme.colorScheme.tertiaryContainer
+        JourneyChallengeKind.DLC->MaterialTheme.colorScheme.secondaryContainer
+        JourneyChallengeKind.EPILOGUE->MaterialTheme.colorScheme.primaryContainer
     }
 
     Row(Modifier.fillMaxWidth()){
@@ -847,6 +851,9 @@ private fun JourneyVisualHero(asset:JourneyVisualAsset){
                         JourneyVisualRole.TOURNAMENT->"Torneio pós-jogo"
                         JourneyVisualRole.RAID->"Tera Raid pós-jogo"
                         JourneyVisualRole.EXPLORATION->"Exploração pós-jogo"
+                        JourneyVisualRole.DLC_CHARACTER->"Personagem do DLC"
+                        JourneyVisualRole.LEGENDARY->"Pokémon lendário / especial"
+                        JourneyVisualRole.EPILOGUE->"Epílogo"
                     },
                     style=MaterialTheme.typography.bodySmall,
                     modifier=Modifier.padding(top=4.dp)
