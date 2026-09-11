@@ -71,23 +71,29 @@ object HomeAudioManager {
 
         releasePlayer(clearScene = false)
         val context = appContext ?: return
-        player = MediaPlayer.create(context, scene.rawResId)?.apply {
-            val attrs = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_GAME)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build()
-            setAudioAttributes(attrs)
-            isLooping = scene.looping
-            val level = volume
-            setVolume(level, level)
-            setOnCompletionListener {
-                if (!scene.looping) {
-                    it.release()
-                    if (player === it) player = null
+        val descriptor = runCatching { context.resources.openRawResourceFd(scene.rawResId) }.getOrNull() ?: return
+        player = runCatching {
+            MediaPlayer().apply {
+                val attrs = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_GAME)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+                setAudioAttributes(attrs)
+                setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
+                isLooping = scene.looping
+                val level = volume
+                setVolume(level, level)
+                setOnCompletionListener {
+                    if (!scene.looping) {
+                        it.release()
+                        if (player === it) player = null
+                    }
                 }
+                prepare()
+                start()
             }
-            start()
-        }
+        }.getOrNull()
+        descriptor.close()
     }
 
     fun onAppBackgrounded() {
