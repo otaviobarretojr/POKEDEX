@@ -30,7 +30,7 @@ private data class BootState(val progress: Float, val label: String)
 
 @Composable
 fun BootExperienceScreen(onReady: () -> Unit) {
-    var state by remember { mutableStateOf(BootState(.04f, "Preparando sua Pokédex")) }
+    val context = LocalContext.current.applicationContext\n    var state by remember { mutableStateOf(BootState(.04f, "Preparando sua Pokédex")) }
     var finished by remember { mutableStateOf(false) }
     val animatedProgress by animateFloatAsState(state.progress, tween(420), label = "bootProgress")
     val infinite = rememberInfiniteTransition(label = "bootMotion")
@@ -39,10 +39,9 @@ fun BootExperienceScreen(onReady: () -> Unit) {
     val glow by infinite.animateFloat(.18f, .42f, infiniteRepeatable(tween(1900), RepeatMode.Reverse), label = "glow")
 
     LaunchedEffect(Unit) {
-        state = BootState(.55f, "Preparando dados locais")
-        delay(60)
-        state = BootState(1f, "Abrindo sua Pokédex")
-        delay(60)
+        StartupPreloader.warm(context) { progress ->
+            state = BootState(progress.fraction, progress.label)
+        }
         finished = true
         onReady()
     }
@@ -94,7 +93,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
             Spacer(Modifier.height(38.dp))
-            Text("POKEDEX  ·  v6.3.8", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
+            Text("POKEDEX  ·  v6.17.0", style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
         }
         if(finished) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha=glow*.15f)))
