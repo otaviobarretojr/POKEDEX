@@ -337,16 +337,16 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
             }
         }
 
-        itemsIndexed(steps,key={_,step->step.id}){index,step->
+        items(steps,key={it.id}){step->
             val done=step.id in completed
             val isNext=nextStep?.id==step.id
             Column{
-                val section=when(index){
-                    0->"CAMPANHA PRINCIPAL · PALDEA"
-                    18->"PÓS-JOGO · PALDEA"
-                    26->"DLC · THE TEAL MASK"
-                    33->"DLC · THE INDIGO DISK"
-                    42->"EPÍLOGO · MOCHI MAYHEM"
+                val section=when(step.id){
+                    "sv-01"->"CAMPANHA PRINCIPAL · PALDEA"
+                    "sv-pg-01"->"PÓS-JOGO · PALDEA"
+                    "sv-dlc-01"->"DLC · THE TEAL MASK"
+                    "sv-dlc-08"->"DLC · THE INDIGO DISK"
+                    "sv-epi-01"->"EPÍLOGO · MOCHI MAYHEM"
                     else->null
                 }
                 section?.let{
