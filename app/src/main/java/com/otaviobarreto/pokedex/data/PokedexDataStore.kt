@@ -27,10 +27,16 @@ object PokedexDataStore {
     }
 
     fun pokemon(id: Int): PokeApiService.RemotePokemonDetail =
-        pokemonCache.computeIfAbsent(id) { PokeApiService.loadPokemon(it) }
+        pokemonCache.computeIfAbsent(id) {
+            PersistentApiCache.promoteLocal(PokeApiService.pokemonUrl(it))
+            PokeApiService.loadPokemon(it)
+        }
 
     fun species(id: Int): PokeApiService.SpeciesInfo =
-        speciesCache.computeIfAbsent(id) { PokeApiService.loadSpecies(it) }
+        speciesCache.computeIfAbsent(id) {
+            PersistentApiCache.promoteLocal(PokeApiService.speciesUrl(it))
+            PokeApiService.loadSpecies(it)
+        }
 
     fun evolutions(url: String): List<PokeApiService.EvolutionStage> =
         evolutionCache.computeIfAbsent(url) { PokeApiService.loadEvolutionChain(it) }
