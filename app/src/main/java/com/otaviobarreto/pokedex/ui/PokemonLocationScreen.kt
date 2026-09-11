@@ -46,6 +46,8 @@ import com.otaviobarreto.pokedex.data.PokeApiService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,7 +71,11 @@ fun PokemonLocationScreen(
         error = null
         runCatching {
             withContext(Dispatchers.IO) {
-                PokedexDataStore.pokemon(pokemonId) to PokedexDataStore.encounters(pokemonId)
+                coroutineScope {
+                    val pokemonJob = async { PokedexDataStore.pokemon(pokemonId) }
+                    val encounterJob = async { PokedexDataStore.encounters(pokemonId) }
+                    pokemonJob.await() to encounterJob.await()
+                }
             }
         }.onSuccess { (loadedPokemon, loadedEncounters) ->
             pokemon = loadedPokemon
