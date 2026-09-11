@@ -79,7 +79,7 @@ fun CompanionHubScreen(
                             GameProgress(game.label,region.label,region.source,dexEntries.count{it.nationalId in CollectionStore.capturedIds},dexEntries.size)
                         }
                     }
-                }.flatMap { it.await() }.filterNotNull()
+                }.map { it.await() }.filterNotNull()
             }
         }
         loadingProgress=false
