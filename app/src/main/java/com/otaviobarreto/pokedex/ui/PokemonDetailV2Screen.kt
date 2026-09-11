@@ -196,8 +196,33 @@ private fun resolveSaveLocation(
     )
 }
 
-@Composable private fun HeroCard(b:DetailV2Bundle,context:GameContext?,accent:Color,saveLocation:DetailSaveLocation,back:()->Unit){val savedGame=saveLocation.gameLabel;val savedAccent=gameColor(savedGame);val inCollection=saveLocation.saved;Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(accent.copy(alpha=.16f),Color(0xFFF8FBFF),Color.White)))){repeat(5){i->Box(Modifier.offset(x=(45+i*62).dp,y=(42+i*48).dp).size((30+i*6).dp).alpha(.08f).background(accent,CircleShape))};IconButton(back,Modifier.padding(16.dp).size(46.dp).background(Color.White.copy(alpha=.82f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")};Column(Modifier.align(Alignment.TopEnd).padding(top=14.dp,end=16.dp).widthIn(min=72.dp,max=132.dp),horizontalAlignment=Alignment.CenterHorizontally){Surface(shape=RoundedCornerShape(16.dp),color=Color.White.copy(alpha=.92f),modifier=Modifier.size(56.dp)){Box(contentAlignment=Alignment.Center){Icon(Icons.Default.CatchingPokemon,null,tint=savedAccent,modifier=Modifier.size(37.dp).alpha(if(inCollection)1f else .20f))}};Text(if(inCollection)savedGame?:"Coleção" else "Não salvo",fontSize=10.sp,fontWeight=FontWeight.Bold,color=if(inCollection)savedAccent else Color(0xFF9AA0AE),modifier=Modifier.padding(top=5.dp),maxLines=1,overflow=TextOverflow.Ellipsis);Text(saveLocation.boxLabel,fontSize=9.sp,color=if(inCollection)Color(0xFF50566A) else Color(0xFFA4A8B2),maxLines=1,overflow=TextOverflow.Ellipsis);Box(Modifier.padding(top=4.dp).width(54.dp).height(4.dp).background(if(inCollection)savedAccent else Color(0xFFD5D7DE),RoundedCornerShape(50)))};Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=48.dp).width(185.dp)){Text("#${b.pokemon.id.toString().padStart(4,'0')}",fontSize=15.sp,color=Color(0xFF56607A),fontWeight=FontWeight.SemiBold);Text(b.pokemon.name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=Color(0xFF11152A),maxLines=2);Text(b.species.genus?:"Pokémon",fontSize=15.sp,color=Color(0xFF667085),modifier=Modifier.padding(top=4.dp),maxLines=1,overflow=TextOverflow.Ellipsis);Row(Modifier.padding(top=12.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){b.pokemon.types.take(2).forEach{TypeBadge(it)}};Spacer(Modifier.height(14.dp));DetailMetric(Icons.Default.Height,"${String.format("%.1f",b.pokemon.heightDecimeters/10.0)} m");DetailMetric(Icons.Default.MonitorWeight,"${String.format("%.1f",b.pokemon.weightHectograms/10.0)} kg");DetailMetric(Icons.Default.LocationOn,context?.regionLabel?:"Nacional")};Box(Modifier.align(Alignment.CenterEnd).padding(end=20.dp,top=58.dp).size(width=190.dp,height=220.dp),contentAlignment=Alignment.Center){PokemonArtwork(model=b.pokemon.spriteUrl,contentDescription=b.pokemon.name,modifier=Modifier.fillMaxSize().padding(horizontal=10.dp,vertical=12.dp),pokemonId=b.pokemon.id)}}}
-
+@Composable private fun HeroCard(b:DetailV2Bundle,context:GameContext?,accent:Color,saveLocation:DetailSaveLocation,back:()->Unit){
+    val inCollection=saveLocation.saved
+    Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(accent.copy(alpha=.16f),Color(0xFFF8FBFF),Color.White)))){
+        repeat(5){i->Box(Modifier.offset(x=(45+i*62).dp,y=(42+i*48).dp).size((30+i*6).dp).alpha(.08f).background(accent,CircleShape))}
+        Row(Modifier.align(Alignment.TopStart).padding(start=16.dp,top=14.dp),verticalAlignment=Alignment.CenterVertically){
+            IconButton(back,Modifier.size(46.dp).background(Color.White.copy(alpha=.82f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
+            Text("#"+b.pokemon.id.toString().padStart(4,'0'),Modifier.padding(start=8.dp),fontSize=15.sp,color=Color(0xFF56607A),fontWeight=FontWeight.SemiBold,maxLines=1)
+        }
+        Surface(shape=RoundedCornerShape(16.dp),color=Color.White.copy(alpha=.92f),modifier=Modifier.align(Alignment.TopEnd).padding(top=14.dp,end=16.dp).size(56.dp)){
+            Box(contentAlignment=Alignment.Center){
+                Icon(Icons.Default.CatchingPokemon,if(inCollection)"Capturado" else "Não capturado",tint=if(inCollection)Color(0xFFE53935) else Color(0xFF5F6368),modifier=Modifier.size(37.dp).alpha(if(inCollection)1f else .38f))
+            }
+        }
+        Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=50.dp).width(235.dp)){
+            Text(b.pokemon.name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=Color(0xFF11152A),maxLines=1,softWrap=false,overflow=TextOverflow.Ellipsis)
+            Text(b.species.genus?:"Pokémon",fontSize=15.sp,color=Color(0xFF667085),modifier=Modifier.padding(top=4.dp),maxLines=1,overflow=TextOverflow.Ellipsis)
+            Row(Modifier.padding(top=12.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){b.pokemon.types.take(2).forEach{TypeBadge(it)}}
+            Spacer(Modifier.height(14.dp))
+            DetailMetric(Icons.Default.Height,"${String.format("%.1f",b.pokemon.heightDecimeters/10.0)} m")
+            DetailMetric(Icons.Default.MonitorWeight,"${String.format("%.1f",b.pokemon.weightHectograms/10.0)} kg")
+            DetailMetric(Icons.Default.LocationOn,context?.regionLabel?:"Nacional")
+        }
+        Box(Modifier.align(Alignment.CenterEnd).padding(end=12.dp,top=62.dp).size(width=174.dp,height=214.dp),contentAlignment=Alignment.Center){
+            PokemonArtwork(model=b.pokemon.spriteUrl,contentDescription=b.pokemon.name,modifier=Modifier.fillMaxSize().padding(horizontal=10.dp,vertical=12.dp),pokemonId=b.pokemon.id)
+        }
+    }
+}
 @Composable private fun TypeBadge(type:String){Surface(shape=RoundedCornerShape(11.dp),color=typeColor(type),modifier=Modifier.wrapContentWidth()){Row(Modifier.padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Eco,null,tint=Color.White,modifier=Modifier.size(15.dp));Spacer(Modifier.width(5.dp));Text(type.uppercase(),color=Color.White,fontWeight=FontWeight.Bold,fontSize=12.sp,maxLines=1)}}}
 private fun gameFromBox(box:String):String=when{box.contains("Scarlet / Violet",true)->"Scarlet / Violet";box.contains("Sword / Shield",true)->"Sword / Shield";box.contains("Let's Go",true)->"Let's Go Pikachu / Eevee";box.contains("Arceus",true)->"Legends Arceus";box.contains("HOME",true)->"Pokémon HOME";else->box.substringBefore(" · Box").substringBefore(" Box ").trim()}
 private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->box.substringAfter("· ").trim();Regex("Box \\d+",RegexOption.IGNORE_CASE).containsMatchIn(box)->Regex("Box \\d+",RegexOption.IGNORE_CASE).find(box)?.value?:box;else->box}
