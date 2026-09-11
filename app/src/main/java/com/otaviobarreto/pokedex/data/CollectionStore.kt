@@ -120,6 +120,7 @@ object CollectionStore {
     }
 
     fun boxesForPokemon(id: Int): List<String> = boxNames.filter { id in boxes[it].orEmpty() }
+    fun duplicateIds(): Set<Int> = boxes.values.flatten().groupingBy { it }.eachCount().filterValues { it > 1 }.keys
 
     fun exportSnapshot(): JSONObject {
         val boxArray = JSONArray()

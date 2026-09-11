@@ -41,10 +41,10 @@ if violations:
 print("Source verification passed.")
 
 
-# v3.0 release guards
+# v4.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 3" not in offline:
-    violations.append("Offline pack version is not v3")
+if "PACK_VERSION = 4" not in offline:
+    violations.append("Offline pack version is not v4")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 if ".crossfade(false)" not in app or "256L * 1024L * 1024L" not in app:
@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "3.0.0"' not in workflow or "versionCode = 300" not in workflow:
-    violations.append("CI v3.0 version stamping missing")
+if 'versionName = "4.0.0"' not in workflow or "versionCode = 400" not in workflow:
+    violations.append("CI v4.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -77,6 +77,27 @@ if "movePokemon(activeBox,target" not in boxes:
 backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
 if "pokedex-companion" not in backup:
     violations.append("Backup format guard missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+planner = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CapturePlannerService.kt").read_text(encoding="utf-8")
+if "obtainableMissing" not in planner or "externalMissing" not in planner:
+    violations.append("Capture planner integration missing")
+
+capture = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CaptureGuideService.kt").read_text(encoding="utf-8")
+for required in ("sampleLocations", "methods", "minLevel", "maxLevel"):
+    if required not in capture:
+        violations.append(f"Capture intelligence missing {required}")
+
+companion = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
+for required in ("Planejador de captura", "smartSearchTerm", "Você já tem este Pokémon"):
+    if required not in companion:
+        violations.append(f"Companion Intelligence missing {required}")
 
 if violations:
     print("Source verification failed:")
