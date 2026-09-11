@@ -27,6 +27,7 @@ import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.data.RecentActivityStore
 import com.otaviobarreto.pokedex.data.JourneyProgressStore
 import com.otaviobarreto.pokedex.data.AppGameCatalog
+import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import com.otaviobarreto.pokedex.ui.*
 
 class MainActivity : ComponentActivity() {
@@ -40,7 +41,24 @@ class MainActivity : ComponentActivity() {
         CollectionStore.migrateLegacyCapturedToSource(legacySource)
         RecentActivityStore.initialize(this)
         JourneyProgressStore.initialize(this)
+        HomeAudioManager.initialize(this)
+        HomeAudioManager.playBoot()
         setContent { PokedexTheme { PokedexRoot() } }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        HomeAudioManager.onAppForegrounded()
+    }
+
+    override fun onStop() {
+        HomeAudioManager.onAppBackgrounded()
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        HomeAudioManager.release()
+        super.onDestroy()
     }
 }
 
@@ -61,7 +79,10 @@ private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Defau
   navController.navigate("boxes"){popUpTo("home"){saveState=true};launchSingleTop=true;restoreState=false}
  }
  fun openGameDex(source:String){navController.navigate("gameDex?source=${Uri.encode(source)}")};fun openCampaignGuide(game:String,phase:String?=null){navController.navigate("campaignGuide?game=${Uri.encode(game)}"+(phase?.let{"&phase=${Uri.encode(it)}"}?:""))};fun openLocation(id:Int,source:String?=null){navController.navigate(if(source.isNullOrBlank())"location/$id" else "location/$id?source=${Uri.encode(source)}")};fun openRegionMap(id:Int,source:String){navController.navigate("regionMap/$id?source=${Uri.encode(source)}")};fun openRegionExplorer(source:String){navController.navigate("regionExplorer?source=${Uri.encode(source)}")};fun openReference(kind:String?=null,name:String?=null,source:String?=null){navController.navigate(if(kind.isNullOrBlank()||name.isNullOrBlank())"reference" else "reference?kind=${Uri.encode(kind)}&name=${Uri.encode(name)}"+(source?.let{"&source=${Uri.encode(it)}"}?:""))}
- LaunchedEffect(currentRoute){currentRoute?.let(RecentActivityStore::recordRoute)}
+ LaunchedEffect(currentRoute){
+  currentRoute?.let(RecentActivityStore::recordRoute)
+  HomeAudioManager.playForRoute(currentRoute)
+ }
  Scaffold(bottomBar={if(!isSecondaryScreen){NavigationBar{mainDestinations.forEach{d->NavigationBarItem(selected=currentRoute==d.route,onClick={navController.navigate(d.route){popUpTo("home"){saveState=true};launchSingleTop=true;restoreState=true}},icon={Icon(d.icon,d.label)},label={Text(d.label)},alwaysShowLabel=false)}}}},topBar={if(isMainDestination&&currentRoute!="home"){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
   NavHost(navController,"home",Modifier.padding(innerPadding)){
    composable("home"){JourneyScreen(onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase->openCampaignGuide(game,phase)},onOpenBoxes=::openBoxes)}
