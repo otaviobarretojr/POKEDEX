@@ -128,10 +128,11 @@ private fun RecreatedRegionExplorer(
 
     LaunchedEffect(selectedPokemon?.nationalId, source) {
         val pokemon = selectedPokemon ?: run { encounters = emptyList(); return@LaunchedEffect }
-        loadingEncounters = true
-        encounters = runCatching {
+        val cachedEncounters = PokedexDataStore.cachedEncounters(pokemon.nationalId)
+        loadingEncounters = cachedEncounters == null
+        encounters = (cachedEncounters ?: runCatching {
             withContext(Dispatchers.IO) { PokedexDataStore.encounters(pokemon.nationalId) }
-        }.getOrElse { emptyList() }.mapNotNull { encounter ->
+        }.getOrElse { emptyList() }).mapNotNull { encounter ->
             val versions = encounter.versions.filter(context::matchesVersion)
             val details = encounter.details.filter { context.matchesVersion(it.version) }
             if (versions.isEmpty() && details.isEmpty()) null else encounter.copy(versions = versions, details = details)
