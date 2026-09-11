@@ -559,6 +559,8 @@ private fun JourneyObjectiveDetailScreen(
     val revision=JourneyProgressStore.revision
     val done=remember(game.label,step.id,revision){step.id in JourneyProgressStore.completed(game.label)}
     val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+    val preparation=JourneyPreparationCatalog.forStep(step.id)
+    val national=PokedexDataStore.cachedNationalDex().orEmpty()
 
     LazyColumn(
         Modifier.fillMaxSize(),
