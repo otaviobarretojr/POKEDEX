@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.5.0"' not in workflow or "versionCode = 650" not in workflow:
-    violations.append("CI v6.5.0 version stamping missing")
+if 'versionName = "6.5.1"' not in workflow or "versionCode = 651" not in workflow:
+    violations.append("CI v6.5.1 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -384,6 +384,19 @@ for required in ("completed", "toggle", "clear"):
         violations.append(f"Journey progress persistence missing {required}")
 if 'MainDestination("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in main:
     violations.append("Journey is not wired as the primary tab")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.5.1 Journey route visual guards
+journey_visual = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("Progresso da campanha", "PRÓXIMO OBJETIVO", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "VerticalDivider", "Próximo recomendado"):
+    if required not in journey_visual:
+        violations.append(f"Journey route visual missing {required}")
 
 if violations:
     print("Source verification failed:")
