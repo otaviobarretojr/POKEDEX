@@ -43,8 +43,8 @@ print("Source verification passed.")
 
 # v6.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 7" not in offline:
-    violations.append("Offline pack version is not v7")
+if "PACK_VERSION = 8" not in offline:
+    violations.append("Offline pack version is not v8")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 if ".crossfade(false)" not in app or "384L * 1024L * 1024L" not in app:
@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.14.0"' not in workflow or "versionCode = 6140" not in workflow:
-    violations.append("CI v6.14.0 version stamping missing")
+if 'versionName = "6.15.0"' not in workflow or "versionCode = 6150" not in workflow:
+    violations.append("CI v6.15.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -741,7 +741,7 @@ for required in ('.put("version", 8)', '.put("journey"', "oldCollection", "oldTe
         violations.append(f"Rollback-safe backup v8 missing {required}")
 
 journey_v614 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
-for required in ("LaunchedEffect(selectedGame)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
+for required in ("LaunchedEffect(explicitGameSelectionRevision)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
     if required not in journey_v614:
         violations.append(f"Journey state isolation/gesture hardening missing {required}")
 
@@ -757,6 +757,26 @@ if "CollectionStore.contextualCapturedIds[region.source]" not in companion_v614:
 test_v614 = root / "app/src/test/java/com/otaviobarreto/pokedex/data/DataIntegrityRulesTest.kt"
 if not test_v614.exists():
     violations.append("Behavioral data integrity regression tests missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.15.0 current-core hardening guards (Journey + Boxes/offline only)
+journey_v615 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("explicitGameSelectionRevision", "LaunchedEffect(explicitGameSelectionRevision)", "if(explicitGameSelectionRevision==0) return@LaunchedEffect"):
+    if required not in journey_v615:
+        violations.append(f"Journey Android recreation preservation missing {required}")
+if "LaunchedEffect(selectedGame){" in journey_v615:
+    violations.append("Journey must not reset saved navigation state merely because selectedGame was restored")
+
+offline_v615 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
+for required in ("PACK_VERSION = 8", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
+    if required not in offline_v615:
+        violations.append(f"Offline artwork integrity audit missing {required}")
 
 if violations:
     print("Source verification failed:")

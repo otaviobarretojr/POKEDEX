@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 7
+    private const val PACK_VERSION = 8
     private var context: Context? = null
 
     data class PackStatus(
@@ -35,7 +35,9 @@ object OfflineGamePackManager {
         val currentVersion: Boolean,
         val hasRegionManifest: Boolean,
         val pinnedResources: Int,
-        val expectedResources: Int
+        val expectedResources: Int,
+        val cachedImages: Int,
+        val expectedImages: Int
     ) {
         val summary: String
             get() = when {
@@ -45,6 +47,7 @@ object OfflineGamePackManager {
                 !currentVersion -> "Pacote precisa ser atualizado"
                 !hasRegionManifest -> "Manifesto regional incompleto"
                 pinnedResources < expectedResources -> "Recursos locais incompletos"
+                cachedImages < expectedImages -> "Imagens offline incompletas"
                 else -> "Pacote precisa de reparo"
             }
     }
@@ -102,8 +105,17 @@ object OfflineGamePackManager {
         val regions = !p.getString(key(gameLabel, "regions"), null).isNullOrBlank()
         val resources = p.getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
         val pinned = resources.count { PersistentApiCache.has(it) && PersistentApiCache.isPinned(it) }
-        val valid = expected > 0 && completed == expected && current && regions && resources.isNotEmpty() && pinned == resources.size
-        return PackAudit(valid, completed, expected, current, regions, pinned, resources.size)
+        val ids = manifestIds(gameLabel)
+        val cachedImages = ids.count(::hasOfflineArtwork)
+        val valid = expected > 0 &&
+            completed == expected &&
+            current &&
+            regions &&
+            resources.isNotEmpty() &&
+            pinned == resources.size &&
+            ids.size == expected &&
+            cachedImages == ids.size
+        return PackAudit(valid, completed, expected, current, regions, pinned, resources.size, cachedImages, ids.size)
     }
 
     fun repair(gameLabel: String) = enqueue(gameLabel)
@@ -255,6 +267,13 @@ object OfflineGamePackManager {
             .apply()
 
         onProgress(Progress(total, total, "Pacote offline verificado"))
+    }
+
+    private fun hasOfflineArtwork(id: Int): Boolean {
+        val disk = context?.imageLoader?.diskCache ?: return false
+        return runCatching {
+            disk.openSnapshot("pokemon-offline-$id")?.use { true } ?: false
+        }.getOrDefault(false)
     }
 
     fun remove(gameLabel: String) {
