@@ -50,8 +50,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.19.0"' not in workflow or "versionCode = 6190" not in workflow:
-    violations.append("CI v6.19.0 version stamping missing")
+if 'versionName = "6.20.0"' not in workflow or "versionCode = 6200" not in workflow:
+    violations.append("CI v6.20.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -701,6 +701,39 @@ if violations:
 
 
 
+
+
+# v6.20.0 dead component cleanup guards
+dead_ui = (
+    "UnifiedRegionExplorerScreen.kt",
+    "RegionExplorerV2Screen.kt",
+    "RegionExplorerV3Screen.kt",
+    "RegionExplorerV4Screen.kt",
+    "PokemonCollectionActions.kt",
+)
+for dead_file in dead_ui:
+    if (ui / dead_file).exists():
+        violations.append(f"Dead UI still compiled: {dead_file}")
+
+dead_data = (
+    "OfflineGameDownloadService.kt",
+    "CommunityEncounterIndex.kt",
+    "RegionMapVisualCatalog.kt",
+)
+data_dir = root / "app/src/main/java/com/otaviobarreto/pokedex/data"
+for dead_file in dead_data:
+    if (data_dir / dead_file).exists():
+        violations.append(f"Dead data component still compiled: {dead_file}")
+
+manifest_v620 = (root / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
+for forbidden in (
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+    "OfflineGameDownloadService",
+):
+    if forbidden in manifest_v620:
+        violations.append(f"Obsolete manifest entry still present: {forbidden}")
 
 # v6.19.0 obsolete service cleanup guards
 obsolete_services = (
