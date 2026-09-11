@@ -30,6 +30,14 @@ object JourneyPreparationCatalog {
         "sv-15" to JourneyPreparation("sv-15","48–50",listOf("Fogo","Lutador","Aço"),listOf(911,448,937),listOf("Hyper Potion"),"Fogo, Lutador e Aço reduzem bastante o risco do ginásio de Gelo."),
         "sv-16" to JourneyPreparation("sv-16","51–53",listOf("Aço","Veneno"),listOf(448,980,823),listOf("Hyper Potion","Full Heal"),"Aço é o melhor eixo de cobertura contra a base Fada."),
         "sv-17" to JourneyPreparation("sv-17","55–57",listOf("Elétrico","Planta","Fada"),listOf(941,930,282),listOf("Max Potion"),"Prepare respostas separadas para Dondozo e Tatsugiri."),
-        "sv-18" to JourneyPreparation("sv-18","56–58",listOf("Psíquico","Voador","Fada"),listOf(282,823,941),listOf("Max Potion","Full Restore"),"Entre com cobertura ampla; é o desafio mais pesado entre as bases.")
+        "sv-18" to JourneyPreparation("sv-18","56–58",listOf("Psíquico","Voador","Fada"),listOf(282,823,941),listOf("Max Potion","Full Restore"),"Entre com cobertura ampla; é o desafio mais pesado entre as bases.",
+        "sv-pg-01" to JourneyPreparation("sv-pg-01","61–63",listOf("Cobertura ampla"),listOf(908,911,914,937,941,979),listOf("Full Restore","Revive"),"Evite um time mono-tipo; a Liga exige respostas diferentes em sequência."),
+        "sv-pg-02" to JourneyPreparation("sv-pg-02","62–64",listOf("Cobertura ampla"),listOf(908,911,914,937,941,979),listOf("Full Restore"),"Arven usa seis funções diferentes; priorize consistência."),
+        "sv-pg-03" to JourneyPreparation("sv-pg-03","63–65",listOf("Cobertura ampla"),listOf(908,911,914,937,941,979),listOf("Full Restore","Revive"),"Prepare-se para duas lutas importantes no fechamento da rota."),
+        "sv-pg-04" to JourneyPreparation("sv-pg-04","66–68",listOf("Fada","Gelo","Terra","Elétrico"),listOf(282,937,980,941),listOf("Full Restore","Max Revive"),"Area Zero mistura Paradox Pokémon e a batalha final; entre com seis membros prontos."),
+        "sv-pg-05" to JourneyPreparation("sv-pg-05","66–70",listOf("Cobertura dos 8 ginásios"),listOf(908,911,914,937,941,979),listOf("Full Restore"),"Troque golpes de cobertura entre as oito revanche quando necessário."),
+        "sv-pg-06" to JourneyPreparation("sv-pg-06","68–72",listOf("Cobertura geral"),listOf(908,911,914,937,941,979),listOf("Full Restore","Max Revive"),"Use seu núcleo mais estável: o torneio exige várias batalhas consecutivas."),
+        "sv-pg-07" to JourneyPreparation("sv-pg-07","75–100",listOf("Build por Tera Type"),listOf(979,1000,1002,1003),listOf("Shell Bell","Held item adequado"),"Para 6★, escolha o atacante depois de conferir espécie, Tera Type e moveset do raid boss."),
+        "sv-pg-08" to JourneyPreparation("sv-pg-08","Livre",listOf("Captura","Exploração"),listOf(1001,1002,1003,1004),listOf("Ultra Ball","Timer Ball","Quick Ball"),"Use status + False Swipe para fechar lendários e Pokédex com segurança.")
     )
 }
