@@ -395,12 +395,14 @@ private fun JourneyStepCard(
         JourneyChallengeKind.TITAN->Icons.Default.Landscape
         JourneyChallengeKind.STAR->Icons.Default.Stars
         JourneyChallengeKind.STORY->Icons.Default.AutoStories
+        JourneyChallengeKind.POSTGAME->Icons.Default.AutoAwesome
     }
     val kindColor=when(step.kind){
         JourneyChallengeKind.GYM->MaterialTheme.colorScheme.primaryContainer
         JourneyChallengeKind.TITAN->MaterialTheme.colorScheme.secondaryContainer
         JourneyChallengeKind.STAR->MaterialTheme.colorScheme.tertiaryContainer
         JourneyChallengeKind.STORY->MaterialTheme.colorScheme.surfaceVariant
+        JourneyChallengeKind.POSTGAME->MaterialTheme.colorScheme.tertiaryContainer
     }
 
     Row(Modifier.fillMaxWidth()){
@@ -841,6 +843,10 @@ private fun JourneyVisualHero(asset:JourneyVisualAsset){
                         JourneyVisualRole.GYM_LEADER->"Líder de Ginásio"
                         JourneyVisualRole.TEAM_STAR_BOSS->"Chefe Team Star"
                         JourneyVisualRole.TITAN->"Pokémon Titã"
+                        JourneyVisualRole.STORY->"Objetivo de história"
+                        JourneyVisualRole.TOURNAMENT->"Torneio pós-jogo"
+                        JourneyVisualRole.RAID->"Tera Raid pós-jogo"
+                        JourneyVisualRole.EXPLORATION->"Exploração pós-jogo"
                     },
                     style=MaterialTheme.typography.bodySmall,
                     modifier=Modifier.padding(top=4.dp)
