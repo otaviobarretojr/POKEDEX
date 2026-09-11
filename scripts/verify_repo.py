@@ -23,11 +23,6 @@ for required in ("prefetchCoreDetails", "prefetchFullDetails", "cachedPokemon", 
     if required not in store:
         violations.append(f"PokedexDataStore missing {required}")
 
-for grid_name in ("PokedexV2Screen.kt", "CollectionScreens.kt"):
-    grid_text = (ui / grid_name).read_text(encoding="utf-8")
-    if "LaunchedEffect(p.id){PokedexDataStore.prefetchDetails(p.id)}" in grid_text or "LaunchedEffect(p.id) { PokedexDataStore.prefetchDetails(p.id) }" in grid_text:
-        violations.append(f"{grid_name}: per-card prefetch regression")
-
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
 if "Render as soon as the two core payloads are ready" not in detail:
     violations.append("progressive detail loading guard missing")
@@ -55,8 +50,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.17.0"' not in workflow or "versionCode = 6170" not in workflow:
-    violations.append("CI v6.17.0 version stamping missing")
+if 'versionName = "6.18.0"' not in workflow or "versionCode = 6180" not in workflow:
+    violations.append("CI v6.18.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -64,11 +59,6 @@ if violations:
         print(" -", item)
     sys.exit(1)
 
-
-companion = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
-for required in ("Busca universal", "Guia de captura", "Backup e restauração", "Progresso por jogo"):
-    if required not in companion:
-        violations.append(f"Companion Hub missing {required}")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 if "repeat(5)" not in boxes or "repeat(6)" not in boxes:
@@ -96,11 +86,6 @@ for required in ("sampleLocations", "methods", "minLevel", "maxLevel"):
     if required not in capture:
         violations.append(f"Capture intelligence missing {required}")
 
-companion = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
-for required in ("Planejador de captura", "smartSearchTerm", "Você já tem este Pokémon"):
-    if required not in companion:
-        violations.append(f"Companion Intelligence missing {required}")
-
 if violations:
     print("Source verification failed:")
     for item in violations:
@@ -117,10 +102,6 @@ for required in ("unboxedCapturedIds", "moveMany", "sortBox"):
     if required not in collection:
         violations.append(f"Box 3.0 missing {required}")
 
-living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
-if "DUPLICATES" not in living:
-    violations.append("Living Dex duplicate intelligence missing")
-
 backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
 if '.put("version", 8)' not in backup or "preferences" not in backup:
     violations.append("Backup context missing")
@@ -131,11 +112,6 @@ if violations:
         print(" -", item)
     sys.exit(1)
 
-
-home = (ui / "HomeDashboardScreen.kt").read_text(encoding="utf-8")
-for required in ("Próximo alvo", "Vistos recentemente", "Continuar de onde parei", "Jogo ativo"):
-    if required not in home:
-        violations.append(f"Smart Home missing {required}")
 
 recent = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/RecentActivityStore.kt").read_text(encoding="utf-8")
 if "recentPokemon" not in recent or "lastRoute" not in recent:
@@ -149,19 +125,10 @@ route = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CaptureRouteSe
 if "CaptureRouteGroup" not in route:
     violations.append("Capture route planner missing")
 
-companion = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
-for required in ("Salvar arquivo", "Abrir arquivo", "Rota por região", "Formas e variantes"):
-    if required not in companion:
-        violations.append(f"v6 Companion missing {required}")
-
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 for required in ("Pesquisar Pokémon", "Modifier.weight(1f).fillMaxHeight()", "Deslize para navegar entre as Boxes", "CircularProgressIndicator"):
     if required not in boxes:
         violations.append(f"Compact swipe Box UI missing {required}")
-
-living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
-if "formas" not in living or "PokemonFormsService.cached" not in living:
-    violations.append("Living Dex Forms integration missing")
 
 if violations:
     print("Source verification failed:")
@@ -183,10 +150,6 @@ for required in ("Início", "Mid game", "Late game"):
     if required not in team_catalog:
         violations.append(f"Campaign phase missing {required}")
 
-team_builder = (ui / "TeamBuilderScreen.kt").read_text(encoding="utf-8")
-if "CampaignTeamGuideScreen" not in team_builder:
-    violations.append("Campaign guide not integrated into My Team")
-
 if violations:
     print("Source verification failed:")
     for item in violations:
@@ -206,10 +169,6 @@ contexts = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/GameContext
 for slug in ("lumiose-city", "hyperspace", "kanto", "champions"):
     if slug not in contexts:
         violations.append(f"Switch GameContext missing {slug}")
-
-games_hub = (ui / "GamesHubScreen.kt").read_text(encoding="utf-8")
-if "AppGameCatalog.games.map" not in games_hub:
-    violations.append("Games Hub is not derived from central catalog")
 
 if violations:
     print("Source verification failed:")
@@ -231,10 +190,6 @@ for required in ("manifest_ids", "resource_urls", "PersistentApiCache.pinAll", "
 store = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokedexDataStore.kt").read_text(encoding="utf-8")
 if "promoteLocal(PokeApiService.pokemonUrl" not in store or "promoteLocal(PokeApiService.speciesUrl" not in store:
     violations.append("Core detail local-first hydration missing")
-
-games = (ui / "GamesHubScreen.kt").read_text(encoding="utf-8")
-if "OfflineGamePackManager.manifestIds" not in games:
-    violations.append("Games progress does not use persistent manifest")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 if "missingDetails.take(12)" not in boxes or "missingDetails.drop(12)" not in boxes:
@@ -610,7 +565,6 @@ for required in ("CompanionPreferences.activeGame","CompanionPreferences.setActi
         violations.append(f"Boxes context handoff missing {required}")
 if "KEY_ACTIVE_REGION" not in prefs_v611:
     violations.append("Persistent active Box region missing")
-# Legacy screens intentionally remain compiled as internal compatibility routes during migration.
 
 
 # v6.12.0 Android back navigation guards
@@ -745,15 +699,6 @@ for required in ("LaunchedEffect(explicitGameSelectionRevision)", "routeListStat
     if required not in journey_v614:
         violations.append(f"Journey state isolation/gesture hardening missing {required}")
 
-living_v614 = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
-for required in ("DataIntegrityRules.capturedForScope", "onPokemonClick: (Int, String?) -> Unit", "onPokemonClick(p.id, scope.source)"):
-    if required not in living_v614:
-        violations.append(f"Legacy Living Dex contextual semantics missing {required}")
-
-companion_v614 = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
-if "CollectionStore.contextualCapturedIds[region.source]" not in companion_v614:
-    violations.append("Legacy Companion regional progress still uses global captures")
-
 test_v614 = root / "app/src/test/java/com/otaviobarreto/pokedex/data/DataIntegrityRulesTest.kt"
 if not test_v614.exists():
     violations.append("Behavioral data integrity regression tests missing")
@@ -784,6 +729,28 @@ if violations:
         print(" -", item)
     sys.exit(1)
 
+
+
+# v6.18.0 legacy UI cleanup guards
+legacy_ui_files = (
+    "CompanionHubScreen.kt",
+    "CollectionScreens.kt",
+    "GamesHubScreen.kt",
+    "PokedexV2Screen.kt",
+    "PokedexScreens.kt",
+    "TeamBuilderScreen.kt",
+    "GameDexScreen.kt",
+    "RegionExplorerScreen.kt",
+    "HomeDashboardScreen.kt",
+)
+for legacy_file in legacy_ui_files:
+    if (ui / legacy_file).exists():
+        violations.append(f"Obsolete legacy UI still compiled: {legacy_file}")
+
+main_v618 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for forbidden_route in ('composable("livingdex")', 'composable("companion")', 'composable("games")', 'composable("pokedex")', 'composable("teams")', 'composable("gameDex?source={source}")', 'composable("regionExplorer?source={source}")'):
+    if forbidden_route in main_v618:
+        violations.append(f"Obsolete route still present: {forbidden_route}")
 
 # v6.17.0 startup preload + continuous audio guards
 audio_manager_path = root / "app/src/main/java/com/otaviobarreto/pokedex/audio/HomeAudioManager.kt"
