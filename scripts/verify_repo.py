@@ -43,8 +43,8 @@ print("Source verification passed.")
 
 # v6.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 6" not in offline:
-    violations.append("Offline pack version is not v6")
+if "PACK_VERSION = 7" not in offline:
+    violations.append("Offline pack version is not v7")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 if ".crossfade(false)" not in app or "256L * 1024L * 1024L" not in app:
@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.2.0"' not in workflow or "versionCode = 620" not in workflow:
-    violations.append("CI v6.2 version stamping missing")
+if 'versionName = "6.3.0"' not in workflow or "versionCode = 630" not in workflow:
+    violations.append("CI v6.3 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -207,6 +207,35 @@ for slug in ("lumiose-city", "hyperspace", "kanto", "champions"):
 games_hub = (ui / "GamesHubScreen.kt").read_text(encoding="utf-8")
 if "AppGameCatalog.games.map" not in games_hub:
     violations.append("Games Hub is not derived from central catalog")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+cache = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt").read_text(encoding="utf-8")
+for required in ("pinAll", "unpinAll", "promoteLocal", "pinnedUrls"):
+    if required not in cache:
+        violations.append(f"Instant cache missing {required}")
+
+offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
+for required in ("manifest_ids", "resource_urls", "PersistentApiCache.pinAll", "sharedUrls", "sharedIds"):
+    if required not in offline:
+        violations.append(f"Offline v7 missing {required}")
+
+store = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokedexDataStore.kt").read_text(encoding="utf-8")
+if "promoteLocal(PokeApiService.pokemonUrl" not in store or "promoteLocal(PokeApiService.speciesUrl" not in store:
+    violations.append("Core detail local-first hydration missing")
+
+games = (ui / "GamesHubScreen.kt").read_text(encoding="utf-8")
+if "OfflineGamePackManager.manifestIds" not in games:
+    violations.append("Games progress does not use persistent manifest")
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+if "entries.take(12)" not in boxes or "entries.drop(12)" not in boxes:
+    violations.append("Box smart preload priority missing")
 
 if violations:
     print("Source verification failed:")
