@@ -64,9 +64,10 @@ object HomeAudioManager {
     }
 
     fun playScene(scene: HomeAudioScene, restart: Boolean = false) {
+        val previousScene = currentScene
         currentScene = scene
         if (!enabled || !appInForeground) return
-        if (!restart && player != null && player?.isPlaying == true && currentScene == scene) return
+        if (!restart && player != null && player?.isPlaying == true && previousScene == scene) return
 
         releasePlayer(clearScene = false)
         val context = appContext ?: return
