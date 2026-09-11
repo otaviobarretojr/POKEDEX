@@ -84,7 +84,7 @@ fun JourneyScreen(
             onSelect={
                 explicitGameSelectionRevision++
                 selectedGame=it
-                CompanionPreferences.activeGame=it
+                AppStatePreferences.activeGame=it
                 view=JourneyView.GAME_MENU
             }
         )
@@ -94,7 +94,7 @@ fun JourneyScreen(
             onRoute={view=JourneyView.ROUTE},
             onMap={view=JourneyView.MAP},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
-            onBoxes={onOpenBoxes(game.label,CompanionPreferences.activeRegionForGame(game.label) ?: game.regions.firstOrNull()?.source)},
+            onBoxes={onOpenBoxes(game.label,AppStatePreferences.activeRegionForGame(game.label) ?: game.regions.firstOrNull()?.source)},
             onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
@@ -705,7 +705,7 @@ private fun JourneyInfoChip(
 
 
 private fun journeySourceForStep(game:AppGame,step:JourneyStep):String?{
-    val preferred=CompanionPreferences.activeRegionForGame(game.label)
+    val preferred=AppStatePreferences.activeRegionForGame(game.label)
     if(game.label=="Scarlet / Violet"){
         val regionIndex=when{
             step.id.startsWith("sv-epi-")->1
