@@ -41,10 +41,10 @@ if violations:
 print("Source verification passed.")
 
 
-# v5.0 release guards
+# v6.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 4" not in offline:
-    violations.append("Offline pack version is not v4")
+if "PACK_VERSION = 5" not in offline:
+    violations.append("Offline pack version is not v5")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 if ".crossfade(false)" not in app or "256L * 1024L * 1024L" not in app:
@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "5.0.0"' not in workflow or "versionCode = 500" not in workflow:
-    violations.append("CI v5.0 version stamping missing")
+if 'versionName = "6.0.0"' not in workflow or "versionCode = 600" not in workflow:
+    violations.append("CI v6.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -120,8 +120,45 @@ if "DUPLICATES" not in living:
     violations.append("Living Dex duplicate intelligence missing")
 
 backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-if '.put("version", 5)' not in backup or "activeGame" not in backup:
+if '.put("version", 6)' not in backup or "activeGame" not in backup:
     violations.append("Backup v5 context missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+home = (ui / "HomeDashboardScreen.kt").read_text(encoding="utf-8")
+for required in ("Próximo alvo", "Vistos recentemente", "Continuar de onde parei", "Jogo ativo"):
+    if required not in home:
+        violations.append(f"Smart Home missing {required}")
+
+recent = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/RecentActivityStore.kt").read_text(encoding="utf-8")
+if "recentPokemon" not in recent or "lastRoute" not in recent:
+    violations.append("Recent activity persistence missing")
+
+forms = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
+if "PokemonFormVariant" not in forms or "varieties" not in forms:
+    violations.append("Pokemon Forms service missing")
+
+route = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CaptureRouteService.kt").read_text(encoding="utf-8")
+if "CaptureRouteGroup" not in route:
+    violations.append("Capture route planner missing")
+
+companion = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
+for required in ("Salvar arquivo", "Abrir arquivo", "Rota por região", "Formas e variantes"):
+    if required not in companion:
+        violations.append(f"v6 Companion missing {required}")
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+if "Mover selecionados" not in boxes or "moveMany" not in boxes:
+    violations.append("Box multi-select batch move missing")
+
+living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
+if "formas" not in living or "PokemonFormsService.cached" not in living:
+    violations.append("Living Dex Forms integration missing")
 
 if violations:
     print("Source verification failed:")
