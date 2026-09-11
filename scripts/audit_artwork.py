@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import csv, io, json, math, os, statistics, urllib.request
+import csv, json, math, re, statistics, urllib.request
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
@@ -7,109 +7,106 @@ MAX_ID=1025
 BASE="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/{id}.png"
 OUT=Path("artwork-audit")
 IMGDIR=OUT/"images"
+CATALOG=Path("app/src/main/java/com/otaviobarreto/pokedex/ui/ArtworkTuningCatalog.kt")
 OUT.mkdir(exist_ok=True); IMGDIR.mkdir(exist_ok=True)
+
+def load_tunings():
+    text=CATALOG.read_text(encoding="utf-8")
+    out={}
+    for m in re.finditer(r"(\d+)\s+to\s+ArtworkTuning\(([-0-9.]+)f,\s*([-0-9.]+)f,\s*([-0-9.]+)f\)",text):
+        out[int(m.group(1))]=(float(m.group(2)),float(m.group(3)),float(m.group(4)))
+    return out
 
 def fetch(i):
     p=IMGDIR/f"{i}.png"
     if p.exists(): return p
-    with urllib.request.urlopen(BASE.format(id=i), timeout=20) as r:
-        p.write_bytes(r.read())
+    with urllib.request.urlopen(BASE.format(id=i), timeout=30) as r: p.write_bytes(r.read())
     return p
 
-def metrics(i,p):
+def metrics(i,p,tuning):
     im=Image.open(p).convert("RGBA")
-    a=im.getchannel("A")
-    bbox=a.getbbox()
-    if not bbox:
-        return dict(id=i,error="empty")
-    l,t,r,b=bbox
-    w,h=im.size
-    bw,bh=r-l,b-t
-    px=a.load()
-    total=mass=sx=sy=0.0
-    opaque=0
+    a=im.getchannel("A"); bbox=a.getbbox()
+    if not bbox: return {"id":i,"error":"empty"}
+    l,t,r,b=bbox; w,h=im.size; bw,bh=r-l,b-t
+    px=a.load(); mass=sx=sy=0.0; opaque=0
     for y in range(t,b):
         for x in range(l,r):
             av=px[x,y]
             if av>8:
-                opaque+=1
-                wt=av/255.0
-                mass+=wt; sx+=x*wt; sy+=y*wt
-    cx=sx/mass if mass else (l+r)/2
-    cy=sy/mass if mass else (t+b)/2
-    box_cx=(l+r)/2; box_cy=(t+b)/2
+                opaque+=1; wt=av/255.0; mass+=wt; sx+=x*wt; sy+=y*wt
+    cx=sx/mass if mass else (l+r)/2; cy=sy/mass if mass else (t+b)/2
+    pad=max(2,int(max(bw,bh)*0.035))
+    cl=max(0,l-pad); ct=max(0,t-pad); cr=min(w-1,r-1+pad); cb=min(h-1,b-1+pad)
+    cw=cr-cl+1; ch=cb-ct+1; fit=1.0/max(cw,ch)
+    scale,ox,oy=tuning
+    crop_cx=cl+cw/2; crop_cy=ct+ch/2
+    final_mass_x=(cx-crop_cx)*fit*scale+ox
+    final_mass_y=(cy-crop_cy)*fit*scale+oy
+    left_edge=(l-crop_cx)*fit*scale+ox; right_edge=(r-crop_cx)*fit*scale+ox
+    top_edge=(t-crop_cy)*fit*scale+oy; bottom_edge=(b-crop_cy)*fit*scale+oy
+    edge_clearance=min(0.5-abs(left_edge),0.5-abs(right_edge),0.5-abs(top_edge),0.5-abs(bottom_edge))
+    density=opaque/max(1,bw*bh)
     return {
-        "id":i,"canvas_w":w,"canvas_h":h,
-        "left":l,"top":t,"right":r,"bottom":b,
-        "bbox_w":bw,"bbox_h":bh,
-        "bbox_fill":(bw*bh)/(w*h),
-        "alpha_density":opaque/max(1,bw*bh),
-        "aspect":bw/max(1,bh),
-        "bbox_center_dx":(box_cx-w/2)/w,
-        "bbox_center_dy":(box_cy-h/2)/h,
-        "mass_center_dx":(cx-box_cx)/max(1,bw),
-        "mass_center_dy":(cy-box_cy)/max(1,bh),
+      "id":i,"alpha_density":density,"aspect":bw/max(1,bh),
+      "final_mass_dx":final_mass_x,"final_mass_dy":final_mass_y,
+      "edge_clearance":edge_clearance,"current_scale":scale,
+      "current_offset_x":ox,"current_offset_y":oy
     }
 
+tunings=load_tunings()
 rows=[]
 for i in range(1,MAX_ID+1):
-    try:
-        rows.append(metrics(i,fetch(i)))
-    except Exception as e:
-        rows.append({"id":i,"error":str(e)})
-        print("ERR",i,e)
-
+    try: rows.append(metrics(i,fetch(i),tunings.get(i,(1.0,0.0,0.0))))
+    except Exception as e: rows.append({"id":i,"error":str(e)}); print("ERR",i,e)
 valid=[r for r in rows if "error" not in r]
-dens=[r["alpha_density"] for r in valid]
-fills=[r["bbox_fill"] for r in valid]
-med_den=statistics.median(dens); med_fill=statistics.median(fills)
+med_den=statistics.median(r["alpha_density"] for r in valid)
 
+candidates=[]
 for r in valid:
-    # Optical centering suggestions after transparent-bounds crop.
-    dx=-r["mass_center_dx"]*0.42
-    dy=-r["mass_center_dy"]*0.42
-    dx=max(-0.075,min(0.075,dx)); dy=max(-0.075,min(0.075,dy))
-    # Thin/airy artworks look smaller even when bbox matches. Mildly compensate.
-    density_ratio=med_den/max(r["alpha_density"],0.05)
-    scale=math.sqrt(density_ratio)
-    scale=max(0.92,min(1.12,scale))
-    r["suggested_offset_x"]=round(dx,4)
-    r["suggested_offset_y"]=round(dy,4)
-    r["suggested_scale"]=round(scale,4)
-    score=0.0
-    score+=abs(r["mass_center_dx"])*4.0
-    score+=abs(r["mass_center_dy"])*4.0
-    score+=max(0,0.18-r["alpha_density"])*3.5
-    score+=max(0,r["alpha_density"]-0.62)*1.8
-    if r["aspect"]>1.9: score+=(r["aspect"]-1.9)*0.4
-    if r["aspect"]<0.53: score+=(0.53-r["aspect"])*0.8
-    r["outlier_score"]=round(score,4)
-    r["needs_review"]=score>=0.22 or abs(dx)>=0.03 or abs(dy)>=0.03 or scale>=1.07 or scale<=0.95
+    curated=r["id"] in tunings
+    residual=math.hypot(r["final_mass_dx"],r["final_mass_dy"])
+    target_scale=max(0.975,min(1.045,math.sqrt(med_den/max(r["alpha_density"],0.05))))
+    scale_delta=max(-0.012,min(0.012,target_scale-r["current_scale"]))
+    # Protect the safe area if the first pass pushed artwork too close to an edge.
+    if r["edge_clearance"] < 0.018:
+        scale_delta=min(scale_delta,-0.006)
+    dx=max(-0.010,min(0.010,-r["final_mass_dx"]*0.55))
+    dy=max(-0.010,min(0.010,-r["final_mass_dy"]*0.55))
+    # Existing curation gets a finer threshold. New entries require stronger evidence.
+    needs=(curated and (residual>=0.014 or r["edge_clearance"]<0.018 or abs(scale_delta)>=0.006)) or ((not curated) and (residual>=0.026 or r["edge_clearance"]<0.012 or abs(scale_delta)>=0.010))
+    if needs:
+        ns=max(0.97,min(1.045,r["current_scale"]+scale_delta))
+        nox=max(-0.045,min(0.045,r["current_offset_x"]+dx))
+        noy=max(-0.045,min(0.045,r["current_offset_y"]+dy))
+        candidates.append({
+          **r,"curated_before":curated,"residual":residual,
+          "new_scale":round(ns,4),"new_offset_x":round(nox,4),"new_offset_y":round(noy,4)
+        })
 
-with open(OUT/"artwork_metrics.csv","w",newline="",encoding="utf-8") as f:
-    fields=sorted({k for r in rows for k in r.keys()})
-    w=csv.DictWriter(f,fieldnames=fields);w.writeheader();w.writerows(rows)
-json.dump(rows,open(OUT/"artwork_metrics.json","w"),indent=2)
+candidates.sort(key=lambda r:(not r["curated_before"],-r["residual"],r["edge_clearance"]))
+json.dump(rows,open(OUT/"post_curation_metrics.json","w"),indent=2)
+json.dump(candidates,open(OUT/"second_pass_candidates.json","w"),indent=2)
+with open(OUT/"second_pass_candidates.csv","w",newline="",encoding="utf-8") as f:
+    fields=sorted({k for r in candidates for k in r}); w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(candidates)
 
-outliers=sorted([r for r in valid if r["needs_review"]], key=lambda x:x["outlier_score"], reverse=True)
-json.dump(outliers,open(OUT/"outliers.json","w"),indent=2)
-print("valid",len(valid),"outliers",len(outliers),"median_density",med_den,"median_fill",med_fill)
-
-# Contact sheets for manual visual curation, 30 artworks per page.
-thumb=150; cols=6; rows_per=5
-font=ImageFont.load_default()
-for page in range((len(outliers)+29)//30):
-    subset=outliers[page*30:(page+1)*30]
-    sheet=Image.new("RGB",(cols*thumb,rows_per*(thumb+24)),"white")
-    d=ImageDraw.Draw(sheet)
+# Contact sheets show the actually tuned result using the same crop + scale + offset model.
+thumb=180; cols=5; per_page=25; font=ImageFont.load_default()
+for page in range((len(candidates)+per_page-1)//per_page):
+    subset=candidates[page*per_page:(page+1)*per_page]
+    sheet=Image.new("RGB",(cols*thumb,5*(thumb+26)),"white"); d=ImageDraw.Draw(sheet)
     for n,r in enumerate(subset):
-        rr=n//cols; cc=n%cols
-        im=Image.open(IMGDIR/f'{r["id"]}.png').convert("RGBA")
-        a=im.getchannel("A"); bbox=a.getbbox()
-        if bbox: im=im.crop(bbox)
-        im.thumbnail((thumb-16,thumb-16),Image.Resampling.LANCZOS)
-        x=cc*thumb+(thumb-im.width)//2
-        y=rr*(thumb+24)+(thumb-im.height)//2
+        rr=n//cols; cc=n%cols; im=Image.open(IMGDIR/f'{r["id"]}.png').convert("RGBA")
+        a=im.getchannel("A"); bb=a.getbbox()
+        if bb: im=im.crop(bb)
+        im.thumbnail((thumb-24,thumb-24),Image.Resampling.LANCZOS)
+        x=cc*thumb+(thumb-im.width)//2; y=rr*(thumb+26)+(thumb-im.height)//2
         sheet.paste(im,(x,y),im)
-        d.text((cc*thumb+4,rr*(thumb+24)+thumb+3),f'#{r["id"]} s={r["outlier_score"]:.2f}',fill="black",font=font)
-    sheet.save(OUT/f"outliers_{page+1:02d}.jpg",quality=88)
+        d.text((cc*thumb+4,rr*(thumb+26)+thumb+4),f'#{r["id"]} res={r["residual"]:.3f}',fill="black",font=font)
+    sheet.save(OUT/f"second_pass_{page+1:02d}.jpg",quality=90)
+
+print("SECOND_PASS_VALID",len(valid))
+print("SECOND_PASS_EXISTING",sum(1 for r in candidates if r["curated_before"]))
+print("SECOND_PASS_NEW",sum(1 for r in candidates if not r["curated_before"]))
+print("SECOND_PASS_TOTAL",len(candidates))
+for r in candidates:
+    print(f'TUNE {r["id"]} {r["new_scale"]:.4f} {r["new_offset_x"]:.4f} {r["new_offset_y"]:.4f} curated={int(r["curated_before"])} residual={r["residual"]:.4f} edge={r["edge_clearance"]:.4f}')
