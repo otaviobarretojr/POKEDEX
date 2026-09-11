@@ -47,9 +47,9 @@ private val livingDexScopes = listOf(LivingDexScope("Nacional", null)) +
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
-    var national by remember { mutableStateOf<List<PokeApiService.DexIndexEntry>>(emptyList()) }
+    var national by remember { mutableStateOf(PokedexDataStore.cachedNationalDex().orEmpty()) }
     var regional by remember { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
+    var loading by remember { mutableStateOf(national.isEmpty()) }
     var query by remember { mutableStateOf("") }
     var collectionFilter by remember { mutableStateOf(LivingCollectionFilter.ALL) }
     var generation by remember { mutableIntStateOf(0) }
@@ -59,8 +59,9 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
-        loading = true
-        national = runCatching { withContext(Dispatchers.IO) { PokedexDataStore.nationalDex() } }.getOrElse { emptyList() }
+        if (national.isEmpty()) loading = true
+        val loaded = runCatching { withContext(Dispatchers.IO) { PokedexDataStore.nationalDex() } }.getOrNull()
+        if (loaded != null) national = loaded
         loading = false
     }
 
