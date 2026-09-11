@@ -24,12 +24,14 @@ import com.otaviobarreto.pokedex.data.*
 fun CampaignTeamGuideScreen(
     onBackToMyTeams:()->Unit,
     onPokemonClick:(Int)->Unit,
-    initialGame:String?=null
+    initialGame:String?=null,
+    initialPhase:String?=null
 ){
     val initial=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames} ?: CompanionPreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames} ?: TeamCampaignCatalog.switchGames.first()
     var game by remember(initial) { mutableStateOf(initial) }
     var starterId by remember(game) { mutableIntStateOf(TeamCampaignCatalog.starters(game).first().second) }
-    var phase by remember { mutableStateOf(CampaignPhase.EARLY) }
+    val suggestedPhase=remember(initialPhase){CampaignPhase.values().firstOrNull{it.name==initialPhase} ?: CampaignPhase.EARLY}
+    var phase by remember(initialGame,initialPhase) { mutableStateOf(suggestedPhase) }
     var gameMenu by remember { mutableStateOf(false) }
     var createdMessage by remember { mutableStateOf<String?>(null) }
     val preset=remember(game,starterId,phase){TeamCampaignCatalog.preset(game,starterId,phase)}
@@ -81,7 +83,10 @@ fun CampaignTeamGuideScreen(
                             )
                         }
                     }
-                    Text("Fase da história",fontWeight=FontWeight.SemiBold)
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Text("Fase da história",fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f))
+                        if(initialPhase!=null && phase==suggestedPhase) AssistChip(onClick={},enabled=false,label={Text("Automático")},leadingIcon={Icon(Icons.Default.AutoAwesome,null,Modifier.size(16.dp))})
+                    }
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()){
                         CampaignPhase.values().forEachIndexed{index,item->
                             SegmentedButton(
