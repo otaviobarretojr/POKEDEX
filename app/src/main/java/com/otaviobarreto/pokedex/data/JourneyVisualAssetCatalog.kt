@@ -63,7 +63,7 @@ object JourneyVisualAssetCatalog {
         "sv-dlc-16" to JourneyVisualAsset("sv-dlc-16",JourneyVisualRole.EXPLORATION,"Blueberry Endgame",ART+"1024.png","League Club · Lendários"),
         "sv-epi-01" to JourneyVisualAsset("sv-epi-01",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Mochi Mayhem"),
         "sv-epi-02" to JourneyVisualAsset("sv-epi-02",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Mochi Mayhem"),
-        "sv-epi-03" to JourneyVisualAsset("sv-epi-03",JourneyVisualRole.DLC_CHARACTER,"Nemona",OFFICIAL+"chara_nemo.png","Mochi Mayhem"),
+        "sv-epi-03" to JourneyVisualAsset("sv-epi-03",JourneyVisualRole.DLC_CHARACTER,"Nemona","https://www.pokemon.co.jp/ex/sv/assets/img/character/220601_02/ja/img_01.jpg","Mochi Mayhem"),
         "sv-epi-04" to JourneyVisualAsset("sv-epi-04",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Final do epílogo")
     )
 }
