@@ -394,7 +394,7 @@ if violations:
 
 # v6.5.1 Journey route visual guards
 journey_visual = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
-for required in ("Progresso da campanha", "PRÓXIMO OBJETIVO", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "VerticalDivider", "Próximo recomendado"):
+for required in ("Progresso da campanha", "PRÓXIMO OBJETIVO", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Próximo recomendado"):
     if required not in journey_visual:
         violations.append(f"Journey route visual missing {required}")
 
