@@ -101,7 +101,8 @@ fun CompanionHubScreen(
                         async {
                             val context=GameContext.fromSource(region.source) ?: return@async null
                             val dexEntries=runCatching { GameDexService.loadGameDex(context) }.getOrDefault(emptyList())
-                            GameProgress(game.label,region.label,region.source,dexEntries.count{it.nationalId in CollectionStore.capturedIds},dexEntries.size)
+                            val registered=CollectionStore.contextualCapturedIds[region.source].orEmpty()
+                            GameProgress(game.label,region.label,region.source,dexEntries.count{it.nationalId in registered},dexEntries.size)
                         }
                     }
                 }.map { it.await() }.filterNotNull()
