@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.5.2"' not in workflow or "versionCode = 652" not in workflow:
-    violations.append("CI v6.5.2 version stamping missing")
+if 'versionName = "6.5.3"' not in workflow or "versionCode = 653" not in workflow:
+    violations.append("CI v6.5.3 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -416,6 +416,33 @@ for required in ("JourneyObjectiveDetailScreen", "Equipe / adversários", "Fraqu
         violations.append(f"Journey objective detail UI missing {required}")
 if "onOpen:()->Unit" not in journey_detail or "IconButton(onClick=onToggle" not in journey_detail:
     violations.append("Journey card open/complete interaction split missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.5.3 Smart Journey progress guards
+smart = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneySmartProgress.kt").read_text(encoding="utf-8")
+for required in ("JourneySmartContext", "CampaignPhase.EARLY", "CampaignPhase.MID", "CampaignPhase.LATE", "Próximo alvo"):
+    if required not in smart:
+        violations.append(f"Smart Journey progress missing {required}")
+journey_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
+for required in ("setCompleted", "completeThrough"):
+    if required not in journey_progress:
+        violations.append(f"Smart Journey progress operation missing {required}")
+journey_ui = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("FASE AUTOMÁTICA", "Concluir progresso até aqui", "JourneySmartProgress.context"):
+    if required not in journey_ui:
+        violations.append(f"Smart Journey UI missing {required}")
+team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
+if "initialPhase" not in team_guide or '"Automático"' not in team_guide:
+    violations.append("Team guide does not accept automatic Journey phase")
+main = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+if "phase={phase}" not in main:
+    violations.append("Smart Journey phase navigation missing")
 
 if violations:
     print("Source verification failed:")
