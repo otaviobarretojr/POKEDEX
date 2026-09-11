@@ -6,6 +6,15 @@ root = Path(__file__).resolve().parents[1]
 ui = root / "app/src/main/java/com/otaviobarreto/pokedex/ui"
 violations = []
 
+journey_screen_path = ui / "JourneyScreen.kt"
+journey_hub_path = ui / "JourneyHubComponents.kt"
+journey_source = (
+    journey_screen_path.read_text(encoding="utf-8")
+    + "\n"
+    + (journey_hub_path.read_text(encoding="utf-8") if journey_hub_path.exists() else "")
+)
+application_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
+
 # UI must go through PokedexDataStore instead of bypassing the shared cache layer.
 for path in ui.glob("*.kt"):
     text = path.read_text(encoding="utf-8")
@@ -50,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.20.0"' not in workflow or "versionCode = 6200" not in workflow:
-    violations.append("CI v6.20.0 version stamping missing")
+if 'versionName = "6.21.0"' not in workflow or "versionCode = 6210" not in workflow:
+    violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -80,7 +89,7 @@ if violations:
     sys.exit(1)
 
 
-prefs = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+prefs = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppStatePreferences.kt").read_text(encoding="utf-8")
 if "activeGame" not in prefs:
     violations.append("Persistent active game context missing")
 
@@ -303,7 +312,7 @@ if violations:
 
 
 # v6.5 Journey guards
-journey = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey = journey_source
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 journey_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
 main = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
@@ -316,7 +325,7 @@ for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
 for required in ("completed", "toggle", "clear"):
     if required not in journey_progress:
         violations.append(f"Journey progress persistence missing {required}")
-if 'MainDestination("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in main:
+if 'MainDestination("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in application_source:
     violations.append("Journey is not wired as the primary tab")
 
 if violations:
@@ -327,7 +336,7 @@ if violations:
 
 
 # v6.5.1 Journey route visual guards
-journey_visual = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_visual = journey_source
 for required in ("Progresso da campanha", "PRÓXIMO PASSO INTELIGENTE", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Próximo recomendado"):
     if required not in journey_visual:
         violations.append(f"Journey route visual missing {required}")
@@ -341,7 +350,7 @@ if violations:
 
 # v6.5.2 Journey objective detail guards
 objective_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyObjectiveDetailsCatalog.kt").read_text(encoding="utf-8")
-journey_detail = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_detail = journey_source
 for required in ("JourneyObjectiveDetail", "JourneyBossMember", '"sv-01"', '"sv-18"', "Mismagius", "Caph Starmobile"):
     if required not in objective_catalog:
         violations.append(f"Journey objective detail catalog missing {required}")
@@ -367,7 +376,7 @@ journey_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/Jou
 for required in ("setCompleted", "completeThrough"):
     if required not in journey_progress:
         violations.append(f"Smart Journey progress operation missing {required}")
-journey_ui = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_ui = journey_source
 for required in ("FASE AUTOMÁTICA", "Concluir progresso até aqui", "JourneySmartProgress.context"):
     if required not in journey_ui:
         violations.append(f"Smart Journey UI missing {required}")
@@ -389,7 +398,7 @@ if violations:
 prep = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyPreparationCatalog.kt").read_text(encoding="utf-8")
 map_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
 dynamic_team = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyDynamicTeamCatalog.kt").read_text(encoding="utf-8")
-journey = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey = journey_source
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 
@@ -420,7 +429,7 @@ if violations:
 
 # v6.7.1 Journey visual assets guards
 visual_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
-journey_ui = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_ui = journey_source
 for required in ("Katy","Brassius","Iono","Kofu","Larry","Ryme","Tulip","Grusha","Giacomo","Mela","Atticus","Ortega","Eri","Klawf","Bombirdier","Orthworm","Great Tusk / Iron Treads","Dondozo & Tatsugiri"):
     if required not in visual_catalog:
         violations.append(f"Journey visual asset missing {required}")
@@ -487,7 +496,7 @@ if violations:
 # v6.9.1 Journey visual audit guards
 journey_visual_catalog=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
 journey_map=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
-journey_ui=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+journey_ui=journey_source
 for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/ja/img_01.jpg","230112_07/img_01.jpg"):
     if required not in journey_visual_catalog:
         violations.append(f"Validated official Journey artwork missing {required}")
@@ -509,7 +518,7 @@ if violations:
 
 
 # v6.10.0 immersive Paldea map guards
-journey_ui_v610=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+journey_ui_v610=journey_source
 for required in ("detectTransformGestures","ContentScale.FillBounds","JourneyMapControl","PRÓXIMO OBJETIVO","Ver objetivo","Icons.Default.MyLocation"):
     if required not in journey_ui_v610:
         violations.append(f"Immersive Journey map missing {required}")
@@ -526,9 +535,9 @@ if violations:
 
 # v6.11.0 navigation consolidation guards
 main_nav=(root/"app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-journey_v611=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+journey_v611=journey_source
 boxes_v611=(ui/"BoxesV2Screen.kt").read_text(encoding="utf-8")
-prefs_v611=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+prefs_v611=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/AppStatePreferences.kt").read_text(encoding="utf-8")
 main_line=next((line for line in main_nav.splitlines() if line.startswith("private val mainDestinations=")),"")
 for forbidden in ('"Pokédex"','"Living Dex"','"Companion"'):
     if forbidden in main_line:
@@ -539,7 +548,7 @@ for required in ('MainDestination("home","Jornada"','MainDestination("boxes","Bo
 for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.contextualCapturedIds","onOpenBoxes"):
     if required not in journey_v611:
         violations.append(f"Journey/Boxes consolidation missing {required}")
-for required in ("CompanionPreferences.activeGame","CompanionPreferences.setActiveRegionForGame"):
+for required in ("AppStatePreferences.activeGame","AppStatePreferences.setActiveRegionForGame"):
     if required not in boxes_v611:
         violations.append(f"Boxes context handoff missing {required}")
 if "KEY_ACTIVE_REGION" not in prefs_v611:
@@ -547,7 +556,7 @@ if "KEY_ACTIVE_REGION" not in prefs_v611:
 
 
 # v6.12.0 Android back navigation guards
-journey_back=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+journey_back=journey_source
 for required in ("BackHandler(enabled=view!=JourneyView.GAMES)","detailReturnView","JourneyView.MAP","JourneyView.ROUTE","selectedGame=null"):
     if required not in journey_back:
         violations.append(f"Android back hierarchy missing {required}")
@@ -562,23 +571,23 @@ if violations:
 
 
 # v6.12.0 navigation/state hardening guards
-prefs_v612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+prefs_v612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppStatePreferences.kt").read_text(encoding="utf-8")
 for required in ("activeRegionForGame", "setActiveRegionForGame", "boxPage", "setBoxPage", "KEY_BOX_PAGE_PREFIX"):
     if required not in prefs_v612:
         violations.append(f"Persistent navigation context missing {required}")
 
 boxes_v612 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("activeRegionForGame(game.label)", "CompanionPreferences.boxPage(regionSource)", "setBoxPage(region.source,current)", "missingDetails.take(12)", "missingDetails.drop(12)"):
+for required in ("activeRegionForGame(game.label)", "AppStatePreferences.boxPage(regionSource)", "setBoxPage(region.source,current)", "missingDetails.take(12)", "missingDetails.drop(12)"):
     if required not in boxes_v612:
         violations.append(f"Box state/performance hardening missing {required}")
 
-journey_v612 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_v612 = journey_source
 for required in ("rememberSaveable", "journeySourceForStep", "onPokemonClick:(Int,String?)->Unit", "activeRegionForGame(game.label)"):
     if required not in journey_v612:
         violations.append(f"Journey state/context hardening missing {required}")
 
 main_v612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-for required in ("resolvedSource=source ?: CompanionPreferences.activeRegionForGame(resolvedGame)", "onPokemonClick={id,source->openPokemon(id,source)}"):
+for required in ("resolvedSource=source ?: AppStatePreferences.activeRegionForGame(resolvedGame)", "onPokemonClick={id,source->openPokemon(id,source)}"):
     if required not in main_v612:
         violations.append(f"Cross-route context preservation missing {required}")
 
@@ -607,12 +616,12 @@ for required in ("CollectionStore.contextualCapturedIds[region.source]", "Collec
 if "val capturedIds=CollectionStore.capturedIds" in boxes_v613:
     violations.append("Boxes must not use global capturedIds as regional progress")
 
-journey_v613 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_v613 = journey_source
 for required in ("CollectionStore.contextualCapturedIds", "LazyListState", "state=listState", "mapZoom", "mapPanX", "onSelectedStepChange"):
     if required not in journey_v613:
         violations.append(f"Journey continuity/context missing {required}")
 
-main_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+main_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8") + "\n" + application_source
 for required in ("migrateLegacyCapturedToSource", "source={source}", "openReference(kind,name,source)", "onPokemonClick={id,source->openPokemon(id,source)}"):
     if required not in main_v613:
         violations.append(f"Cross-screen source propagation missing {required}")
@@ -632,7 +641,7 @@ for required in ("rememberSaveable(id)", "CollectionStore.isCapturedIn(source,po
 if "GameDexService.loadGameDex(context)" in detail_v613:
     violations.append("Pokémon detail must not force-load GameDex only for capture indicator")
 
-prefs_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+prefs_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppStatePreferences.kt").read_text(encoding="utf-8")
 for required in ("exportSnapshot", "importSnapshot", "boxPages", "regions"):
     if required not in prefs_v613:
         violations.append(f"Navigation backup missing {required}")
@@ -664,7 +673,7 @@ for required in ("exportSnapshot", "importSnapshot", "JourneyCatalog.steps"):
     if required not in journey_progress_v614:
         violations.append(f"Journey backup support missing {required}")
 
-journey_v614 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_v614 = journey_source
 for required in ("LaunchedEffect(explicitGameSelectionRevision)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
     if required not in journey_v614:
         violations.append(f"Journey state isolation/gesture hardening missing {required}")
@@ -681,7 +690,7 @@ if violations:
 
 
 # v6.15.0 current-core hardening guards (Journey + Boxes/offline only)
-journey_v615 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_v615 = journey_source
 for required in ("explicitGameSelectionRevision", "LaunchedEffect(explicitGameSelectionRevision)", "if(explicitGameSelectionRevision==0) return@LaunchedEffect"):
     if required not in journey_v615:
         violations.append(f"Journey Android recreation preservation missing {required}")
@@ -703,7 +712,7 @@ if violations:
 
 
 
-# v6.20.0 dead component cleanup guards
+# v6.21.0 dead component cleanup guards
 dead_ui = (
     "UnifiedRegionExplorerScreen.kt",
     "RegionExplorerV2Screen.kt",
@@ -817,14 +826,13 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.20.0",
+        "v6.21.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
 
 main_activity_v617 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
 for required in (
-    "HomeAudioManager.initialize(this)",
     "HomeAudioManager.playBoot()",
     "HomeAudioManager.playMainTrack()",
     "HomeAudioManager.onAppBackgrounded()",
@@ -836,6 +844,8 @@ if "HomeAudioManager.playForRoute(currentRoute)" in main_activity_v617:
     violations.append("Navigation must not switch background music")
 
 app_v617 = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
+if "HomeAudioManager.initialize(this)" not in app_v617:
+    violations.append("Audio manager must initialize from Application")
 if "preloadScope.launch" in app_v617:
     violations.append("Legacy parallel preload still runs outside loading screen")
 
@@ -846,6 +856,62 @@ for raw_name in (
     raw_path = root / "app/src/main/res/raw" / raw_name
     if not raw_path.exists() or raw_path.stat().st_size == 0:
         violations.append(f"Required audio asset missing {raw_name}")
+
+
+# v6.21.0 design foundation guards
+design_tokens = ui / "PokedexDesignTokens.kt"
+if not design_tokens.exists():
+    violations.append("Central design tokens missing")
+else:
+    design_source = design_tokens.read_text(encoding="utf-8")
+    for required in ("object Colors", "object Spacing", "object Radius", "object Elevation", "val AppTypography", "val Shapes"):
+        if required not in design_source:
+            violations.append(f"Design foundation missing {required}")
+
+theme_source = (ui / "PokedexTheme.kt").read_text(encoding="utf-8")
+for required in ("PokedexDesignTokens.Colors", "PokedexDesignTokens.AppTypography", "PokedexDesignTokens.Shapes"):
+    if required not in theme_source:
+        violations.append(f"Theme not routed through design system: {required}")
+
+app_state = root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppStatePreferences.kt"
+if not app_state.exists():
+    violations.append("AppStatePreferences missing")
+if (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").exists():
+    violations.append("Obsolete CompanionPreferences file returned")
+if (root / "app/src/test/java/com/otaviobarreto/pokedex/data/CompanionRegressionTest.kt").exists():
+    violations.append("Obsolete Companion regression test returned")
+if not (root / "app/src/test/java/com/otaviobarreto/pokedex/data/GameContextRegressionTest.kt").exists():
+    violations.append("GameContext regression test missing")
+
+if not journey_hub_path.exists():
+    violations.append("Journey hub extraction missing")
+else:
+    hub_source = journey_hub_path.read_text(encoding="utf-8")
+    for required in ("JourneyGamePicker", "JourneyGameMenu", "rememberJourneyCollectionProgress"):
+        if required not in hub_source:
+            violations.append(f"Journey hub component missing {required}")
+
+for required in (
+    "CollectionStore.initialize(this)",
+    "TeamStore.initialize(this)",
+    "JourneyProgressStore.initialize(this)",
+    "AppStatePreferences.initialize(this)",
+    "HomeAudioManager.initialize(this)",
+):
+    if required not in application_source:
+        violations.append(f"Application initialization missing {required}")
+
+main_foundation = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this)", "JourneyProgressStore.initialize(this)", "AppStatePreferences.initialize(this)"):
+    if forbidden in main_foundation:
+        violations.append(f"Duplicate Activity initialization remains: {forbidden}")
+
+local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
+if 'versionName = "6.21.0"' not in local_gradle or "versionCode = 6210" not in local_gradle:
+    violations.append("Local build version is not aligned with v6.21.0")
+
+if (root / ".github/workflows/import-home-audio.yml").exists():
+    violations.append("Obsolete feature-branch audio import workflow still present")
 
 if violations:
     print("Source verification failed:")

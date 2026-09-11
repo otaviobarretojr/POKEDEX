@@ -27,7 +27,7 @@ fun CampaignTeamGuideScreen(
     initialGame:String?=null,
     initialPhase:String?=null
 ){
-    val initial=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames} ?: CompanionPreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames} ?: TeamCampaignCatalog.switchGames.first()
+    val initial=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames} ?: AppStatePreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames} ?: TeamCampaignCatalog.switchGames.first()
     var game by remember(initial) { mutableStateOf(initial) }
     var starterId by remember(game) { mutableIntStateOf(TeamCampaignCatalog.starters(game).first().second) }
     val suggestedPhase=remember(initialPhase){CampaignPhase.values().firstOrNull{it.name==initialPhase} ?: CampaignPhase.EARLY}
@@ -40,7 +40,7 @@ fun CampaignTeamGuideScreen(
     }
     val displaySlots=if(dynamic!=null && phase==dynamic.preset?.phase)dynamic.adjustedSlots else preset?.slots.orEmpty()
     val national=PokedexDataStore.cachedNationalDex().orEmpty()
-    val source=remember(game){CompanionPreferences.activeRegionForGame(game) ?: AppGameCatalog.games.firstOrNull{it.label==game}?.regions?.firstOrNull()?.source}
+    val source=remember(game){AppStatePreferences.activeRegionForGame(game) ?: AppGameCatalog.games.firstOrNull{it.label==game}?.regions?.firstOrNull()?.source}
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -71,7 +71,7 @@ fun CampaignTeamGuideScreen(
                                 DropdownMenuItem(text={Text(g)},onClick={
                                     game=g
                                     starterId=TeamCampaignCatalog.starters(g).first().second
-                                    CompanionPreferences.activeGame=g.takeIf{candidate->AppGameCatalog.games.any{it.label==candidate}} ?: CompanionPreferences.activeGame
+                                    AppStatePreferences.activeGame=g.takeIf{candidate->AppGameCatalog.games.any{it.label==candidate}} ?: AppStatePreferences.activeGame
                                     gameMenu=false
                                 })
                             }

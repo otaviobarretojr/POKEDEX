@@ -3,7 +3,8 @@ package com.otaviobarreto.pokedex.data
 import android.content.Context
 import org.json.JSONObject
 
-object CompanionPreferences {
+object AppStatePreferences {
+    // Keep the historical SharedPreferences file name to preserve existing installs.
     private const val PREFS = "companion_preferences"
     private const val KEY_ACTIVE_GAME = "active_game"
     private const val KEY_ACTIVE_REGION = "active_region"

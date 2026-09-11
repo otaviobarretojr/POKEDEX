@@ -3,7 +3,7 @@ package com.otaviobarreto.pokedex.data
 import org.junit.Assert.*
 import org.junit.Test
 
-class CompanionRegressionTest {
+class GameContextRegressionTest {
     @Test fun scarletVioletIncludesAllThreeRegions() {
         val game = AppGameCatalog.games.first { it.label == "Scarlet / Violet" }
         assertEquals(listOf("Paldea","Kitakami","Blueberry"), game.regions.map { it.label })

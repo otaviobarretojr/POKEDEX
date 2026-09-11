@@ -28,7 +28,7 @@ object StartupPreloader {
         progress(.08f, "Abrindo dados locais")
         runCatching { PokedexDataStore.nationalDex() }
 
-        val activeGame = CompanionPreferences.activeGame
+        val activeGame = AppStatePreferences.activeGame
         val game = AppGameCatalog.games.firstOrNull { it.label == activeGame }
 
         progress(.24f, "Preparando sua Jornada")

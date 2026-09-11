@@ -1,58 +1,47 @@
 # POKEDEX
 
-Aplicativo Android pessoal para consulta e acompanhamento de Pokémon, reconstruído com arquitetura própria e inspirado funcionalmente em apps de referência como DataDex.
+Aplicativo Android pessoal para organizar a jornada nos jogos Pokémon, acompanhar Boxes e consultar informações contextualizadas por jogo.
 
-## Objetivo
+## Estado atual — v6.21.0
 
-Construir uma Pokédex offline, rápida e completa, com navegação por Pokémon, detalhes, evoluções, golpes, habilidades, itens, localizações por jogo, Team Builder, Living Dex e Boxes.
+O produto foi consolidado em dois pilares principais:
 
-## Princípios
+- **Jornada:** escolha do jogo, rota recomendada, mapa, objetivos, progresso e guia de time.
+- **Boxes:** coleção contextual por jogo/região, progresso e acesso à ficha de cada Pokémon.
 
-- Android nativo com Kotlin + Jetpack Compose
-- Arquitetura modular e preparada para crescimento
-- Dados locais/offline sempre que possível
-- Sem anúncios
-- Sem assinatura ou recursos premium
-- Recursos principais disponíveis por padrão
-- Living Dex e Boxes integrados ao mesmo banco de progresso
+Telas auxiliares permanecem acessíveis a partir desses fluxos: detalhes do Pokémon, evolução, tipos, localização/mapa regional, referências de golpes/habilidades/itens e guia de campanha.
 
-## Roadmap inicial
+## Arquitetura
 
-### Fase 0 — Fundação
-- Projeto Android compilável
-- Navegação principal
-- Tema e design system
-- Estrutura de módulos
-- Camada de dados e persistência
+- Kotlin + Jetpack Compose
+- Navegação com Navigation Compose
+- PokéAPI com cache persistente em disco e memória
+- Cache de imagens via Coil
+- Preload real na abertura
+- Pacotes offline por jogo
+- Persistência de Jornada, Boxes, jogo/região ativa e atividade recente
+- Uma trilha contínua durante o app, com música própria no preload
+- CI com auditoria estrutural, auditoria de assets, testes, lint e build do APK
 
-### Fase 1 — Pokédex
-- Lista completa
-- Busca
-- Filtros
-- Tela de detalhes
-- Tipos, stats, habilidades e evolução
+## Design foundation
 
-### Fase 2 — Dados avançados
-- Golpes
-- TMs
-- Itens
-- Localizações
-- Dados por jogo
+A v6.21.0 prepara a próxima fase visual sem alterar a aparência atual:
 
-### Fase 3 — Team Builder
-- Times
-- Slots
-- Tipagem
-- Cobertura
+- tokens centrais de cor, tipografia, espaçamento, raio e elevação;
+- tema centralizado;
+- componentes da Jornada separados em arquivos menores;
+- inicialização de estado centralizada no Application;
+- nomenclatura de estado desvinculada do antigo Companion;
+- versionamento local e CI alinhados.
 
-### Fase 4 — Living Dex
-- Capturado / faltando
-- Progresso por geração e jogo
-- Boxes
-- Integração com Pokémon HOME como referência de organização
+## Princípios para o redesign
 
-### Fase 5 — Refinamento
-- Auditoria visual
-- Performance
-- Offline completo
-- Build e distribuição do APK
+1. A lógica funcional fica congelada enquanto a camada visual evolui.
+2. Jornada e Boxes permanecem como navegação principal.
+3. Cache, offline, áudio e back stack não devem depender de componentes visuais.
+4. Novos componentes devem consumir o design system central.
+5. Cada tela deve continuar passando por testes, lint e build antes de merge.
+
+## Build
+
+O build oficial é gerado pelo workflow Android Build e usa a assinatura estável do projeto para permitir atualização sobre versões anteriores.
