@@ -63,6 +63,7 @@ import com.otaviobarreto.pokedex.data.CommunityEncounterIndex
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokeApiService
+import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.RegionMapCatalog
 import com.otaviobarreto.pokedex.data.RegionMapVisualCatalog
 import com.otaviobarreto.pokedex.data.RegionMapZone
@@ -121,7 +122,7 @@ private fun PaldeaHdExplorer(
         val pokemon = selectedPokemon ?: run { encounters = emptyList(); return@LaunchedEffect }
         loadingEncounters = true
         encounters = runCatching {
-            withContext(Dispatchers.IO) { PokeApiService.loadEncounters(pokemon.nationalId) }
+            withContext(Dispatchers.IO) { PokedexDataStore.encounters(pokemon.nationalId) }
         }.getOrElse { emptyList() }.mapNotNull { encounter ->
             val versions = encounter.versions.filter(context::matchesVersion)
             val details = encounter.details.filter { context.matchesVersion(it.version) }

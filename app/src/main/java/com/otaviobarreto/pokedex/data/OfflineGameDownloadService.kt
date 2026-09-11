@@ -1,12 +1,15 @@
 package com.otaviobarreto.pokedex.data
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.otaviobarreto.pokedex.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -60,8 +63,10 @@ class OfflineGameDownloadService : Service() {
             val ok = runCatching {
                 OfflineGamePackManager.download(game) { p ->
                     OfflineGamePackManager.setRuntimeProgress(gameLabel, p, true)
-                    getSystemService(NotificationManager::class.java)
-                        .notify(notificationId, notification(gameLabel, p.done, p.total, p.label, true))
+                    if (canPostNotifications()) {
+                        getSystemService(NotificationManager::class.java)
+                            .notify(notificationId, notification(gameLabel, p.done, p.total, p.label, true))
+                    }
                 }
             }.isSuccess
             finish(gameLabel, notificationId, ok)
@@ -76,9 +81,15 @@ class OfflineGameDownloadService : Service() {
         val manager = getSystemService(NotificationManager::class.java)
         val status = OfflineGamePackManager.status(gameLabel)
         val text = if (success && status.verified) "Pacote offline concluído" else "Download interrompido. Toque novamente para continuar."
-        manager.notify(notificationId, notification(gameLabel, status.completeCount, status.pokemonCount, text, false))
+        if (canPostNotifications()) {
+            manager.notify(notificationId, notification(gameLabel, status.completeCount, status.pokemonCount, text, false))
+        }
         if (jobs.isEmpty()) stopSelf()
     }
+
+    private fun canPostNotifications(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
     private fun notification(gameLabel: String, done: Int, total: Int, label: String, ongoing: Boolean) =
         NotificationCompat.Builder(this, CHANNEL_ID)

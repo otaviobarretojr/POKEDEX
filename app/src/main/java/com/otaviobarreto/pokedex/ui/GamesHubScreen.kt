@@ -59,7 +59,7 @@ private val gameHubEntries=listOf(
 fun GamesHubScreen(onOpenGame:(String)->Unit){
     var regionPicker by remember{mutableStateOf<GameHubEntry?>(null)}
     var refreshToken by remember{mutableIntStateOf(0)}
-    LaunchedEffect(Unit){ while(true){ delay(700); refreshToken++ } }
+    LaunchedEffect(Unit){ while(true){ delay(1500); refreshToken++ } }
     var message by remember{mutableStateOf<String?>(null)}
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){

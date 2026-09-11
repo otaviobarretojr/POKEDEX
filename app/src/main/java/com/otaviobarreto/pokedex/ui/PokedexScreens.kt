@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.PokeApiService
+import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.PokemonRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -73,7 +74,7 @@ fun PokedexScreen(onPokemonClick: (Int) -> Unit) {
     LaunchedEffect(Unit) {
         loading = true
         dex = runCatching {
-            withContext(Dispatchers.IO) { PokeApiService.loadNationalDex() }
+            withContext(Dispatchers.IO) { PokedexDataStore.nationalDex() }
         }.getOrElse {
             sourceMessage = "Sem conexão: exibindo catálogo local disponível."
             PokemonRepository.all().map {
@@ -91,7 +92,7 @@ fun PokedexScreen(onPokemonClick: (Int) -> Unit) {
         } else {
             loadingType = true
             typeIds = runCatching {
-                withContext(Dispatchers.IO) { PokeApiService.loadPokemonIdsForType(type) }
+                withContext(Dispatchers.IO) { PokedexDataStore.pokemonIdsForType(type) }
             }.getOrElse {
                 PokemonRepository.all().filter { pokemon ->
                     pokemon.types.any { it.equals(type, ignoreCase = true) }
@@ -233,10 +234,10 @@ fun PokemonDetailScreen(id: Int, source: String? = null, onBack: () -> Unit) {
         bundle = null
         runCatching {
             withContext(Dispatchers.IO) {
-                val pokemon = PokeApiService.loadPokemon(id)
-                val species = PokeApiService.loadSpecies(id)
-                val evolution = species.evolutionChainUrl?.let { PokeApiService.loadEvolutionChain(it) } ?: emptyList()
-                val encounters = PokeApiService.loadEncounters(id)
+                val pokemon = PokedexDataStore.pokemon(id)
+                val species = PokedexDataStore.species(id)
+                val evolution = species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it) } ?: emptyList()
+                val encounters = PokedexDataStore.encounters(id)
                 DetailBundle(pokemon, species, evolution, encounters)
             }
         }.onSuccess { bundle = it }

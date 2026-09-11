@@ -35,7 +35,75 @@ private data class MoveView(val move:PokeApiService.RemoteMove,val details:List<
 
 private fun cachedDetailBundle(id:Int):DetailV2Bundle?{val p=PokedexDataStore.cachedPokemon(id)?:return null;val s=PokedexDataStore.cachedSpecies(id)?:return null;val e=s.evolutionChainUrl?.let{PokedexDataStore.cachedEvolutions(it)}?:emptyList();val l=PokedexDataStore.cachedEncounters(id).orEmpty();return DetailV2Bundle(p,s,e,l)}
 
-@Composable fun PokemonDetailV2Screen(id:Int,source:String?=null,onBack:()->Unit,onOpenLocation:(()->Unit)?=null,onOpenReference:((String,String)->Unit)?=null,onOpenPokemon:((Int)->Unit)?=null){var bundle by remember(id){mutableStateOf(cachedDetailBundle(id))};var error by remember(id){mutableStateOf<String?>(null)};var retry by remember{mutableIntStateOf(0)};var tab by remember(id){mutableIntStateOf(0)};val context=remember(source){GameContext.fromSource(source)};LaunchedEffect(id,retry){error=null;runCatching{withContext(Dispatchers.IO){coroutineScope{val pJob=async{PokedexDataStore.pokemon(id)};val sJob=async{PokedexDataStore.species(id)};val lJob=async{PokedexDataStore.encounters(id)};val s=sJob.await();val eJob=async{s.evolutionChainUrl?.let{PokedexDataStore.evolutions(it)}?:emptyList()};DetailV2Bundle(pJob.await(),s,eJob.await(),lJob.await())}}}.onSuccess{bundle=it}.onFailure{error="Não foi possível carregar os dados deste Pokémon."}};when{bundle!=null->DetailV2Content(bundle!!,tab,{tab=it},context,onBack,onOpenLocation,onOpenReference,onOpenPokemon);error!=null->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Column(horizontalAlignment=Alignment.CenterHorizontally){Text(error!!);Button({retry++},Modifier.padding(top=12.dp)){Text("Tentar novamente")}}};else->InstantDetailShell(id,onBack)}}
+@Composable
+fun PokemonDetailV2Screen(
+    id:Int,
+    source:String?=null,
+    onBack:()->Unit,
+    onOpenLocation:(()->Unit)?=null,
+    onOpenReference:((String,String)->Unit)?=null,
+    onOpenPokemon:((Int)->Unit)?=null
+){
+    var bundle by remember(id){ mutableStateOf(cachedDetailBundle(id)) }
+    var error by remember(id){ mutableStateOf<String?>(null) }
+    var retry by remember{ mutableIntStateOf(0) }
+    var tab by remember(id){ mutableIntStateOf(0) }
+    val context=remember(source){ GameContext.fromSource(source) }
+
+    LaunchedEffect(id,retry){
+        error=null
+
+        val core = runCatching {
+            withContext(Dispatchers.IO) {
+                coroutineScope {
+                    val pJob=async { PokedexDataStore.pokemon(id) }
+                    val sJob=async { PokedexDataStore.species(id) }
+                    pJob.await() to sJob.await()
+                }
+            }
+        }.getOrElse {
+            if(bundle==null) error="Não foi possível carregar os dados deste Pokémon."
+            return@LaunchedEffect
+        }
+
+        val (pokemon,species)=core
+        // Render as soon as the two core payloads are ready. Evolution and encounter
+        // data are secondary and must never block opening the detail screen.
+        bundle=DetailV2Bundle(
+            pokemon,
+            species,
+            PokedexDataStore.cachedEvolutions(species.evolutionChainUrl).orEmpty(),
+            PokedexDataStore.cachedEncounters(id).orEmpty()
+        )
+
+        runCatching {
+            withContext(Dispatchers.IO) {
+                coroutineScope {
+                    val eJob=async {
+                        species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it) } ?: emptyList()
+                    }
+                    val lJob=async { PokedexDataStore.encounters(id) }
+                    eJob.await() to lJob.await()
+                }
+            }
+        }.onSuccess { (evolutions,encounters) ->
+            bundle=DetailV2Bundle(pokemon,species,evolutions,encounters)
+        }
+    }
+
+    when{
+        bundle!=null -> DetailV2Content(
+            bundle!!,tab,{tab=it},context,onBack,onOpenLocation,onOpenReference,onOpenPokemon
+        )
+        error!=null -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+            Column(horizontalAlignment=Alignment.CenterHorizontally){
+                Text(error!!)
+                Button({retry++},Modifier.padding(top=12.dp)){Text("Tentar novamente")}
+            }
+        }
+        else -> InstantDetailShell(id,onBack)
+    }
+}
 
 @Composable private fun InstantDetailShell(id:Int,onBack:()->Unit){
     val entry=remember(id){PokedexDataStore.cachedIndexEntry(id)}
