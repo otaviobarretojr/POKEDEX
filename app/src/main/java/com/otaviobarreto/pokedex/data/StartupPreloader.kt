@@ -19,8 +19,10 @@ object StartupPreloader {
         context: Context,
         onProgress: (StartupPreloadProgress) -> Unit
     ) = withContext(Dispatchers.IO) {
-        fun progress(value: Float, label: String) {
-            onProgress(StartupPreloadProgress(value.coerceIn(0f, 1f), label))
+        suspend fun progress(value: Float, label: String) {
+            withContext(Dispatchers.Main.immediate) {
+                onProgress(StartupPreloadProgress(value.coerceIn(0f, 1f), label))
+            }
         }
 
         progress(.08f, "Abrindo dados locais")
