@@ -18,9 +18,11 @@ object GameDexService {
             get() = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$nationalId.png"
     }
 
+    fun cacheUrl(context: GameContext): String = "$API/pokedex/${context.pokedexSlug}"
+
     fun loadGameDex(context: GameContext): List<GameDexEntry> {
         cache[context.pokedexSlug]?.let { return it }
-        val json = getJson("$API/pokedex/${context.pokedexSlug}")
+        val json = getJson(cacheUrl(context))
         val entries = json.getJSONArray("pokemon_entries")
         val result = buildList(entries.length()) {
             for (i in 0 until entries.length()) {
