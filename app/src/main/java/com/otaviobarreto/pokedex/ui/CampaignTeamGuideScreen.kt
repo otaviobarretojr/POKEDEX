@@ -35,6 +35,10 @@ fun CampaignTeamGuideScreen(
     var gameMenu by remember { mutableStateOf(false) }
     var createdMessage by remember { mutableStateOf<String?>(null) }
     val preset=remember(game,starterId,phase){TeamCampaignCatalog.preset(game,starterId,phase)}
+    val dynamic=remember(game,starterId,JourneyProgressStore.revision){
+        if(game=="Scarlet / Violet")JourneyDynamicTeamCatalog.suggestion(game,starterId) else null
+    }
+    val displaySlots=if(dynamic!=null && phase==dynamic.preset?.phase)dynamic.adjustedSlots else preset?.slots.orEmpty()
     val national=PokedexDataStore.cachedNationalDex().orEmpty()
 
     LazyColumn(
@@ -100,6 +104,22 @@ fun CampaignTeamGuideScreen(
             }
         }
         preset?.let{team->
+            dynamic?.takeIf{phase==it.preset?.phase}?.let{smart->
+                item{
+                    Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.tertiaryContainer)){
+                        Column(Modifier.fillMaxWidth().padding(14.dp)){
+                            Row(verticalAlignment=Alignment.CenterVertically){
+                                Icon(Icons.Default.AutoAwesome,null)
+                                Text("TIME DINÂMICO DA JORNADA",Modifier.padding(start=8.dp),fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium)
+                            }
+                            Text(smart.reason,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
+                            smart.focusStep?.let{step->
+                                Text("Foco atual: "+step.title+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=6.dp))
+                            }
+                        }
+                    }
+                }
+            }
             item{
                 Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
@@ -109,7 +129,7 @@ fun CampaignTeamGuideScreen(
                     }
                 }
             }
-            itemsIndexed(team.slots,key={index,slot->index.toString()+"-"+slot.pokemonId}){index,slot->
+            itemsIndexed(displaySlots,key={index,slot->index.toString()+"-"+slot.pokemonId}){index,slot->
                 val entry=national.firstOrNull{it.id==slot.pokemonId}
                 val build=TeamCampaignCatalog.buildFor(slot.pokemonId,game)
                 Card(Modifier.fillMaxWidth().clickable{onPokemonClick(slot.pokemonId)},shape=RoundedCornerShape(20.dp)){
@@ -143,7 +163,7 @@ fun CampaignTeamGuideScreen(
                 Button(
                     onClick={
                         val name=game.substringBefore(" / ")+" · "+team.starter+" · "+team.phase.label
-                        TeamStore.createTeam(name,team.slots.map{it.pokemonId})
+                        TeamStore.createTeam(name,displaySlots.map{it.pokemonId})
                         createdMessage="Time criado em Meus Times."
                     },
                     modifier=Modifier.fillMaxWidth().height(52.dp)
