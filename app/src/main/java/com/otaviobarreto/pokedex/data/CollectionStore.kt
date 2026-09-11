@@ -259,8 +259,15 @@ object CollectionStore {
     }.getOrDefault(false)
 
     private fun syncCapturedFromBoxes(id: Int) {
-        if (boxes.values.none { id in it } && id in capturedIds) { capturedIds = capturedIds - id; persistCaptured() }
-        else if (boxes.values.any { id in it } && id !in capturedIds) { capturedIds = capturedIds + id; persistCaptured() }
+        val boxed = boxes.values.any { id in it }
+        val contextual = contextualCapturedIds.values.any { id in it }
+        if (!boxed && !contextual && id in capturedIds) {
+            capturedIds = capturedIds - id
+            persistCaptured()
+        } else if ((boxed || contextual) && id !in capturedIds) {
+            capturedIds = capturedIds + id
+            persistCaptured()
+        }
     }
     private fun sanitizeBoxName(name: String) = name.trim().replace(Regex("\\s+"), " ").take(48)
     private fun persistCaptured() { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putStringSet(KEY_CAPTURED, capturedIds.map(Int::toString).toSet())?.apply() }
