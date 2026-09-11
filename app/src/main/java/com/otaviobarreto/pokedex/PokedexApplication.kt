@@ -6,7 +6,7 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
-import com.otaviobarreto.pokedex.data.CompanionPreferences
+import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import com.otaviobarreto.pokedex.data.PersistentApiCache
 import com.otaviobarreto.pokedex.data.RecentActivityStore
@@ -17,7 +17,7 @@ class PokedexApplication : Application(), ImageLoaderFactory {
         super.onCreate()
         PersistentApiCache.initialize(this)
         OfflineGamePackManager.initialize(this)
-        CompanionPreferences.initialize(this)
+        AppStatePreferences.initialize(this)
         RecentActivityStore.initialize(this)
         runCatching {
             HttpResponseCache.install(File(cacheDir, "pokeapi-http"), 32L * 1024L * 1024L)
