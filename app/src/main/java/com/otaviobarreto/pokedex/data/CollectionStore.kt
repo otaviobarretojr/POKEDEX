@@ -13,6 +13,8 @@ object CollectionStore {
     private const val KEY_CAPTURED = "captured_ids"
     private const val KEY_BOX_PREFIX = "box_"
     private const val KEY_BOX_ORDER = "box_order_v2"
+    private const val KEY_CONTEXTUAL_CAPTURED = "contextual_captured_v1"
+    private const val KEY_CONTEXT_MIGRATED = "contextual_captured_migrated_v1"
     private const val MAX_BOX_SIZE = 30
 
     val defaultBoxes = listOf(
@@ -25,6 +27,7 @@ object CollectionStore {
 
     private var context: Context? = null
     var capturedIds by mutableStateOf<Set<Int>>(emptySet()); private set
+    var contextualCapturedIds by mutableStateOf<Map<String, Set<Int>>>(emptyMap()); private set
     var boxNames by mutableStateOf(defaultBoxes); private set
     var boxes by mutableStateOf<Map<String, Set<Int>>>(defaultBoxes.associateWith { emptySet() }); private set
 
@@ -33,6 +36,7 @@ object CollectionStore {
         this.context = context.applicationContext
         val prefs = this.context!!.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         capturedIds = prefs.getStringSet(KEY_CAPTURED, emptySet()).orEmpty().mapNotNull { it.toIntOrNull() }.toSet()
+        contextualCapturedIds = decodeContextualCaptured(prefs.getString(KEY_CONTEXTUAL_CAPTURED, null))
         val storedOrder = prefs.getString(KEY_BOX_ORDER, null)?.let(::decodeBoxOrder).orEmpty()
         boxNames = if (storedOrder.isEmpty()) defaultBoxes else storedOrder
         boxes = boxNames.associateWith { box -> prefs.getStringSet(KEY_BOX_PREFIX + box, emptySet()).orEmpty().mapNotNull { it.toIntOrNull() }.toSet() }
@@ -42,6 +46,30 @@ object CollectionStore {
     }
 
     fun isCaptured(id: Int): Boolean = id in capturedIds
+    fun capturedIn(source: String): Set<Int> = contextualCapturedIds[source].orEmpty()
+    fun isCapturedIn(source: String, id: Int): Boolean = id in contextualCapturedIds[source].orEmpty()
+    fun toggleCapturedIn(source: String, id: Int) = setCapturedIn(source, id, !isCapturedIn(source, id))
+    fun setCapturedIn(source: String, id: Int, captured: Boolean) {
+        if (source.isBlank()) { setCaptured(id, captured); return }
+        val current = contextualCapturedIds[source].orEmpty()
+        val updated = if (captured) current + id else current - id
+        if (updated == current) return
+        contextualCapturedIds = if (updated.isEmpty()) contextualCapturedIds - source else contextualCapturedIds + (source to updated)
+        persistContextualCaptured()
+        if (captured) markCaptured(id)
+    }
+
+    fun migrateLegacyCapturedToSource(source: String?) {
+        if (source.isNullOrBlank() || capturedIds.isEmpty()) return
+        val prefs = context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE) ?: return
+        if (prefs.getBoolean(KEY_CONTEXT_MIGRATED, false)) return
+        if (contextualCapturedIds.isEmpty()) {
+            contextualCapturedIds = mapOf(source to capturedIds)
+            persistContextualCaptured()
+        }
+        prefs.edit().putBoolean(KEY_CONTEXT_MIGRATED, true).apply()
+    }
+
     fun toggleCaptured(id: Int) = setCaptured(id, id !in capturedIds)
     fun setCaptured(id: Int, captured: Boolean) {
         if (captured) {
@@ -51,6 +79,11 @@ object CollectionStore {
         if (id in capturedIds) {
             capturedIds = capturedIds - id
             persistCaptured()
+        }
+        val contextualAffected = contextualCapturedIds.filterValues { id in it }.keys
+        if (contextualAffected.isNotEmpty()) {
+            contextualCapturedIds = contextualCapturedIds.mapValues { (_, ids) -> ids - id }.filterValues { it.isNotEmpty() }
+            persistContextualCaptured()
         }
         val affected = boxes.filterValues { id in it }.keys
         if (affected.isNotEmpty()) {
@@ -164,8 +197,13 @@ object CollectionStore {
         boxNames.forEach { name ->
             boxArray.put(JSONObject().put("name", name).put("ids", JSONArray(boxes[name].orEmpty().sorted())))
         }
+        val contextual = JSONObject()
+        contextualCapturedIds.toSortedMap().forEach { (source, ids) ->
+            contextual.put(source, JSONArray(ids.sorted()))
+        }
         return JSONObject()
             .put("captured", JSONArray(capturedIds.sorted()))
+            .put("contextualCaptured", contextual)
             .put("boxes", boxArray)
     }
 
@@ -174,6 +212,21 @@ object CollectionStore {
         val newCaptured = buildSet {
             for (i in 0 until capturedArray.length()) {
                 capturedArray.optInt(i).takeIf { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID }?.let(::add)
+            }
+        }
+        val contextualObject = snapshot.optJSONObject("contextualCaptured")
+        val restoredContextual = linkedMapOf<String, Set<Int>>()
+        if (contextualObject != null) {
+            val keys = contextualObject.keys()
+            while (keys.hasNext()) {
+                val source = keys.next()
+                val idsArray = contextualObject.optJSONArray(source) ?: continue
+                val ids = buildSet {
+                    for (j in 0 until idsArray.length()) {
+                        idsArray.optInt(j).takeIf { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID }?.let(::add)
+                    }
+                }
+                if (source.isNotBlank() && ids.isNotEmpty()) restoredContextual[source] = ids
             }
         }
         val boxesArray = snapshot.optJSONArray("boxes") ?: JSONArray()
@@ -194,10 +247,14 @@ object CollectionStore {
         }
         boxNames = if (names.isEmpty()) defaultBoxes else names
         boxes = if (restored.isEmpty()) boxNames.associateWith { emptySet() } else boxNames.associateWith { restored[it].orEmpty() }
-        capturedIds = newCaptured + boxes.values.flatten()
+        contextualCapturedIds = restoredContextual
+        capturedIds = newCaptured + boxes.values.flatten() + contextualCapturedIds.values.flatten()
         persistBoxOrder()
         boxNames.forEach(::persistBox)
         persistCaptured()
+        persistContextualCaptured()
+        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()
+            ?.putBoolean(KEY_CONTEXT_MIGRATED, contextualCapturedIds.isNotEmpty())?.apply()
         true
     }.getOrDefault(false)
 
@@ -207,6 +264,28 @@ object CollectionStore {
     }
     private fun sanitizeBoxName(name: String) = name.trim().replace(Regex("\\s+"), " ").take(48)
     private fun persistCaptured() { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putStringSet(KEY_CAPTURED, capturedIds.map(Int::toString).toSet())?.apply() }
+    private fun persistContextualCaptured() {
+        val root = JSONObject()
+        contextualCapturedIds.toSortedMap().forEach { (source, ids) -> root.put(source, JSONArray(ids.sorted())) }
+        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putString(KEY_CONTEXTUAL_CAPTURED, root.toString())?.apply()
+    }
+    private fun decodeContextualCaptured(raw: String?): Map<String, Set<Int>> = runCatching {
+        if (raw.isNullOrBlank()) return@runCatching emptyMap()
+        val root = JSONObject(raw)
+        buildMap {
+            val keys = root.keys()
+            while (keys.hasNext()) {
+                val source = keys.next()
+                val array = root.optJSONArray(source) ?: continue
+                val ids = buildSet {
+                    for (i in 0 until array.length()) {
+                        array.optInt(i).takeIf { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID }?.let(::add)
+                    }
+                }
+                if (ids.isNotEmpty()) put(source, ids)
+            }
+        }
+    }.getOrDefault(emptyMap())
     private fun persistBox(box: String) { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putStringSet(KEY_BOX_PREFIX + box, boxes[box].orEmpty().map(Int::toString).toSet())?.apply() }
     private fun persistBoxOrder() { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putString(KEY_BOX_ORDER, JSONArray(boxNames).toString())?.apply() }
     private fun decodeBoxOrder(raw: String): List<String> = runCatching { val a = JSONArray(raw); buildList { for (i in 0 until a.length()) a.optString(i).takeIf { it.isNotBlank() }?.let(::add) } }.getOrDefault(emptyList())
