@@ -30,7 +30,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
-import com.otaviobarreto.pokedex.data.CompanionPreferences
+import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
@@ -60,27 +60,27 @@ private val qbGames=AppGameCatalog.games.map{game->
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
- val preferredGame=CompanionPreferences.activeGame.takeIf{g->qbGames.any{it.label==g}} ?: qbGames.first().label
+ val preferredGame=AppStatePreferences.activeGame.takeIf{g->qbGames.any{it.label==g}} ?: qbGames.first().label
  var gameLabel by rememberSaveable{mutableStateOf(preferredGame)}
  val game=remember(gameLabel){qbGames.firstOrNull{it.label==gameLabel}?:qbGames.first()}
- val preferredRegion=CompanionPreferences.activeRegionForGame(game.label)
+ val preferredRegion=AppStatePreferences.activeRegionForGame(game.label)
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(CompanionPreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  LaunchedEffect(region.source,game.label){
   loading=true
-  CompanionPreferences.activeGame=game.label
-  CompanionPreferences.setActiveRegionForGame(game.label,region.source)
-  page=CompanionPreferences.boxPage(region.source)
+  AppStatePreferences.activeGame=game.label
+  AppStatePreferences.setActiveRegionForGame(game.label,region.source)
+  page=AppStatePreferences.boxPage(region.source)
   val ctx=GameContext.fromSource(region.source)
   dex=if(ctx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}}.getOrElse{emptyList()}
   val pageCount=((dex.size+29)/30).coerceAtLeast(1)
   if(page>=pageCount) page=pageCount-1
-  CompanionPreferences.setBoxPage(region.source,page)
+  AppStatePreferences.setBoxPage(region.source,page)
   loading=false
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
- LaunchedEffect(region.source,current){CompanionPreferences.setBoxPage(region.source,current)}
+ LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
  val entries=dex.drop(current*30).take(30);val missingDetails=entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null};LaunchedEffect(entries){missingDetails.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(250);missingDetails.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty();val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
   Row(
@@ -99,7 +99,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      qbGames.forEach{g->
       DropdownMenuItem(
        text={Text(g.label,fontWeight=FontWeight.SemiBold)},
-       onClick={gameLabel=g.label;CompanionPreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==CompanionPreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=CompanionPreferences.boxPage(regionSource);CompanionPreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
+       onClick={gameLabel=g.label;AppStatePreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==AppStatePreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=AppStatePreferences.boxPage(regionSource);AppStatePreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
       )
      }
     }
@@ -120,7 +120,7 @@ private val qbGames=AppGameCatalog.games.map{game->
         Text(r.label,fontWeight=FontWeight.SemiBold)
         if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)
        }},
-       onClick={regionSource=r.source;CompanionPreferences.setActiveRegionForGame(game.label,r.source);page=CompanionPreferences.boxPage(r.source);regionMenu=false}
+       onClick={regionSource=r.source;AppStatePreferences.setActiveRegionForGame(game.label,r.source);page=AppStatePreferences.boxPage(r.source);regionMenu=false}
       )
      }
     }
