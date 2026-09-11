@@ -16,20 +16,26 @@ object JourneySmartProgress {
         val next=steps.firstOrNull{it.id !in completed}
         val count=completed.count{done->steps.any{it.id==done}}.coerceAtMost(steps.size)
         val ratio=if(steps.isEmpty())0f else count.toFloat()/steps.size
+        val nextId=next?.id.orEmpty()
         val phase=when{
+            nextId.startsWith("sv-pg-") || nextId.startsWith("sv-dlc-") || nextId.startsWith("sv-epi-") -> CampaignPhase.LATE
             ratio < .34f -> CampaignPhase.EARLY
             ratio < .72f -> CampaignPhase.MID
             else -> CampaignPhase.LATE
         }
-        val label=when(phase){
-            CampaignPhase.EARLY -> "Início da campanha"
-            CampaignPhase.MID -> "Meio da campanha"
-            CampaignPhase.LATE -> "Reta final"
+        val label=when{
+            nextId.startsWith("sv-pg-") -> "Pós-jogo de Paldea"
+            nextId in listOf("sv-dlc-01","sv-dlc-02","sv-dlc-03","sv-dlc-04","sv-dlc-05","sv-dlc-06","sv-dlc-07") -> "The Teal Mask"
+            nextId.startsWith("sv-dlc-") -> "The Indigo Disk"
+            nextId.startsWith("sv-epi-") -> "Mochi Mayhem"
+            phase==CampaignPhase.EARLY -> "Início da campanha"
+            phase==CampaignPhase.MID -> "Meio da campanha"
+            else -> "Reta final"
         }
         val recommendation=when{
             steps.isEmpty() -> "A rota inteligente deste jogo ainda não foi catalogada."
-            next==null -> "Rota principal concluída. Seu time deve estar preparado para o fechamento da campanha."
-            else -> "Próximo alvo: "+next.title+" · "+next.levelLabel+". O Time Ideal será aberto já na fase "+phase.label+"."
+            next==null -> "Jornada completa: campanha, pós-jogo, DLC e epílogo concluídos."
+            else -> "Próximo alvo: "+next.title+" · "+next.levelLabel+". Etapa atual: "+label+"."
         }
         return JourneySmartContext(count,steps.size,next,phase,label,recommendation)
     }
