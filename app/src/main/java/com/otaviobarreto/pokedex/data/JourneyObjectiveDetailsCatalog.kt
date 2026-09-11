@@ -153,7 +153,7 @@ object JourneyObjectiveDetailsCatalog {
             listOf("Psíquico","Voador","Fada"),
             "Psíquico e Voador têm ótimo valor, mas leve cobertura para Lucario e Annihilape. Recomenda-se nível 56 ou mais.",
             "Conclusão da última base principal e fechamento da rota Starfall Street."
-        ,
+        ),
         "sv-pg-01" to d("Fechamento da Victory Road: avaliação da Elite Four e batalha de Campeã.",listOf(p("Elite Four","Nv. 57–61"),p("Geeta","Nv. 61–62","Top Champion")),listOf("Cobertura variada"),"Leve seis Pokémon próximos do nível 62 com cobertura ampla e itens de cura.","Conclusão da Victory Road e avanço para o final das três rotas."),
         "sv-pg-02" to d("Arven encerra Path of Legends em uma batalha completa.",listOf(p("Equipe de Arven","Nv. 58–63","6 Pokémon")),listOf("Cobertura variada"),"Prepare respostas para uma equipe diversificada e preserve seu núcleo mais forte.","Conclusão de Path of Legends."),
         "sv-pg-03" to d("Fechamento de Starfall Street envolvendo Clavell e Cassiopeia.",listOf(p("Director Clavell","Nv. 60–61"),p("Cassiopeia","Nv. 62–63")),listOf("Cobertura variada"),"Equipe equilibrada na faixa de 63 facilita as duas batalhas.","Conclusão de Starfall Street."),
