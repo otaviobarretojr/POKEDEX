@@ -121,6 +121,28 @@ object CollectionStore {
 
     fun boxesForPokemon(id: Int): List<String> = boxNames.filter { id in boxes[it].orEmpty() }
     fun duplicateIds(): Set<Int> = boxes.values.flatten().groupingBy { it }.eachCount().filterValues { it > 1 }.keys
+    fun unboxedCapturedIds(): Set<Int> = capturedIds - boxes.values.flatten().toSet()
+
+    fun moveMany(fromBox: String, toBox: String, ids: Collection<Int>): Int {
+        if (fromBox == toBox) return 0
+        val target = ensureBox(toBox) ?: return 0
+        val sourceIds = boxes[fromBox].orEmpty()
+        val candidates = ids.filter { it in sourceIds && it !in boxes[target].orEmpty() }
+        val room = (MAX_BOX_SIZE - boxes[target].orEmpty().size).coerceAtLeast(0)
+        val moving = candidates.take(room)
+        if (moving.isEmpty()) return 0
+        boxes = boxes + (target to (boxes[target].orEmpty() + moving)) + (fromBox to (sourceIds - moving.toSet()))
+        moving.forEach(::markCaptured)
+        persistBox(target); persistBox(fromBox)
+        return moving.size
+    }
+
+    fun sortBox(box: String): Boolean {
+        if (box !in boxes) return false
+        boxes = boxes + (box to boxes[box].orEmpty().sorted().toCollection(linkedSetOf()))
+        persistBox(box)
+        return true
+    }
 
     fun exportSnapshot(): JSONObject {
         val boxArray = JSONArray()
