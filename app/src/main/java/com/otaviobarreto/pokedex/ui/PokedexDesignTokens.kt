@@ -67,5 +67,5 @@ object PokedexDesignTokens {
         extraLarge = RoundedCornerShape(Radius.Xl)
     )
 
-    val Typography = Typography()
+    val AppTypography = Typography()
 }
