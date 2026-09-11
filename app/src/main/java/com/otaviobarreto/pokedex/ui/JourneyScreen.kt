@@ -584,7 +584,7 @@ private fun JourneyObjectiveDetailScreen(
                 JourneyDetailSectionTitle(Icons.Default.CardGiftcard,"O que você ganha")
                 Card(shape=RoundedCornerShape(18.dp)){
                     Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
-                        Icon(Icons.Default.Unlock,null)
+                        Icon(Icons.Default.CardGiftcard,null)
                         Text(info.reward,Modifier.padding(start=10.dp).weight(1f),style=MaterialTheme.typography.bodyMedium)
                     }
                 }
