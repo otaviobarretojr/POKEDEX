@@ -73,6 +73,13 @@ object PersistentApiCache {
 
     fun isPinned(url: String): Boolean = url in pinnedUrls
 
+    fun promoteLocal(url: String): Boolean {
+        val file = fileFor(url)
+        if (!file.exists()) return false
+        file.setLastModified(System.currentTimeMillis())
+        return true
+    }
+
     fun clear() {
         memory.clear()
         directory?.listFiles()?.forEach { it.delete() }
