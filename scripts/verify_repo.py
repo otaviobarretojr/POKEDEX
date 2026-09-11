@@ -938,7 +938,7 @@ for required in ("JourneyGameCover", "GameCoverCatalog.coversFor", "AsyncImage",
         violations.append(f"Journey official cover rendering missing {required}")
 
 startup_v622 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
-for required in ("GameCoverCatalog.coversFor", "startup-game-cover", "Preparando capas dos jogos"):
+for required in ("GameCoverCatalog.coversFor", "startup-journey-art", "Preparando arte da Jornada"):
     if required not in startup_v622:
         violations.append(f"Journey cover preload missing {required}")
 
