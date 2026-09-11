@@ -561,6 +561,9 @@ if "story_img_01.jpg" not in journey_map or "backgroundUrl" not in journey_map:
     violations.append("Official Paldea map background missing")
 if "Mapa oficial de Paldea" not in journey_ui:
     violations.append("Official Paldea map is not rendered in Journey")
+type_icons=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTypeIconCatalog.kt").read_text(encoding="utf-8")
+if "generation-ix/scarlet-violet" not in type_icons or "JourneyTypeIconCatalog" not in journey_ui:
+    violations.append("Scarlet/Violet type icons are not wired into Journey")
 if not (root/"scripts/audit_journey_visuals.py").exists():
     violations.append("Journey visual URL audit script missing")
 
