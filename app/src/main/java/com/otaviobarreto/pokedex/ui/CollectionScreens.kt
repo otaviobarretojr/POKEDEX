@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 private data class LivingDexScope(val label: String, val source: String?)
-private enum class LivingCollectionFilter { ALL, OWNED, BOXED, MISSING, UNBOXED }
+private enum class LivingCollectionFilter { ALL, OWNED, BOXED, MISSING, UNBOXED, DUPLICATES }
 private val livingDexScopes = listOf(LivingDexScope("Nacional", null)) +
     AppGameCatalog.games.flatMap { game -> game.regions.map { LivingDexScope("${game.label} · ${it.label}", it.source) } }
 
@@ -89,6 +89,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                 LivingCollectionFilter.BOXED -> p.id in captured && CollectionStore.boxesForPokemon(p.id).isNotEmpty()
                 LivingCollectionFilter.MISSING -> p.id !in captured
                 LivingCollectionFilter.UNBOXED -> p.id in captured && CollectionStore.boxesForPokemon(p.id).isEmpty()
+                LivingCollectionFilter.DUPLICATES -> p.id in CollectionStore.duplicateIds()
             }
             queryOk && generationOk && collectionOk
         }
@@ -187,7 +188,8 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                     LivingCollectionFilter.OWNED to "Capturados",
                     LivingCollectionFilter.BOXED to "Na Box",
                     LivingCollectionFilter.MISSING to "Faltantes",
-                    LivingCollectionFilter.UNBOXED to "Sem Box"
+                    LivingCollectionFilter.UNBOXED to "Sem Box",
+                    LivingCollectionFilter.DUPLICATES to "Duplicados"
                 ).forEach { (filter, label) ->
                     AssistChip(onClick = { collectionFilter = filter }, label = { Text(label) }, leadingIcon = if (collectionFilter == filter) ({ Text("✓") }) else null)
                 }
