@@ -50,8 +50,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.18.0"' not in workflow or "versionCode = 6180" not in workflow:
-    violations.append("CI v6.18.0 version stamping missing")
+if 'versionName = "6.19.0"' not in workflow or "versionCode = 6190" not in workflow:
+    violations.append("CI v6.19.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -66,25 +66,12 @@ if "repeat(5)" not in boxes or "repeat(6)" not in boxes:
 if "movePokemon(activeBox,target" in boxes or "Mover selecionados" in boxes:
     violations.append("Box movement controls must remain removed")
 
-backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-if "pokedex-companion" not in backup:
-    violations.append("Backup format guard missing")
-
 if violations:
     print("Source verification failed:")
     for item in violations:
         print(" -", item)
     sys.exit(1)
 
-
-planner = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CapturePlannerService.kt").read_text(encoding="utf-8")
-if "obtainableMissing" not in planner or "externalMissing" not in planner:
-    violations.append("Capture planner integration missing")
-
-capture = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CaptureGuideService.kt").read_text(encoding="utf-8")
-for required in ("sampleLocations", "methods", "minLevel", "maxLevel"):
-    if required not in capture:
-        violations.append(f"Capture intelligence missing {required}")
 
 if violations:
     print("Source verification failed:")
@@ -102,10 +89,6 @@ for required in ("unboxedCapturedIds", "moveMany", "sortBox"):
     if required not in collection:
         violations.append(f"Box 3.0 missing {required}")
 
-backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-if '.put("version", 8)' not in backup or "preferences" not in backup:
-    violations.append("Backup context missing")
-
 if violations:
     print("Source verification failed:")
     for item in violations:
@@ -120,10 +103,6 @@ if "recentPokemon" not in recent or "lastRoute" not in recent:
 forms = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
 if "PokemonFormVariant" not in forms or "varieties" not in forms:
     violations.append("Pokemon Forms service missing")
-
-route = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CaptureRouteService.kt").read_text(encoding="utf-8")
-if "CaptureRouteGroup" not in route:
-    violations.append("Capture route planner missing")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 for required in ("Pesquisar Pokémon", "Modifier.weight(1f).fillMaxHeight()", "Deslize para navegar entre as Boxes", "CircularProgressIndicator"):
@@ -658,10 +637,6 @@ for required in ("exportSnapshot", "importSnapshot", "boxPages", "regions"):
     if required not in prefs_v613:
         violations.append(f"Navigation backup missing {required}")
 
-backup_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-if '.put("version", 8)' not in backup_v613 or 'put("preferences"' not in backup_v613 or 'put("journey"' not in backup_v613:
-    violations.append("Backup v8 contextual/Journey state missing")
-
 cache_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt").read_text(encoding="utf-8")
 promote_body = cache_v613.split("fun promoteLocal",1)[1].split("fun clear",1)[0] if "fun promoteLocal" in cache_v613 else ""
 if "setLastModified" in promote_body:
@@ -688,11 +663,6 @@ journey_progress_v614 = (root / "app/src/main/java/com/otaviobarreto/pokedex/dat
 for required in ("exportSnapshot", "importSnapshot", "JourneyCatalog.steps"):
     if required not in journey_progress_v614:
         violations.append(f"Journey backup support missing {required}")
-
-backup_v614 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-for required in ('.put("version", 8)', '.put("journey"', "oldCollection", "oldTeams", "oldPreferences", "oldRecent", "oldJourney", "getOrElse"):
-    if required not in backup_v614:
-        violations.append(f"Rollback-safe backup v8 missing {required}")
 
 journey_v614 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
 for required in ("LaunchedEffect(explicitGameSelectionRevision)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
@@ -730,6 +700,19 @@ if violations:
     sys.exit(1)
 
 
+
+
+# v6.19.0 obsolete service cleanup guards
+obsolete_services = (
+    "BackupService.kt",
+    "CaptureGuideService.kt",
+    "CapturePlannerService.kt",
+    "CaptureRouteService.kt",
+)
+data_dir = root / "app/src/main/java/com/otaviobarreto/pokedex/data"
+for obsolete_service in obsolete_services:
+    if (data_dir / obsolete_service).exists():
+        violations.append(f"Obsolete service still compiled: {obsolete_service}")
 
 # v6.18.0 legacy UI cleanup guards
 legacy_ui_files = (
