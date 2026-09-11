@@ -36,6 +36,21 @@ jobs:
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
 
+      - name: Install artwork audit dependencies
+        if: github.event_name == 'pull_request' && github.head_ref == 'v6.3.8-artwork-curation'
+        run: python3 -m pip install pillow
+
+      - name: Audit all 1025 official artworks
+        if: github.event_name == 'pull_request' && github.head_ref == 'v6.3.8-artwork-curation'
+        run: python3 scripts/audit_artwork.py
+
+      - name: Upload artwork audit
+        if: github.event_name == 'pull_request' && github.head_ref == 'v6.3.8-artwork-curation'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artwork-audit
+          path: artwork-audit
+
       - name: Stamp v6.3.7 build
         run: |
           sed -i 's/versionCode = [0-9]\+/versionCode = 637/' app/build.gradle.kts
