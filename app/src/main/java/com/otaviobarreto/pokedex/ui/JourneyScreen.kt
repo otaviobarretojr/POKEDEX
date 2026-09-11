@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -45,6 +47,12 @@ fun JourneyScreen(
     var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
+    val routeListState=rememberLazyListState()
+    var mapSelectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
+    var mapSelectionInitialized by rememberSaveable { mutableStateOf(false) }
+    var mapZoom by rememberSaveable { mutableFloatStateOf(1f) }
+    var mapPanX by rememberSaveable { mutableFloatStateOf(0f) }
+    var mapPanY by rememberSaveable { mutableFloatStateOf(0f) }
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
 
     BackHandler(enabled=view!=JourneyView.GAMES){
@@ -77,6 +85,7 @@ fun JourneyScreen(
             game=game,
             onBack={view=JourneyView.GAME_MENU},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+            listState=routeListState,
             onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
         JourneyView.DETAIL -> if(game!=null && selectedStepId!=null){
@@ -91,6 +100,14 @@ fun JourneyScreen(
         } else { view=JourneyView.GAMES }
         JourneyView.MAP -> if(game!=null) JourneyMapScreen(
             game=game,
+            selectedStepId=mapSelectedStepId,
+            selectionInitialized=mapSelectionInitialized,
+            zoom=mapZoom,
+            pan=Offset(mapPanX,mapPanY),
+            onSelectedStepChange={mapSelectedStepId=it},
+            onSelectionInitialized={mapSelectionInitialized=true},
+            onZoomChange={mapZoom=it},
+            onPanChange={mapPanX=it.x;mapPanY=it.y},
             onBack={view=JourneyView.GAME_MENU},
             onOpenStep={stepId->detailReturnView=JourneyView.MAP;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
@@ -102,6 +119,7 @@ private fun JourneyGamePicker(onSelect:(String)->Unit){
     val captured=CollectionStore.contextualCapturedIds
     LazyColumn(
         Modifier.fillMaxSize(),
+        state=listState,
         contentPadding=PaddingValues(16.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)
     ){
@@ -303,7 +321,7 @@ private fun JourneyActionCard(
 }
 
 @Composable
-private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep:(String)->Unit){
+private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:LazyListState,onOpenStep:(String)->Unit){
     val revision=JourneyProgressStore.revision
     val steps=remember(game.label,revision){JourneyCatalog.steps(game.label)}
     val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
@@ -872,6 +890,14 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
 @Composable
 private fun JourneyMapScreen(
     game:AppGame,
+    selectedStepId:String?,
+    selectionInitialized:Boolean,
+    zoom:Float,
+    pan:Offset,
+    onSelectedStepChange:(String?)->Unit,
+    onSelectionInitialized:()->Unit,
+    onZoomChange:(Float)->Unit,
+    onPanChange:(Offset)->Unit,
     onBack:()->Unit,
     onOpenStep:(String)->Unit
 ){
@@ -881,18 +907,22 @@ private fun JourneyMapScreen(
     val points=remember(game.label){JourneyMapCatalog.points(game.label)}
     val mappedSteps=steps.filter{step->points.any{it.stepId==step.id}}
     val next=mappedSteps.firstOrNull{it.id !in completed}
-    var selectedStepId by remember(game.label){mutableStateOf<String?>(next?.id)}
+    LaunchedEffect(game.label,selectionInitialized){
+        if(!selectionInitialized){
+            onSelectedStepChange(next?.id)
+            onSelectionInitialized()
+        }
+    }
     val selected=steps.firstOrNull{it.id==selectedStepId}
-    var zoom by remember(game.label){mutableFloatStateOf(1f)}
-    var pan by remember(game.label){mutableStateOf(Offset.Zero)}
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)){
         BoxWithConstraints(
             Modifier.fillMaxSize()
                 .pointerInput(game.label){
                     detectTransformGestures{_,panChange,zoomChange,_->
-                        zoom=(zoom*zoomChange).coerceIn(1f,3.5f)
-                        pan=if(zoom<=1.01f) Offset.Zero else pan+panChange
+                        val newZoom=(zoom*zoomChange).coerceIn(1f,3.5f)
+                        onZoomChange(newZoom)
+                        onPanChange(if(newZoom<=1.01f) Offset.Zero else pan+panChange)
                     }
                 }
         ){
@@ -933,7 +963,7 @@ private fun JourneyMapScreen(
                         modifier=Modifier
                             .offset(x=mapW*point.x-marker/2,y=mapH*point.y-marker/2)
                             .size(marker)
-                            .clickable{selectedStepId=step.id},
+                            .clickable{onSelectedStepChange(step.id)},
                         shape=RoundedCornerShape(50),
                         color=when{
                             isNext->MaterialTheme.colorScheme.tertiary
@@ -988,14 +1018,15 @@ private fun JourneyMapScreen(
                 Modifier.align(Alignment.CenterEnd).padding(end=12.dp),
                 verticalArrangement=Arrangement.spacedBy(8.dp)
             ){
-                JourneyMapControl(Icons.Default.Add,"Aproximar"){zoom=(zoom+.35f).coerceAtMost(3.5f)}
+                JourneyMapControl(Icons.Default.Add,"Aproximar"){onZoomChange((zoom+.35f).coerceAtMost(3.5f))}
                 JourneyMapControl(Icons.Default.Remove,"Afastar"){
-                    zoom=(zoom-.35f).coerceAtLeast(1f)
-                    if(zoom<=1.01f)pan=Offset.Zero
+                    val newZoom=(zoom-.35f).coerceAtLeast(1f)
+                    onZoomChange(newZoom)
+                    if(newZoom<=1.01f)onPanChange(Offset.Zero)
                 }
                 JourneyMapControl(Icons.Default.MyLocation,"Próximo objetivo"){
-                    selectedStepId=next?.id
-                    zoom=1f;pan=Offset.Zero
+                    onSelectedStepChange(next?.id)
+                    onZoomChange(1f);onPanChange(Offset.Zero)
                 }
             }
 
@@ -1030,7 +1061,7 @@ private fun JourneyMapScreen(
                                 Text(step.title,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
                                 Text(step.location+" · "+step.levelLabel,style=MaterialTheme.typography.bodySmall)
                             }
-                            IconButton(onClick={selectedStepId=null}){Icon(Icons.Default.Close,"Fechar")}
+                            IconButton(onClick={onSelectedStepChange(null)}){Icon(Icons.Default.Close,"Fechar")}
                         }
                         Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically){
                             JourneyTypeChip(step.typeLabel)
