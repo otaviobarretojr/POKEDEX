@@ -23,14 +23,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.otaviobarreto.pokedex.data.*
-import kotlinx.coroutines.delay
 
 private data class BootState(val progress: Float, val label: String)
 
 @Composable
 fun BootExperienceScreen(onReady: () -> Unit) {
-    val context = LocalContext.current.applicationContext\n    var state by remember { mutableStateOf(BootState(.04f, "Preparando sua Pokédex")) }
+    val context = LocalContext.current.applicationContext
+    var state by remember { mutableStateOf(BootState(.04f, "Preparando sua Pokédex")) }
     var finished by remember { mutableStateOf(false) }
     val animatedProgress by animateFloatAsState(state.progress, tween(420), label = "bootProgress")
     val infinite = rememberInfiniteTransition(label = "bootMotion")
