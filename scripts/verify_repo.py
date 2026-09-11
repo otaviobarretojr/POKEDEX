@@ -559,7 +559,7 @@ for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/ja/img
         violations.append(f"Validated official Journey artwork missing {required}")
 if "story_img_01.jpg" not in journey_map or "backgroundUrl" not in journey_map:
     violations.append("Official Paldea map background missing")
-if "Mapa oficial de Paldea" not in journey_ui:
+if "contentDescription=\"Mapa de Paldea\"" not in journey_ui:
     violations.append("Official Paldea map is not rendered in Journey")
 type_icons=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTypeIconCatalog.kt").read_text(encoding="utf-8")
 if "generation-ix/scarlet-violet" not in type_icons or "JourneyTypeIconCatalog" not in journey_ui:
