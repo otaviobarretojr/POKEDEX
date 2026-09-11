@@ -169,7 +169,7 @@ private fun JourneyGameReferenceCard(
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .92f)
                                 ) {
                                     Text(
-                                        text = region.label.uppercase(),
+                                        text = compactJourneyRegionLabel(region.label),
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -199,6 +199,14 @@ private fun JourneyGameReferenceCard(
             }
         }
     }
+}
+
+
+private fun compactJourneyRegionLabel(label: String): String = when (label) {
+    "Isle of Armor" -> "ARMOR"
+    "Crown Tundra" -> "TUNDRA"
+    "Hyperspace" -> "HYPERSPACE"
+    else -> label.uppercase()
 }
 
 @Composable
