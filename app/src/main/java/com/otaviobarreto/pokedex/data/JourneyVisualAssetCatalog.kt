@@ -1,6 +1,6 @@
 package com.otaviobarreto.pokedex.data
 
-enum class JourneyVisualRole { GYM_LEADER, TEAM_STAR_BOSS, TITAN }
+enum class JourneyVisualRole { GYM_LEADER, TEAM_STAR_BOSS, TITAN, STORY, TOURNAMENT, RAID, EXPLORATION }
 
 data class JourneyVisualAsset(
     val stepId:String,
@@ -35,6 +35,14 @@ object JourneyVisualAssetCatalog {
         "sv-15" to JourneyVisualAsset("sv-15",JourneyVisualRole.GYM_LEADER,"Grusha",OFFICIAL+"chara_grusha.png","Ice Gym"),
         "sv-16" to JourneyVisualAsset("sv-16",JourneyVisualRole.TEAM_STAR_BOSS,"Ortega",OFFICIAL+"chara_ortega.png","Ruchbah Squad"),
         "sv-17" to JourneyVisualAsset("sv-17",JourneyVisualRole.TITAN,"Dondozo & Tatsugiri",ART+"977.png","False Dragon Titan"),
-        "sv-18" to JourneyVisualAsset("sv-18",JourneyVisualRole.TEAM_STAR_BOSS,"Eri",OFFICIAL+"chara_eri.png","Caph Squad")
+        "sv-18" to JourneyVisualAsset("sv-18",JourneyVisualRole.TEAM_STAR_BOSS,"Eri",OFFICIAL+"chara_eri.png","Caph Squad"),
+        "sv-pg-01" to JourneyVisualAsset("sv-pg-01",JourneyVisualRole.STORY,"Geeta",OFFICIAL+"chara_omodaka.png","Pokémon League"),
+        "sv-pg-02" to JourneyVisualAsset("sv-pg-02",JourneyVisualRole.STORY,"Arven",OFFICIAL+"chara_pepper.png","Path of Legends Finale"),
+        "sv-pg-03" to JourneyVisualAsset("sv-pg-03",JourneyVisualRole.STORY,"Penny",OFFICIAL+"chara_botan.png","Starfall Street Finale"),
+        "sv-pg-04" to JourneyVisualAsset("sv-pg-04",JourneyVisualRole.STORY,"Koraidon / Miraidon",ART+"1007.png","The Way Home · Area Zero"),
+        "sv-pg-05" to JourneyVisualAsset("sv-pg-05",JourneyVisualRole.GYM_LEADER,"Gym Leaders",OFFICIAL+"chara_aoki.png","8 Gym Rematches"),
+        "sv-pg-06" to JourneyVisualAsset("sv-pg-06",JourneyVisualRole.TOURNAMENT,"Academy Ace Tournament",OFFICIAL+"chara_nemo.png","Academy Tournament"),
+        "sv-pg-07" to JourneyVisualAsset("sv-pg-07",JourneyVisualRole.RAID,"Black Crystal Tera Raid",ART+"1000.png","6★ Tera Raids"),
+        "sv-pg-08" to JourneyVisualAsset("sv-pg-08",JourneyVisualRole.EXPLORATION,"Treasures of Ruin",ART+"1004.png","Paldea Endgame")
     )
 }
