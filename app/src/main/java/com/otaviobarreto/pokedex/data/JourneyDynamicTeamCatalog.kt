@@ -13,12 +13,13 @@ object JourneyDynamicTeamCatalog {
         val smart=JourneySmartProgress.context(game)
         val preset=TeamCampaignCatalog.preset(game,starterId,smart.phase)
         val prep=smart.nextStep?.let{JourneyPreparationCatalog.forStep(it.id)}
-        val recommended=prep?.pokemonIds.orEmpty()
+        val rawRecommended=prep?.pokemonIds.orEmpty()
+        val recommended=rawRecommended.sortedByDescending{it in CollectionStore.capturedIds}
         val adjusted=adjustSlots(preset?.slots.orEmpty(),recommended,starterId)
         val reason=when{
             smart.nextStep==null -> "Campanha principal concluída: use o time de reta final e priorize cobertura geral."
             prep==null -> "Time ajustado para a fase atual da Jornada."
-            else -> "Para "+smart.nextStep.title+", priorize "+prep.counters.joinToString(" / ")+" e mantenha o núcleo do time da fase "+smart.phase.label+"."
+            else -> "Para "+smart.nextStep.title+", priorize "+prep.counters.joinToString(" / ")+". Pokémon que já estão na sua coleção recebem prioridade quando servem como resposta."
         }
         return DynamicTeamSuggestion(preset,smart.nextStep,recommended,adjusted,reason)
     }
