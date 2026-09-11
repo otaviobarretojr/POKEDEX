@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.13.0"' not in workflow or "versionCode = 6130" not in workflow:
-    violations.append("CI v6.13.0 version stamping missing")
+if 'versionName = "6.14.0"' not in workflow or "versionCode = 6140" not in workflow:
+    violations.append("CI v6.14.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -705,13 +705,58 @@ for required in ("exportSnapshot", "importSnapshot", "boxPages", "regions"):
         violations.append(f"Navigation backup missing {required}")
 
 backup_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-if '.put("version", 7)' not in backup_v613 or 'put("preferences"' not in backup_v613:
-    violations.append("Backup v7 contextual state missing")
+if '.put("version", 8)' not in backup_v613 or 'put("preferences"' not in backup_v613 or 'put("journey"' not in backup_v613:
+    violations.append("Backup v8 contextual/Journey state missing")
 
 cache_v613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt").read_text(encoding="utf-8")
 promote_body = cache_v613.split("fun promoteLocal",1)[1].split("fun clear",1)[0] if "fun promoteLocal" in cache_v613 else ""
 if "setLastModified" in promote_body:
     violations.append("promoteLocal must not refresh TTL timestamps")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.14.0 data integrity + navigation hardening guards
+integrity_rules = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/DataIntegrityRules.kt").read_text(encoding="utf-8")
+for required in ("capturedForScope", "shouldEnsureOwned", "completedCount"):
+    if required not in integrity_rules:
+        violations.append(f"Data integrity rules missing {required}")
+
+collection_v614 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt").read_text(encoding="utf-8")
+if "DataIntegrityRules.shouldEnsureOwned" not in collection_v614:
+    violations.append("Collection ownership/Box integrity rule missing")
+
+journey_progress_v614 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
+for required in ("exportSnapshot", "importSnapshot", "JourneyCatalog.steps"):
+    if required not in journey_progress_v614:
+        violations.append(f"Journey backup support missing {required}")
+
+backup_v614 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
+for required in ('.put("version", 8)', '.put("journey"', "oldCollection", "oldTeams", "oldPreferences", "oldRecent", "oldJourney", "getOrElse"):
+    if required not in backup_v614:
+        violations.append(f"Rollback-safe backup v8 missing {required}")
+
+journey_v614 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("LaunchedEffect(selectedGame)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
+    if required not in journey_v614:
+        violations.append(f"Journey state isolation/gesture hardening missing {required}")
+
+living_v614 = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
+for required in ("DataIntegrityRules.capturedForScope", "onPokemonClick: (Int, String?) -> Unit", "onPokemonClick(p.id, scope.source)"):
+    if required not in living_v614:
+        violations.append(f"Legacy Living Dex contextual semantics missing {required}")
+
+companion_v614 = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
+if "CollectionStore.contextualCapturedIds[region.source]" not in companion_v614:
+    violations.append("Legacy Companion regional progress still uses global captures")
+
+test_v614 = root / "app/src/test/java/com/otaviobarreto/pokedex/data/DataIntegrityRulesTest.kt"
+if not test_v614.exists():
+    violations.append("Behavioral data integrity regression tests missing")
 
 if violations:
     print("Source verification failed:")
