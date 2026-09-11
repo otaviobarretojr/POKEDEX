@@ -1,6 +1,8 @@
 package com.otaviobarreto.pokedex.data
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -14,7 +16,7 @@ object PokedexDataStore {
     private val evolutionCache = ConcurrentHashMap<String, List<PokeApiService.EvolutionStage>>()
     private val encounterCache = ConcurrentHashMap<Int, List<PokeApiService.EncounterLocation>>()
     private val typeCache = ConcurrentHashMap<String, Set<Int>>()
-    private val prefetchSemaphore = Semaphore(permits = 6)
+    private val prefetchSemaphore = Semaphore(permits = 4)
 
     fun nationalDex(): List<PokeApiService.DexIndexEntry> {
         nationalDexCache?.let { return it }
@@ -41,21 +43,60 @@ object PokedexDataStore {
         return typeCache.computeIfAbsent(key) { PokeApiService.loadPokemonIdsForType(type) }
     }
 
-    fun cachedIndexEntry(id: Int): PokeApiService.DexIndexEntry? = nationalDexCache?.firstOrNull { it.id == id }
+    fun cachedIndexEntry(id: Int): PokeApiService.DexIndexEntry? =
+        nationalDexCache?.firstOrNull { it.id == id }
+
     fun cachedPokemon(id: Int) = pokemonCache[id]
     fun cachedSpecies(id: Int) = speciesCache[id]
     fun cachedEncounters(id: Int) = encounterCache[id]
     fun cachedEvolutions(url: String?) = url?.let { evolutionCache[it] }
 
-    suspend fun prefetchDetails(id: Int) {
-        if (pokemonCache.containsKey(id) && speciesCache.containsKey(id) && encounterCache.containsKey(id)) return
+    /**
+     * Warm only the data required to render the detail screen hero + Info/Stats/Moves.
+     * Evolution and encounter payloads are deliberately deferred so scrolling through
+     * a list cannot saturate the network/cache with expensive secondary requests.
+     */
+    suspend fun prefetchCoreDetails(id: Int) {
+        if (pokemonCache.containsKey(id) && speciesCache.containsKey(id)) return
         withContext(Dispatchers.IO) {
             prefetchSemaphore.withPermit {
                 runCatching {
-                    pokemon(id)
-                    val s = species(id)
-                    s.evolutionChainUrl?.let(::evolutions)
-                    encounters(id)
+                    coroutineScope {
+                        val pokemonJob = async { pokemon(id) }
+                        val speciesJob = async { species(id) }
+                        pokemonJob.await()
+                        speciesJob.await()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Compatibility entry point used by list/grid screens.
+     * Since v1.1 this intentionally performs only the core warm-up.
+     */
+    suspend fun prefetchDetails(id: Int) = prefetchCoreDetails(id)
+
+    /**
+     * Full warm-up used by offline packs and explicit background preparation.
+     */
+    suspend fun prefetchFullDetails(id: Int) {
+        withContext(Dispatchers.IO) {
+            prefetchSemaphore.withPermit {
+                runCatching {
+                    coroutineScope {
+                        val pokemonJob = async { pokemon(id) }
+                        val speciesJob = async { species(id) }
+                        val encounterJob = async { encounters(id) }
+                        pokemonJob.await()
+                        val s = speciesJob.await()
+                        val evolutionJob = async {
+                            s.evolutionChainUrl?.let { evolutions(it) } ?: emptyList()
+                        }
+                        encounterJob.await()
+                        evolutionJob.await()
+                    }
                 }
             }
         }
