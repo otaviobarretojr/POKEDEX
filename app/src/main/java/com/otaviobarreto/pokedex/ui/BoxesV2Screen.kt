@@ -52,7 +52,7 @@ private fun numberedBox(game:String,page:Int)="$game · Box ${page+1}"
 
 @OptIn(ExperimentalMaterial3Api::class,ExperimentalFoundationApi::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
- var game by remember{mutableStateOf(qbGames.first())};var region by remember{mutableStateOf(game.regions.first())};var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by remember{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var quick by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)};var search by remember{mutableStateOf(false)};var selected by remember{mutableStateOf<Set<Int>>(emptySet())};var batchMenu by remember{mutableStateOf(false)}
+ var game by remember{mutableStateOf(qbGames.first())};var region by remember{mutableStateOf(game.regions.first())};var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by remember{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var quick by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)};var search by remember{mutableStateOf(false)}
  LaunchedEffect(region.source,game.label){
   loading=true;page=0
   val ctx=GameContext.fromSource(region.source)
