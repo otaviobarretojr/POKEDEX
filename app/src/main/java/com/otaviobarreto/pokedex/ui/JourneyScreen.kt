@@ -259,18 +259,18 @@ private data class JourneyCollectionProgress(val captured:Int=0,val total:Int=0)
 private fun rememberJourneyCollectionProgress(
     game:AppGame,
     capturedIds:Set<Int>
-):State<JourneyCollectionProgress> = produceState(
-    initialValue=JourneyCollectionProgress(),
-    game.label,
-    capturedIds
-){
-    val ids=withContext(Dispatchers.IO){
-        game.regions.flatMap{region->
-            val ctx=GameContext.fromSource(region.source)
-            if(ctx==null) emptyList() else runCatching{GameDexService.loadGameDex(ctx).map{it.nationalId}}.getOrDefault(emptyList())
-        }.toSet()
+):State<JourneyCollectionProgress>{
+    val ids by produceState<Set<Int>>(initialValue=emptySet(),game.label){
+        value=withContext(Dispatchers.IO){
+            game.regions.flatMap{region->
+                val ctx=GameContext.fromSource(region.source)
+                if(ctx==null) emptyList() else runCatching{GameDexService.loadGameDex(ctx).map{it.nationalId}}.getOrDefault(emptyList())
+            }.toSet()
+        }
     }
-    value=JourneyCollectionProgress(ids.count{it in capturedIds},ids.size)
+    return remember(ids,capturedIds){
+        mutableStateOf(JourneyCollectionProgress(ids.count{it in capturedIds},ids.size))
+    }
 }
 
 @Composable
