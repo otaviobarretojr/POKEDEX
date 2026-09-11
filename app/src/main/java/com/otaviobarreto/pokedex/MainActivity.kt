@@ -17,7 +17,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.otaviobarreto.pokedex.data.CollectionStore
-import com.otaviobarreto.pokedex.data.CompanionPreferences
+import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.data.RecentActivityStore
 import com.otaviobarreto.pokedex.data.JourneyProgressStore
@@ -30,9 +30,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CollectionStore.initialize(this)
         TeamStore.initialize(this)
-        CompanionPreferences.initialize(this)
-        val legacySource = CompanionPreferences.activeRegionSource
-            ?: AppGameCatalog.games.firstOrNull { it.label == CompanionPreferences.activeGame }?.regions?.firstOrNull()?.source
+        AppStatePreferences.initialize(this)
+        val legacySource = AppStatePreferences.activeRegionSource
+            ?: AppGameCatalog.games.firstOrNull { it.label == AppStatePreferences.activeGame }?.regions?.firstOrNull()?.source
         CollectionStore.migrateLegacyCapturedToSource(legacySource)
         RecentActivityStore.initialize(this)
         JourneyProgressStore.initialize(this)
@@ -67,10 +67,10 @@ private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Defau
  val isSecondaryScreen=currentRoute=="pokemon/{id}?source={source}"||currentRoute=="location/{id}?source={source}"||currentRoute=="regionMap/{id}?source={source}"||currentRoute=="reference?kind={kind}&name={name}&source={source}"||currentRoute=="campaignGuide?game={game}&phase={phase}";val isMainDestination=currentRoute in mainDestinations.map{it.route};val useCompactOwnHeader=currentRoute=="boxes"
  fun openPokemon(id:Int,source:String?=null){RecentActivityStore.recordPokemon(id);navController.navigate(if(source.isNullOrBlank())"pokemon/$id" else "pokemon/$id?source=${Uri.encode(source)}")}
  fun openBoxes(game:String?=null,source:String?=null){
-  val resolvedGame=game ?: CompanionPreferences.activeGame
-  val resolvedSource=source ?: CompanionPreferences.activeRegionForGame(resolvedGame)
-  game?.let{CompanionPreferences.activeGame=it}
-  if(resolvedSource!=null) CompanionPreferences.setActiveRegionForGame(resolvedGame,resolvedSource)
+  val resolvedGame=game ?: AppStatePreferences.activeGame
+  val resolvedSource=source ?: AppStatePreferences.activeRegionForGame(resolvedGame)
+  game?.let{AppStatePreferences.activeGame=it}
+  if(resolvedSource!=null) AppStatePreferences.setActiveRegionForGame(resolvedGame,resolvedSource)
   navController.navigate("boxes"){popUpTo("home"){saveState=true};launchSingleTop=true;restoreState=false}
  }
  fun openCampaignGuide(game:String,phase:String?=null){navController.navigate("campaignGuide?game=${Uri.encode(game)}"+(phase?.let{"&phase=${Uri.encode(it)}"}?:""))}
