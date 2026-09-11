@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.0.0"' not in workflow or "versionCode = 600" not in workflow:
-    violations.append("CI v6.0 version stamping missing")
+if 'versionName = "6.1.0"' not in workflow or "versionCode = 610" not in workflow:
+    violations.append("CI v6.1 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -159,6 +159,30 @@ if "Mover selecionados" not in boxes or "moveMany" not in boxes:
 living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
 if "formas" not in living or "PokemonFormsService.cached" not in living:
     violations.append("Living Dex Forms integration missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+team_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/TeamCampaignCatalog.kt").read_text(encoding="utf-8")
+for required in ("Let's Go Pikachu / Eevee", "Sword / Shield", "Brilliant Diamond / Shining Pearl", "Legends Arceus", "Scarlet / Violet", "Legends Z-A"):
+    if required not in team_catalog:
+        violations.append(f"Switch campaign guide missing {required}")
+
+team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
+for required in ("GUIA DE CAMPANHA", "Usar este time", "Build de campanha"):
+    if required not in team_guide:
+        violations.append(f"Campaign team guide missing {required}")
+for required in ("Início", "Mid game", "Late game"):
+    if required not in team_catalog:
+        violations.append(f"Campaign phase missing {required}")
+
+team_builder = (ui / "TeamBuilderScreen.kt").read_text(encoding="utf-8")
+if "CampaignTeamGuideScreen" not in team_builder:
+    violations.append("Campaign guide not integrated into My Team")
 
 if violations:
     print("Source verification failed:")
