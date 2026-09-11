@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.4.0"' not in workflow or "versionCode = 640" not in workflow:
-    violations.append("CI v6.4.0 version stamping missing")
+if 'versionName = "6.5.0"' not in workflow or "versionCode = 650" not in workflow:
+    violations.append("CI v6.5.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -360,6 +360,30 @@ for required in ("ArtworkTuningCatalog.forPokemon", "graphicsLayer", "offset(x =
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
 if detail.count("pokemonId=") < 3:
     violations.append("Detail artwork calls are not wired to per-Pokemon curation")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.5 Journey guards
+journey = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
+journey_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
+main = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for required in ("JORNADA", "Melhor rota", "Time ideal", "Pokédex do jogo"):
+    if required not in journey:
+        violations.append(f"Journey hub missing {required}")
+for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
+    if required not in journey_catalog:
+        violations.append(f"Scarlet/Violet Journey route missing {required}")
+for required in ("completed", "toggle", "clear"):
+    if required not in journey_progress:
+        violations.append(f"Journey progress persistence missing {required}")
+if 'MainDestination("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in main:
+    violations.append("Journey is not wired as the primary tab")
 
 if violations:
     print("Source verification failed:")
