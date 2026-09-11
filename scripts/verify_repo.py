@@ -864,12 +864,12 @@ if not design_tokens.exists():
     violations.append("Central design tokens missing")
 else:
     design_source = design_tokens.read_text(encoding="utf-8")
-    for required in ("object Colors", "object Spacing", "object Radius", "object Elevation", "val Typography", "val Shapes"):
+    for required in ("object Colors", "object Spacing", "object Radius", "object Elevation", "val AppTypography", "val Shapes"):
         if required not in design_source:
             violations.append(f"Design foundation missing {required}")
 
 theme_source = (ui / "PokedexTheme.kt").read_text(encoding="utf-8")
-for required in ("PokedexDesignTokens.Colors", "PokedexDesignTokens.Typography", "PokedexDesignTokens.Shapes"):
+for required in ("PokedexDesignTokens.Colors", "PokedexDesignTokens.AppTypography", "PokedexDesignTokens.Shapes"):
     if required not in theme_source:
         violations.append(f"Theme not routed through design system: {required}")
 
