@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.5.1"' not in workflow or "versionCode = 651" not in workflow:
-    violations.append("CI v6.5.1 version stamping missing")
+if 'versionName = "6.5.2"' not in workflow or "versionCode = 652" not in workflow:
+    violations.append("CI v6.5.2 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -397,6 +397,25 @@ journey_visual = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
 for required in ("Progresso da campanha", "PRÓXIMO OBJETIVO", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Próximo recomendado"):
     if required not in journey_visual:
         violations.append(f"Journey route visual missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.5.2 Journey objective detail guards
+objective_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyObjectiveDetailsCatalog.kt").read_text(encoding="utf-8")
+journey_detail = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("JourneyObjectiveDetail", "JourneyBossMember", '"sv-01"', '"sv-18"', "Mismagius", "Caph Starmobile"):
+    if required not in objective_catalog:
+        violations.append(f"Journey objective detail catalog missing {required}")
+for required in ("JourneyObjectiveDetailScreen", "Equipe / adversários", "Fraquezas e resposta", "O que você ganha", "Ver time ideal para esta fase"):
+    if required not in journey_detail:
+        violations.append(f"Journey objective detail UI missing {required}")
+if "onOpen:()->Unit" not in journey_detail or "IconButton(onClick=onToggle" not in journey_detail:
+    violations.append("Journey card open/complete interaction split missing")
 
 if violations:
     print("Source verification failed:")

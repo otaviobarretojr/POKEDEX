@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.*
 
-private enum class JourneyView { GAMES, GAME_MENU, ROUTE }
+private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 
 @Composable
 fun JourneyScreen(
@@ -28,6 +28,7 @@ fun JourneyScreen(
 ){
     var selectedGame by remember { mutableStateOf<String?>(null) }
     var view by remember { mutableStateOf(JourneyView.GAMES) }
+    var selectedStepId by remember { mutableStateOf<String?>(null) }
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
 
     when(view){
@@ -45,8 +46,18 @@ fun JourneyScreen(
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
             game=game,
             onBack={view=JourneyView.GAME_MENU},
-            onTeam={onOpenTeamGuide(game.label)}
+            onTeam={onOpenTeamGuide(game.label)},
+            onOpenStep={stepId->selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
+        JourneyView.DETAIL -> if(game!=null && selectedStepId!=null){
+            val step=JourneyCatalog.steps(game.label).firstOrNull{it.id==selectedStepId}
+            if(step!=null) JourneyObjectiveDetailScreen(
+                game=game,
+                step=step,
+                onBack={view=JourneyView.ROUTE},
+                onTeam={onOpenTeamGuide(game.label)}
+            ) else view=JourneyView.ROUTE
+        } else { view=JourneyView.GAMES }
     }
 }
 
@@ -177,7 +188,7 @@ private fun JourneyActionCard(
 }
 
 @Composable
-private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit){
+private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep:(String)->Unit){
     val revision=JourneyProgressStore.revision
     val steps=remember(game.label,revision){JourneyCatalog.steps(game.label)}
     val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
@@ -256,7 +267,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit){
                 Card(
                     shape=RoundedCornerShape(20.dp),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.tertiaryContainer),
-                    modifier=Modifier.fillMaxWidth().padding(bottom=14.dp)
+                    modifier=Modifier.fillMaxWidth().padding(bottom=14.dp).clickable{onOpenStep(step.id)}
                 ){
                     Row(
                         Modifier.fillMaxWidth().padding(14.dp),
@@ -281,6 +292,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit){
                 step=step,
                 done=done,
                 isNext=isNext,
+                onOpen={onOpenStep(step.id)},
                 onToggle={JourneyProgressStore.toggle(game.label,step.id)}
             )
         }
@@ -321,6 +333,7 @@ private fun JourneyStepCard(
     step:JourneyStep,
     done:Boolean,
     isNext:Boolean,
+    onOpen:()->Unit,
     onToggle:()->Unit
 ){
     val kindIcon=when(step.kind){
@@ -370,7 +383,7 @@ private fun JourneyStepCard(
         }
 
         Card(
-            Modifier.weight(1f).padding(bottom=10.dp).clickable(onClick=onToggle),
+            Modifier.weight(1f).padding(bottom=10.dp).clickable(onClick=onOpen),
             shape=RoundedCornerShape(22.dp),
             colors=CardDefaults.cardColors(
                 containerColor=when{
@@ -452,10 +465,12 @@ private fun JourneyStepCard(
                         color=if(done)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.weight(1f))
-                    Icon(
-                        if(done)Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                        if(done)"Concluído" else "Marcar como concluído"
-                    )
+                    IconButton(onClick=onToggle,modifier=Modifier.size(36.dp)){
+                        Icon(
+                            if(done)Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                            if(done)"Concluído" else "Marcar como concluído"
+                        )
+                    }
                 }
             }
         }
@@ -481,5 +496,137 @@ private fun JourneyInfoChip(
             Spacer(Modifier.width(4.dp))
             Text(label,style=MaterialTheme.typography.labelSmall,maxLines=1)
         }
+    }
+}
+
+
+@Composable
+private fun JourneyObjectiveDetailScreen(
+    game:AppGame,
+    step:JourneyStep,
+    onBack:()->Unit,
+    onTeam:()->Unit
+){
+    val revision=JourneyProgressStore.revision
+    val done=remember(game.label,step.id,revision){step.id in JourneyProgressStore.completed(game.label)}
+    val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding=PaddingValues(16.dp),
+        verticalArrangement=Arrangement.spacedBy(12.dp)
+    ){
+        item{
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
+                Column(Modifier.weight(1f)){
+                    Text(step.kind.label.uppercase(),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
+                    Text(step.title,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+                }
+                IconButton(onClick={JourneyProgressStore.toggle(game.label,step.id)}){
+                    Icon(if(done)Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,if(done)"Concluído" else "Pendente")
+                }
+            }
+        }
+
+        item{
+            Card(
+                shape=RoundedCornerShape(24.dp),
+                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)
+            ){
+                Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Text(step.subtitle,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
+                        Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface){
+                            Text(step.levelLabel,Modifier.padding(horizontal=10.dp,vertical=6.dp),fontWeight=FontWeight.Bold)
+                        }
+                    }
+                    JourneyDetailLine(Icons.Default.Category,"Tipo",step.typeLabel)
+                    JourneyDetailLine(Icons.Default.LocationOn,"Local",step.location)
+                    Text(detail?.summary ?: step.note,style=MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+
+        detail?.let{info->
+            item{JourneyDetailSectionTitle(Icons.Default.Groups,"Equipe / adversários")}
+            items(info.opponents){member->
+                Card(shape=RoundedCornerShape(18.dp)){
+                    Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+                        Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.secondaryContainer){
+                            Icon(Icons.Default.CatchingPokemon,null,Modifier.padding(10.dp))
+                        }
+                        Column(Modifier.weight(1f).padding(start=10.dp)){
+                            Text(member.name,fontWeight=FontWeight.Bold)
+                            if(member.detail.isNotBlank())Text(member.detail,style=MaterialTheme.typography.bodySmall)
+                        }
+                        Text(member.level,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+
+            item{
+                JourneyDetailSectionTitle(Icons.Default.Bolt,"Fraquezas e resposta")
+                Card(shape=RoundedCornerShape(18.dp)){
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Text("Tipos recomendados",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold)
+                        Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                            info.weakTo.take(4).forEach{type->
+                                AssistChip(onClick={},enabled=false,label={Text(type)})
+                            }
+                        }
+                        Text(info.recommended,style=MaterialTheme.typography.bodyMedium,modifier=Modifier.padding(top=10.dp))
+                    }
+                }
+            }
+
+            item{
+                JourneyDetailSectionTitle(Icons.Default.CardGiftcard,"O que você ganha")
+                Card(shape=RoundedCornerShape(18.dp)){
+                    Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+                        Icon(Icons.Default.CardGiftcard,null)
+                        Text(info.reward,Modifier.padding(start=10.dp).weight(1f),style=MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+
+        item{
+            Button(
+                onClick={JourneyProgressStore.toggle(game.label,step.id)},
+                modifier=Modifier.fillMaxWidth().height(52.dp)
+            ){
+                Icon(if(done)Icons.Default.CheckCircle else Icons.Default.Done,null)
+                Spacer(Modifier.width(8.dp))
+                Text(if(done)"Marcar como pendente" else "Marcar como concluído")
+            }
+        }
+
+        item{
+            OutlinedButton(onClick=onTeam,modifier=Modifier.fillMaxWidth().height(50.dp)){
+                Icon(Icons.Default.Groups,null)
+                Spacer(Modifier.width(8.dp))
+                Text("Ver time ideal para esta fase")
+            }
+        }
+        item{Spacer(Modifier.height(20.dp))}
+    }
+}
+
+@Composable
+private fun JourneyDetailSectionTitle(icon:ImageVector,title:String){
+    Row(verticalAlignment=Alignment.CenterVertically){
+        Icon(icon,null,Modifier.size(18.dp))
+        Spacer(Modifier.width(7.dp))
+        Text(title,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
+    Row(verticalAlignment=Alignment.CenterVertically){
+        Icon(icon,null,Modifier.size(17.dp))
+        Text(label+":",Modifier.padding(start=7.dp),fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.bodySmall)
+        Text(value,Modifier.padding(start=5.dp),style=MaterialTheme.typography.bodySmall)
     }
 }
