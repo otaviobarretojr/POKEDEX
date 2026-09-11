@@ -64,35 +64,31 @@ private val qbGames=AppGameCatalog.games.map{game->
   loading=false
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(350);entries.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
- Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=12.dp)){
-  Column(Modifier.padding(top=5.dp,bottom=5.dp)){Text("POKEDEX",fontSize=27.sp,lineHeight=28.sp,fontWeight=FontWeight.Black,color=QBink);Text("C A T C H  E M  ·  T O D A S  A S  R E G I Õ E S",fontSize=7.sp,color=QBmuted)}
-  Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
-   ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.15f)){OutlinedTextField(game.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},shape=RoundedCornerShape(15.dp));ExposedDropdownMenu(gameMenu,{gameMenu=false}){qbGames.forEach{g->DropdownMenuItem({Text(g.label,fontWeight=FontWeight.SemiBold)},{gameLabel=g.label;regionSource=g.regions.first().source;page=0;gameMenu=false})}}}
-   ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.85f)){OutlinedTextField(region.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text(if(game.regions.size>1)"DLC / região" else "Região")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},shape=RoundedCornerShape(15.dp));ExposedDropdownMenu(regionMenu,{regionMenu=false}){game.regions.forEach{r->DropdownMenuItem({Column{Text(r.label,fontWeight=FontWeight.SemiBold);Text(r.badge,fontSize=10.sp,color=QBmuted)}},{regionSource=r.source;page=0;regionMenu=false})}}}
+ Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
+  Row(Modifier.fillMaxWidth().padding(top=2.dp,bottom=2.dp),verticalAlignment=Alignment.CenterVertically){
+   Column(Modifier.weight(1f)){Text("BOX",fontSize=19.sp,lineHeight=19.sp,fontWeight=FontWeight.Black,color=QBink);Text(game.label,fontSize=9.sp,color=QBmuted,maxLines=1,overflow=TextOverflow.Ellipsis)}
+   Surface(shape=RoundedCornerShape(10.dp),color=game.accent.copy(alpha=.10f)){Text(region.label,Modifier.padding(horizontal=9.dp,vertical=4.dp),fontSize=10.sp,fontWeight=FontWeight.Bold,color=game.accent)}
   }
-  Card(Modifier.fillMaxWidth().padding(top=7.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=QBsurface)){Row(Modifier.fillMaxWidth().height(68.dp).padding(horizontal=13.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){CircularProgressIndicator({progress},Modifier.fillMaxSize(),color=game.accent,trackColor=game.accent.copy(alpha=.12f),strokeWidth=5.dp);Text("${(progress*100).toInt()}%",fontSize=10.sp,fontWeight=FontWeight.Black)};Spacer(Modifier.width(14.dp));QBStat("${dex.size}","Total",Modifier.weight(1f));QBStat("$caught","Capturados",Modifier.weight(1f),QBmint);QBStat("${(dex.size-caught).coerceAtLeast(0)}","Restantes",Modifier.weight(1f));QBStat("$duplicateCount","Duplicados",Modifier.weight(1f),Color(0xFFB26A00));Surface(shape=RoundedCornerShape(10.dp),color=Color.White.copy(alpha=.7f)){Column(Modifier.padding(horizontal=9.dp,vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(Icons.Default.Landscape,null,tint=game.accent,modifier=Modifier.size(14.dp));Text(region.label,fontSize=8.sp,fontWeight=FontWeight.Bold,maxLines=1)}}}}
-  Row(Modifier.fillMaxWidth().height(50.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){FilledTonalIconButton({page=current-1},enabled=current>0){Icon(Icons.Default.ChevronLeft,"Anterior")};Surface(shape=RoundedCornerShape(13.dp),color=QBsurface){Row(Modifier.padding(horizontal=18.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Inventory2,null,tint=game.accent);Spacer(Modifier.width(7.dp));Text("Box ${current+1}",fontWeight=FontWeight.Black)}};FilledTonalIconButton({page=current+1},enabled=current<pages-1){Icon(Icons.Default.ChevronRight,"Próxima")}}
-  Box(Modifier.weight(1f).fillMaxWidth()){if(loading)Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}else if(dex.isEmpty())Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}else QBGrid(entries,boxedNow,selected,selectionMode,{pk->if(selectionMode)selected=if(pk.nationalId in selected)selected-pk.nationalId else selected+pk.nationalId else onPokemonClick(pk.nationalId,region.source)},{pk->selectionMode=true;selected=if(pk.nationalId in selected)selected-pk.nationalId else selected+pk.nationalId})}
-  if(selectionMode){
-    Row(Modifier.fillMaxWidth().height(50.dp).padding(bottom=3.dp),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalAlignment=Alignment.CenterVertically){
-      Text(selected.size.toString()+" selecionados",Modifier.weight(1f),fontWeight=FontWeight.Bold)
-      FilledTonalButton({batchMove=true},enabled=selected.isNotEmpty()){Icon(Icons.Default.DriveFileMove,null);Spacer(Modifier.width(4.dp));Text("Mover")}
-      TextButton({selected=emptySet();selectionMode=false}){Text("Cancelar")}
-    }
-  }else{
-    Row(Modifier.fillMaxWidth().height(50.dp).padding(bottom=3.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-      FilledTonalButton({search=true},Modifier.weight(1f).fillMaxHeight(),shape=RoundedCornerShape(18.dp)){Icon(Icons.Default.Search,null);Spacer(Modifier.width(6.dp));Text("Pesquisar",fontWeight=FontWeight.Bold)}
-      FilledTonalButton({CollectionStore.sortBox(activeBox)},Modifier.fillMaxHeight(),shape=RoundedCornerShape(18.dp)){Icon(Icons.Default.Sort,null);Text("Ordenar")}
-    }
+  Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
+   ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.12f)){OutlinedTextField(game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=46.dp),readOnly=true,singleLine=true,label={Text("Jogo",fontSize=10.sp)},textStyle=MaterialTheme.typography.bodySmall,trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},shape=RoundedCornerShape(13.dp));ExposedDropdownMenu(gameMenu,{gameMenu=false}){qbGames.forEach{g->DropdownMenuItem({Text(g.label,fontWeight=FontWeight.SemiBold)},{gameLabel=g.label;regionSource=g.regions.first().source;page=0;gameMenu=false})}}}
+   ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.88f)){OutlinedTextField(region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=46.dp),readOnly=true,singleLine=true,label={Text(if(game.regions.size>1)"Região / DLC" else "Região",fontSize=10.sp)},textStyle=MaterialTheme.typography.bodySmall,trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},shape=RoundedCornerShape(13.dp));ExposedDropdownMenu(regionMenu,{regionMenu=false}){game.regions.forEach{r->DropdownMenuItem({Column{Text(r.label,fontWeight=FontWeight.SemiBold);if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)}},{regionSource=r.source;page=0;regionMenu=false})}}}
   }
+  Row(Modifier.fillMaxWidth().height(40.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
+   FilledTonalIconButton({page=current-1},enabled=current>0,modifier=Modifier.size(36.dp)){Icon(Icons.Default.ChevronLeft,"Anterior")}
+   Column(horizontalAlignment=Alignment.CenterHorizontally){Text("Box "+(current+1)+" / "+pages,fontSize=14.sp,fontWeight=FontWeight.Black,color=QBink);Text(caught.toString()+" / "+dex.size+" capturados",fontSize=9.sp,color=game.accent)}
+   FilledTonalIconButton({page=current+1},enabled=current<pages-1,modifier=Modifier.size(36.dp)){Icon(Icons.Default.ChevronRight,"Próxima")}
+  }
+  Box(Modifier.weight(1f).fillMaxWidth()){
+   when{
+    loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
+    dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
+    else->QBGrid(entries,capturedIds){pk->onPokemonClick(pk.nationalId,region.source)}
+   }
+  }
+  FilledTonalButton({search=true},Modifier.fillMaxWidth().height(40.dp).padding(bottom=1.dp),shape=RoundedCornerShape(13.dp)){Icon(Icons.Default.Search,null,Modifier.size(17.dp));Spacer(Modifier.width(6.dp));Text("Pesquisar Pokémon",fontWeight=FontWeight.Bold,fontSize=12.sp)}
  }
- quick?.let{pk->val inBox=pk.nationalId in CollectionStore.boxes[activeBox].orEmpty();val destinations=(0 until pages).map{numberedBox(game.label,it)};QBQuickDialog(pk,inBox,activeBox,destinations,{quick=null},{if(inBox)CollectionStore.removeFromBox(activeBox,pk.nationalId)else CollectionStore.addToBox(activeBox,pk.nationalId);quick=null}){target->CollectionStore.movePokemon(activeBox,target,pk.nationalId);quick=null}}
  if(search)QBSearch(dex,CollectionStore.capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
- if(batchMove){
-  val destinations=(0 until pages).map{numberedBox(game.label,it)}.filter{it!=activeBox}
-  AlertDialog(onDismissRequest={batchMove=false},title={Text("Mover selecionados")},text={Column{destinations.forEach{target->TextButton(onClick={CollectionStore.moveMany(activeBox,target,selected);selected=emptySet();selectionMode=false;batchMove=false},Modifier.fillMaxWidth()){Text(target)}}}},confirmButton={},dismissButton={TextButton({batchMove=false}){Text("Fechar")}})
- }
-}
+}}
 
 @Composable private fun QBStat(value:String,label:String,modifier:Modifier,color:Color=QBink){Column(modifier,horizontalAlignment=Alignment.CenterHorizontally){Text(value,fontWeight=FontWeight.Black,fontSize=12.sp,color=color);Text(label,fontSize=8.sp,color=QBmuted,maxLines=1)}}
 
