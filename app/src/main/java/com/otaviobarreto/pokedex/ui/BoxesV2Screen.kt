@@ -81,7 +81,7 @@ private val qbGames=AppGameCatalog.games.map{game->
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){CompanionPreferences.setBoxPage(region.source,current)}
- val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null}.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(250);entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null}.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ val entries=dex.drop(current*30).take(30);val missingDetails=entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null};LaunchedEffect(entries){missingDetails.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(250);missingDetails.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
