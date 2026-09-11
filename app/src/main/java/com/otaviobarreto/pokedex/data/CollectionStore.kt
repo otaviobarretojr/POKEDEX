@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import org.json.JSONArray
+import org.json.JSONObject
 
 /** Single source of truth for collection and Box placement. */
 object CollectionStore {
@@ -119,6 +120,48 @@ object CollectionStore {
     }
 
     fun boxesForPokemon(id: Int): List<String> = boxNames.filter { id in boxes[it].orEmpty() }
+
+    fun exportSnapshot(): JSONObject {
+        val boxArray = JSONArray()
+        boxNames.forEach { name ->
+            boxArray.put(JSONObject().put("name", name).put("ids", JSONArray(boxes[name].orEmpty().sorted())))
+        }
+        return JSONObject()
+            .put("captured", JSONArray(capturedIds.sorted()))
+            .put("boxes", boxArray)
+    }
+
+    fun importSnapshot(snapshot: JSONObject): Boolean = runCatching {
+        val capturedArray = snapshot.optJSONArray("captured") ?: JSONArray()
+        val newCaptured = buildSet {
+            for (i in 0 until capturedArray.length()) {
+                capturedArray.optInt(i).takeIf { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID }?.let(::add)
+            }
+        }
+        val boxesArray = snapshot.optJSONArray("boxes") ?: JSONArray()
+        val names = mutableListOf<String>()
+        val restored = linkedMapOf<String, Set<Int>>()
+        for (i in 0 until boxesArray.length()) {
+            val obj = boxesArray.optJSONObject(i) ?: continue
+            val name = sanitizeBoxName(obj.optString("name"))
+            if (name.isBlank() || name in names) continue
+            val idsArray = obj.optJSONArray("ids") ?: JSONArray()
+            val ids = buildSet {
+                for (j in 0 until idsArray.length()) {
+                    idsArray.optInt(j).takeIf { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID }?.let(::add)
+                }
+            }.take(MAX_BOX_SIZE).toSet()
+            names += name
+            restored[name] = ids
+        }
+        boxNames = if (names.isEmpty()) defaultBoxes else names
+        boxes = if (restored.isEmpty()) boxNames.associateWith { emptySet() } else boxNames.associateWith { restored[it].orEmpty() }
+        capturedIds = newCaptured + boxes.values.flatten()
+        persistBoxOrder()
+        boxNames.forEach(::persistBox)
+        persistCaptured()
+        true
+    }.getOrDefault(false)
 
     private fun syncCapturedFromBoxes(id: Int) {
         if (boxes.values.none { id in it } && id in capturedIds) { capturedIds = capturedIds - id; persistCaptured() }
