@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,14 +37,14 @@ private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
 
 @Composable
 fun JourneyScreen(
-    onPokemonClick:(Int)->Unit,
+    onPokemonClick:(Int,String?)->Unit,
     onOpenTeamGuide:(String,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit
 ){
-    var selectedGame by remember { mutableStateOf<String?>(null) }
-    var view by remember { mutableStateOf(JourneyView.GAMES) }
-    var selectedStepId by remember { mutableStateOf<String?>(null) }
-    var detailReturnView by remember { mutableStateOf(JourneyView.ROUTE) }
+    var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
+    var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
+    var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
+    var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
 
     BackHandler(enabled=view!=JourneyView.GAMES){
@@ -69,7 +70,7 @@ fun JourneyScreen(
             onRoute={view=JourneyView.ROUTE},
             onMap={view=JourneyView.MAP},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
-            onBoxes={onOpenBoxes(game.label,game.regions.firstOrNull()?.source)},
+            onBoxes={onOpenBoxes(game.label,CompanionPreferences.activeRegionForGame(game.label) ?: game.regions.firstOrNull()?.source)},
             onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
@@ -665,13 +666,30 @@ private fun JourneyInfoChip(
 }
 
 
+
+private fun journeySourceForStep(game:AppGame,step:JourneyStep):String?{
+    val preferred=CompanionPreferences.activeRegionForGame(game.label)
+    if(game.label=="Scarlet / Violet"){
+        val regionIndex=when{
+            step.id.startsWith("sv-epi-")->1
+            step.id.startsWith("sv-dlc-")->{
+                val number=step.id.removePrefix("sv-dlc-").toIntOrNull() ?: 0
+                if(number in 1..7) 1 else 2
+            }
+            else->0
+        }
+        return game.regions.getOrNull(regionIndex)?.source ?: preferred ?: game.regions.firstOrNull()?.source
+    }
+    return preferred?.takeIf{source->game.regions.any{it.source==source}} ?: game.regions.firstOrNull()?.source
+}
+
 @Composable
 private fun JourneyObjectiveDetailScreen(
     game:AppGame,
     step:JourneyStep,
     onBack:()->Unit,
     onTeam:()->Unit,
-    onPokemonClick:(Int)->Unit
+    onPokemonClick:(Int,String?)->Unit
 ){
     val revision=JourneyProgressStore.revision
     val done=remember(game.label,step.id,revision){step.id in JourneyProgressStore.completed(game.label)}
@@ -776,7 +794,7 @@ private fun JourneyObjectiveDetailScreen(
             item{JourneyDetailSectionTitle(Icons.Default.CatchingPokemon,"Pokémon úteis agora")}
             items(prep.pokemonIds){pokemonId->
                 val entry=national.firstOrNull{it.id==pokemonId}
-                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(pokemonId)},shape=RoundedCornerShape(18.dp)){
+                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))},shape=RoundedCornerShape(18.dp)){
                     Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
                         PokemonArtwork(
                             model=entry?.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
