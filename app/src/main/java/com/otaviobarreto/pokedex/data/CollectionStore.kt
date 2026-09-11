@@ -259,7 +259,11 @@ object CollectionStore {
     }.getOrDefault(false)
 
     private fun syncCapturedFromBoxes(id: Int) {
-        val referenced = boxes.values.any { id in it } || contextualCapturedIds.values.any { id in it }
+        val referenced = DataIntegrityRules.shouldEnsureOwned(
+            alreadyOwned = id in capturedIds,
+            hasBoxReference = boxes.values.any { id in it },
+            hasContextualReference = contextualCapturedIds.values.any { id in it }
+        )
         if (referenced && id !in capturedIds) {
             capturedIds = capturedIds + id
             persistCaptured()
