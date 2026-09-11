@@ -10,6 +10,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,9 +39,10 @@ internal fun JourneyGamePicker(onSelect:(String)->Unit){
                 shape=RoundedCornerShape(22.dp)
             ){
                 Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
-                    Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.primaryContainer){
-                        Icon(Icons.Default.SportsEsports,null,Modifier.padding(14.dp))
-                    }
+                    JourneyGameCover(
+                        gameLabel = game.label,
+                        modifier = Modifier.width(88.dp).height(74.dp)
+                    )
                     Column(Modifier.weight(1f).padding(horizontal=12.dp)){
                         Text(game.label,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
                         Text(game.subtitle,style=MaterialTheme.typography.bodySmall)
@@ -65,6 +69,51 @@ internal fun JourneyGamePicker(onSelect:(String)->Unit){
             }
         }
         item{Spacer(Modifier.height(20.dp))}
+    }
+}
+
+
+@Composable
+private fun JourneyGameCover(
+    gameLabel: String,
+    modifier: Modifier = Modifier
+) {
+    val covers = GameCoverCatalog.coversFor(gameLabel)
+    if (covers.isEmpty()) {
+        Surface(
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.SportsEsports, contentDescription = null)
+            }
+        }
+        return
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Row(
+            Modifier.fillMaxSize().padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            covers.take(2).forEach { cover ->
+                AsyncImage(
+                    model = cover,
+                    contentDescription = "Capa oficial de $gameLabel",
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(11.dp)),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
     }
 }
 

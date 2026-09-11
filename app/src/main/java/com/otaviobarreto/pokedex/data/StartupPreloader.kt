@@ -62,7 +62,26 @@ object StartupPreloader {
             }
         }
 
-        progress(.86f, "Preparando imagens")
+        val gameCoverUrls = AppGameCatalog.adventureGames
+            .flatMap { GameCoverCatalog.coversFor(it.label) }
+            .distinct()
+
+        progress(.84f, "Preparando capas dos jogos")
+        gameCoverUrls.forEachIndexed { index, cover ->
+            runCatching {
+                context.imageLoader.execute(
+                    ImageRequest.Builder(context)
+                        .data(cover)
+                        .memoryCacheKey("startup-game-cover-$index")
+                        .diskCacheKey("startup-game-cover-$index")
+                        .build()
+                )
+            }
+            val local = .84f + ((index + 1f) / gameCoverUrls.size.coerceAtLeast(1)) * .06f
+            progress(local, "Preparando capas dos jogos")
+        }
+
+        progress(.90f, "Preparando imagens")
         priorityIds.take(20).forEachIndexed { index, id ->
             val sprite = PokedexDataStore.cachedPokemon(id)?.spriteUrl ?: return@forEachIndexed
             runCatching {
@@ -74,7 +93,7 @@ object StartupPreloader {
                         .build()
                 )
             }
-            val local = .86f + ((index + 1f) / priorityIds.take(20).size.coerceAtLeast(1)) * .11f
+            val local = .90f + ((index + 1f) / priorityIds.take(20).size.coerceAtLeast(1)) * .09f
             progress(local, "Preparando imagens")
         }
 
