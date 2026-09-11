@@ -65,8 +65,30 @@ object StartupPreloader {
         val gameCoverUrls = AppGameCatalog.adventureGames
             .flatMap { GameCoverCatalog.coversFor(it.label) }
             .distinct()
+        val journeyHeroUrls = AppGameCatalog.adventureGames
+            .flatMap { JourneyGameVisualCatalog.forGame(it.label).heroPokemonIds }
+            .distinct()
+            .map { id ->
+                "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
+            }
 
-        progress(.84f, "Preparando capas dos jogos")
+        progress(.82f, "Preparando arte da Jornada")
+        (gameCoverUrls + journeyHeroUrls).distinct().forEachIndexed { index, artwork ->
+            runCatching {
+                context.imageLoader.execute(
+                    ImageRequest.Builder(context)
+                        .data(artwork)
+                        .memoryCacheKey("startup-journey-art-$index")
+                        .diskCacheKey("startup-journey-art-$index")
+                        .build()
+                )
+            }
+            val totalArtwork = (gameCoverUrls + journeyHeroUrls).distinct().size.coerceAtLeast(1)
+            val local = .82f + ((index + 1f) / totalArtwork) * .08f
+            progress(local, "Preparando arte da Jornada")
+        }
+
+        progress(.90f, "Preparando imagens")
         gameCoverUrls.forEachIndexed { index, cover ->
             runCatching {
                 context.imageLoader.execute(
@@ -77,11 +99,9 @@ object StartupPreloader {
                         .build()
                 )
             }
-            val local = .84f + ((index + 1f) / gameCoverUrls.size.coerceAtLeast(1)) * .06f
-            progress(local, "Preparando capas dos jogos")
+            // Covers are already cached above together with Journey hero art.
         }
 
-        progress(.90f, "Preparando imagens")
         priorityIds.take(20).forEachIndexed { index, id ->
             val sprite = PokedexDataStore.cachedPokemon(id)?.spriteUrl ?: return@forEachIndexed
             runCatching {
