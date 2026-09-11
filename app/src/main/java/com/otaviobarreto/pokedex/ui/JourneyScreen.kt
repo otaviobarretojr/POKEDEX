@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.otaviobarreto.pokedex.data.*
 
 private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
@@ -35,7 +37,7 @@ private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
 fun JourneyScreen(
     onPokemonClick:(Int)->Unit,
     onOpenTeamGuide:(String,String?)->Unit,
-    onOpenGameDex:(String)->Unit
+    onOpenBoxes:(String,String?)->Unit
 ){
     var selectedGame by remember { mutableStateOf<String?>(null) }
     var view by remember { mutableStateOf(JourneyView.GAMES) }
@@ -52,8 +54,8 @@ fun JourneyScreen(
             onRoute={view=JourneyView.ROUTE},
             onMap={view=JourneyView.MAP},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
-            onDex={game.regions.firstOrNull()?.source?.let(onOpenGameDex)},
-            onRegion={onOpenGameDex}
+            onBoxes={onOpenBoxes(game.label,game.regions.firstOrNull()?.source)},
+            onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
             game=game,
@@ -81,6 +83,7 @@ fun JourneyScreen(
 
 @Composable
 private fun JourneyGamePicker(onSelect:(String)->Unit){
+    val captured=CollectionStore.capturedIds
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding=PaddingValues(16.dp),
@@ -91,6 +94,7 @@ private fun JourneyGamePicker(onSelect:(String)->Unit){
             Text("Escolha um jogo para abrir sua central de rota, time e guias.",style=MaterialTheme.typography.bodyMedium)
         }
         items(AppGameCatalog.adventureGames,key={it.label}){game->
+            val progress by rememberJourneyCollectionProgress(game,captured)
             Card(
                 Modifier.fillMaxWidth().clickable{onSelect(game.label)},
                 shape=RoundedCornerShape(22.dp)
@@ -102,6 +106,23 @@ private fun JourneyGamePicker(onSelect:(String)->Unit){
                     Column(Modifier.weight(1f).padding(horizontal=12.dp)){
                         Text(game.label,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
                         Text(game.subtitle,style=MaterialTheme.typography.bodySmall)
+                        if(progress.total>0){
+                            Row(Modifier.fillMaxWidth().padding(top=8.dp),verticalAlignment=Alignment.CenterVertically){
+                                LinearProgressIndicator(
+                                    progress={progress.ratio},
+                                    modifier=Modifier.weight(1f).height(7.dp),
+                                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                                )
+                                Text(
+                                    progress.captured.toString()+"/"+progress.total+" · "+(progress.ratio*100).toInt()+"%",
+                                    style=MaterialTheme.typography.labelSmall,
+                                    fontWeight=FontWeight.Bold,
+                                    modifier=Modifier.padding(start=8.dp)
+                                )
+                            }
+                        }else{
+                            Text("Box · calculando progresso…",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=6.dp))
+                        }
                     }
                     Icon(Icons.Default.ChevronRight,null)
                 }
@@ -118,7 +139,7 @@ private fun JourneyGameMenu(
     onRoute:()->Unit,
     onMap:()->Unit,
     onTeam:()->Unit,
-    onDex:()->Unit,
+    onBoxes:()->Unit,
     onRegion:(String)->Unit
 ){
     val route=JourneyCatalog.steps(game.label)
@@ -163,12 +184,36 @@ private fun JourneyGameMenu(
             )
         }
         item{
-            JourneyActionCard(
-                icon=Icons.Default.CatchingPokemon,
-                title="Pokédex do jogo",
-                subtitle="Abra a Pokédex regional vinculada ao jogo.",
-                onClick=onDex
-            )
+            val captured=CollectionStore.capturedIds
+            val boxProgress by rememberJourneyCollectionProgress(game,captured)
+            Card(
+                Modifier.fillMaxWidth().clickable(onClick=onBoxes),
+                shape=RoundedCornerShape(22.dp),
+                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)
+            ){
+                Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+                    Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)){
+                        Icon(Icons.Default.GridView,null,Modifier.padding(13.dp))
+                    }
+                    Column(Modifier.weight(1f).padding(horizontal=12.dp)){
+                        Text("Boxes do jogo",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
+                        if(boxProgress.total>0){
+                            Text(
+                                boxProgress.captured.toString()+" de "+boxProgress.total+" Pokémon · "+(boxProgress.ratio*100).toInt()+"%",
+                                style=MaterialTheme.typography.bodySmall
+                            )
+                            LinearProgressIndicator(
+                                progress={boxProgress.ratio},
+                                modifier=Modifier.fillMaxWidth().padding(top=8.dp).height(7.dp),
+                                strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                        }else{
+                            Text("Abra a coleção principal deste jogo.",style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    Icon(Icons.Default.ChevronRight,null)
+                }
+            }
         }
         if(game.regions.isNotEmpty()){
             item{Text("Regiões e conteúdos",fontWeight=FontWeight.Bold)}
@@ -187,6 +232,29 @@ private fun JourneyGameMenu(
         }
         item{Spacer(Modifier.height(20.dp))}
     }
+}
+
+
+private data class JourneyCollectionProgress(val captured:Int=0,val total:Int=0){
+    val ratio:Float get()=if(total<=0)0f else captured.toFloat()/total
+}
+
+@Composable
+private fun rememberJourneyCollectionProgress(
+    game:AppGame,
+    capturedIds:Set<Int>
+):State<JourneyCollectionProgress> = produceState(
+    initialValue=JourneyCollectionProgress(),
+    game.label,
+    capturedIds
+){
+    val ids=withContext(Dispatchers.IO){
+        game.regions.flatMap{region->
+            val ctx=GameContext.fromSource(region.source)
+            if(ctx==null) emptyList() else runCatching{GameDexService.loadGameDex(ctx).map{it.nationalId}}.getOrDefault(emptyList())
+        }.toSet()
+    }
+    value=JourneyCollectionProgress(ids.count{it in capturedIds},ids.size)
 }
 
 @Composable

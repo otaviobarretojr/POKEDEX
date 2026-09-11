@@ -30,6 +30,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.CompanionPreferences
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
@@ -59,9 +60,11 @@ private val qbGames=AppGameCatalog.games.map{game->
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
- var gameLabel by rememberSaveable{mutableStateOf(qbGames.first().label)}
+ val preferredGame=CompanionPreferences.activeGame.takeIf{g->qbGames.any{it.label==g}} ?: qbGames.first().label
+ var gameLabel by rememberSaveable{mutableStateOf(preferredGame)}
  val game=remember(gameLabel){qbGames.firstOrNull{it.label==gameLabel}?:qbGames.first()}
- var regionSource by rememberSaveable{mutableStateOf(game.regions.first().source)}
+ val preferredRegion=CompanionPreferences.activeRegionSource
+ var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
  var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  LaunchedEffect(region.source,game.label){
@@ -90,7 +93,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      qbGames.forEach{g->
       DropdownMenuItem(
        text={Text(g.label,fontWeight=FontWeight.SemiBold)},
-       onClick={gameLabel=g.label;regionSource=g.regions.first().source;page=0;gameMenu=false}
+       onClick={gameLabel=g.label;CompanionPreferences.activeGame=g.label;regionSource=g.regions.first().source;CompanionPreferences.activeRegionSource=regionSource;page=0;gameMenu=false}
       )
      }
     }
@@ -111,7 +114,7 @@ private val qbGames=AppGameCatalog.games.map{game->
         Text(r.label,fontWeight=FontWeight.SemiBold)
         if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)
        }},
-       onClick={regionSource=r.source;page=0;regionMenu=false}
+       onClick={regionSource=r.source;CompanionPreferences.activeRegionSource=r.source;page=0;regionMenu=false}
       )
      }
     }

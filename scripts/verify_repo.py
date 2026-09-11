@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.10.0"' not in workflow or "versionCode = 6100" not in workflow:
-    violations.append("CI v6.10.0 version stamping missing")
+if 'versionName = "6.11.0"' not in workflow or "versionCode = 6110" not in workflow:
+    violations.append("CI v6.11.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -373,7 +373,7 @@ journey = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 journey_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
 main = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-for required in ("JORNADA", "Melhor rota", "Time ideal", "Pokédex do jogo"):
+for required in ("JORNADA", "Melhor rota", "Time ideal", "Boxes do jogo"):
     if required not in journey:
         violations.append(f"Journey hub missing {required}")
 for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
@@ -588,3 +588,26 @@ if violations:
     for item in violations:
         print(" -", item)
     sys.exit(1)
+
+
+# v6.11.0 navigation consolidation guards
+main_nav=(root/"app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+journey_v611=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+boxes_v611=(ui/"BoxesV2Screen.kt").read_text(encoding="utf-8")
+prefs_v611=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+main_line=next((line for line in main_nav.splitlines() if line.startswith("private val mainDestinations=")),"")
+for forbidden in ('"Pokédex"','"Living Dex"','"Companion"'):
+    if forbidden in main_line:
+        violations.append(f"Legacy primary tab still present: {forbidden}")
+for required in ('MainDestination("home","Jornada"','MainDestination("boxes","Boxes"'):
+    if required not in main_line:
+        violations.append(f"Primary navigation missing {required}")
+for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.capturedIds","onOpenBoxes"):
+    if required not in journey_v611:
+        violations.append(f"Journey/Boxes consolidation missing {required}")
+for required in ("CompanionPreferences.activeGame","CompanionPreferences.activeRegionSource"):
+    if required not in boxes_v611:
+        violations.append(f"Boxes context handoff missing {required}")
+if "KEY_ACTIVE_REGION" not in prefs_v611:
+    violations.append("Persistent active Box region missing")
+# Legacy screens intentionally remain compiled as internal compatibility routes during migration.
