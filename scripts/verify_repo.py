@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.1"' not in workflow or "versionCode = 631" not in workflow:
-    violations.append("CI v6.3.1 version stamping missing")
+if 'versionName = "6.3.2"' not in workflow or "versionCode = 632" not in workflow:
+    violations.append("CI v6.3.2 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -71,8 +71,10 @@ for required in ("Busca universal", "Guia de captura", "Backup e restauração",
         violations.append(f"Companion Hub missing {required}")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-if "movePokemon(activeBox,target" not in boxes:
-    violations.append("Box-to-Box move integration missing")
+if "repeat(5)" not in boxes or "repeat(6)" not in boxes:
+    violations.append("Fixed 30-Pokemon Box grid missing")
+if "movePokemon(activeBox,target" in boxes or "Mover selecionados" in boxes:
+    violations.append("Box movement controls must remain removed")
 
 backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
 if "pokedex-companion" not in backup:
@@ -153,8 +155,9 @@ for required in ("Salvar arquivo", "Abrir arquivo", "Rota por região", "Formas 
         violations.append(f"v6 Companion missing {required}")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-if "Mover selecionados" not in boxes or "moveMany" not in boxes:
-    violations.append("Box multi-select batch move missing")
+for required in ("BOX", "Pesquisar Pokémon", "capturados", "Modifier.weight(1f).fillMaxHeight()"):
+    if required not in boxes:
+        violations.append(f"Compact fixed Box UI missing {required}")
 
 living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
 if "formas" not in living or "PokemonFormsService.cached" not in living:
@@ -250,6 +253,21 @@ for required in ("rememberSaveable", "gameLabel", "regionSource", "page by remem
         violations.append(f"Box return-state persistence missing {required}")
 if "loading=true;page=0" in boxes or "loading=true; page=0" in boxes:
     violations.append("Box page reset regression detected in load effect")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+if "migrateCapturedToBox" in boxes or "migrateLegacyGameBox" in boxes:
+    violations.append("Box screen must not mutate fixed game ordering")
+if "sortBox(" in boxes or "moveMany(" in boxes:
+    violations.append("Box screen must stay search/browse focused")
+if "padding(horizontal=6.dp)" not in boxes or "height(40.dp)" not in boxes:
+    violations.append("Compact Box chrome regression")
 
 if violations:
     print("Source verification failed:")
