@@ -64,9 +64,10 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                 val active=current!=null
                 val capturedIds=CollectionStore.capturedIds
                 val gameIds=remember(game.title,refreshToken,capturedIds){
-                    catalogGame?.regions.orEmpty().flatMap { region ->
-                        GameContext.fromSource(region.source)?.let { GameDexService.cached(it).orEmpty() }.orEmpty()
-                    }.map { it.nationalId }.distinct()
+                    OfflineGamePackManager.manifestIds(game.title).takeIf { it.isNotEmpty() }?.toList()
+                        ?: catalogGame?.regions.orEmpty().flatMap { region ->
+                            GameContext.fromSource(region.source)?.let { GameDexService.cached(it).orEmpty() }.orEmpty()
+                        }.map { it.nationalId }.distinct()
                 }
                 val gameCaptured=gameIds.count { it in capturedIds }
 
@@ -93,7 +94,7 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                 Text(
                                     when {
                                         active -> current?.label ?: "Preparando download…"
-                                        status.verified -> "Offline verificado · " + status.pokemonCount + " Pokémon + imagens"
+                                        status.verified -> "Offline verificado · " + status.pokemonCount + " Pokémon + dados fixados"
                                         status.completeCount > 0 -> "Pacote parcial · " + status.completeCount + " / " + status.pokemonCount + " Pokémon"
                                         status.downloaded -> "Pacote incompleto · toque para atualizar"
                                         else -> if(game.regions.size>1) game.regions.size.toString() + " regiões / conteúdos" else "Disponível para download offline"

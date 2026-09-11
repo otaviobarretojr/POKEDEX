@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 6
+    private const val PACK_VERSION = 7
     private var context: Context? = null
 
     data class PackStatus(
@@ -33,7 +33,9 @@ object OfflineGamePackManager {
         val completedIds: Int,
         val expectedCount: Int,
         val currentVersion: Boolean,
-        val hasRegionManifest: Boolean
+        val hasRegionManifest: Boolean,
+        val pinnedResources: Int,
+        val expectedResources: Int
     ) {
         val summary: String
             get() = when {
@@ -42,6 +44,7 @@ object OfflineGamePackManager {
                 completedIds < expectedCount -> "Faltam ${expectedCount - completedIds} Pokémon"
                 !currentVersion -> "Pacote precisa ser atualizado"
                 !hasRegionManifest -> "Manifesto regional incompleto"
+                pinnedResources < expectedResources -> "Recursos locais incompletos"
                 else -> "Pacote precisa de reparo"
             }
     }
@@ -97,11 +100,20 @@ object OfflineGamePackManager {
             .size
         val current = p.getInt(key(gameLabel, "version"), 0) == PACK_VERSION
         val regions = !p.getString(key(gameLabel, "regions"), null).isNullOrBlank()
-        val valid = expected > 0 && completed == expected && current && regions
-        return PackAudit(valid, completed, expected, current, regions)
+        val resources = p.getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
+        val pinned = resources.count { PersistentApiCache.has(it) && PersistentApiCache.isPinned(it) }
+        val valid = expected > 0 && completed == expected && current && regions && resources.isNotEmpty() && pinned == resources.size
+        return PackAudit(valid, completed, expected, current, regions, pinned, resources.size)
     }
 
     fun repair(gameLabel: String) = enqueue(gameLabel)
+
+    fun manifestIds(gameLabel: String): Set<Int> =
+        prefs().getStringSet(key(gameLabel, "manifest_ids"), emptySet()).orEmpty()
+            .mapNotNull { it.toIntOrNull() }.toSet()
+
+    fun resourceUrls(gameLabel: String): Set<String> =
+        prefs().getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
 
     fun status(gameLabel: String): PackStatus {
         val prefs = prefs()
@@ -127,10 +139,11 @@ object OfflineGamePackManager {
         onProgress(Progress(0, 1, "Preparando ${game.label}"))
         val regionalDexes = contexts.mapIndexed { index, ctx ->
             onProgress(Progress(index, contexts.size.coerceAtLeast(1), "Baixando ${ctx.regionLabel}"))
-            GameDexService.loadGameDex(ctx)
+            GameDexService.loadGameDex(ctx).also { PersistentApiCache.pin(GameDexService.cacheUrl(ctx)) }
         }
 
         val ids = regionalDexes.flatten().map { it.nationalId }.distinct().sorted()
+        prefs().edit().putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet()).apply()
         val total = ids.size.coerceAtLeast(1)
         val completedKey = key(game.label, "completed_ids")
         val alreadyCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
@@ -161,9 +174,22 @@ object OfflineGamePackManager {
                         val formsJob = async { runCatching { PokemonFormsService.load(id) } }
                         val pokemon = pokemonJob.await()
                         val species = speciesJob.await()
-                        species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it) }
+                        val evolutionUrl = species.evolutionChainUrl
+                        evolutionUrl?.let { PokedexDataStore.evolutions(it) }
                         encounterJob.await()
                         formsJob.await()
+
+                        val resourceUrls = buildSet {
+                            add(PokeApiService.pokemonUrl(id))
+                            add(PokeApiService.speciesUrl(id))
+                            add(PokeApiService.encountersUrl(id))
+                            evolutionUrl?.let(::add)
+                        }
+                        PersistentApiCache.pinAll(resourceUrls)
+                        synchronized(lock) {
+                            val allResources = prefs().getStringSet(key(game.label, "resource_urls"), emptySet()).orEmpty() + resourceUrls
+                            prefs().edit().putStringSet(key(game.label, "resource_urls"), allResources).apply()
+                        }
 
                         val request = ImageRequest.Builder(appContext)
                             .data(pokemon.spriteUrl)
@@ -224,6 +250,7 @@ object OfflineGamePackManager {
             .putInt(key(game.label, "complete"), ids.size)
             .putInt(key(game.label, "version"), PACK_VERSION)
             .putString(key(game.label, "regions"), contexts.joinToString("|") { it.pokedexSlug })
+            .putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet())
             .putStringSet(completedKey, ids.map(Int::toString).toSet())
             .apply()
 
@@ -231,6 +258,22 @@ object OfflineGamePackManager {
     }
 
     fun remove(gameLabel: String) {
+        val urls = resourceUrls(gameLabel)
+        val ids = manifestIds(gameLabel)
+        val sharedUrls = AppGameCatalog.games.asSequence()
+            .map { it.label }
+            .filter { it != gameLabel }
+            .flatMap { resourceUrls(it).asSequence() }
+            .toSet()
+        val sharedIds = AppGameCatalog.games.asSequence()
+            .map { it.label }
+            .filter { it != gameLabel }
+            .flatMap { manifestIds(it).asSequence() }
+            .toSet()
+        PersistentApiCache.unpinAll(urls - sharedUrls, deleteFiles = true)
+        context?.imageLoader?.diskCache?.let { disk ->
+            (ids - sharedIds).forEach { id -> runCatching { disk.remove("pokemon-offline-$id") } }
+        }
         prefs().edit()
             .remove(key(gameLabel, "ready"))
             .remove(key(gameLabel, "at"))
@@ -239,6 +282,8 @@ object OfflineGamePackManager {
             .remove(key(gameLabel, "version"))
             .remove(key(gameLabel, "regions"))
             .remove(key(gameLabel, "completed_ids"))
+            .remove(key(gameLabel, "manifest_ids"))
+            .remove(key(gameLabel, "resource_urls"))
             .remove(key(gameLabel, "running"))
             .remove(key(gameLabel, "runtime_done"))
             .remove(key(gameLabel, "runtime_total"))

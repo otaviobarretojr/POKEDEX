@@ -27,10 +27,16 @@ object PokedexDataStore {
     }
 
     fun pokemon(id: Int): PokeApiService.RemotePokemonDetail =
-        pokemonCache.computeIfAbsent(id) { PokeApiService.loadPokemon(it) }
+        pokemonCache.computeIfAbsent(id) {
+            PersistentApiCache.promoteLocal(PokeApiService.pokemonUrl(it))
+            PokeApiService.loadPokemon(it)
+        }
 
     fun species(id: Int): PokeApiService.SpeciesInfo =
-        speciesCache.computeIfAbsent(id) { PokeApiService.loadSpecies(it) }
+        speciesCache.computeIfAbsent(id) {
+            PersistentApiCache.promoteLocal(PokeApiService.speciesUrl(it))
+            PokeApiService.loadSpecies(it)
+        }
 
     fun evolutions(url: String): List<PokeApiService.EvolutionStage> =
         evolutionCache.computeIfAbsent(url) { PokeApiService.loadEvolutionChain(it) }
@@ -81,6 +87,14 @@ object PokedexDataStore {
      * Since v1.1 this intentionally performs only the core warm-up.
      */
     suspend fun prefetchDetails(id: Int) = prefetchCoreDetails(id)
+
+    suspend fun hydratePinned(ids: Collection<Int>) {
+        ids.distinct().take(24).forEach { id ->
+            val pokemonPinned = PersistentApiCache.isPinned(PokeApiService.pokemonUrl(id))
+            val speciesPinned = PersistentApiCache.isPinned(PokeApiService.speciesUrl(id))
+            if (pokemonPinned && speciesPinned) prefetchCoreDetails(id)
+        }
+    }
 
     /**
      * Full warm-up used by offline packs and explicit background preparation.

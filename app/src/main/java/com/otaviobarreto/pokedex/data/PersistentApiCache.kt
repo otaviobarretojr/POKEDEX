@@ -16,10 +16,14 @@ object PersistentApiCache {
     private const val DEFAULT_MAX_AGE_MS = 7L * 24L * 60L * 60L * 1000L
     private var directory: File? = null
     private val memory = ConcurrentHashMap<String, String>()
+    private var pinsFile: File? = null
+    @Volatile private var pinnedUrls: Set<String> = emptySet()
 
     fun initialize(context: Context) {
         if (directory != null) return
         directory = File(context.filesDir, "api-cache-v1").apply { mkdirs() }
+        pinsFile = File(context.filesDir, "api-cache-pins.txt")
+        pinnedUrls = pinsFile?.takeIf { it.exists() }?.readLines()?.filter { it.isNotBlank() }?.toSet().orEmpty()
     }
 
     fun getOrFetch(
@@ -30,7 +34,7 @@ object PersistentApiCache {
         memory[url]?.let { return it }
         val file = fileFor(url)
         val now = System.currentTimeMillis()
-        if (file.exists() && now - file.lastModified() <= maxAgeMs) {
+        if (file.exists() && (url in pinnedUrls || now - file.lastModified() <= maxAgeMs)) {
             read(file)?.let { value -> memory[url] = value; return value }
         }
 
@@ -43,9 +47,44 @@ object PersistentApiCache {
 
     fun has(url: String): Boolean = fileFor(url).exists()
 
+    fun peek(url: String): String? {
+        memory[url]?.let { return it }
+        return read(fileFor(url))?.also { memory[url] = it }
+    }
+
+    @Synchronized fun pin(url: String) {
+        if (!has(url)) return
+        pinnedUrls = pinnedUrls + url
+        persistPins()
+    }
+
+    @Synchronized fun pinAll(urls: Collection<String>) {
+        val existing = urls.filter(::has)
+        if (existing.isEmpty()) return
+        pinnedUrls = pinnedUrls + existing
+        persistPins()
+    }
+
+    @Synchronized fun unpinAll(urls: Collection<String>, deleteFiles: Boolean = false) {
+        pinnedUrls = pinnedUrls - urls.toSet()
+        urls.forEach { memory.remove(it); if (deleteFiles) fileFor(it).delete() }
+        persistPins()
+    }
+
+    fun isPinned(url: String): Boolean = url in pinnedUrls
+
+    fun promoteLocal(url: String): Boolean {
+        val file = fileFor(url)
+        if (!file.exists()) return false
+        file.setLastModified(System.currentTimeMillis())
+        return true
+    }
+
     fun clear() {
         memory.clear()
         directory?.listFiles()?.forEach { it.delete() }
+        pinnedUrls = emptySet()
+        persistPins()
     }
 
     fun sizeBytes(): Long = directory?.listFiles()?.sumOf { it.length() } ?: 0L
@@ -70,6 +109,10 @@ object PersistentApiCache {
             }
             file.setLastModified(System.currentTimeMillis())
         }
+    }
+
+    private fun persistPins() {
+        runCatching { pinsFile?.writeText(pinnedUrls.sorted().joinToString("\n")) }
     }
 
     private fun sha256(value: String): String {

@@ -28,6 +28,7 @@ import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 private val QBbg=Color(0xFFFBF8FF);private val QBsurface=Color(0xFFF1EEFA);private val QBink=Color(0xFF171522);private val QBmuted=Color(0xFF777286);private val QBmint=Color(0xFF67D7CB)
@@ -68,7 +69,7 @@ private fun numberedBox(game:String,page:Int)="$game · Box ${page+1}"
   }
   loading=false
  }
- val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val activeBox=numberedBox(game.label,current);val boxedNow=CollectionStore.boxes[activeBox].orEmpty();val caught=dex.count{entry->CollectionStore.boxesForPokemon(entry.nationalId).any{it.startsWith(game.label)}};val duplicateCount=dex.count{it.nationalId in CollectionStore.duplicateIds()};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(350);entries.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val activeBox=numberedBox(game.label,current);val boxedNow=CollectionStore.boxes[activeBox].orEmpty();val caught=dex.count{entry->CollectionStore.boxesForPokemon(entry.nationalId).any{it.startsWith(game.label)}};val duplicateCount=dex.count{it.nationalId in CollectionStore.duplicateIds()};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=12.dp)){
   Column(Modifier.padding(top=5.dp,bottom=5.dp)){Text("POKEDEX",fontSize=27.sp,lineHeight=28.sp,fontWeight=FontWeight.Black,color=QBink);Text("C A T C H  E M  ·  T O D A S  A S  R E G I Õ E S",fontSize=7.sp,color=QBmuted)}
   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
