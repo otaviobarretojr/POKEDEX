@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.11.0"' not in workflow or "versionCode = 6110" not in workflow:
-    violations.append("CI v6.11.0 version stamping missing")
+if 'versionName = "6.11.1"' not in workflow or "versionCode = 6111" not in workflow:
+    violations.append("CI v6.11.1 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -611,3 +611,18 @@ for required in ("CompanionPreferences.activeGame","CompanionPreferences.activeR
 if "KEY_ACTIVE_REGION" not in prefs_v611:
     violations.append("Persistent active Box region missing")
 # Legacy screens intentionally remain compiled as internal compatibility routes during migration.
+
+
+# v6.11.1 Android back navigation guards
+journey_back=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("BackHandler(enabled=view!=JourneyView.GAMES)","detailReturnView","JourneyView.MAP","JourneyView.ROUTE","selectedGame=null"):
+    if required not in journey_back:
+        violations.append(f"Android back hierarchy missing {required}")
+if "onBack={selectedStepId=null;view=detailReturnView}" not in journey_back:
+    violations.append("Journey toolbar back does not match Android back origin")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
