@@ -227,7 +227,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
                 IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
                 Column(Modifier.weight(1f)){
                     Text("Melhor rota",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
-                    Text(game.label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(game.label+" · "+JourneyCatalog.routeLabel(game.label),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick=onTeam){
                     Icon(Icons.Default.Groups,null,Modifier.size(18.dp))
