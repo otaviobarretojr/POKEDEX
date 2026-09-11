@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.21.0"' not in workflow or "versionCode = 6210" not in workflow:
+if 'versionName = "6.22.0"' not in workflow or "versionCode = 6220" not in workflow:
     violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.21.0",
+        "v6.22.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,11 +907,40 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "6.21.0"' not in local_gradle or "versionCode = 6210" not in local_gradle:
+if 'versionName = "6.22.0"' not in local_gradle or "versionCode = 6220" not in local_gradle:
     violations.append("Local build version is not aligned with v6.21.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
+
+
+# v6.22.0 official Journey cover guards
+game_cover_catalog = root / "app/src/main/java/com/otaviobarreto/pokedex/data/GameCoverCatalog.kt"
+if not game_cover_catalog.exists():
+    violations.append("Official game cover catalog missing")
+else:
+    cover_source = game_cover_catalog.read_text(encoding="utf-8")
+    for required in (
+        "Pokémon Legends: Z-A",
+        "Scarlet / Violet",
+        "Sword / Shield",
+        "Let's Go Pikachu / Eevee",
+        "Legends Arceus",
+        "Brilliant Diamond / Shining Pearl",
+        "FireRed / LeafGreen",
+    ):
+        if required not in cover_source:
+            violations.append(f"Journey cover missing game {required}")
+
+journey_hub_v622 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in ("JourneyGameCover", "GameCoverCatalog.coversFor", "AsyncImage", "ContentScale.Fit"):
+    if required not in journey_hub_v622:
+        violations.append(f"Journey official cover rendering missing {required}")
+
+startup_v622 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+for required in ("GameCoverCatalog.coversFor", "startup-game-cover", "Preparando capas dos jogos"):
+    if required not in startup_v622:
+        violations.append(f"Journey cover preload missing {required}")
 
 if violations:
     print("Source verification failed:")
