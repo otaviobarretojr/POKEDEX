@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.2"' not in workflow or "versionCode = 632" not in workflow:
-    violations.append("CI v6.3.2 version stamping missing")
+if 'versionName = "6.3.3"' not in workflow or "versionCode = 633" not in workflow:
+    violations.append("CI v6.3.3 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -155,9 +155,9 @@ for required in ("Salvar arquivo", "Abrir arquivo", "Rota por região", "Formas 
         violations.append(f"v6 Companion missing {required}")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("BOX", "Pesquisar Pokémon", "capturados", "Modifier.weight(1f).fillMaxHeight()"):
+for required in ("Pesquisar Pokémon", "Modifier.weight(1f).fillMaxHeight()", "Deslize para navegar entre as Boxes", "CircularProgressIndicator"):
     if required not in boxes:
-        violations.append(f"Compact fixed Box UI missing {required}")
+        violations.append(f"Compact swipe Box UI missing {required}")
 
 living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
 if "formas" not in living or "PokemonFormsService.cached" not in living:
@@ -268,6 +268,21 @@ if "sortBox(" in boxes or "moveMany(" in boxes:
     violations.append("Box screen must stay search/browse focused")
 if "padding(horizontal=6.dp)" not in boxes or "height(40.dp)" not in boxes:
     violations.append("Compact Box chrome regression")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("detectHorizontalDragGestures", "Deslize para navegar entre as Boxes", "CircularProgressIndicator", "ContentScale.Fit"):
+    if required not in boxes:
+        violations.append(f"Box swipe/header polish missing {required}")
+for forbidden in ("ChevronLeft", "ChevronRight", 'Text("BOX"'):
+    if forbidden in boxes:
+        violations.append(f"Box duplicate/arrow chrome regression: {forbidden}")
 
 if violations:
     print("Source verification failed:")
