@@ -30,10 +30,10 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Stamp v6.7.1 build
+      - name: Stamp v6.8.0 build
         run: |
-          sed -i 's/versionCode = [0-9]\+/versionCode = 671/' app/build.gradle.kts
-          sed -i 's/versionName = "[^"]*"/versionName = "6.7.1"/' app/build.gradle.kts
+          sed -i 's/versionCode = [0-9]\+/versionCode = 680/' app/build.gradle.kts
+          sed -i 's/versionName = "[^"]*"/versionName = "6.8.0"/' app/build.gradle.kts
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
       - name: Install artwork audit dependency
