@@ -99,7 +99,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      qbGames.forEach{g->
       DropdownMenuItem(
        text={Text(g.label,fontWeight=FontWeight.SemiBold)},
-       onClick={gameLabel=g.label;CompanionPreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==CompanionPreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=CompanionPreferences.boxPage(regionSource);CompanionPreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
+       onClick={AppSoundManager.play(AppSoundCue.MOVE);gameLabel=g.label;CompanionPreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==CompanionPreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=CompanionPreferences.boxPage(regionSource);CompanionPreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
       )
      }
     }
@@ -120,7 +120,7 @@ private val qbGames=AppGameCatalog.games.map{game->
         Text(r.label,fontWeight=FontWeight.SemiBold)
         if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)
        }},
-       onClick={regionSource=r.source;CompanionPreferences.setActiveRegionForGame(game.label,r.source);page=CompanionPreferences.boxPage(r.source);regionMenu=false}
+       onClick={AppSoundManager.play(AppSoundCue.MOVE);regionSource=r.source;CompanionPreferences.setActiveRegionForGame(game.label,r.source);page=CompanionPreferences.boxPage(r.source);regionMenu=false}
       )
      }
     }
@@ -188,8 +188,8 @@ private val qbGames=AppGameCatalog.games.map{game->
       onDragEnd={
        val threshold=90f
        if(!loading){
-        if(dragTotal < -threshold && current < pages-1) page=current+1
-        else if(dragTotal > threshold && current > 0) page=current-1
+        if(dragTotal < -threshold && current < pages-1){AppSoundManager.play(AppSoundCue.RL);page=current+1}
+        else if(dragTotal > threshold && current > 0){AppSoundManager.play(AppSoundCue.RL);page=current-1}
        }
        dragTotal=0f
       },
@@ -200,7 +200,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
-    else->QBGrid(entries,capturedIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+    else->QBGrid(entries,capturedIds,{pk->AppSoundManager.play(AppSoundCue.DECIDE);onPokemonClick(pk.nationalId,region.source)},{pk->AppSoundManager.play(AppSoundCue.LONG_PRESS);captureTarget=pk})
    }
   }
   Row(
@@ -208,7 +208,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    horizontalArrangement=Arrangement.spacedBy(4.dp)
   ){
    FilledTonalButton(
-    {search=true},
+    {AppSoundManager.play(AppSoundCue.OPEN);search=true},
     Modifier.weight(1f).fillMaxHeight(),
     shape=RoundedCornerShape(13.dp)
    ){
@@ -217,7 +217,7 @@ private val qbGames=AppGameCatalog.games.map{game->
     Text("Pesquisar",fontWeight=FontWeight.Bold,fontSize=12.sp)
    }
    FilledTonalButton(
-    {allBoxes=true},
+    {AppSoundManager.play(AppSoundCue.OPEN);allBoxes=true},
     Modifier.weight(1f).fillMaxHeight(),
     shape=RoundedCornerShape(13.dp)
    ){
@@ -227,14 +227,14 @@ private val qbGames=AppGameCatalog.games.map{game->
    }
   }
  }
- if(search)QBSearch(dex,capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
+ if(search)QBSearch(dex,capturedIds,{AppSoundManager.play(AppSoundCue.CLOSE);search=false},{pk->AppSoundManager.play(AppSoundCue.MOVE);val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->AppSoundManager.play(AppSoundCue.DECIDE);search=false;onPokemonClick(pk.nationalId,region.source)})
  if(allBoxes)QBAllBoxes(
   dex=dex,
   current=current,
   captured=capturedIds,
   accent=game.accent,
   dismiss={allBoxes=false},
-  select={targetPage->page=targetPage;allBoxes=false}
+  select={targetPage->AppSoundManager.play(AppSoundCue.DECIDE);page=targetPage;allBoxes=false}
  )
  captureTarget?.let{pk->
   val already=CollectionStore.isCapturedIn(region.source,pk.nationalId)
@@ -243,7 +243,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    title={Text(if(already)"Remover captura?" else "Capturar Pokémon?")},
    text={Text(pretty(pk.name)+(if(already)" será marcado como não capturado." else " será marcado como capturado."))},
    confirmButton={
-    Button(onClick={CollectionStore.toggleCapturedIn(region.source,pk.nationalId);captureTarget=null}){
+    Button(onClick={AppSoundManager.play(if(already)AppSoundCue.CANCEL else AppSoundCue.CATCH);CollectionStore.toggleCapturedIn(region.source,pk.nationalId);captureTarget=null}){
      Text(if(already)"Remover" else "Capturar")
     }
    },
