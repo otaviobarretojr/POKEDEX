@@ -37,7 +37,7 @@ fun TeamBuilderScreen(onPokemonClick: (Int) -> Unit) {
     val teams = TeamStore.teams
     var selectedTeamId by remember { mutableStateOf(teams.firstOrNull()?.id) }
     var query by remember { mutableStateOf("") }
-    var national by remember { mutableStateOf<List<PokeApiService.DexIndexEntry>>(emptyList()) }
+    var national by remember { mutableStateOf(PokedexDataStore.cachedNationalDex().orEmpty()) }
     var regionalIds by remember { mutableStateOf<Set<Int>?>(null) }
     var scope by remember { mutableStateOf(teamScopes.first()) }
     var scopeMenu by remember { mutableStateOf(false) }
@@ -46,9 +46,9 @@ fun TeamBuilderScreen(onPokemonClick: (Int) -> Unit) {
     var showDelete by remember { mutableStateOf(false) }
     var replacePokemonId by remember { mutableStateOf<Int?>(null) }
     var memberTypes by remember { mutableStateOf<Map<Int, List<String>>>(emptyMap()) }
-    var loadingDex by remember { mutableStateOf(true) }
+    var loadingDex by remember { mutableStateOf(national.isEmpty()) }
 
-    LaunchedEffect(Unit) { loadingDex=true; national=runCatching{withContext(Dispatchers.IO){PokedexDataStore.nationalDex()}}.getOrElse{emptyList()}; loadingDex=false }
+    LaunchedEffect(Unit) { if(national.isEmpty()) loadingDex=true; val loaded=runCatching{withContext(Dispatchers.IO){PokedexDataStore.nationalDex()}}.getOrNull(); if(loaded!=null) national=loaded; loadingDex=false }
     LaunchedEffect(scope.source) { val source=scope.source; regionalIds=if(source==null)null else GameContext.fromSource(source)?.let{ctx->runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx).map{it.nationalId}.toSet()}}.getOrElse{emptySet()}}?:emptySet() }
     LaunchedEffect(teams) { if(teams.none{it.id==selectedTeamId}) selectedTeamId=teams.firstOrNull()?.id }
     val selectedTeam=teams.firstOrNull{it.id==selectedTeamId}?:teams.firstOrNull()
