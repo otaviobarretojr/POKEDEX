@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.0"' not in workflow or "versionCode = 630" not in workflow:
-    violations.append("CI v6.3 version stamping missing")
+if 'versionName = "6.3.1"' not in workflow or "versionCode = 631" not in workflow:
+    violations.append("CI v6.3.1 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -236,6 +236,20 @@ if "OfflineGamePackManager.manifestIds" not in games:
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 if "entries.take(12)" not in boxes or "entries.drop(12)" not in boxes:
     violations.append("Box smart preload priority missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("rememberSaveable", "gameLabel", "regionSource", "page by rememberSaveable"):
+    if required not in boxes:
+        violations.append(f"Box return-state persistence missing {required}")
+if "loading=true;page=0" in boxes or "loading=true; page=0" in boxes:
+    violations.append("Box page reset regression detected in load effect")
 
 if violations:
     print("Source verification failed:")
