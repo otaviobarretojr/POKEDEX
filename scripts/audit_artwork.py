@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import csv, json, math, re, statistics, urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
@@ -54,10 +55,17 @@ def metrics(i,p,tuning):
     }
 
 tunings=load_tunings()
+def audit_one(i):
+    try: return metrics(i,fetch(i),tunings.get(i,(1.0,0.0,0.0)))
+    except Exception as e: return {"id":i,"error":str(e)}
 rows=[]
-for i in range(1,MAX_ID+1):
-    try: rows.append(metrics(i,fetch(i),tunings.get(i,(1.0,0.0,0.0))))
-    except Exception as e: rows.append({"id":i,"error":str(e)}); print("ERR",i,e)
+with ThreadPoolExecutor(max_workers=24) as pool:
+    futures={pool.submit(audit_one,i):i for i in range(1,MAX_ID+1)}
+    for future in as_completed(futures):
+        row=future.result()
+        if "error" in row: print("ERR",row["id"],row["error"])
+        rows.append(row)
+rows.sort(key=lambda r:r["id"])
 valid=[r for r in rows if "error" not in r]
 med_den=statistics.median(r["alpha_density"] for r in valid)
 
