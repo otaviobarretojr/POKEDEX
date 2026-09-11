@@ -32,28 +32,13 @@ import java.util.Locale
 private data class GameHubRegion(val source:String,val title:String,val subtitle:String)
 private data class GameHubEntry(val title:String,val subtitle:String,val regions:List<GameHubRegion>)
 
-private val gameHubEntries=listOf(
-    GameHubEntry("Scarlet / Violet","Jogo base + The Hidden Treasure of Area Zero",listOf(
-        GameHubRegion("Scarlet / Violet · Paldea","Paldea","Jogo base"),
-        GameHubRegion("Scarlet / Violet · Kitakami","Kitakami","DLC · The Teal Mask"),
-        GameHubRegion("Scarlet / Violet · Blueberry","Blueberry","DLC · The Indigo Disk")
-    )),
-    GameHubEntry("Sword / Shield","Galar + Expansion Pass",listOf(
-        GameHubRegion("Sword / Shield · Galar","Galar","Jogo base"),
-        GameHubRegion("Sword / Shield · Isle of Armor","Isle of Armor","DLC · The Isle of Armor"),
-        GameHubRegion("Sword / Shield · Crown Tundra","Crown Tundra","DLC · The Crown Tundra")
-    )),
-    GameHubEntry("Legends Arceus","Hisui",listOf(GameHubRegion("Legends Arceus · Hisui","Hisui","Pokédex regional"))),
-    GameHubEntry("Let's Go Pikachu / Eevee","Kanto",listOf(GameHubRegion("Let's Go Pikachu / Eevee · Kanto","Kanto","Pokédex regional"))),
-    GameHubEntry("Brilliant Diamond / Shining Pearl","Sinnoh",listOf(GameHubRegion("Brilliant Diamond / Shining Pearl · Sinnoh","Sinnoh","Pokédex regional"))),
-    GameHubEntry("Black / White","Unova",listOf(GameHubRegion("Black / White · Unova","Unova","Pokédex regional"))),
-    GameHubEntry("X / Y","Kalos",listOf(
-        GameHubRegion("X / Y · Kalos Central","Central Kalos","Pokédex Central"),
-        GameHubRegion("X / Y · Kalos Coastal","Coastal Kalos","Pokédex Costeira"),
-        GameHubRegion("X / Y · Kalos Mountain","Mountain Kalos","Pokédex Montanhosa")
-    )),
-    GameHubEntry("Omega Ruby / Alpha Sapphire","Hoenn",listOf(GameHubRegion("Omega Ruby / Alpha Sapphire · Hoenn","Hoenn","Pokédex regional")))
-)
+private val gameHubEntries = AppGameCatalog.games.map { game ->
+    GameHubEntry(
+        title = game.label,
+        subtitle = game.subtitle.ifBlank { game.regions.joinToString(" + ") { it.label } },
+        regions = game.regions.map { region -> GameHubRegion(region.source, region.label, region.subtitle) }
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
