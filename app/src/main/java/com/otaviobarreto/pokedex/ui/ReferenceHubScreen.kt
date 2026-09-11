@@ -31,7 +31,8 @@ fun ReferenceHubScreen(
  onBack:()->Unit,
  initialKind:String?=null,
  initialName:String?=null,
- onPokemonClick:((Int)->Unit)?=null
+ source:String?=null,
+ onPokemonClick:((Int,String?)->Unit)?=null
 ){
  val initialIndex=remember(initialKind){referenceTabs.indexOfFirst{it.key==initialKind}.coerceAtLeast(0)}
  var selected by remember{mutableIntStateOf(initialIndex)}
@@ -92,7 +93,7 @@ fun ReferenceHubScreen(
 
  if(chosen!=null)ModalBottomSheet(onDismissRequest={chosen=null;detail=null},dragHandle={BottomSheetDefaults.DragHandle()}){
   when{
-   detail!=null->ReferenceDetailSheet(detail!!,onPokemonClick)
+   detail!=null->ReferenceDetailSheet(detail!!,source,onPokemonClick)
    detailError!=null->Box(Modifier.fillMaxWidth().height(220.dp).padding(24.dp),contentAlignment=Alignment.Center){Text(detailError!!)}
    else->Column(Modifier.fillMaxWidth().height(220.dp).padding(24.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally){
     Text(pretty(chosen!!.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
@@ -106,7 +107,7 @@ fun ReferenceHubScreen(
 }
 
 @Composable
-private fun ReferenceDetailSheet(detail:ReferenceDetail,onPokemonClick:((Int)->Unit)?){
+private fun ReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemonClick:((Int,String?)->Unit)?){
  LazyColumn(Modifier.fillMaxWidth().heightIn(max=650.dp),contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
   item{Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){detail.spriteUrl?.let{AsyncImage(it,detail.name,Modifier.size(72.dp).padding(end=12.dp))};Column(Modifier.weight(1f)){Text(detail.name,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text(when(detail.kind){"move"->"Golpe";"ability"->"Habilidade";else->"Item"},style=MaterialTheme.typography.labelLarge)}}}
   if(detail.kind=="move")item{Card(Modifier.fillMaxWidth()){Column(Modifier.padding(14.dp)){Text("Dados do golpe",fontWeight=FontWeight.Bold);Spacer(Modifier.height(6.dp));ReferenceLine("Tipo",detail.type?:"—");ReferenceLine("Classe",detail.category?:"—");ReferenceLine("Poder",detail.power?.toString()?:"—");ReferenceLine("Precisão",detail.accuracy?.let{"$it%"}?:"—");ReferenceLine("PP",detail.pp?.toString()?:"—");ReferenceLine("Prioridade",detail.priority?.toString()?:"0")}}}
@@ -114,7 +115,7 @@ private fun ReferenceDetailSheet(detail:ReferenceDetail,onPokemonClick:((Int)->U
   detail.description?.takeIf{it.isNotBlank()}?.let{description->item{Text("Efeito",fontWeight=FontWeight.Bold);Text(description,style=MaterialTheme.typography.bodyMedium)}}
   if(detail.pokemonIds.isNotEmpty()){
    item{Text(if(detail.kind=="move")"Pokémon que podem aprender" else "Pokémon com esta habilidade",fontWeight=FontWeight.Bold);Text("${detail.pokemonIds.size}${if(detail.pokemonIds.size>=80)"+" else ""} listados",style=MaterialTheme.typography.labelSmall)}
-   items(detail.pokemonIds.zip(detail.pokemonNames),key={it.first}){(id,name)->Card(Modifier.fillMaxWidth().then(if(onPokemonClick!=null)Modifier.clickable{onPokemonClick(id)}else Modifier)){Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp));Column(Modifier.weight(1f).padding(start=8.dp)){Text(name,fontWeight=FontWeight.SemiBold);Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)};if(onPokemonClick!=null)Icon(Icons.Default.ChevronRight,null)}}}
+   items(detail.pokemonIds.zip(detail.pokemonNames),key={it.first}){(id,name)->Card(Modifier.fillMaxWidth().then(if(onPokemonClick!=null)Modifier.clickable{onPokemonClick(id,source)}else Modifier)){Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp));Column(Modifier.weight(1f).padding(start=8.dp)){Text(name,fontWeight=FontWeight.SemiBold);Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)};if(onPokemonClick!=null)Icon(Icons.Default.ChevronRight,null)}}}
   }
   item{Spacer(Modifier.height(26.dp))}
  }
