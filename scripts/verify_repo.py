@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.boxLabel" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.8"' not in workflow or "versionCode = 638" not in workflow:
-    violations.append("CI v6.3.8 version stamping missing")
+if 'versionName = "6.3.9"' not in workflow or "versionCode = 639" not in workflow:
+    violations.append("CI v6.3.9 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -351,8 +351,8 @@ if violations:
 
 
 tuning = (ui / "ArtworkTuningCatalog.kt").read_text(encoding="utf-8")
-if tuning.count("to ArtworkTuning(") != 106:
-    violations.append("Artwork curation override count must stay at 106 reviewed outliers")
+if tuning.count("to ArtworkTuning(") != 109:
+    violations.append("Artwork curation override count must stay at 109 reviewed artworks")
 artwork = (ui / "PokemonArtwork.kt").read_text(encoding="utf-8")
 for required in ("ArtworkTuningCatalog.forPokemon", "graphicsLayer", "offset(x = dx, y = dy)", "pokemonId: Int? = null"):
     if required not in artwork:
