@@ -56,7 +56,7 @@ fun LivingDexScreen(onPokemonClick: (Int, String?) -> Unit) {
     var generation by remember { mutableIntStateOf(0) }
     var scope by remember { mutableStateOf(livingDexScopes.first()) }
     var scopeMenu by remember { mutableStateOf(false) }
-    val captured = if (scope.source == null) CollectionStore.capturedIds else CollectionStore.contextualCapturedIds[scope.source].orEmpty()
+    val captured = DataIntegrityRules.capturedForScope(CollectionStore.capturedIds, CollectionStore.contextualCapturedIds, scope.source)
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
