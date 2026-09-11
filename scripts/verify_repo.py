@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.5.3"' not in workflow or "versionCode = 653" not in workflow:
-    violations.append("CI v6.5.3 version stamping missing")
+if 'versionName = "6.7.0"' not in workflow or "versionCode = 670" not in workflow:
+    violations.append("CI v6.7.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -394,7 +394,7 @@ if violations:
 
 # v6.5.1 Journey route visual guards
 journey_visual = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
-for required in ("Progresso da campanha", "PRÓXIMO OBJETIVO", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Próximo recomendado"):
+for required in ("Progresso da campanha", "PRÓXIMO PASSO INTELIGENTE", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Próximo recomendado"):
     if required not in journey_visual:
         violations.append(f"Journey route visual missing {required}")
 
@@ -443,6 +443,39 @@ if "initialPhase" not in team_guide or '"Automático"' not in team_guide:
 main = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
 if "phase={phase}" not in main:
     violations.append("Smart Journey phase navigation missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.5.4-v6.7.0 Complete Journey guards
+prep = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyPreparationCatalog.kt").read_text(encoding="utf-8")
+map_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
+dynamic_team = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyDynamicTeamCatalog.kt").read_text(encoding="utf-8")
+journey = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
+journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
+
+for required in ("PRÓXIMO PASSO INTELIGENTE", "Preparação recomendada", "Pokémon úteis agora", "Mapa da Jornada", "JourneyMapScreen"):
+    if required not in journey:
+        violations.append(f"Complete Journey UI missing {required}")
+for required in ("sv-01", "sv-18", "recommendedLevel", "pokemonIds", "items"):
+    if required not in prep:
+        violations.append(f"Journey preparation catalog missing {required}")
+for required in ("JourneyMapPoint", "sv-01", "sv-18"):
+    if required not in map_catalog:
+        violations.append(f"Journey map catalog missing {required}")
+for required in ("adjustedSlots", "CollectionStore.capturedIds", "adjustSlots"):
+    if required not in dynamic_team:
+        violations.append(f"Dynamic Journey team missing {required}")
+for required in ("TIME DINÂMICO DA JORNADA", "displaySlots", "JourneyDynamicTeamCatalog.suggestion"):
+    if required not in team_guide:
+        violations.append(f"Dynamic team guide UI missing {required}")
+if "18 objetivos · ordem revisada por nível · sem level scaling" not in journey_catalog:
+    violations.append("Scarlet/Violet curated route annotation missing")
 
 if violations:
     print("Source verification failed:")

@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.*
 
-private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
+private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
 
 @Composable
 fun JourneyScreen(
@@ -39,6 +39,7 @@ fun JourneyScreen(
             game=game,
             onBack={view=JourneyView.GAMES},
             onRoute={view=JourneyView.ROUTE},
+            onMap={view=JourneyView.MAP},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
             onDex={game.regions.firstOrNull()?.source?.let(onOpenGameDex)},
             onRegion={onOpenGameDex}
@@ -55,9 +56,15 @@ fun JourneyScreen(
                 game=game,
                 step=step,
                 onBack={view=JourneyView.ROUTE},
-                onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)}
+                onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+                onPokemonClick=onPokemonClick
             ) else view=JourneyView.ROUTE
         } else { view=JourneyView.GAMES }
+        JourneyView.MAP -> if(game!=null) JourneyMapScreen(
+            game=game,
+            onBack={view=JourneyView.GAME_MENU},
+            onOpenStep={stepId->selectedStepId=stepId;view=JourneyView.DETAIL}
+        ) else { view=JourneyView.GAMES }
     }
 }
 
@@ -98,6 +105,7 @@ private fun JourneyGameMenu(
     game:AppGame,
     onBack:()->Unit,
     onRoute:()->Unit,
+    onMap:()->Unit,
     onTeam:()->Unit,
     onDex:()->Unit,
     onRegion:(String)->Unit
@@ -124,6 +132,15 @@ private fun JourneyGameMenu(
                 subtitle=if(route.isNotEmpty()) "Sequência recomendada por nível, com progresso salvo." else "Estrutura pronta; rota detalhada deste jogo entra na próxima curadoria.",
                 enabled=route.isNotEmpty(),
                 onClick=onRoute
+            )
+        }
+        item{
+            JourneyActionCard(
+                icon=Icons.Default.Map,
+                title="Mapa da Jornada",
+                subtitle=if(JourneyMapCatalog.points(game.label).isNotEmpty()) "Veja concluídos, objetivo atual e próximos desafios distribuídos no mapa." else "Mapa desta campanha ainda não está disponível.",
+                enabled=JourneyMapCatalog.points(game.label).isNotEmpty(),
+                onClick=onMap
             )
         }
         item{
@@ -210,7 +227,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
                 IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
                 Column(Modifier.weight(1f)){
                     Text("Melhor rota",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
-                    Text(game.label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(game.label+" · "+JourneyCatalog.routeLabel(game.label),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick=onTeam){
                     Icon(Icons.Default.Groups,null,Modifier.size(18.dp))
@@ -283,23 +300,34 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
         }
 
         nextStep?.let{step->
+            val prep=JourneyPreparationCatalog.forStep(step.id)
+            val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+    val preparation=JourneyPreparationCatalog.forStep(step.id)
+    val national=PokedexDataStore.cachedNationalDex().orEmpty()
             item{
                 Card(
                     shape=RoundedCornerShape(20.dp),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.tertiaryContainer),
                     modifier=Modifier.fillMaxWidth().padding(bottom=14.dp).clickable{onOpenStep(step.id)}
                 ){
-                    Row(
-                        Modifier.fillMaxWidth().padding(14.dp),
-                        verticalAlignment=Alignment.CenterVertically
-                    ){
-                        Icon(Icons.Default.NearMe,null)
-                        Column(Modifier.weight(1f).padding(start=10.dp)){
-                            Text("PRÓXIMO OBJETIVO",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
-                            Text(step.title+" · "+step.levelLabel,fontWeight=FontWeight.Bold)
-                            Text(step.location,style=MaterialTheme.typography.bodySmall)
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Row(verticalAlignment=Alignment.CenterVertically){
+                            Icon(Icons.Default.NearMe,null)
+                            Column(Modifier.weight(1f).padding(start=10.dp)){
+                                Text("PRÓXIMO PASSO INTELIGENTE",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
+                                Text(step.title+" · "+step.levelLabel,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                                Text(step.location,style=MaterialTheme.typography.bodySmall)
+                            }
+                            Icon(Icons.Default.ChevronRight,null)
                         }
-                        Icon(Icons.Default.ChevronRight,null)
+                        if(prep!=null){
+                            HorizontalDivider(Modifier.padding(vertical=10.dp))
+                            Text("Prepare-se com "+prep.counters.joinToString(" / "),fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.bodySmall)
+                            Text(prep.tip,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=3.dp))
+                            if(detail?.opponents?.isNotEmpty()==true){
+                                Text("Principal ameaça: "+detail.opponents.last().name+" · "+detail.opponents.last().level,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=5.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -525,11 +553,14 @@ private fun JourneyObjectiveDetailScreen(
     game:AppGame,
     step:JourneyStep,
     onBack:()->Unit,
-    onTeam:()->Unit
+    onTeam:()->Unit,
+    onPokemonClick:(Int)->Unit
 ){
     val revision=JourneyProgressStore.revision
     val done=remember(game.label,step.id,revision){step.id in JourneyProgressStore.completed(game.label)}
     val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+    val preparation=JourneyPreparationCatalog.forStep(step.id)
+    val national=PokedexDataStore.cachedNationalDex().orEmpty()
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -611,6 +642,39 @@ private fun JourneyObjectiveDetailScreen(
             }
         }
 
+        preparation?.let{prep->
+            item{JourneyDetailSectionTitle(Icons.Default.Build,"Preparação recomendada")}
+            item{
+                Card(shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)){
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Text("Nível recomendado · "+prep.recommendedLevel,fontWeight=FontWeight.Bold)
+                        Text("Cobertura: "+prep.counters.joinToString(" / "),style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
+                        Text("Itens: "+prep.items.joinToString(" · "),style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=3.dp))
+                        Text(prep.tip,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=8.dp))
+                    }
+                }
+            }
+            item{JourneyDetailSectionTitle(Icons.Default.CatchingPokemon,"Pokémon úteis agora")}
+            items(prep.pokemonIds){pokemonId->
+                val entry=national.firstOrNull{it.id==pokemonId}
+                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(pokemonId)},shape=RoundedCornerShape(18.dp)){
+                    Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
+                        PokemonArtwork(
+                            model=entry?.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
+                            contentDescription=entry?.name,
+                            modifier=Modifier.size(58.dp),
+                            pokemonId=pokemonId
+                        )
+                        Column(Modifier.weight(1f).padding(start=10.dp)){
+                            Text(entry?.name ?: "#"+pokemonId,fontWeight=FontWeight.Bold)
+                            Text("Opção recomendada para este objetivo",style=MaterialTheme.typography.bodySmall)
+                        }
+                        Icon(Icons.Default.ChevronRight,null)
+                    }
+                }
+            }
+        }
+
         item{
             Button(
                 onClick={JourneyProgressStore.toggle(game.label,step.id)},
@@ -661,5 +725,71 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
         Icon(icon,null,Modifier.size(17.dp))
         Text(label+":",Modifier.padding(start=7.dp),fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.bodySmall)
         Text(value,Modifier.padding(start=5.dp),style=MaterialTheme.typography.bodySmall)
+    }
+}
+
+
+@Composable
+private fun JourneyMapScreen(
+    game:AppGame,
+    onBack:()->Unit,
+    onOpenStep:(String)->Unit
+){
+    val revision=JourneyProgressStore.revision
+    val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
+    val steps=remember(game.label){JourneyCatalog.steps(game.label)}
+    val points=remember(game.label){JourneyMapCatalog.points(game.label)}
+    val next=steps.firstOrNull{it.id !in completed}
+
+    Column(Modifier.fillMaxSize().padding(16.dp)){
+        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+            IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
+            Column(Modifier.weight(1f)){
+                Text("Mapa da Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
+                Text(game.label,style=MaterialTheme.typography.labelMedium)
+            }
+            Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                Text(completed.size.coerceAtMost(steps.size).toString()+"/"+steps.size,Modifier.padding(horizontal=10.dp,vertical=6.dp),fontWeight=FontWeight.Bold)
+            }
+        }
+
+        Card(
+            Modifier.fillMaxWidth().weight(1f).padding(top=10.dp),
+            shape=RoundedCornerShape(26.dp),
+            colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)
+        ){
+            BoxWithConstraints(Modifier.fillMaxSize().padding(12.dp)){
+                Box(
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.22f),RoundedCornerShape(22.dp))
+                )
+                points.forEach{point->
+                    val step=steps.firstOrNull{it.id==point.stepId} ?: return@forEach
+                    val done=step.id in completed
+                    val isNext=next?.id==step.id
+                    val x=maxWidth*point.x
+                    val y=maxHeight*point.y
+                    Surface(
+                        modifier=Modifier.offset(x=x-18.dp,y=y-18.dp).size(36.dp).clickable{onOpenStep(step.id)},
+                        shape=RoundedCornerShape(50),
+                        color=when{
+                            done->MaterialTheme.colorScheme.primary
+                            isNext->MaterialTheme.colorScheme.tertiary
+                            else->MaterialTheme.colorScheme.surface
+                        },
+                        shadowElevation=if(isNext)6.dp else 2.dp
+                    ){
+                        Box(contentAlignment=Alignment.Center){
+                            if(done) Icon(Icons.Default.Check,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onPrimary)
+                            else Text(step.order.toString(),fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+                Column(Modifier.align(Alignment.BottomStart).padding(10.dp)){
+                    Text("● Concluído   ● Próximo   ○ Pendente",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold)
+                    next?.let{Text("Próximo: "+it.title+" · "+it.location,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))}
+                }
+            }
+        }
+        Text("Mapa esquemático de progressão: os pontos representam a posição relativa dos objetivos em Paldea.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
     }
 }
