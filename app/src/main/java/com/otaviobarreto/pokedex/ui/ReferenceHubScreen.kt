@@ -36,8 +36,8 @@ fun ReferenceHubScreen(
  val initialIndex=remember(initialKind){referenceTabs.indexOfFirst{it.key==initialKind}.coerceAtLeast(0)}
  var selected by remember{mutableIntStateOf(initialIndex)}
  var query by remember{mutableStateOf(initialName.orEmpty())}
- var entries by remember{mutableStateOf<List<ReferenceEntry>>(emptyList())}
- var loading by remember{mutableStateOf(true)}
+ var entries by remember{mutableStateOf(ReferenceCatalogService.cached(referenceTabs[initialIndex].key).orEmpty())}
+ var loading by remember{mutableStateOf(entries.isEmpty())}
  var error by remember{mutableStateOf<String?>(null)}
  var chosen by remember{mutableStateOf<ReferenceEntry?>(null)}
  var detail by remember{mutableStateOf<ReferenceDetail?>(null)}
@@ -47,9 +47,12 @@ fun ReferenceHubScreen(
  val tab=referenceTabs[selected]
 
  LaunchedEffect(tab.key){
-  loading=true;error=null
-  entries=runCatching{withContext(Dispatchers.IO){ReferenceCatalogService.load(tab.key)}}
-   .onFailure{error="Não foi possível carregar ${tab.label.lowercase()}."}.getOrDefault(emptyList())
+  val cached=ReferenceCatalogService.cached(tab.key).orEmpty()
+  if(cached.isNotEmpty()) entries=cached
+  loading=entries.isEmpty();error=null
+  val loaded=runCatching{withContext(Dispatchers.IO){ReferenceCatalogService.load(tab.key)}}
+   .onFailure{if(entries.isEmpty()) error="Não foi possível carregar " + tab.label.lowercase() + "."}.getOrNull()
+  if(loaded!=null) entries=loaded
   loading=false
  }
  LaunchedEffect(entries,initialName,tab.key){
@@ -60,9 +63,11 @@ fun ReferenceHubScreen(
  }
  LaunchedEffect(chosen,tab.key){
   val entry=chosen?:return@LaunchedEffect
-  detailLoading=true;detail=null;detailError=null
-  detail=runCatching{withContext(Dispatchers.IO){ReferenceCatalogService.loadDetail(tab.key,entry)}}
-   .onFailure{detailError="Não foi possível carregar os detalhes."}.getOrNull()
+  detail=ReferenceCatalogService.cachedDetail(tab.key,entry)
+  detailLoading=detail==null;detailError=null
+  val loaded=runCatching{withContext(Dispatchers.IO){ReferenceCatalogService.loadDetail(tab.key,entry)}}
+   .onFailure{if(detail==null) detailError="Não foi possível carregar os detalhes."}.getOrNull()
+  if(loaded!=null) detail=loaded
   detailLoading=false
  }
 
@@ -87,9 +92,15 @@ fun ReferenceHubScreen(
 
  if(chosen!=null)ModalBottomSheet(onDismissRequest={chosen=null;detail=null},dragHandle={BottomSheetDefaults.DragHandle()}){
   when{
-   detailLoading->Box(Modifier.fillMaxWidth().height(260.dp),contentAlignment=Alignment.Center){CircularProgressIndicator()}
-   detailError!=null->Box(Modifier.fillMaxWidth().height(220.dp).padding(24.dp),contentAlignment=Alignment.Center){Text(detailError!!)}
    detail!=null->ReferenceDetailSheet(detail!!,onPokemonClick)
+   detailError!=null->Box(Modifier.fillMaxWidth().height(220.dp).padding(24.dp),contentAlignment=Alignment.Center){Text(detailError!!)}
+   else->Column(Modifier.fillMaxWidth().height(220.dp).padding(24.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally){
+    Text(pretty(chosen!!.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
+    Spacer(Modifier.height(12.dp))
+    CircularProgressIndicator()
+    Spacer(Modifier.height(8.dp))
+    Text("Carregando detalhes…",style=MaterialTheme.typography.bodySmall)
+   }
   }
  }
 }

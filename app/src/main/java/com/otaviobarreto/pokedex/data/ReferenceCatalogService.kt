@@ -28,6 +28,11 @@ object ReferenceCatalogService {
     private val cache = ConcurrentHashMap<String, List<ReferenceEntry>>()
     private val detailCache = ConcurrentHashMap<String, ReferenceDetail>()
 
+    fun cached(kind: String): List<ReferenceEntry>? = cache[kind]
+
+    fun cachedDetail(kind: String, entry: ReferenceEntry): ReferenceDetail? =
+        detailCache[kind + ":" + entry.url]
+
     fun load(kind: String): List<ReferenceEntry> {
         cache[kind]?.let { return it }
         require(kind in setOf("move", "ability", "item"))

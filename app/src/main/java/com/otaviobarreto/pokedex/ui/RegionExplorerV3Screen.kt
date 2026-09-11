@@ -102,12 +102,12 @@ private fun PaldeaHdExplorer(
 ) {
     val zones = remember(context) { RegionMapCatalog.zones(context) }
     val mapVisual = remember { RegionMapVisualCatalog.visualFor("Paldea") }
-    var dex by remember(source) { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
+    var dex by remember(source) { mutableStateOf(GameDexService.cached(context).orEmpty()) }
     var selectedPokemon by remember { mutableStateOf<GameDexService.GameDexEntry?>(null) }
     var encounters by remember { mutableStateOf<List<PokeApiService.EncounterLocation>>(emptyList()) }
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(HdMapFilter.ALL) }
-    var loading by remember(source) { mutableStateOf(true) }
+    var loading by remember(source) { mutableStateOf(dex.isEmpty()) }
     var loadingEncounters by remember { mutableStateOf(false) }
     var error by remember(source) { mutableStateOf<String?>(null) }
     var selectedZone by remember(source) { mutableStateOf<RegionMapZone?>(null) }
@@ -120,10 +120,11 @@ private fun PaldeaHdExplorer(
 
     LaunchedEffect(selectedPokemon?.nationalId, source) {
         val pokemon = selectedPokemon ?: run { encounters = emptyList(); return@LaunchedEffect }
-        loadingEncounters = true
-        encounters = runCatching {
+        val cachedEncounters = PokedexDataStore.cachedEncounters(pokemon.nationalId)
+        loadingEncounters = cachedEncounters == null
+        encounters = (cachedEncounters ?: runCatching {
             withContext(Dispatchers.IO) { PokedexDataStore.encounters(pokemon.nationalId) }
-        }.getOrElse { emptyList() }.mapNotNull { encounter ->
+        }.getOrElse { emptyList() }).mapNotNull { encounter ->
             val versions = encounter.versions.filter(context::matchesVersion)
             val details = encounter.details.filter { context.matchesVersion(it.version) }
             if (versions.isEmpty() && details.isEmpty()) null else encounter.copy(versions = versions, details = details)

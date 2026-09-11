@@ -91,12 +91,12 @@ fun RegionExplorerV2Screen(
 ) {
     val context = remember(source) { GameContext.fromSource(source) }
     val zones = remember(context) { RegionMapCatalog.zones(context) }
-    var dex by remember(source) { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
+    var dex by remember(source) { mutableStateOf(context?.let(GameDexService::cached).orEmpty()) }
     var selectedPokemon by remember { mutableStateOf<GameDexService.GameDexEntry?>(null) }
     var encounters by remember { mutableStateOf<List<PokeApiService.EncounterLocation>>(emptyList()) }
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(MapCaptureFilter.ALL) }
-    var loading by remember(source) { mutableStateOf(true) }
+    var loading by remember(source) { mutableStateOf(dex.isEmpty()) }
     var loadingEncounters by remember { mutableStateOf(false) }
     var error by remember(source) { mutableStateOf<String?>(null) }
     var selectedZone by remember(source) { mutableStateOf<RegionMapZone?>(null) }
@@ -115,10 +115,11 @@ fun RegionExplorerV2Screen(
 
     LaunchedEffect(selectedPokemon?.nationalId, source) {
         val pokemon = selectedPokemon ?: run { encounters = emptyList(); return@LaunchedEffect }
-        loadingEncounters = true
-        encounters = runCatching {
+        val cachedEncounters = PokedexDataStore.cachedEncounters(pokemon.nationalId)
+        loadingEncounters = cachedEncounters == null
+        encounters = (cachedEncounters ?: runCatching {
             withContext(Dispatchers.IO) { PokedexDataStore.encounters(pokemon.nationalId) }
-        }.getOrElse { emptyList() }.mapNotNull { encounter ->
+        }.getOrElse { emptyList() }).mapNotNull { encounter ->
             val game = context ?: return@mapNotNull encounter
             val versions = encounter.versions.filter(game::matchesVersion)
             val details = encounter.details.filter { game.matchesVersion(it.version) }
