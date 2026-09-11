@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.DataIntegrityRules
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
@@ -47,7 +48,7 @@ private val livingDexScopes = listOf(LivingDexScope("Nacional", null)) +
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
+fun LivingDexScreen(onPokemonClick: (Int, String?) -> Unit) {
     var national by remember { mutableStateOf(PokedexDataStore.cachedNationalDex().orEmpty()) }
     var regional by remember { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(national.isEmpty()) }
@@ -56,7 +57,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
     var generation by remember { mutableIntStateOf(0) }
     var scope by remember { mutableStateOf(livingDexScopes.first()) }
     var scopeMenu by remember { mutableStateOf(false) }
-    val captured = CollectionStore.capturedIds
+    val captured = DataIntegrityRules.capturedForScope(CollectionStore.capturedIds, CollectionStore.contextualCapturedIds, scope.source)
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
@@ -204,7 +205,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
             }
             if (nextMissing != null) {
                 Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = { onPokemonClick(nextMissing.id) }) {
+                    TextButton(onClick = { onPokemonClick(nextMissing.id, scope.source) }) {
                         Text("Próximo faltante · #${nextMissing.id.toString().padStart(4, '0')} ${nextMissing.name}")
                     }
                 }
@@ -228,7 +229,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                 items(filtered, key = { it.id }, contentType = { "pokemon" }) { p ->
                     val caught = p.id in captured
                     Card(
-                        Modifier.fillMaxWidth().aspectRatio(.78f).clickable { onPokemonClick(p.id) },
+                        Modifier.fillMaxWidth().aspectRatio(.78f).clickable { onPokemonClick(p.id, scope.source) },
                         shape = RoundedCornerShape(15.dp),
                         colors = CardDefaults.cardColors(containerColor = if (caught) Color(0xFFEAE8FB) else Color(0xFFF1F0F8))
                     ) {

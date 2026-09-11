@@ -55,6 +55,15 @@ fun JourneyScreen(
     var mapPanY by rememberSaveable { mutableFloatStateOf(0f) }
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
 
+    LaunchedEffect(selectedGame){
+        routeListState.scrollToItem(0)
+        mapSelectedStepId=null
+        mapSelectionInitialized=false
+        mapZoom=1f
+        mapPanX=0f
+        mapPanY=0f
+    }
+
     BackHandler(enabled=view!=JourneyView.GAMES){
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
@@ -324,7 +333,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     val revision=JourneyProgressStore.revision
     val steps=remember(game.label,revision){JourneyCatalog.steps(game.label)}
     val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
-    val completedCount=completed.size.coerceAtMost(steps.size)
+    val completedCount=DataIntegrityRules.completedCount(steps.map{it.id},completed)
     val progress=if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
     val nextStep=steps.firstOrNull{it.id !in completed}
     val smart=remember(game.label,revision){JourneySmartProgress.context(game.label)}
@@ -914,15 +923,17 @@ private fun JourneyMapScreen(
         }
     }
     val selected=steps.firstOrNull{it.id==selectedStepId}
+    val currentZoom by rememberUpdatedState(zoom)
+    val currentPan by rememberUpdatedState(pan)
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)){
         BoxWithConstraints(
             Modifier.fillMaxSize()
                 .pointerInput(game.label){
                     detectTransformGestures{_,panChange,zoomChange,_->
-                        val newZoom=(zoom*zoomChange).coerceIn(1f,3.5f)
+                        val newZoom=(currentZoom*zoomChange).coerceIn(1f,3.5f)
                         onZoomChange(newZoom)
-                        onPanChange(if(newZoom<=1.01f) Offset.Zero else pan+panChange)
+                        onPanChange(if(newZoom<=1.01f) Offset.Zero else currentPan+panChange)
                     }
                 }
         ){
