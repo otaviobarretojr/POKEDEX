@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DownloadForOffline
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material3.*
@@ -123,19 +124,30 @@ fun GamesHubScreen(onOpenGame:(String)->Unit){
                                     )
                                 }
                             }
-                            IconButton(
-                                enabled=!active && catalogGame!=null,
-                                onClick={
-                                    if(catalogGame==null) return@IconButton
-                                    OfflineGamePackManager.enqueue(game.title)
-                                    refreshToken++
+                            Column(horizontalAlignment=Alignment.CenterHorizontally){
+                                IconButton(
+                                    enabled=!active && catalogGame!=null,
+                                    onClick={
+                                        if(catalogGame==null) return@IconButton
+                                        OfflineGamePackManager.enqueue(game.title)
+                                        refreshToken++
+                                    }
+                                ){
+                                    Icon(
+                                        if(status.verified) Icons.Default.OfflinePin else Icons.Default.DownloadForOffline,
+                                        contentDescription=if(status.verified)"Atualizar dados offline" else "Baixar dados offline",
+                                        tint=if(status.verified) Color(0xFF2C8B65) else Color(0xFF5B55E7)
+                                    )
                                 }
-                            ){
-                                Icon(
-                                    if(status.verified) Icons.Default.OfflinePin else Icons.Default.DownloadForOffline,
-                                    contentDescription=if(status.verified)"Atualizar dados offline" else "Baixar dados offline",
-                                    tint=if(status.verified) Color(0xFF2C8B65) else Color(0xFF5B55E7)
-                                )
+                                if(status.pokemonCount>0 && !active){
+                                    IconButton(onClick={
+                                        OfflineGamePackManager.remove(game.title)
+                                        refreshToken++
+                                        message="Pacote offline de " + game.title + " removido."
+                                    }){
+                                        Icon(Icons.Default.DeleteForever,contentDescription="Remover pacote offline",tint=Color(0xFF9A4650))
+                                    }
+                                }
                             }
                         }
                         if(status.pokemonCount>0 && !active){
