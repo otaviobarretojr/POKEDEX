@@ -3,6 +3,7 @@ package com.otaviobarreto.pokedex.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,6 +16,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -65,20 +68,105 @@ private val qbGames=AppGameCatalog.games.map{game->
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(350);entries.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.capturedIds;val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
-  Row(Modifier.fillMaxWidth().padding(top=2.dp,bottom=2.dp),verticalAlignment=Alignment.CenterVertically){
-   Column(Modifier.weight(1f)){Text("BOX",fontSize=19.sp,lineHeight=19.sp,fontWeight=FontWeight.Black,color=QBink);Text(game.label,fontSize=9.sp,color=QBmuted,maxLines=1,overflow=TextOverflow.Ellipsis)}
-   Surface(shape=RoundedCornerShape(10.dp),color=game.accent.copy(alpha=.10f)){Text(region.label,Modifier.padding(horizontal=9.dp,vertical=4.dp),fontSize=10.sp,fontWeight=FontWeight.Bold,color=game.accent)}
+  Row(
+   Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
+   horizontalArrangement=Arrangement.spacedBy(5.dp)
+  ){
+   ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.18f)){
+    OutlinedTextField(
+     game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
+     readOnly=true,singleLine=true,label={Text("Jogo",fontSize=9.sp)},
+     textStyle=MaterialTheme.typography.bodySmall,
+     trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},
+     shape=RoundedCornerShape(12.dp)
+    )
+    ExposedDropdownMenu(gameMenu,{gameMenu=false}){
+     qbGames.forEach{g->
+      DropdownMenuItem(
+       text={Text(g.label,fontWeight=FontWeight.SemiBold)},
+       onClick={gameLabel=g.label;regionSource=g.regions.first().source;page=0;gameMenu=false}
+      )
+     }
+    }
+   }
+   ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.82f)){
+    OutlinedTextField(
+     region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
+     readOnly=true,singleLine=true,
+     label={Text(if(game.regions.size>1)"Região / DLC" else "Região",fontSize=9.sp)},
+     textStyle=MaterialTheme.typography.bodySmall,
+     trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},
+     shape=RoundedCornerShape(12.dp)
+    )
+    ExposedDropdownMenu(regionMenu,{regionMenu=false}){
+     game.regions.forEach{r->
+      DropdownMenuItem(
+       text={Column{
+        Text(r.label,fontWeight=FontWeight.SemiBold)
+        if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)
+       }},
+       onClick={regionSource=r.source;page=0;regionMenu=false}
+      )
+     }
+    }
+   }
   }
-  Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
-   ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.12f)){OutlinedTextField(game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=46.dp),readOnly=true,singleLine=true,label={Text("Jogo",fontSize=10.sp)},textStyle=MaterialTheme.typography.bodySmall,trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},shape=RoundedCornerShape(13.dp));ExposedDropdownMenu(gameMenu,{gameMenu=false}){qbGames.forEach{g->DropdownMenuItem({Text(g.label,fontWeight=FontWeight.SemiBold)},{gameLabel=g.label;regionSource=g.regions.first().source;page=0;gameMenu=false})}}}
-   ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.88f)){OutlinedTextField(region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=46.dp),readOnly=true,singleLine=true,label={Text(if(game.regions.size>1)"Região / DLC" else "Região",fontSize=10.sp)},textStyle=MaterialTheme.typography.bodySmall,trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},shape=RoundedCornerShape(13.dp));ExposedDropdownMenu(regionMenu,{regionMenu=false}){game.regions.forEach{r->DropdownMenuItem({Column{Text(r.label,fontWeight=FontWeight.SemiBold);if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)}},{regionSource=r.source;page=0;regionMenu=false})}}}
+  Row(
+   Modifier.fillMaxWidth().height(48.dp).padding(horizontal=4.dp),
+   verticalAlignment=Alignment.CenterVertically
+  ){
+   Column(Modifier.weight(1f)){
+    Text(
+     "Box "+(current+1)+" / "+pages,
+     fontSize=16.sp,
+     lineHeight=17.sp,
+     fontWeight=FontWeight.Black,
+     color=QBink
+    )
+    Text(
+     "Deslize para navegar entre as Boxes",
+     fontSize=8.5.sp,
+     color=QBmuted
+    )
+   }
+   Box(Modifier.size(42.dp),contentAlignment=Alignment.Center){
+    CircularProgressIndicator(
+     progress={progress.coerceIn(0f,1f)},
+     modifier=Modifier.fillMaxSize(),
+     strokeWidth=4.dp,
+     color=game.accent,
+     trackColor=game.accent.copy(alpha=.12f)
+    )
+    Column(horizontalAlignment=Alignment.CenterHorizontally){
+     Text(((progress*100).toInt()).toString()+"%",fontSize=8.5.sp,fontWeight=FontWeight.Black,color=game.accent)
+     Text(caught.toString()+"/"+dex.size,fontSize=6.5.sp,color=QBmuted)
+    }
+   }
   }
-  Row(Modifier.fillMaxWidth().height(40.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
-   FilledTonalIconButton({page=current-1},enabled=current>0,modifier=Modifier.size(36.dp)){Icon(Icons.Default.ChevronLeft,"Anterior")}
-   Column(horizontalAlignment=Alignment.CenterHorizontally){Text("Box "+(current+1)+" / "+pages,fontSize=14.sp,fontWeight=FontWeight.Black,color=QBink);Text(caught.toString()+" / "+dex.size+" capturados",fontSize=9.sp,color=game.accent)}
-   FilledTonalIconButton({page=current+1},enabled=current<pages-1,modifier=Modifier.size(36.dp)){Icon(Icons.Default.ChevronRight,"Próxima")}
-  }
-  Box(Modifier.weight(1f).fillMaxWidth()){
+  var dragTotal by remember { mutableFloatStateOf(0f) }
+  Box(
+   Modifier
+    .weight(1f)
+    .fillMaxWidth()
+    .pointerInput(current,pages,loading){
+     detectHorizontalDragGestures(
+      onDragStart={dragTotal=0f},
+      onHorizontalDrag={change,dragAmount->
+       change.consume()
+       dragTotal+=dragAmount
+      },
+      onDragEnd={
+       val threshold=90f
+       if(!loading){
+        if(dragTotal < -threshold && current < pages-1) page=current+1
+        else if(dragTotal > threshold && current > 0) page=current-1
+       }
+       dragTotal=0f
+      },
+      onDragCancel={dragTotal=0f}
+     )
+    }
+  ){
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
@@ -133,12 +221,18 @@ private fun QBSlot(
             AsyncImage(
                 model=pk.spriteUrl,
                 contentDescription=pk.name,
-                modifier=Modifier.fillMaxSize().padding(horizontal=1.dp,vertical=8.dp).alpha(if(captured)1f else .22f),
+                modifier=Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(.78f)
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal=2.dp,vertical=2.dp)
+                    .alpha(if(captured)1f else .22f),
+                contentScale=ContentScale.Fit,
                 colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)})
             )
             Surface(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                color=Color.White.copy(alpha=.84f)
+                color=Color.White.copy(alpha=.90f)
             ){
                 Column(
                     Modifier.padding(vertical=2.dp,horizontal=1.dp),
