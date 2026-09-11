@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.5"' not in workflow or "versionCode = 635" not in workflow:
-    violations.append("CI v6.3.5 version stamping missing")
+if 'versionName = "6.3.6"' not in workflow or "versionCode = 636" not in workflow:
+    violations.append("CI v6.3.6 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -312,6 +312,20 @@ collection = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/Collectio
 for required in ("fun setCaptured", "affected = boxes.filterValues", "toggleCaptured(id: Int) = setCaptured"):
     if required not in collection:
         violations.append(f"Persistent capture state missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+for required in ("resolveSaveLocation", "Box "+(index/30+1)", "saveLocation.boxLabel"):
+    if required not in detail:
+        violations.append(f"Detail save-location resolver missing {required}")
+if 'SectionCard("Coleção"' in detail:
+    violations.append("Collection card must stay hidden from Info tab")
 
 if violations:
     print("Source verification failed:")
