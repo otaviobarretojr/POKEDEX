@@ -27,7 +27,8 @@ fun HomeDashboardScreen(
     onOpenTeams:()->Unit,
     onOpenBoxes:()->Unit,
     onOpenCompanion:()->Unit,
-    onOpenGame:(String)->Unit
+    onOpenGame:(String)->Unit,
+    onContinue:(String)->Unit
 ){
     val dex=PokedexDataStore.cachedNationalDex().orEmpty()
     val captured=CollectionStore.capturedIds
@@ -65,6 +66,18 @@ fun HomeDashboardScreen(
                     Spacer(Modifier.height(10.dp))
                     LinearProgressIndicator(progress={progress},modifier=Modifier.fillMaxWidth())
                     Text(captured.size.toString()+" / "+nationalTotal+" na Living Dex",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
+                }
+            }
+        }
+        item{
+            Card(Modifier.fillMaxWidth().clickable{onContinue(RecentActivityStore.lastRoute)},shape=RoundedCornerShape(20.dp)){
+                Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+                    Icon(Icons.Default.History,null)
+                    Column(Modifier.weight(1f).padding(start=10.dp)){
+                        Text("Continuar de onde parei",fontWeight=FontWeight.Bold)
+                        Text(RecentActivityStore.lastRoute.replaceFirstChar{it.uppercase()},style=MaterialTheme.typography.bodySmall)
+                    }
+                    Icon(Icons.Default.ChevronRight,null)
                 }
             }
         }
