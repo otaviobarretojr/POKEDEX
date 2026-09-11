@@ -306,8 +306,6 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
         nextStep?.let{step->
             val prep=JourneyPreparationCatalog.forStep(step.id)
             val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
-    val preparation=JourneyPreparationCatalog.forStep(step.id)
-    val national=PokedexDataStore.cachedNationalDex().orEmpty()
             item{
                 Card(
                     shape=RoundedCornerShape(20.dp),
@@ -512,7 +510,7 @@ private fun JourneyStepCard(
                     Modifier.fillMaxWidth().padding(top=10.dp),
                     horizontalArrangement=Arrangement.spacedBy(8.dp)
                 ){
-                    JourneyInfoChip(Icons.Default.Category,step.typeLabel)
+                    JourneyTypeChip(step.typeLabel)
                     JourneyInfoChip(Icons.Default.LocationOn,step.location,Modifier.weight(1f))
                 }
 
@@ -623,7 +621,7 @@ private fun JourneyObjectiveDetailScreen(
                             Text(step.levelLabel,Modifier.padding(horizontal=10.dp,vertical=6.dp),fontWeight=FontWeight.Bold)
                         }
                     }
-                    JourneyDetailLine(Icons.Default.Category,"Tipo",step.typeLabel)
+                    JourneyTypeDetailLine(step.typeLabel)
                     JourneyDetailLine(Icons.Default.LocationOn,"Local",step.location)
                     Text(detail?.summary ?: step.note,style=MaterialTheme.typography.bodyMedium)
                 }
@@ -791,8 +789,18 @@ private fun JourneyMapScreen(
             colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)
         ){
             BoxWithConstraints(Modifier.fillMaxSize().padding(12.dp)){
-                Box(
+                JourneyMapCatalog.backgroundUrl(game.label)?.let{mapUrl->
+                    AsyncImage(
+                        model=mapUrl,
+                        contentDescription="Mapa oficial de Paldea",
+                        contentScale=ContentScale.Fit,
+                        modifier=Modifier.fillMaxSize().clip(RoundedCornerShape(22.dp))
+                    )
+                } ?: Box(
                     Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.22f),RoundedCornerShape(22.dp))
+                )
+                Box(
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha=.08f),RoundedCornerShape(22.dp))
                 )
                 points.forEach{point->
                     val step=steps.firstOrNull{it.id==point.stepId} ?: return@forEach
@@ -822,7 +830,7 @@ private fun JourneyMapScreen(
                 }
             }
         }
-        Text("Mapa esquemático da campanha principal de Paldea. Pós-jogo e DLCs seguem pela rota completa acima.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
+        Text("Mapa oficial de Paldea com os 18 objetivos principais posicionados por região. Toque em um ponto para abrir o objetivo.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
     }
 }
 
@@ -874,5 +882,40 @@ private fun JourneyVisualHero(asset:JourneyVisualAsset){
                 )
             }
         }
+    }
+}
+
+
+@Composable
+private fun JourneyTypeChip(typeLabel:String){
+    Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface){
+        Row(Modifier.padding(horizontal=8.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
+            JourneyTypeIconCatalog.iconUrl(typeLabel)?.let{url->
+                AsyncImage(
+                    model=url,
+                    contentDescription=typeLabel,
+                    contentScale=ContentScale.Fit,
+                    modifier=Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(5.dp))
+            }
+            Text(typeLabel,style=MaterialTheme.typography.labelSmall,maxLines=1)
+        }
+    }
+}
+
+@Composable
+private fun JourneyTypeDetailLine(typeLabel:String){
+    Row(verticalAlignment=Alignment.CenterVertically){
+        JourneyTypeIconCatalog.iconUrl(typeLabel)?.let{url->
+            AsyncImage(
+                model=url,
+                contentDescription=typeLabel,
+                contentScale=ContentScale.Fit,
+                modifier=Modifier.size(22.dp)
+            )
+        } ?: Icon(Icons.Default.Category,null,Modifier.size(17.dp))
+        Text("Tipo:",Modifier.padding(start=7.dp),fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.bodySmall)
+        Text(typeLabel,Modifier.padding(start=5.dp),style=MaterialTheme.typography.bodySmall)
     }
 }
