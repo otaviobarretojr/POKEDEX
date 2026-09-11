@@ -45,7 +45,7 @@ fun CompanionHubScreen(
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var gameProgress by remember { mutableStateOf<List<GameProgress>>(emptyList()) }
     var loadingProgress by remember { mutableStateOf(false) }
-    var plannerGame by remember { mutableStateOf(AppGameCatalog.games.first().label) }
+    var plannerGame by remember { mutableStateOf(CompanionPreferences.activeGame) }
     var plannerPlan by remember { mutableStateOf<CapturePlan?>(null) }
     var plannerLoading by remember { mutableStateOf(false) }
     var plannerMenu by remember { mutableStateOf(false) }
@@ -112,6 +112,7 @@ fun CompanionHubScreen(
         item {
             Text("COMPANION",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
             Text("Busca, captura, progresso e backup em um só lugar.",style=MaterialTheme.typography.bodyMedium)
+            AssistChip(onClick={},label={Text("Jogo ativo · "+plannerGame)},leadingIcon={Icon(Icons.Default.SportsEsports,null)})
         }
         item {
             Card(shape=RoundedCornerShape(22.dp)){
@@ -203,7 +204,7 @@ fun CompanionHubScreen(
             ExposedDropdownMenuBox(expanded=plannerMenu,onExpandedChange={plannerMenu=!plannerMenu},modifier=Modifier.fillMaxWidth().padding(top=8.dp)){
                 OutlinedTextField(plannerGame,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(plannerMenu)})
                 ExposedDropdownMenu(plannerMenu,{plannerMenu=false}){
-                    AppGameCatalog.games.forEach{game->DropdownMenuItem({Text(game.label)},{plannerGame=game.label;plannerMenu=false})}
+                    AppGameCatalog.games.forEach{game->DropdownMenuItem({Text(game.label)},{plannerGame=game.label;CompanionPreferences.activeGame=game.label;plannerMenu=false})}
                 }
             }
         }
@@ -214,6 +215,7 @@ fun CompanionHubScreen(
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         Text(plan.game,fontWeight=FontWeight.Bold)
                         Text(plan.obtainableMissing.size.toString()+" faltantes disponíveis neste jogo",color=MaterialTheme.colorScheme.primary)
+                        Text("Próximo alvo: "+(plan.obtainableMissing.firstOrNull()?.name ?: "Living Dex concluída neste jogo"),fontWeight=FontWeight.SemiBold)
                         Text(plan.externalMissing.size.toString()+" faltantes dependem de outros jogos/trocas/HOME",style=MaterialTheme.typography.bodySmall)
                     }
                 }

@@ -6,12 +6,15 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
+enum class CapturePlanCategory { AVAILABLE_HERE, OTHER_GAME_OR_TRADE, ALREADY_OWNED }
+data class CapturePlanStep(val pokemon: PokeApiService.DexIndexEntry, val category: CapturePlanCategory, val priority: Int)
 data class CapturePlan(
     val game: String,
     val obtainableMissing: List<PokeApiService.DexIndexEntry>,
     val externalMissing: List<PokeApiService.DexIndexEntry>,
     val alreadyCaptured: Int,
-    val supportedTotal: Int
+    val supportedTotal: Int,
+    val steps: List<CapturePlanStep> = emptyList()
 )
 
 object CapturePlannerService {
@@ -30,12 +33,16 @@ object CapturePlannerService {
             }.awaitAll().flatten().toSet()
         }
         val missing = dex.filter { it.id !in CollectionStore.capturedIds }
+        val obtainable = missing.filter { it.id in availableIds }
+        val external = missing.filter { it.id !in availableIds }
         CapturePlan(
             game = gameLabel,
-            obtainableMissing = missing.filter { it.id in availableIds },
-            externalMissing = missing.filter { it.id !in availableIds },
+            obtainableMissing = obtainable,
+            externalMissing = external,
             alreadyCaptured = dex.count { it.id in CollectionStore.capturedIds },
-            supportedTotal = dex.size
+            supportedTotal = dex.size,
+            steps = obtainable.mapIndexed { index, p -> CapturePlanStep(p, CapturePlanCategory.AVAILABLE_HERE, index + 1) } +
+                external.mapIndexed { index, p -> CapturePlanStep(p, CapturePlanCategory.OTHER_GAME_OR_TRADE, obtainable.size + index + 1) }
         )
     }
 }

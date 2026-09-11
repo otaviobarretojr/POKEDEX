@@ -41,7 +41,7 @@ if violations:
 print("Source verification passed.")
 
 
-# v4.0 release guards
+# v5.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 if "PACK_VERSION = 4" not in offline:
     violations.append("Offline pack version is not v4")
@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "4.0.0"' not in workflow or "versionCode = 400" not in workflow:
-    violations.append("CI v4.0 version stamping missing")
+if 'versionName = "5.0.0"' not in workflow or "versionCode = 500" not in workflow:
+    violations.append("CI v5.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -98,6 +98,30 @@ companion = (ui / "CompanionHubScreen.kt").read_text(encoding="utf-8")
 for required in ("Planejador de captura", "smartSearchTerm", "Você já tem este Pokémon"):
     if required not in companion:
         violations.append(f"Companion Intelligence missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+prefs = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CompanionPreferences.kt").read_text(encoding="utf-8")
+if "activeGame" not in prefs:
+    violations.append("Persistent active game context missing")
+
+collection = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt").read_text(encoding="utf-8")
+for required in ("unboxedCapturedIds", "moveMany", "sortBox"):
+    if required not in collection:
+        violations.append(f"Box 3.0 missing {required}")
+
+living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
+if "DUPLICATES" not in living:
+    violations.append("Living Dex duplicate intelligence missing")
+
+backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
+if '.put("version", 5)' not in backup or "activeGame" not in backup:
+    violations.append("Backup v5 context missing")
 
 if violations:
     print("Source verification failed:")

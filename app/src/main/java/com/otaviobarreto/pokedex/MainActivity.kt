@@ -21,6 +21,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.CompanionPreferences
 import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.ui.*
 
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CollectionStore.initialize(this)
         TeamStore.initialize(this)
+        CompanionPreferences.initialize(this)
         setContent { PokedexTheme { PokedexRoot() } }
     }
 }
