@@ -90,8 +90,6 @@ object OfflineGamePackManager {
         return PackAudit(valid, completed, expected, current, regions, pinned, resources.size, cachedImages, ids.size)
     }
 
-    fun repair(gameLabel: String) = enqueue(gameLabel)
-
     fun manifestIds(gameLabel: String): Set<Int> =
         prefs().getStringSet(key(gameLabel, "manifest_ids"), emptySet()).orEmpty()
             .mapNotNull { it.toIntOrNull() }.toSet()
