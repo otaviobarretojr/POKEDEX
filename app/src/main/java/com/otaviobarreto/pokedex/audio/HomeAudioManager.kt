@@ -24,6 +24,7 @@ object HomeAudioManager {
     private var appContext: Context? = null
     private var player: MediaPlayer? = null
     private var currentScene: HomeAudioScene? = null
+    private var loadedScene: HomeAudioScene? = null
     private var appInForeground = true
 
     fun initialize(context: Context) {
@@ -64,10 +65,13 @@ object HomeAudioManager {
     }
 
     fun playScene(scene: HomeAudioScene, restart: Boolean = false) {
-        val previousScene = currentScene
         currentScene = scene
-        if (!enabled || !appInForeground) return
-        if (!restart && player != null && player?.isPlaying == true && previousScene == scene) return
+        if (!enabled) return
+        if (!appInForeground) {
+            if (loadedScene != scene) releasePlayer(clearScene = false)
+            return
+        }
+        if (!restart && player != null && player?.isPlaying == true && loadedScene == scene) return
 
         releasePlayer(clearScene = false)
         val context = appContext ?: return
@@ -93,6 +97,7 @@ object HomeAudioManager {
                 start()
             }
         }.getOrNull()
+        loadedScene = if (player != null) scene else null
         descriptor.close()
     }
 
@@ -107,10 +112,10 @@ object HomeAudioManager {
         appInForeground = true
         if (!enabled) return
         val active = player
-        if (active != null) {
+        if (active != null && loadedScene == currentScene) {
             runCatching { active.start() }
         } else {
-            currentScene?.let(::playScene)
+            currentScene?.let { playScene(it, restart = true) }
         }
     }
 
@@ -124,6 +129,7 @@ object HomeAudioManager {
         runCatching { player?.reset() }
         runCatching { player?.release() }
         player = null
+        loadedScene = null
         if (clearScene) currentScene = null
     }
 
