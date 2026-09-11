@@ -12,7 +12,7 @@ object GameCoverCatalog {
 
     private val covers = mapOf(
         "Pokémon Legends: Z-A" to listOf(
-            "https://legends.pokemon.com/_next/image?q=75&url=%2Fimages%2Fbox-art%2Fpoke-legends-box-art-NS-UKV-2x.png&w=640"
+            "https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png"
         ),
         "Scarlet / Violet" to listOf(
             "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053966/849c234de8df7265201d26d9d72f88eed3f32438d3dca12fc135beb4c3befc85",
