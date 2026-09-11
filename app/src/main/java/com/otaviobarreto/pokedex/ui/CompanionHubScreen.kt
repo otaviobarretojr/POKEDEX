@@ -44,6 +44,7 @@ fun CompanionHubScreen(
     var selectedPokemon by remember { mutableStateOf<Int?>(null) }
     var availability by remember { mutableStateOf<List<CaptureAvailability>>(emptyList()) }
     var loadingGuide by remember { mutableStateOf(false) }
+    var forms by remember { mutableStateOf<List<PokemonFormVariant>>(emptyList()) }
     var backupText by remember { mutableStateOf("") }
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var gameProgress by remember { mutableStateOf<List<GameProgress>>(emptyList()) }
@@ -51,6 +52,7 @@ fun CompanionHubScreen(
     var plannerGame by remember { mutableStateOf(CompanionPreferences.activeGame) }
     var plannerPlan by remember { mutableStateOf<CapturePlan?>(null) }
     var plannerLoading by remember { mutableStateOf(false) }
+    var routeGroups by remember { mutableStateOf<List<CaptureRouteGroup>>(emptyList()) }
     var plannerMenu by remember { mutableStateOf(false) }
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
@@ -111,13 +113,23 @@ fun CompanionHubScreen(
     LaunchedEffect(selectedPokemon){
         val id=selectedPokemon ?: return@LaunchedEffect
         loadingGuide=true
-        availability=CaptureGuideService.find(id)
+        coroutineScope {
+            val guideJob=async{CaptureGuideService.find(id)}
+            val formsJob=async{runCatching{withContext(Dispatchers.IO){PokemonFormsService.load(id)}}.getOrDefault(emptyList())}
+            availability=guideJob.await()
+            forms=formsJob.await()
+        }
         loadingGuide=false
     }
 
     LaunchedEffect(plannerGame){
         plannerLoading=true
-        plannerPlan=CapturePlannerService.build(plannerGame)
+        coroutineScope {
+            val planJob=async{CapturePlannerService.build(plannerGame)}
+            val routeJob=async{CaptureRouteService.build(plannerGame)}
+            plannerPlan=planJob.await()
+            routeGroups=routeJob.await()
+        }
         plannerLoading=false
     }
 
@@ -194,6 +206,16 @@ fun CompanionHubScreen(
                 }
             }
             if(loadingGuide)item{LinearProgressIndicator(Modifier.fillMaxWidth())}
+            if(forms.size>1)item{
+                Card(Modifier.fillMaxWidth()){
+                    Column(Modifier.fillMaxWidth().padding(12.dp)){
+                        Text("Formas e variantes",fontWeight=FontWeight.Bold)
+                        forms.forEach{form->
+                            Text((if(form.isDefault)"• Principal · " else "• ")+form.name,style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
             if(!loadingGuide && availability.isEmpty()) item { Text("Nenhuma disponibilidade regional encontrada para #"+id+".") }
             items(availability,key={it.source}){entry->
                 Card(Modifier.fillMaxWidth().clickable{onOpenGame(entry.source)}){
@@ -231,6 +253,22 @@ fun CompanionHubScreen(
                         Text(plan.obtainableMissing.size.toString()+" faltantes disponíveis neste jogo",color=MaterialTheme.colorScheme.primary)
                         Text("Próximo alvo: "+(plan.obtainableMissing.firstOrNull()?.name ?: "Living Dex concluída neste jogo"),fontWeight=FontWeight.SemiBold)
                         Text(plan.externalMissing.size.toString()+" faltantes dependem de outros jogos/trocas/HOME",style=MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            if(routeGroups.isNotEmpty()){
+                item { Text("Rota por região",fontWeight=FontWeight.Bold) }
+                items(routeGroups,key={"route-"+it.source}){group->
+                    Card(Modifier.fillMaxWidth().clickable{onOpenGame(group.source)}){
+                        Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                            Icon(Icons.Default.Route,null)
+                            Column(Modifier.weight(1f).padding(start=10.dp)){
+                                Text(group.region,fontWeight=FontWeight.SemiBold)
+                                Text(group.pokemon.size.toString()+" faltantes nesta região",style=MaterialTheme.typography.bodySmall)
+                                Text(group.pokemon.take(4).joinToString(" · "){it.name},style=MaterialTheme.typography.labelSmall)
+                            }
+                            Icon(Icons.Default.ChevronRight,null)
+                        }
                     }
                 }
             }
