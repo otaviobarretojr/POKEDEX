@@ -23,9 +23,11 @@ import com.otaviobarreto.pokedex.data.*
 @Composable
 fun CampaignTeamGuideScreen(
     onBackToMyTeams:()->Unit,
-    onPokemonClick:(Int)->Unit
+    onPokemonClick:(Int)->Unit,
+    initialGame:String?=null
 ){
-    var game by remember { mutableStateOf(CompanionPreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames} ?: TeamCampaignCatalog.switchGames.first()) }
+    val initial=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames} ?: CompanionPreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames} ?: TeamCampaignCatalog.switchGames.first()
+    var game by remember(initial) { mutableStateOf(initial) }
     var starterId by remember(game) { mutableIntStateOf(TeamCampaignCatalog.starters(game).first().second) }
     var phase by remember { mutableStateOf(CampaignPhase.EARLY) }
     var gameMenu by remember { mutableStateOf(false) }
