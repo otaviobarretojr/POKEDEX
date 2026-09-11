@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.9.0"' not in workflow or "versionCode = 690" not in workflow:
-    violations.append("CI v6.9.0 version stamping missing")
+if 'versionName = "6.9.1"' not in workflow or "versionCode = 691" not in workflow:
+    violations.append("CI v6.9.1 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -542,6 +542,27 @@ for required in ("THE TEAL MASK","THE INDIGO DISK","MOCHI MAYHEM"):
         violations.append(f"Journey section header missing {required}")
 if "The Teal Mask" not in smart or "The Indigo Disk" not in smart or "Mochi Mayhem" not in smart:
     violations.append("Smart progress is not DLC-aware")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.9.1 Journey visual audit guards
+journey_visual_catalog=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
+journey_map=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
+journey_ui=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/img_01.jpg","230112_07/img_01.jpg"):
+    if required not in journey_visual_catalog:
+        violations.append(f"Validated official Journey artwork missing {required}")
+if "story_img_01.jpg" not in journey_map or "backgroundUrl" not in journey_map:
+    violations.append("Official Paldea map background missing")
+if "Mapa oficial de Paldea" not in journey_ui:
+    violations.append("Official Paldea map is not rendered in Journey")
+if not (root/"scripts/audit_journey_visuals.py").exists():
+    violations.append("Journey visual URL audit script missing")
 
 if violations:
     print("Source verification failed:")
