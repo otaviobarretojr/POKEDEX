@@ -47,7 +47,7 @@ if "PACK_VERSION = 7" not in offline:
     violations.append("Offline pack version is not v7")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
-if ".crossfade(false)" not in app or "256L * 1024L * 1024L" not in app:
+if ".crossfade(false)" not in app or "384L * 1024L * 1024L" not in app:
     violations.append("Image engine v2 tuning missing")
 
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
