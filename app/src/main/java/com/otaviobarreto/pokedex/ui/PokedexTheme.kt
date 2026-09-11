@@ -30,7 +30,7 @@ private val PokedexLightColors = lightColorScheme(
 fun PokedexTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = PokedexLightColors,
-        typography = PokedexDesignTokens.Typography,
+        typography = PokedexDesignTokens.AppTypography,
         shapes = PokedexDesignTokens.Shapes,
         content = content
     )
