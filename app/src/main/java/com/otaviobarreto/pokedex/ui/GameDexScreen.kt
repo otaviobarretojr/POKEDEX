@@ -64,8 +64,9 @@ fun GameDexScreen(
     onOpenRegionExplorer: (String) -> Unit
 ) {
     val context = remember(source) { GameContext.fromSource(source) }
-    var entries by remember(source) { mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList()) }
-    var loading by remember(source) { mutableStateOf(true) }
+    val cachedEntries = remember(source, context) { context?.let(GameDexService::cached).orEmpty() }
+    var entries by remember(source) { mutableStateOf(cachedEntries) }
+    var loading by remember(source) { mutableStateOf(cachedEntries.isEmpty()) }
     var error by remember(source) { mutableStateOf<String?>(null) }
     var query by remember { mutableStateOf("") }
     var onlyMissing by remember { mutableStateOf(false) }
@@ -76,13 +77,14 @@ fun GameDexScreen(
             error = "Este contexto não está vinculado a um jogo reconhecido."
             loading = false
         } else {
+            if (entries.isEmpty()) loading = true
             runCatching {
                 withContext(Dispatchers.IO) { GameDexService.loadGameDex(game) }
             }.onSuccess {
                 entries = it
                 loading = false
             }.onFailure {
-                error = "Não foi possível carregar a Pokédex desta região."
+                if (entries.isEmpty()) error = "Não foi possível carregar a Pokédex desta região."
                 loading = false
             }
         }
