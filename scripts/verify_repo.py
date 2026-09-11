@@ -602,7 +602,7 @@ for forbidden in ('"Pokédex"','"Living Dex"','"Companion"'):
 for required in ('MainDestination("home","Jornada"','MainDestination("boxes","Boxes"'):
     if required not in main_line:
         violations.append(f"Primary navigation missing {required}")
-for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.capturedIds","onOpenBoxes"):
+for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.contextualCapturedIds","onOpenBoxes"):
     if required not in journey_v611:
         violations.append(f"Journey/Boxes consolidation missing {required}")
 for required in ("CompanionPreferences.activeGame","CompanionPreferences.setActiveRegionForGame"):
