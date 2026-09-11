@@ -325,7 +325,7 @@ for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
 for required in ("completed", "toggle", "clear"):
     if required not in journey_progress:
         violations.append(f"Journey progress persistence missing {required}")
-if 'MainDestination("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in main:
+if 'MainDestination("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in application_source:
     violations.append("Journey is not wired as the primary tab")
 
 if violations:
