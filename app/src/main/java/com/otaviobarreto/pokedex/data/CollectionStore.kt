@@ -259,12 +259,8 @@ object CollectionStore {
     }.getOrDefault(false)
 
     private fun syncCapturedFromBoxes(id: Int) {
-        val boxed = boxes.values.any { id in it }
-        val contextual = contextualCapturedIds.values.any { id in it }
-        if (!boxed && !contextual && id in capturedIds) {
-            capturedIds = capturedIds - id
-            persistCaptured()
-        } else if ((boxed || contextual) && id !in capturedIds) {
+        val referenced = boxes.values.any { id in it } || contextualCapturedIds.values.any { id in it }
+        if (referenced && id !in capturedIds) {
             capturedIds = capturedIds + id
             persistCaptured()
         }
