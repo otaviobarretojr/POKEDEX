@@ -272,7 +272,6 @@ private fun QBGrid(
     }
 }
 
-@Composable
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun QBSlot(
