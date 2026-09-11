@@ -30,11 +30,25 @@ object RecentActivityStore {
     }
 
     fun recordRoute(route: String) {
-        if (route.isBlank()) return
+        if (route.isBlank() || route == "home") return
         lastRoute = route
         context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()
             ?.putString(KEY_ROUTE, route)?.apply()
     }
+
+    fun exportSnapshot(): org.json.JSONObject = org.json.JSONObject()
+        .put("pokemon", JSONArray(recentPokemon))
+        .put("lastRoute", lastRoute)
+
+    fun importSnapshot(snapshot: org.json.JSONObject): Boolean = runCatching {
+        recentPokemon = decode(snapshot.optJSONArray("pokemon")?.toString() ?: "[]").take(20)
+        lastRoute = snapshot.optString("lastRoute", "pokedex").ifBlank { "pokedex" }
+        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()
+            ?.putString(KEY_POKEMON, JSONArray(recentPokemon).toString())
+            ?.putString(KEY_ROUTE, lastRoute)
+            ?.apply()
+        true
+    }.getOrDefault(false)
 
     private fun decode(raw: String): List<Int> = runCatching {
         val a = JSONArray(raw)
