@@ -43,8 +43,8 @@ print("Source verification passed.")
 
 # v6.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 5" not in offline:
-    violations.append("Offline pack version is not v5")
+if "PACK_VERSION = 6" not in offline:
+    violations.append("Offline pack version is not v6")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 if ".crossfade(false)" not in app or "256L * 1024L * 1024L" not in app:
@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.1.0"' not in workflow or "versionCode = 610" not in workflow:
-    violations.append("CI v6.1 version stamping missing")
+if 'versionName = "6.2.0"' not in workflow or "versionCode = 620" not in workflow:
+    violations.append("CI v6.2 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -168,7 +168,7 @@ if violations:
 
 
 team_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/TeamCampaignCatalog.kt").read_text(encoding="utf-8")
-for required in ("Let's Go Pikachu / Eevee", "Sword / Shield", "Brilliant Diamond / Shining Pearl", "Legends Arceus", "Scarlet / Violet", "Legends Z-A"):
+for required in ("Let's Go Pikachu / Eevee", "Sword / Shield", "Brilliant Diamond / Shining Pearl", "Legends Arceus", "Scarlet / Violet", "Pokémon Legends: Z-A"):
     if required not in team_catalog:
         violations.append(f"Switch campaign guide missing {required}")
 
@@ -183,6 +183,30 @@ for required in ("Início", "Mid game", "Late game"):
 team_builder = (ui / "TeamBuilderScreen.kt").read_text(encoding="utf-8")
 if "CampaignTeamGuideScreen" not in team_builder:
     violations.append("Campaign guide not integrated into My Team")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppGameCatalog.kt").read_text(encoding="utf-8")
+for required in ("Pokémon Legends: Z-A", "FireRed / LeafGreen", "Pokémon Champions", "Scarlet / Violet", "Sword / Shield", "Let's Go Pikachu / Eevee", "Legends Arceus", "Brilliant Diamond / Shining Pearl"):
+    if required not in catalog:
+        violations.append(f"Switch catalog missing {required}")
+for legacy in ("Black / White", "X / Y", "Omega Ruby / Alpha Sapphire"):
+    if legacy in catalog:
+        violations.append(f"Legacy non-Switch title still in primary catalog: {legacy}")
+
+contexts = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/GameContext.kt").read_text(encoding="utf-8")
+for slug in ("lumiose-city", "hyperspace", "kanto", "champions"):
+    if slug not in contexts:
+        violations.append(f"Switch GameContext missing {slug}")
+
+games_hub = (ui / "GamesHubScreen.kt").read_text(encoding="utf-8")
+if "AppGameCatalog.games.map" not in games_hub:
+    violations.append("Games Hub is not derived from central catalog")
 
 if violations:
     print("Source verification failed:")
