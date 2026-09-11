@@ -90,16 +90,123 @@ private val qbGames=AppGameCatalog.games.map{game->
  if(search)QBSearch(dex,CollectionStore.capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
 }}
 
-@Composable private fun QBStat(value:String,label:String,modifier:Modifier,color:Color=QBink){Column(modifier,horizontalAlignment=Alignment.CenterHorizontally){Text(value,fontWeight=FontWeight.Black,fontSize=12.sp,color=color);Text(label,fontSize=8.sp,color=QBmuted,maxLines=1)}}
+@Composable
+private fun QBGrid(
+    entries:List<GameDexService.GameDexEntry>,
+    captured:Set<Int>,
+    open:(GameDexService.GameDexEntry)->Unit
+){
+    Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(2.dp)){
+        repeat(5){row->
+            Row(Modifier.weight(1f).fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(2.dp)){
+                repeat(6){col->
+                    val pk=entries.getOrNull(row*6+col)
+                    if(pk==null){
+                        Surface(Modifier.weight(1f).fillMaxHeight(),RoundedCornerShape(9.dp),color=QBsurface){}
+                    }else{
+                        QBSlot(
+                            pk=pk,
+                            captured=pk.nationalId in captured,
+                            open={open(pk)},
+                            modifier=Modifier.weight(1f).fillMaxHeight()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable private fun QBGrid(entries:List<GameDexService.GameDexEntry>,boxed:Set<Int>,selected:Set<Int>,selectionMode:Boolean,open:(GameDexService.GameDexEntry)->Unit,longPress:(GameDexService.GameDexEntry)->Unit){Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(4.dp)){repeat(5){r->Row(Modifier.weight(1f).fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){repeat(6){col->val pk=entries.getOrNull(r*6+col);if(pk==null)Surface(Modifier.weight(1f).fillMaxHeight(),RoundedCornerShape(11.dp),color=QBsurface){}else Box(Modifier.weight(1f).fillMaxHeight()){QBSlot(pk,pk.nationalId in boxed,pk.nationalId in selected,selectionMode,{open(pk)},{longPress(pk)})}}}}}}
+@Composable
+private fun QBSlot(
+    pk:GameDexService.GameDexEntry,
+    captured:Boolean,
+    open:()->Unit,
+    modifier:Modifier=Modifier
+){
+    Surface(
+        modifier.clickable(onClick=open),
+        shape=RoundedCornerShape(9.dp),
+        color=if(captured)Color(0xFFEAE6FA)else QBsurface
+    ){
+        Box(Modifier.fillMaxSize()){
+            AsyncImage(
+                model=pk.spriteUrl,
+                contentDescription=pk.name,
+                modifier=Modifier.fillMaxSize().padding(horizontal=1.dp,vertical=8.dp).alpha(if(captured)1f else .22f),
+                colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)})
+            )
+            Surface(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                color=Color.White.copy(alpha=.84f)
+            ){
+                Column(
+                    Modifier.padding(vertical=2.dp,horizontal=1.dp),
+                    horizontalAlignment=Alignment.CenterHorizontally
+                ){
+                    Text(
+                        pretty(pk.name),
+                        fontSize=7.5.sp,
+                        lineHeight=8.sp,
+                        maxLines=1,
+                        overflow=TextOverflow.Ellipsis,
+                        color=if(captured)QBink else QBmuted
+                    )
+                    Text(
+                        "#"+pk.gameNumber.toString().padStart(3,'0'),
+                        fontSize=7.sp,
+                        lineHeight=7.sp,
+                        color=QBmuted
+                    )
+                }
+            }
+        }
+    }
+}
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable private fun QBSlot(pk:GameDexService.GameDexEntry,captured:Boolean,selected:Boolean,selectionMode:Boolean,open:()->Unit,longPress:()->Unit){val haptic=LocalHapticFeedback.current;Surface(Modifier.fillMaxSize().combinedClickable(onClick=open,onLongClick={haptic.performHapticFeedback(HapticFeedbackType.LongPress);longPress()}),shape=RoundedCornerShape(11.dp),color=if(selected)Color(0xFFD7D2FF)else if(captured)Color(0xFFEAE6FA)else QBsurface){Column(Modifier.fillMaxSize().padding(2.dp),horizontalAlignment=Alignment.CenterHorizontally){AsyncImage(pk.spriteUrl,pk.name,Modifier.weight(1f).fillMaxWidth(.94f).alpha(if(captured)1f else .24f),colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)}));Text(pretty(pk.name),fontSize=8.sp,lineHeight=8.sp,maxLines=1,overflow=TextOverflow.Ellipsis,color=if(captured)QBink else QBmuted);Text("#${pk.gameNumber.toString().padStart(3,'0')}",fontSize=8.sp,color=QBmuted)}}}
+@Composable
+private fun QBSearch(
+    dex:List<GameDexService.GameDexEntry>,
+    captured:Set<Int>,
+    dismiss:()->Unit,
+    select:(GameDexService.GameDexEntry)->Unit,
+    open:(GameDexService.GameDexEntry)->Unit
+){
+    var q by remember{mutableStateOf("")}
+    val key=q.trim().removePrefix("#")
+    val results=if(key.isBlank()) emptyList() else dex.filter{
+        it.name.contains(key,true)||it.gameNumber.toString()==key||it.nationalId.toString()==key
+    }.take(10)
 
-@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QBQuickDialog(pk:GameDexService.GameDexEntry,inBox:Boolean,currentBox:String,destinations:List<String>,dismiss:()->Unit,confirm:()->Unit,move:(String)->Unit){var target by remember(currentBox){mutableStateOf(destinations.firstOrNull{it!=currentBox}?:currentBox)};var menu by remember{mutableStateOf(false)};AlertDialog(onDismissRequest=dismiss,icon={AsyncImage(pk.spriteUrl,pk.name,Modifier.size(96.dp))},title={Text(pretty(pk.name),fontWeight=FontWeight.Bold)},text={Column{Text(if(inBox)"Este Pokémon está em "+currentBox+"." else "Adicionar este Pokémon em "+currentBox+"?");if(inBox&&destinations.size>1){Spacer(Modifier.height(10.dp));ExposedDropdownMenuBox(menu,{menu=!menu}){OutlinedTextField(target,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Mover para")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(menu)});ExposedDropdownMenu(menu,{menu=false}){destinations.filter{it!=currentBox}.forEach{box->DropdownMenuItem({Text(box)},{target=box;menu=false})}}};Button({move(target)},Modifier.fillMaxWidth().padding(top=8.dp)){Icon(Icons.Default.DriveFileMove,null);Spacer(Modifier.width(6.dp));Text("Mover")}}}},confirmButton={Button(confirm){Icon(if(inBox)Icons.Default.RemoveCircleOutline else Icons.Default.AddCircle,null);Spacer(Modifier.width(6.dp));Text(if(inBox)"Remover" else "Adicionar")}},dismissButton={TextButton(dismiss){Text("Cancelar")}})}
+    AlertDialog(
+        onDismissRequest=dismiss,
+        title={Text("Pesquisar Pokémon")},
+        text={Column{
+            OutlinedTextField(
+                q,{q=it},Modifier.fillMaxWidth(),singleLine=true,
+                leadingIcon={Icon(Icons.Default.Search,null)},
+                placeholder={Text("Nome ou número")}
+            )
+            Spacer(Modifier.height(8.dp))
+            results.forEach{pk->
+                Row(
+                    Modifier.fillMaxWidth().clickable{select(pk)}.padding(vertical=5.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    AsyncImage(pk.spriteUrl,pk.name,Modifier.size(48.dp))
+                    Column(Modifier.weight(1f)){
+                        Text(pretty(pk.name),fontWeight=FontWeight.SemiBold)
+                        Text(if(pk.nationalId in captured)"Capturado" else "Faltando",fontSize=11.sp,color=QBmuted)
+                    }
+                    TextButton({open(pk)}){Text("Ficha")}
+                }
+            }
+        }},
+        confirmButton={},
+        dismissButton={TextButton(dismiss){Text("Fechar")}}
+    )
+}
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable private fun QBSearch(dex:List<GameDexService.GameDexEntry>,captured:Set<Int>,dismiss:()->Unit,select:(GameDexService.GameDexEntry)->Unit,open:(GameDexService.GameDexEntry)->Unit){var q by remember{mutableStateOf("")};val key=q.trim().removePrefix("#");val results=if(key.isBlank())emptyList()else dex.filter{it.name.contains(key,true)||it.gameNumber.toString()==key||it.nationalId.toString()==key}.take(10);AlertDialog(onDismissRequest=dismiss,title={Text("Pesquisar Pokémon")},text={Column{OutlinedTextField(q,{q=it},Modifier.fillMaxWidth(),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},placeholder={Text("Nome ou número")});Spacer(Modifier.height(8.dp));results.forEach{pk->Row(Modifier.fillMaxWidth().combinedClickable(onClick={select(pk)}).padding(vertical=5.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage(pk.spriteUrl,pk.name,Modifier.size(44.dp));Column(Modifier.weight(1f)){Text(pretty(pk.name),fontWeight=FontWeight.SemiBold);Text(if(pk.nationalId in captured)"Capturado" else "Faltando",fontSize=11.sp,color=QBmuted)};TextButton({open(pk)}){Text("Ficha")}}}}},confirmButton={},dismissButton={TextButton(dismiss){Text("Fechar")}})}
-private fun pretty(name:String)=name.split("-"," ").joinToString(" "){it.replaceFirstChar{c->if(c.isLowerCase())c.titlecase()else c.toString()}}
+private fun pretty(name:String)=name.split("-"," ").joinToString(" "){
+    it.replaceFirstChar{c->if(c.isLowerCase())c.titlecase()else c.toString()}
+}
