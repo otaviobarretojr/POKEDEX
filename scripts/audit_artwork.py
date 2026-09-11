@@ -80,8 +80,9 @@ for r in valid:
         scale_delta=min(scale_delta,-0.006)
     dx=max(-0.010,min(0.010,-r["final_mass_dx"]*0.55))
     dy=max(-0.010,min(0.010,-r["final_mass_dy"]*0.55))
-    # Existing curation gets a finer threshold. New entries require stronger evidence.
-    needs=(curated and (residual>=0.014 or r["edge_clearance"]<0.018 or abs(scale_delta)>=0.006)) or ((not curated) and (residual>=0.026 or r["edge_clearance"]<0.012 or abs(scale_delta)>=0.010))
+    # Second-pass shortlist is intentionally strict. These metrics are aids for
+    # human optical review, not instructions to mathematically recenter every PNG.
+    needs = residual >= 0.105 or r["edge_clearance"] < -0.020
     if needs:
         ns=max(0.97,min(1.045,r["current_scale"]+scale_delta))
         nox=max(-0.045,min(0.045,r["current_offset_x"]+dx))
