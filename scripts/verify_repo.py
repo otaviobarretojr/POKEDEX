@@ -173,9 +173,12 @@ for required in ("Let's Go Pikachu / Eevee", "Sword / Shield", "Brilliant Diamon
         violations.append(f"Switch campaign guide missing {required}")
 
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
-for required in ("GUIA DE CAMPANHA", "Usar este time", "Build de campanha", "Início", "Mid game", "Late game"):
+for required in ("GUIA DE CAMPANHA", "Usar este time", "Build de campanha"):
     if required not in team_guide:
         violations.append(f"Campaign team guide missing {required}")
+for required in ("Início", "Mid game", "Late game"):
+    if required not in team_catalog:
+        violations.append(f"Campaign phase missing {required}")
 
 team_builder = (ui / "TeamBuilderScreen.kt").read_text(encoding="utf-8")
 if "CampaignTeamGuideScreen" not in team_builder:
