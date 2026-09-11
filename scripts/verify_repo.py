@@ -741,7 +741,7 @@ for required in ('.put("version", 8)', '.put("journey"', "oldCollection", "oldTe
         violations.append(f"Rollback-safe backup v8 missing {required}")
 
 journey_v614 = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
-for required in ("LaunchedEffect(selectedGame)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
+for required in ("LaunchedEffect(explicitGameSelectionRevision)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
     if required not in journey_v614:
         violations.append(f"Journey state isolation/gesture hardening missing {required}")
 
