@@ -88,7 +88,7 @@ private val qbGames=AppGameCatalog.games.map{game->
   FilledTonalButton({search=true},Modifier.fillMaxWidth().height(40.dp).padding(bottom=1.dp),shape=RoundedCornerShape(13.dp)){Icon(Icons.Default.Search,null,Modifier.size(17.dp));Spacer(Modifier.width(6.dp));Text("Pesquisar Pokémon",fontWeight=FontWeight.Bold,fontSize=12.sp)}
  }
  if(search)QBSearch(dex,CollectionStore.capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
-}}
+}
 
 @Composable
 private fun QBGrid(
