@@ -321,7 +321,7 @@ if violations:
 
 
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
-for required in ("resolveSaveLocation", "Box "+(index/30+1)", "saveLocation.boxLabel"):
+for required in ("resolveSaveLocation", 'boxLabel="Box "+(index/30+1)', "saveLocation.boxLabel"):
     if required not in detail:
         violations.append(f"Detail save-location resolver missing {required}")
 if 'SectionCard("Coleção"' in detail:
