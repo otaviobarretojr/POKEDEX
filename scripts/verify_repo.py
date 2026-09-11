@@ -155,9 +155,9 @@ for required in ("Salvar arquivo", "Abrir arquivo", "Rota por região", "Formas 
         violations.append(f"v6 Companion missing {required}")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("BOX", "Pesquisar Pokémon", "capturados", "Modifier.weight(1f).fillMaxHeight()"):
+for required in ("Pesquisar Pokémon", "Modifier.weight(1f).fillMaxHeight()", "Deslize para navegar entre as Boxes", "CircularProgressIndicator"):
     if required not in boxes:
-        violations.append(f"Compact fixed Box UI missing {required}")
+        violations.append(f"Compact swipe Box UI missing {required}")
 
 living = (ui / "CollectionScreens.kt").read_text(encoding="utf-8")
 if "formas" not in living or "PokemonFormsService.cached" not in living:
