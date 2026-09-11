@@ -72,7 +72,7 @@ object StartupPreloader {
                 "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
             }
 
-        progress(.82f, "Preparando arte da Jornada")
+        progress(.84f, "Preparando arte da Jornada")
         (gameCoverUrls + journeyHeroUrls).distinct().forEachIndexed { index, artwork ->
             runCatching {
                 context.imageLoader.execute(
@@ -84,24 +84,11 @@ object StartupPreloader {
                 )
             }
             val totalArtwork = (gameCoverUrls + journeyHeroUrls).distinct().size.coerceAtLeast(1)
-            val local = .82f + ((index + 1f) / totalArtwork) * .08f
+            val local = .84f + ((index + 1f) / totalArtwork) * .07f
             progress(local, "Preparando arte da Jornada")
         }
 
-        progress(.90f, "Preparando imagens")
-        gameCoverUrls.forEachIndexed { index, cover ->
-            runCatching {
-                context.imageLoader.execute(
-                    ImageRequest.Builder(context)
-                        .data(cover)
-                        .memoryCacheKey("startup-game-cover-$index")
-                        .diskCacheKey("startup-game-cover-$index")
-                        .build()
-                )
-            }
-            // Covers are already cached above together with Journey hero art.
-        }
-
+        progress(.91f, "Preparando imagens")
         priorityIds.take(20).forEachIndexed { index, id ->
             val sprite = PokedexDataStore.cachedPokemon(id)?.spriteUrl ?: return@forEachIndexed
             runCatching {
@@ -113,7 +100,7 @@ object StartupPreloader {
                         .build()
                 )
             }
-            val local = .90f + ((index + 1f) / priorityIds.take(20).size.coerceAtLeast(1)) * .09f
+            val local = .91f + ((index + 1f) / priorityIds.take(20).size.coerceAtLeast(1)) * .08f
             progress(local, "Preparando imagens")
         }
 
