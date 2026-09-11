@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable private fun PokedexRoot(){var bootReady by remember{mutableStateOf(false)};if(!bootReady)BootExperienceScreen{bootReady=true}else PokedexApp()}
+@Composable private fun PokedexRoot(){var bootReady by remember{mutableStateOf(false)};if(!bootReady)BootExperienceScreen{HomeAudioManager.playMainTrack();bootReady=true}else PokedexApp()}
 data class MainDestination(val route:String,val label:String,val icon:ImageVector)
 private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Default.Map),MainDestination("boxes","Boxes",Icons.Default.GridView))
 
@@ -81,7 +81,6 @@ private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Defau
  fun openGameDex(source:String){navController.navigate("gameDex?source=${Uri.encode(source)}")};fun openCampaignGuide(game:String,phase:String?=null){navController.navigate("campaignGuide?game=${Uri.encode(game)}"+(phase?.let{"&phase=${Uri.encode(it)}"}?:""))};fun openLocation(id:Int,source:String?=null){navController.navigate(if(source.isNullOrBlank())"location/$id" else "location/$id?source=${Uri.encode(source)}")};fun openRegionMap(id:Int,source:String){navController.navigate("regionMap/$id?source=${Uri.encode(source)}")};fun openRegionExplorer(source:String){navController.navigate("regionExplorer?source=${Uri.encode(source)}")};fun openReference(kind:String?=null,name:String?=null,source:String?=null){navController.navigate(if(kind.isNullOrBlank()||name.isNullOrBlank())"reference" else "reference?kind=${Uri.encode(kind)}&name=${Uri.encode(name)}"+(source?.let{"&source=${Uri.encode(it)}"}?:""))}
  LaunchedEffect(currentRoute){
   currentRoute?.let(RecentActivityStore::recordRoute)
-  HomeAudioManager.playForRoute(currentRoute)
  }
  Scaffold(bottomBar={if(!isSecondaryScreen){NavigationBar{mainDestinations.forEach{d->NavigationBarItem(selected=currentRoute==d.route,onClick={navController.navigate(d.route){popUpTo("home"){saveState=true};launchSingleTop=true;restoreState=true}},icon={Icon(d.icon,d.label)},label={Text(d.label)},alwaysShowLabel=false)}}}},topBar={if(isMainDestination&&currentRoute!="home"&&!useCompactOwnHeader){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
   NavHost(navController,"home",Modifier.padding(innerPadding)){
