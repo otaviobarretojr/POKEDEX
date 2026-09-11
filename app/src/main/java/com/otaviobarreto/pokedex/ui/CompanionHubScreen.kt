@@ -1,5 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -50,8 +53,19 @@ fun CompanionHubScreen(
     var plannerLoading by remember { mutableStateOf(false) }
     var plannerMenu by remember { mutableStateOf(false) }
     val clipboard=LocalClipboardManager.current
+    val context=LocalContext.current
     val dex=PokedexDataStore.cachedNationalDex().orEmpty()
     val captured=CollectionStore.capturedIds
+    val createBackupLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")){uri->
+        if(uri!=null) runCatching{context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use{it.write(BackupService.exportJson())}}.onSuccess{backupMessage="Backup salvo em arquivo."}.onFailure{backupMessage="Não foi possível salvar o backup."}
+    }
+    val openBackupLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            val raw=runCatching{context.contentResolver.openInputStream(uri)?.bufferedReader()?.use{it.readText()}}.getOrNull().orEmpty()
+            backupText=raw
+            backupMessage=if(raw.isNotBlank()&&BackupService.importJson(raw))"Backup restaurado com sucesso." else "Backup inválido ou incompatível."
+        }
+    }
     val pokemonResults=remember(query,dex){
         val q=smartSearchTerm(query).ifBlank { query.trim().removePrefix("#") }
         if(q.length<2) emptyList() else dex.asSequence().filter{it.name.contains(q,true)||it.id.toString()==q}.take(12)
@@ -238,8 +252,12 @@ fun CompanionHubScreen(
             Text("Backup e restauração",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             Text("O backup inclui capturados, Boxes e Times.",style=MaterialTheme.typography.bodySmall)
             Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                Button(onClick={val data=BackupService.exportJson();backupText=data;clipboard.setText(AnnotatedString(data));backupMessage="Backup copiado para a área de transferência."},modifier=Modifier.weight(1f)){Icon(Icons.Default.Backup,null);Spacer(Modifier.width(6.dp));Text("Copiar backup")}
-                OutlinedButton(onClick={backupText=clipboard.getText()?.text.orEmpty()},modifier=Modifier.weight(1f)){Icon(Icons.Default.ContentPaste,null);Spacer(Modifier.width(6.dp));Text("Colar")}
+                Button(onClick={createBackupLauncher.launch("pokedex-backup-v6.json")},modifier=Modifier.weight(1f)){Icon(Icons.Default.Save,null);Spacer(Modifier.width(6.dp));Text("Salvar arquivo")}
+                OutlinedButton(onClick={openBackupLauncher.launch(arrayOf("application/json","text/plain"))},modifier=Modifier.weight(1f)){Icon(Icons.Default.FolderOpen,null);Spacer(Modifier.width(6.dp));Text("Abrir arquivo")}
+            }
+            Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                TextButton(onClick={val data=BackupService.exportJson();backupText=data;clipboard.setText(AnnotatedString(data));backupMessage="Backup copiado."},modifier=Modifier.weight(1f)){Text("Copiar JSON")}
+                TextButton(onClick={backupText=clipboard.getText()?.text.orEmpty()},modifier=Modifier.weight(1f)){Text("Colar JSON")}
             }
             OutlinedTextField(backupText,{backupText=it},Modifier.fillMaxWidth().heightIn(min=120.dp).padding(top=8.dp),label={Text("Backup JSON")})
             Button(onClick={backupMessage=if(BackupService.importJson(backupText))"Backup restaurado com sucesso." else "Backup inválido ou incompatível."},modifier=Modifier.fillMaxWidth().padding(top=8.dp),enabled=backupText.isNotBlank()){Text("Restaurar backup")}
