@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.boxLabel" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.6"' not in workflow or "versionCode = 636" not in workflow:
-    violations.append("CI v6.3.6 version stamping missing")
+if 'versionName = "6.3.7"' not in workflow or "versionCode = 637" not in workflow:
+    violations.append("CI v6.3.7 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -326,6 +326,22 @@ for required in ("resolveSaveLocation", 'boxLabel="Box "+(index/30+1)', "saveLoc
         violations.append(f"Detail save-location resolver missing {required}")
 if 'SectionCard("Coleção"' in detail:
     violations.append("Collection card must stay hidden from Info tab")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+artwork = (ui / "PokemonArtwork.kt").read_text(encoding="utf-8")
+for required in ("TransparentBoundsCropTransformation", "Color.alpha", "paddingRatio", "ContentScale.Fit"):
+    if required not in artwork:
+        violations.append(f"Artwork alignment missing {required}")
+
+detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+if detail.count("PokemonArtwork(") < 3:
+    violations.append("Pokemon detail artwork normalization not applied consistently")
 
 if violations:
     print("Source verification failed:")
