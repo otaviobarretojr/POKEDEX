@@ -26,6 +26,7 @@ object HomeAudioManager {
     private var currentScene: HomeAudioScene? = null
     private var loadedScene: HomeAudioScene? = null
     private var appInForeground = true
+    private var pendingSceneAfterBoot: HomeAudioScene? = null
 
     fun initialize(context: Context) {
         if (appContext == null) appContext = context.applicationContext
@@ -61,6 +62,11 @@ object HomeAudioManager {
             "home", null -> HomeAudioScene.JOURNEY
             else -> HomeAudioScene.DETAIL
         }
+        if (loadedScene == HomeAudioScene.BOOT && player?.isPlaying == true) {
+            currentScene = scene
+            pendingSceneAfterBoot = scene
+            return
+        }
         playScene(scene)
     }
 
@@ -91,6 +97,12 @@ object HomeAudioManager {
                     if (!scene.looping) {
                         it.release()
                         if (player === it) player = null
+                        loadedScene = null
+                        val nextScene = pendingSceneAfterBoot
+                        pendingSceneAfterBoot = null
+                        if (nextScene != null && appInForeground && enabled) {
+                            playScene(nextScene, restart = true)
+                        }
                     }
                 }
                 prepare()
