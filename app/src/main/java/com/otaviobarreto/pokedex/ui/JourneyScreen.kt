@@ -641,7 +641,7 @@ private fun JourneyObjectiveDetailScreen(
         }
 
         preparation?.let{prep->
-            item{JourneyDetailSectionTitle(Icons.Default.Backpack,"Preparação recomendada")}
+            item{JourneyDetailSectionTitle(Icons.Default.Build,"Preparação recomendada")}
             item{
                 Card(shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
