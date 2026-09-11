@@ -45,6 +45,16 @@ object TeamStore {
         return id
     }
 
+    fun createTeam(name: String, members: List<Int>): Long? {
+        val clean = sanitizeName(name)
+        if (clean.isBlank()) return null
+        val valid = members.filter { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID }.distinct().take(MAX_TEAM_SIZE)
+        val id = (System.currentTimeMillis() + teams.size).coerceAtLeast(1L)
+        teams = teams + Team(id = id, name = clean, members = valid)
+        persist()
+        return id
+    }
+
     fun renameTeam(teamId: Long, name: String): Boolean {
         val clean = sanitizeName(name)
         if (clean.isBlank() || teams.none { it.id == teamId }) return false
