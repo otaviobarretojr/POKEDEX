@@ -82,6 +82,14 @@ object PokedexDataStore {
      */
     suspend fun prefetchDetails(id: Int) = prefetchCoreDetails(id)
 
+    suspend fun hydratePinned(ids: Collection<Int>) {
+        ids.distinct().take(24).forEach { id ->
+            val pokemonPinned = PersistentApiCache.isPinned(PokeApiService.pokemonUrl(id))
+            val speciesPinned = PersistentApiCache.isPinned(PokeApiService.speciesUrl(id))
+            if (pokemonPinned && speciesPinned) prefetchCoreDetails(id)
+        }
+    }
+
     /**
      * Full warm-up used by offline packs and explicit background preparation.
      */
