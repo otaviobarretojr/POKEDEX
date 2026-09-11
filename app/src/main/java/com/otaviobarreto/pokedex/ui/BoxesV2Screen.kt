@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -53,9 +54,13 @@ private fun numberedBox(game:String,page:Int)="$game · Box ${page+1}"
 
 @OptIn(ExperimentalMaterial3Api::class,ExperimentalFoundationApi::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
- var game by remember{mutableStateOf(qbGames.first())};var region by remember{mutableStateOf(game.regions.first())};var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by remember{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var quick by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)};var search by remember{mutableStateOf(false)};var selectionMode by remember{mutableStateOf(false)};var selected by remember{mutableStateOf<Set<Int>>(emptySet())};var batchMove by remember{mutableStateOf(false)}
+ var gameLabel by rememberSaveable{mutableStateOf(qbGames.first().label)}
+ val game=remember(gameLabel){qbGames.firstOrNull{it.label==gameLabel}?:qbGames.first()}
+ var regionSource by rememberSaveable{mutableStateOf(game.regions.first().source)}
+ val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(0)};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var quick by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)};var search by remember{mutableStateOf(false)};var selectionMode by remember{mutableStateOf(false)};var selected by remember{mutableStateOf<Set<Int>>(emptySet())};var batchMove by remember{mutableStateOf(false)}
  LaunchedEffect(region.source,game.label){
-  loading=true;page=0
+  loading=true
   val ctx=GameContext.fromSource(region.source)
   dex=if(ctx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}}.getOrElse{emptyList()}
   if(dex.isNotEmpty()){
@@ -67,14 +72,16 @@ private fun numberedBox(game:String,page:Int)="$game · Box ${page+1}"
     CollectionStore.migrateCapturedToBox(box,ids)
    }
   }
+  val pageCount=((dex.size+29)/30).coerceAtLeast(1)
+  if(page>=pageCount) page=pageCount-1
   loading=false
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1);val entries=dex.drop(current*30).take(30);LaunchedEffect(entries){entries.take(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(350);entries.drop(12).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val activeBox=numberedBox(game.label,current);val boxedNow=CollectionStore.boxes[activeBox].orEmpty();val caught=dex.count{entry->CollectionStore.boxesForPokemon(entry.nationalId).any{it.startsWith(game.label)}};val duplicateCount=dex.count{it.nationalId in CollectionStore.duplicateIds()};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=12.dp)){
   Column(Modifier.padding(top=5.dp,bottom=5.dp)){Text("POKEDEX",fontSize=27.sp,lineHeight=28.sp,fontWeight=FontWeight.Black,color=QBink);Text("C A T C H  E M  ·  T O D A S  A S  R E G I Õ E S",fontSize=7.sp,color=QBmuted)}
   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
-   ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.15f)){OutlinedTextField(game.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},shape=RoundedCornerShape(15.dp));ExposedDropdownMenu(gameMenu,{gameMenu=false}){qbGames.forEach{g->DropdownMenuItem({Text(g.label,fontWeight=FontWeight.SemiBold)},{game=g;region=g.regions.first();gameMenu=false})}}}
-   ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.85f)){OutlinedTextField(region.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text(if(game.regions.size>1)"DLC / região" else "Região")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},shape=RoundedCornerShape(15.dp));ExposedDropdownMenu(regionMenu,{regionMenu=false}){game.regions.forEach{r->DropdownMenuItem({Column{Text(r.label,fontWeight=FontWeight.SemiBold);Text(r.badge,fontSize=10.sp,color=QBmuted)}},{region=r;regionMenu=false})}}}
+   ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.15f)){OutlinedTextField(game.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text("Jogo")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},shape=RoundedCornerShape(15.dp));ExposedDropdownMenu(gameMenu,{gameMenu=false}){qbGames.forEach{g->DropdownMenuItem({Text(g.label,fontWeight=FontWeight.SemiBold)},{gameLabel=g.label;regionSource=g.regions.first().source;page=0;gameMenu=false})}}}
+   ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.85f)){OutlinedTextField(region.label,{},Modifier.menuAnchor().fillMaxWidth(),readOnly=true,singleLine=true,label={Text(if(game.regions.size>1)"DLC / região" else "Região")},trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},shape=RoundedCornerShape(15.dp));ExposedDropdownMenu(regionMenu,{regionMenu=false}){game.regions.forEach{r->DropdownMenuItem({Column{Text(r.label,fontWeight=FontWeight.SemiBold);Text(r.badge,fontSize=10.sp,color=QBmuted)}},{regionSource=r.source;page=0;regionMenu=false})}}}
   }
   Card(Modifier.fillMaxWidth().padding(top=7.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=QBsurface)){Row(Modifier.fillMaxWidth().height(68.dp).padding(horizontal=13.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){CircularProgressIndicator({progress},Modifier.fillMaxSize(),color=game.accent,trackColor=game.accent.copy(alpha=.12f),strokeWidth=5.dp);Text("${(progress*100).toInt()}%",fontSize=10.sp,fontWeight=FontWeight.Black)};Spacer(Modifier.width(14.dp));QBStat("${dex.size}","Total",Modifier.weight(1f));QBStat("$caught","Capturados",Modifier.weight(1f),QBmint);QBStat("${(dex.size-caught).coerceAtLeast(0)}","Restantes",Modifier.weight(1f));QBStat("$duplicateCount","Duplicados",Modifier.weight(1f),Color(0xFFB26A00));Surface(shape=RoundedCornerShape(10.dp),color=Color.White.copy(alpha=.7f)){Column(Modifier.padding(horizontal=9.dp,vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(Icons.Default.Landscape,null,tint=game.accent,modifier=Modifier.size(14.dp));Text(region.label,fontSize=8.sp,fontWeight=FontWeight.Bold,maxLines=1)}}}}
   Row(Modifier.fillMaxWidth().height(50.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){FilledTonalIconButton({page=current-1},enabled=current>0){Icon(Icons.Default.ChevronLeft,"Anterior")};Surface(shape=RoundedCornerShape(13.dp),color=QBsurface){Row(Modifier.padding(horizontal=18.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Inventory2,null,tint=game.accent);Spacer(Modifier.width(7.dp));Text("Box ${current+1}",fontWeight=FontWeight.Black)}};FilledTonalIconButton({page=current+1},enabled=current<pages-1){Icon(Icons.Default.ChevronRight,"Próxima")}}
