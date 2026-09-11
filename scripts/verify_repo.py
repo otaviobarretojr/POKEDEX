@@ -122,8 +122,8 @@ if "DUPLICATES" not in living:
     violations.append("Living Dex duplicate intelligence missing")
 
 backup = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/BackupService.kt").read_text(encoding="utf-8")
-if '.put("version", 7)' not in backup or "preferences" not in backup:
-    violations.append("Backup v5 context missing")
+if '.put("version", 8)' not in backup or "preferences" not in backup:
+    violations.append("Backup context missing")
 
 if violations:
     print("Source verification failed:")
