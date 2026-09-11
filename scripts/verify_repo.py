@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.9.1"' not in workflow or "versionCode = 691" not in workflow:
-    violations.append("CI v6.9.1 version stamping missing")
+if 'versionName = "6.10.0"' not in workflow or "versionCode = 6100" not in workflow:
+    violations.append("CI v6.10.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -566,6 +566,22 @@ if "generation-ix/scarlet-violet" not in type_icons or "JourneyTypeIconCatalog" 
     violations.append("Scarlet/Violet type icons are not wired into Journey")
 if not (root/"scripts/audit_journey_visuals.py").exists():
     violations.append("Journey visual URL audit script missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.10.0 immersive Paldea map guards
+journey_ui_v610=(ui/"JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ("detectTransformGestures","ContentScale.FillBounds","JourneyMapControl","PRÓXIMO OBJETIVO","Ver objetivo","Icons.Default.MyLocation"):
+    if required not in journey_ui_v610:
+        violations.append(f"Immersive Journey map missing {required}")
+for obsolete in ("● Concluído   ● Próximo   ○ Pendente","Mapa oficial de Paldea com os 18 objetivos principais posicionados por região. Toque em um ponto para abrir o objetivo."):
+    if obsolete in journey_ui_v610:
+        violations.append(f"Legacy map UI still present: {obsolete}")
 
 if violations:
     print("Source verification failed:")
