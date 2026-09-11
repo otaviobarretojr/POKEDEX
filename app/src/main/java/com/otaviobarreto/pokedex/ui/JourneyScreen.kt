@@ -67,6 +67,7 @@ fun JourneyScreen(
     }
 
     BackHandler(enabled=view!=JourneyView.GAMES){
+        AppSoundManager.play(AppSoundCue.CLOSE)
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
             JourneyView.ROUTE -> view=JourneyView.GAME_MENU
@@ -82,6 +83,7 @@ fun JourneyScreen(
     when(view){
         JourneyView.GAMES -> JourneyGamePicker(
             onSelect={
+                AppSoundManager.play(AppSoundCue.DECIDE)
                 explicitGameSelectionRevision++
                 selectedGame=it
                 CompanionPreferences.activeGame=it
@@ -90,27 +92,27 @@ fun JourneyScreen(
         )
         JourneyView.GAME_MENU -> if(game!=null) JourneyGameMenu(
             game=game,
-            onBack={view=JourneyView.GAMES},
-            onRoute={view=JourneyView.ROUTE},
-            onMap={view=JourneyView.MAP},
-            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
-            onBoxes={onOpenBoxes(game.label,CompanionPreferences.activeRegionForGame(game.label) ?: game.regions.firstOrNull()?.source)},
-            onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
+            onBack={AppSoundManager.play(AppSoundCue.CLOSE);view=JourneyView.GAMES},
+            onRoute={AppSoundManager.play(AppSoundCue.OPEN);view=JourneyView.ROUTE},
+            onMap={AppSoundManager.play(AppSoundCue.OPEN);view=JourneyView.MAP},
+            onTeam={AppSoundManager.play(AppSoundCue.DECIDE);onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+            onBoxes={AppSoundManager.play(AppSoundCue.OPEN);onOpenBoxes(game.label,CompanionPreferences.activeRegionForGame(game.label) ?: game.regions.firstOrNull()?.source)},
+            onRegion={regionSource->AppSoundManager.play(AppSoundCue.MOVE);onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
             game=game,
-            onBack={view=JourneyView.GAME_MENU},
-            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+            onBack={AppSoundManager.play(AppSoundCue.CLOSE);view=JourneyView.GAME_MENU},
+            onTeam={AppSoundManager.play(AppSoundCue.DECIDE);onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
             listState=routeListState,
-            onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL}
+            onOpenStep={stepId->AppSoundManager.play(AppSoundCue.DECIDE);detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
         JourneyView.DETAIL -> if(game!=null && selectedStepId!=null){
             val step=JourneyCatalog.steps(game.label).firstOrNull{it.id==selectedStepId}
             if(step!=null) JourneyObjectiveDetailScreen(
                 game=game,
                 step=step,
-                onBack={selectedStepId=null;view=detailReturnView},
-                onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+                onBack={AppSoundManager.play(AppSoundCue.CLOSE);selectedStepId=null;view=detailReturnView},
+                onTeam={AppSoundManager.play(AppSoundCue.DECIDE);onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
                 onPokemonClick=onPokemonClick
             ) else view=JourneyView.ROUTE
         } else { view=JourneyView.GAMES }
@@ -124,8 +126,8 @@ fun JourneyScreen(
             onSelectionInitialized={mapSelectionInitialized=true},
             onZoomChange={mapZoom=it},
             onPanChange={mapPanX=it.x;mapPanY=it.y},
-            onBack={view=JourneyView.GAME_MENU},
-            onOpenStep={stepId->detailReturnView=JourneyView.MAP;selectedStepId=stepId;view=JourneyView.DETAIL}
+            onBack={AppSoundManager.play(AppSoundCue.CLOSE);view=JourneyView.GAME_MENU},
+            onOpenStep={stepId->AppSoundManager.play(AppSoundCue.DECIDE);detailReturnView=JourneyView.MAP;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
     }
 }
@@ -484,7 +486,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                     done=done,
                     isNext=isNext,
                     onOpen={onOpenStep(step.id)},
-                    onToggle={JourneyProgressStore.toggle(game.label,step.id)}
+                    onToggle={AppSoundManager.play(AppSoundCue.CHECK_BOX);JourneyProgressStore.toggle(game.label,step.id)}
                 )
             }
         }
@@ -746,7 +748,7 @@ private fun JourneyObjectiveDetailScreen(
                     Text(step.kind.label.uppercase(),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
                     Text(step.title,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
                 }
-                IconButton(onClick={JourneyProgressStore.toggle(game.label,step.id)}){
+                IconButton(onClick={AppSoundManager.play(AppSoundCue.CHECK_BOX);JourneyProgressStore.toggle(game.label,step.id)}){
                     Icon(if(done)Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,if(done)"Concluído" else "Pendente")
                 }
             }
@@ -851,7 +853,7 @@ private fun JourneyObjectiveDetailScreen(
 
         item{
             Button(
-                onClick={JourneyProgressStore.toggle(game.label,step.id)},
+                onClick={AppSoundManager.play(AppSoundCue.CHECK_BOX);JourneyProgressStore.toggle(game.label,step.id)},
                 modifier=Modifier.fillMaxWidth().height(52.dp)
             ){
                 Icon(if(done)Icons.Default.CheckCircle else Icons.Default.Done,null)
