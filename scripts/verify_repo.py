@@ -51,8 +51,8 @@ if ".crossfade(false)" not in app or "384L * 1024L * 1024L" not in app:
     violations.append("Image engine v2 tuning missing")
 
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
-if "CollectionStore.toggleCaptured" not in detail:
-    violations.append("Pokemon detail capture integration missing")
+if "resolveSaveLocation" not in detail or "saveLocation.boxLabel" not in detail:
+    violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
 if 'versionName = "6.3.6"' not in workflow or "versionCode = 636" not in workflow:
