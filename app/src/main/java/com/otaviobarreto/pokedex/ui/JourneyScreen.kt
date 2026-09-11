@@ -3,6 +3,7 @@ package com.otaviobarreto.pokedex.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,9 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.otaviobarreto.pokedex.data.*
 
 private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
@@ -338,6 +342,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,onOpenStep
             val isNext=nextStep?.id==step.id
             JourneyStepCard(
                 step=step,
+                visual=JourneyVisualAssetCatalog.forStep(step.id),
                 done=done,
                 isNext=isNext,
                 onOpen={onOpenStep(step.id)},
@@ -379,6 +384,7 @@ private fun JourneyCountPill(icon:ImageVector,label:String){
 @Composable
 private fun JourneyStepCard(
     step:JourneyStep,
+    visual:JourneyVisualAsset?,
     done:Boolean,
     isNext:Boolean,
     onOpen:()->Unit,
@@ -443,6 +449,10 @@ private fun JourneyStepCard(
         ){
             Column(Modifier.fillMaxWidth().padding(14.dp)){
                 Row(verticalAlignment=Alignment.CenterVertically){
+                    visual?.let{
+                        JourneyVisualThumb(it,Modifier.size(62.dp))
+                        Spacer(Modifier.width(10.dp))
+                    }
                     Surface(shape=RoundedCornerShape(12.dp),color=kindColor){
                         Row(
                             Modifier.padding(horizontal=8.dp,vertical=5.dp),
@@ -581,11 +591,13 @@ private fun JourneyObjectiveDetailScreen(
         }
 
         item{
+            val visual=JourneyVisualAssetCatalog.forStep(step.id)
             Card(
                 shape=RoundedCornerShape(24.dp),
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)
             ){
                 Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    visual?.let{JourneyVisualHero(it)}
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                         Text(step.subtitle,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
                         Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface){
@@ -791,5 +803,49 @@ private fun JourneyMapScreen(
             }
         }
         Text("Mapa esquemático de progressão: os pontos representam a posição relativa dos objetivos em Paldea.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
+    }
+}
+
+
+@Composable
+private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
+    Surface(modifier=modifier,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface){
+        AsyncImage(
+            model=asset.imageUrl,
+            contentDescription=asset.subject,
+            contentScale=ContentScale.Fit,
+            modifier=Modifier.fillMaxSize().padding(4.dp)
+        )
+    }
+}
+
+@Composable
+private fun JourneyVisualHero(asset:JourneyVisualAsset){
+    Card(
+        Modifier.fillMaxWidth().height(190.dp),
+        shape=RoundedCornerShape(20.dp),
+        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.72f))
+    ){
+        Row(Modifier.fillMaxSize().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+            AsyncImage(
+                model=asset.imageUrl,
+                contentDescription=asset.subject,
+                contentScale=ContentScale.Fit,
+                modifier=Modifier.weight(1f).fillMaxHeight()
+            )
+            Column(Modifier.weight(.72f).padding(start=10.dp)){
+                Text(asset.subject,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge)
+                Text(asset.emblemLabel,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=4.dp))
+                Text(
+                    when(asset.role){
+                        JourneyVisualRole.GYM_LEADER->"Líder de Ginásio"
+                        JourneyVisualRole.TEAM_STAR_BOSS->"Chefe Team Star"
+                        JourneyVisualRole.TITAN->"Pokémon Titã"
+                    },
+                    style=MaterialTheme.typography.bodySmall,
+                    modifier=Modifier.padding(top=4.dp)
+                )
+            }
+        }
     }
 }
