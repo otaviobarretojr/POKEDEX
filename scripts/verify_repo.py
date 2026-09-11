@@ -351,8 +351,8 @@ if violations:
 
 
 tuning = (ui / "ArtworkTuningCatalog.kt").read_text(encoding="utf-8")
-if tuning.count("to ArtworkTuning(") != 106:
-    violations.append("Artwork curation override count must stay at 106 reviewed outliers")
+if tuning.count("to ArtworkTuning(") != 109:
+    violations.append("Artwork curation override count must stay at 109 reviewed artworks")
 artwork = (ui / "PokemonArtwork.kt").read_text(encoding="utf-8")
 for required in ("ArtworkTuningCatalog.forPokemon", "graphicsLayer", "offset(x = dx, y = dy)", "pokemonId: Int? = null"):
     if required not in artwork:
