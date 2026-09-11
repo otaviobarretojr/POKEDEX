@@ -48,6 +48,7 @@ fun JourneyScreen(
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val routeListState=rememberLazyListState()
+    var explicitGameSelectionRevision by remember { mutableIntStateOf(0) }
     var mapSelectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var mapSelectionInitialized by rememberSaveable { mutableStateOf(false) }
     var mapZoom by rememberSaveable { mutableFloatStateOf(1f) }
@@ -55,7 +56,8 @@ fun JourneyScreen(
     var mapPanY by rememberSaveable { mutableFloatStateOf(0f) }
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
 
-    LaunchedEffect(selectedGame){
+    LaunchedEffect(explicitGameSelectionRevision){
+        if(explicitGameSelectionRevision==0) return@LaunchedEffect
         routeListState.scrollToItem(0)
         mapSelectedStepId=null
         mapSelectionInitialized=false
@@ -79,7 +81,12 @@ fun JourneyScreen(
 
     when(view){
         JourneyView.GAMES -> JourneyGamePicker(
-            onSelect={selectedGame=it;CompanionPreferences.activeGame=it;view=JourneyView.GAME_MENU}
+            onSelect={
+                explicitGameSelectionRevision++
+                selectedGame=it
+                CompanionPreferences.activeGame=it
+                view=JourneyView.GAME_MENU
+            }
         )
         JourneyView.GAME_MENU -> if(game!=null) JourneyGameMenu(
             game=game,
