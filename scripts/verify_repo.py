@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.boxLabel" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.7"' not in workflow or "versionCode = 637" not in workflow:
-    violations.append("CI v6.3.7 version stamping missing")
+if 'versionName = "6.3.8"' not in workflow or "versionCode = 638" not in workflow:
+    violations.append("CI v6.3.8 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -342,6 +342,24 @@ for required in ("TransparentBoundsCropTransformation", "Color.alpha", "paddingR
 detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
 if detail.count("PokemonArtwork(") < 3:
     violations.append("Pokemon detail artwork normalization not applied consistently")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+tuning = (ui / "ArtworkTuningCatalog.kt").read_text(encoding="utf-8")
+if tuning.count("to ArtworkTuning(") != 106:
+    violations.append("Artwork curation override count must stay at 106 reviewed outliers")
+artwork = (ui / "PokemonArtwork.kt").read_text(encoding="utf-8")
+for required in ("ArtworkTuningCatalog.forPokemon", "graphicsLayer", "offset(x = dx, y = dy)", "pokemonId: Int? = null"):
+    if required not in artwork:
+        violations.append(f"Curated artwork renderer missing {required}")
+detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+if detail.count("pokemonId=") < 3:
+    violations.append("Detail artwork calls are not wired to per-Pokemon curation")
 
 if violations:
     print("Source verification failed:")
