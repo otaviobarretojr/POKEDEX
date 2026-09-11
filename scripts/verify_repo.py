@@ -39,3 +39,27 @@ if violations:
     sys.exit(1)
 
 print("Source verification passed.")
+
+
+# v2.0 release guards
+offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
+if "PACK_VERSION = 3" not in offline:
+    violations.append("Offline pack version is not v3")
+
+app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
+if ".crossfade(false)" not in app or "256L * 1024L * 1024L" not in app:
+    violations.append("Image engine v2 tuning missing")
+
+detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+if "CollectionStore.toggleCaptured" not in detail:
+    violations.append("Pokemon detail capture integration missing")
+
+workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
+if 'versionName = "2.0.0"' not in workflow or "versionCode = 200" not in workflow:
+    violations.append("CI v2.0 version stamping missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)

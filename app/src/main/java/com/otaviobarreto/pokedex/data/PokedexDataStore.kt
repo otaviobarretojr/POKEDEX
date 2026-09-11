@@ -43,6 +43,8 @@ object PokedexDataStore {
         return typeCache.computeIfAbsent(key) { PokeApiService.loadPokemonIdsForType(type) }
     }
 
+    fun cachedNationalDex(): List<PokeApiService.DexIndexEntry>? = nationalDexCache
+
     fun cachedIndexEntry(id: Int): PokeApiService.DexIndexEntry? =
         nationalDexCache?.firstOrNull { it.id == id }
 

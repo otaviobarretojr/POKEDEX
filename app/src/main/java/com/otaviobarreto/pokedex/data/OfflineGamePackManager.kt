@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 2
+    private const val PACK_VERSION = 3
     private var context: Context? = null
 
     data class PackStatus(
@@ -232,6 +232,10 @@ object OfflineGamePackManager {
             .remove(key(gameLabel, "version"))
             .remove(key(gameLabel, "regions"))
             .remove(key(gameLabel, "completed_ids"))
+            .remove(key(gameLabel, "running"))
+            .remove(key(gameLabel, "runtime_done"))
+            .remove(key(gameLabel, "runtime_total"))
+            .remove(key(gameLabel, "runtime_label"))
             .apply()
     }
 

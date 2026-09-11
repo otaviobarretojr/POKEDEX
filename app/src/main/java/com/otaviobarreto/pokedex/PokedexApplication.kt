@@ -35,17 +35,17 @@ class PokedexApplication : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .memoryCache {
             MemoryCache.Builder(this)
-                .maxSizePercent(0.25)
+                .maxSizePercent(0.30)
                 .strongReferencesEnabled(true)
                 .build()
         }
         .diskCache {
             DiskCache.Builder()
                 .directory(File(cacheDir, "pokemon-images"))
-                .maxSizeBytes(192L * 1024L * 1024L)
+                .maxSizeBytes(256L * 1024L * 1024L)
                 .build()
         }
         .respectCacheHeaders(false)
-        .crossfade(120)
+        .crossfade(false)
         .build()
 }
