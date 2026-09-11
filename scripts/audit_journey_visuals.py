@@ -5,12 +5,18 @@ from pathlib import Path
 root=Path(__file__).resolve().parents[1]
 visual=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
 map_text=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
+type_text=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTypeIconCatalog.kt").read_text(encoding="utf-8")
 
 constants=dict(re.findall(r'private const val\s+(\w+)="([^"]+)"',visual))
 urls=re.findall(r'https://[^"\s]+',visual+"\n"+map_text)
 for name,base in constants.items():
     for suffix in re.findall(r'\b'+re.escape(name)+r'\+"([^"]+)"',visual):
         urls.append(base+suffix)
+
+type_base_match=re.search(r'private const val BASE="([^"]+)"',type_text)
+if type_base_match:
+    type_base=type_base_match.group(1)
+    urls.extend(type_base+str(i)+".png" for i in range(1,19))
 
 seen=set()
 urls=[u for u in urls if not u.endswith("/") and not (u in seen or seen.add(u))]
