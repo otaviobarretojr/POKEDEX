@@ -42,7 +42,8 @@ object TeamCampaignCatalog {
         "Brilliant Diamond / Shining Pearl" -> listOf("Turtwig" to 387, "Chimchar" to 390, "Piplup" to 393)
         "Legends Arceus" -> listOf("Rowlet" to 722, "Cyndaquil" to 155, "Oshawott" to 501)
         "Scarlet / Violet" -> listOf("Sprigatito" to 906, "Fuecoco" to 909, "Quaxly" to 912)
-        "Legends Z-A" -> listOf("Chikorita" to 152, "Tepig" to 498, "Totodile" to 158)
+        "Pokémon Legends: Z-A" -> listOf("Chikorita" to 152, "Tepig" to 498, "Totodile" to 158)
+        "FireRed / LeafGreen" -> listOf("Bulbasaur" to 1, "Charmander" to 4, "Squirtle" to 7)
         else -> emptyList()
     }
 
@@ -54,7 +55,8 @@ object TeamCampaignCatalog {
             "Brilliant Diamond / Shining Pearl" -> bdsp(starterId,phase)
             "Legends Arceus" -> arceus(starterId,phase)
             "Scarlet / Violet" -> scarletViolet(starterId,phase)
-            "Legends Z-A" -> legendsZa(starterId,phase)
+            "Pokémon Legends: Z-A" -> legendsZa(starterId,phase)
+            "FireRed / LeafGreen" -> fireRedLeafGreen(starterId,phase)
             else -> emptyList()
         }
         if(slots.isEmpty())return null
@@ -67,7 +69,7 @@ object TeamCampaignCatalog {
             },
             sourceLabel=when(game){
                 "Let's Go Pikachu / Eevee"->"PokéBase · equipes in-game"
-                "Legends Z-A"->"Game8 · Story Progression / Starter Teams"
+                "Pokémon Legends: Z-A"->"Game8 · Story Progression / Starter Teams"
                 else->"Game8 · Best Team / Story Progression"
             }
         )
