@@ -13,11 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import com.otaviobarreto.pokedex.data.AppGameCatalog
-import com.otaviobarreto.pokedex.data.GameContext
-import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
-import com.otaviobarreto.pokedex.data.ReferenceCatalogService
 
 class PokedexApplication : Application(), ImageLoaderFactory {
     private val preloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -29,13 +25,10 @@ class PokedexApplication : Application(), ImageLoaderFactory {
             HttpResponseCache.install(File(cacheDir, "pokeapi-http"), 32L * 1024L * 1024L)
         }
         preloadScope.launch {
+            // Cold-start warm-up stays intentionally small. The home Pokédex is
+            // the only dataset prepared immediately; game/reference catalogs
+            // are loaded cache-first when their screens are opened.
             runCatching { PokedexDataStore.nationalDex() }
-            AppGameCatalog.games.flatMap { it.regions }.forEach { region ->
-                runCatching { GameContext.fromSource(region.source)?.let { GameDexService.loadGameDex(it) } }
-            }
-            listOf("move", "ability", "item").forEach { kind ->
-                runCatching { ReferenceCatalogService.load(kind) }
-            }
         }
     }
 

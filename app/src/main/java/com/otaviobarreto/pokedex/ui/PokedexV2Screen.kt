@@ -39,10 +39,18 @@ fun PokedexV2Screen(onPokemonClick:(Int)->Unit,onOpenReference:()->Unit={}){
  var query by remember{mutableStateOf("")}
  var generation by remember{mutableIntStateOf(0)}
  var status by remember{mutableIntStateOf(0)}
- var dex by remember{mutableStateOf<List<PokeApiService.DexIndexEntry>>(emptyList())}
- var loading by remember{mutableStateOf(true)}
+ val localFallback = remember {
+  PokemonRepository.all().map { PokeApiService.DexIndexEntry(it.id,it.name,it.generation) }
+ }
+ var dex by remember{mutableStateOf(PokedexDataStore.cachedIndexEntry(1)?.let { runCatching { PokedexDataStore.nationalDex() }.getOrNull() } ?: localFallback)}
+ var loading by remember{mutableStateOf(dex.isEmpty())}
  val captured=CollectionStore.capturedIds
- LaunchedEffect(Unit){loading=true;dex=runCatching{withContext(Dispatchers.IO){PokedexDataStore.nationalDex()}}.getOrElse{PokemonRepository.all().map{PokeApiService.DexIndexEntry(it.id,it.name,it.generation)}};loading=false}
+ LaunchedEffect(Unit){
+  if(dex.isEmpty()) loading=true
+  val loaded=runCatching{withContext(Dispatchers.IO){PokedexDataStore.nationalDex()}}.getOrNull()
+  if(loaded!=null) dex=loaded
+  loading=false
+ }
  val filtered=remember(dex,query,generation,status,captured){val q=query.trim().removePrefix("#");dex.filter{p->(q.isBlank()||p.name.contains(q,true)||p.id.toString()==q)&&(generation==0||p.generation==generation)&&when(status){1->p.id in captured;2->p.id !in captured;else->true}}}
  Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
   Column(Modifier.padding(horizontal=16.dp,vertical=10.dp)){
@@ -52,7 +60,7 @@ fun PokedexV2Screen(onPokemonClick:(Int)->Unit,onOpenReference:()->Unit={}){
    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top=5.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){(0..9).forEach{g->FilterChip(selected=generation==g,onClick={generation=g},label={Text(if(g==0)"Todas Gerações" else "G$g")})}}
    Text(if(loading)"Carregando…" else "${filtered.size} Pokémon",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=6.dp))
   }
-  if(loading)Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}else LazyVerticalGrid(GridCells.Fixed(4),Modifier.fillMaxSize().padding(horizontal=10.dp),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+  if(dex.isEmpty() && loading)Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}else LazyVerticalGrid(GridCells.Fixed(4),Modifier.fillMaxSize().padding(horizontal=10.dp),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
    items(filtered,key={it.id}){p->LaunchedEffect(p.id){PokedexDataStore.prefetchDetails(p.id)};val caught=p.id in captured;Card(Modifier.fillMaxWidth().aspectRatio(.78f).clickable{onPokemonClick(p.id)},shape=RoundedCornerShape(15.dp),colors=CardDefaults.cardColors(containerColor=if(caught)Color(0xFFEAE8FB) else Color(0xFFF1F0F8))){Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally){AsyncImage(model=p.spriteUrl,contentDescription=p.name,contentScale=ContentScale.Fit,modifier=Modifier.weight(1f).fillMaxWidth(.9f).padding(3.dp).alpha(if(caught)1f else .26f),colorFilter=if(caught)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)}));Text(p.name,fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.labelMedium);Text("#${p.id.toString().padStart(4,'0')} · G${p.generation}",style=MaterialTheme.typography.labelSmall)}}}
    item{Spacer(Modifier.height(12.dp))}
   }
