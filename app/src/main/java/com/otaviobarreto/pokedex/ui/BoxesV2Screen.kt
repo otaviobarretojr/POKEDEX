@@ -385,7 +385,7 @@ private fun QBAllBoxes(
                                     Text(owned.toString()+" / "+entries.size+" capturados",fontSize=11.sp,color=QBmuted)
                                 }
                                 if(index==current)AssistChip(onClick={},label={Text("Atual",fontSize=10.sp)})
-                                else Icon(Icons.Default.ChevronRight,null,tint=QBmuted)
+                                else Icon(Icons.Default.ArrowForwardIos,null,tint=QBmuted)
                             }
                         }
                     }
