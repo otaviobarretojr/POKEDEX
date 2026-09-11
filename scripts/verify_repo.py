@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.15.0"' not in workflow or "versionCode = 6150" not in workflow:
-    violations.append("CI v6.15.0 version stamping missing")
+if 'versionName = "6.16.0"' not in workflow or "versionCode = 6160" not in workflow:
+    violations.append("CI v6.16.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -777,6 +777,53 @@ offline_v615 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/Offline
 for required in ("PACK_VERSION = 8", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
     if required not in offline_v615:
         violations.append(f"Offline artwork integrity audit missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v6.16.0 Pokémon HOME audio integration guards
+audio_manager_path = root / "app/src/main/java/com/otaviobarreto/pokedex/audio/HomeAudioManager.kt"
+if not audio_manager_path.exists():
+    violations.append("HOME audio manager missing")
+else:
+    audio_manager = audio_manager_path.read_text(encoding="utf-8")
+    for required in (
+        "R.raw.pokehome_ps_01",
+        "R.raw.pokehome_st_sys01",
+        "R.raw.pokehome_st_sys02",
+        "R.raw.pokehome_st_sys03",
+        "AudioAttributes.USAGE_GAME",
+        "onAppBackgrounded",
+        "onAppForegrounded",
+        "playForRoute",
+    ):
+        if required not in audio_manager:
+            violations.append(f"HOME audio integration missing {required}")
+
+main_activity_v616 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for required in (
+    "HomeAudioManager.initialize(this)",
+    "HomeAudioManager.playBoot()",
+    "HomeAudioManager.playForRoute(currentRoute)",
+    "HomeAudioManager.onAppBackgrounded()",
+    "HomeAudioManager.onAppForegrounded()",
+):
+    if required not in main_activity_v616:
+        violations.append(f"HOME audio lifecycle wiring missing {required}")
+
+for raw_name in (
+    "pokehome_ps_01.ogg",
+    "pokehome_st_sys01.ogg",
+    "pokehome_st_sys02.ogg",
+    "pokehome_st_sys03.ogg",
+):
+    raw_path = root / "app/src/main/res/raw" / raw_name
+    if not raw_path.exists() or raw_path.stat().st_size == 0:
+        violations.append(f"HOME audio asset missing {raw_name}")
 
 if violations:
     print("Source verification failed:")
