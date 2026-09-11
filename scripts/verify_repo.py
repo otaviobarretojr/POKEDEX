@@ -55,8 +55,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.16.1"' not in workflow or "versionCode = 6161" not in workflow:
-    violations.append("CI v6.16.1 version stamping missing")
+if 'versionName = "6.17.0"' not in workflow or "versionCode = 6170" not in workflow:
+    violations.append("CI v6.17.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -785,45 +785,84 @@ if violations:
     sys.exit(1)
 
 
-# v6.16.0 Pokémon HOME audio integration guards
+# v6.17.0 startup preload + continuous audio guards
 audio_manager_path = root / "app/src/main/java/com/otaviobarreto/pokedex/audio/HomeAudioManager.kt"
+startup_preloader_path = root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt"
+boot_screen_path = root / "app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt"
+
 if not audio_manager_path.exists():
     violations.append("HOME audio manager missing")
 else:
     audio_manager = audio_manager_path.read_text(encoding="utf-8")
     for required in (
-        "R.raw.pokehome_ps_01",
         "R.raw.pokehome_st_sys01",
         "R.raw.pokehome_st_sys02",
-        "R.raw.pokehome_st_sys03",
         "AudioAttributes.USAGE_GAME",
+        "playMainTrack",
         "onAppBackgrounded",
         "onAppForegrounded",
-        "playForRoute",
     ):
         if required not in audio_manager:
-            violations.append(f"HOME audio integration missing {required}")
+            violations.append(f"Continuous HOME audio missing {required}")
+    for forbidden in (
+        "playForRoute",
+        "HomeAudioScene.JOURNEY",
+        "HomeAudioScene.DETAIL",
+    ):
+        if forbidden in audio_manager:
+            violations.append(f"Route-based audio switching still present: {forbidden}")
 
-main_activity_v616 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+if not startup_preloader_path.exists():
+    violations.append("Startup preload coordinator missing")
+else:
+    startup_preloader = startup_preloader_path.read_text(encoding="utf-8")
+    for required in (
+        "PokedexDataStore.nationalDex()",
+        "GameDexService.loadGameDex",
+        "ReferenceCatalogService.load",
+        "PokedexDataStore.prefetchCoreDetails",
+        "context.imageLoader.execute",
+    ):
+        if required not in startup_preloader:
+            violations.append(f"Startup preload missing {required}")
+
+if not boot_screen_path.exists():
+    violations.append("Boot loading screen missing")
+else:
+    boot_screen = boot_screen_path.read_text(encoding="utf-8")
+    for required in (
+        "StartupPreloader.warm",
+        "progress.fraction",
+        "progress.label",
+        "v6.17.0",
+    ):
+        if required not in boot_screen:
+            violations.append(f"Real loading UI missing {required}")
+
+main_activity_v617 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
 for required in (
     "HomeAudioManager.initialize(this)",
     "HomeAudioManager.playBoot()",
-    "HomeAudioManager.playForRoute(currentRoute)",
+    "HomeAudioManager.playMainTrack()",
     "HomeAudioManager.onAppBackgrounded()",
     "HomeAudioManager.onAppForegrounded()",
 ):
-    if required not in main_activity_v616:
-        violations.append(f"HOME audio lifecycle wiring missing {required}")
+    if required not in main_activity_v617:
+        violations.append(f"Audio lifecycle wiring missing {required}")
+if "HomeAudioManager.playForRoute(currentRoute)" in main_activity_v617:
+    violations.append("Navigation must not switch background music")
+
+app_v617 = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
+if "preloadScope.launch" in app_v617:
+    violations.append("Legacy parallel preload still runs outside loading screen")
 
 for raw_name in (
-    "pokehome_ps_01.ogg",
     "pokehome_st_sys01.ogg",
     "pokehome_st_sys02.ogg",
-    "pokehome_st_sys03.ogg",
 ):
     raw_path = root / "app/src/main/res/raw" / raw_name
     if not raw_path.exists() or raw_path.stat().st_size == 0:
-        violations.append(f"HOME audio asset missing {raw_name}")
+        violations.append(f"Required audio asset missing {raw_name}")
 
 if violations:
     print("Source verification failed:")
