@@ -2,6 +2,7 @@ package com.otaviobarreto.pokedex.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -770,70 +777,178 @@ private fun JourneyMapScreen(
     val points=remember(game.label){JourneyMapCatalog.points(game.label)}
     val mappedSteps=steps.filter{step->points.any{it.stepId==step.id}}
     val next=mappedSteps.firstOrNull{it.id !in completed}
+    var selectedStepId by remember(game.label){mutableStateOf<String?>(next?.id)}
+    val selected=steps.firstOrNull{it.id==selectedStepId}
+    var zoom by remember(game.label){mutableFloatStateOf(1f)}
+    var pan by remember(game.label){mutableStateOf(Offset.Zero)}
 
-    Column(Modifier.fillMaxSize().padding(16.dp)){
-        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-            IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
-            Column(Modifier.weight(1f)){
-                Text("Mapa da Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
-                Text(game.label,style=MaterialTheme.typography.labelMedium)
-            }
-            Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer){
-                Text(completed.count{it in mappedSteps.map{step->step.id}}.toString()+"/"+mappedSteps.size,Modifier.padding(horizontal=10.dp,vertical=6.dp),fontWeight=FontWeight.Bold)
-            }
-        }
-
-        Card(
-            Modifier.fillMaxWidth().weight(1f).padding(top=10.dp),
-            shape=RoundedCornerShape(26.dp),
-            colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)){
+        BoxWithConstraints(
+            Modifier.fillMaxSize()
+                .pointerInput(game.label){
+                    detectTransformGestures{_,panChange,zoomChange,_->
+                        zoom=(zoom*zoomChange).coerceIn(1f,3.5f)
+                        pan=if(zoom<=1.01f) Offset.Zero else pan+panChange
+                    }
+                }
         ){
-            BoxWithConstraints(Modifier.fillMaxSize().padding(12.dp)){
+            val mapAspect=1.414f
+            val viewportW=maxWidth
+            val viewportH=maxHeight
+            val fittedH=viewportW/mapAspect
+            val mapH=if(fittedH<viewportH) fittedH else viewportH
+            val mapW=mapH*mapAspect
+            val left=(viewportW-mapW)/2
+            val top=(viewportH-mapH)/2
+
+            Box(
+                Modifier.offset(x=left,y=top)
+                    .size(mapW,mapH)
+                    .graphicsLayer{
+                        scaleX=zoom;scaleY=zoom
+                        translationX=pan.x;translationY=pan.y
+                    }
+                    .clip(RoundedCornerShape(18.dp))
+            ){
                 JourneyMapCatalog.backgroundUrl(game.label)?.let{mapUrl->
                     AsyncImage(
                         model=mapUrl,
-                        contentDescription="Mapa oficial de Paldea",
-                        contentScale=ContentScale.Fit,
-                        modifier=Modifier.fillMaxSize().clip(RoundedCornerShape(22.dp))
+                        contentDescription="Mapa de Paldea",
+                        contentScale=ContentScale.FillBounds,
+                        modifier=Modifier.fillMaxSize()
                     )
-                } ?: Box(
-                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.22f),RoundedCornerShape(22.dp))
-                )
-                Box(
-                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha=.08f),RoundedCornerShape(22.dp))
-                )
+                }
+
                 points.forEach{point->
                     val step=steps.firstOrNull{it.id==point.stepId} ?: return@forEach
                     val done=step.id in completed
                     val isNext=next?.id==step.id
-                    val x=maxWidth*point.x
-                    val y=maxHeight*point.y
+                    val isSelected=selectedStepId==step.id
+                    val marker=if(isNext)48.dp else if(done)32.dp else 38.dp
                     Surface(
-                        modifier=Modifier.offset(x=x-18.dp,y=y-18.dp).size(36.dp).clickable{onOpenStep(step.id)},
+                        modifier=Modifier
+                            .offset(x=mapW*point.x-marker/2,y=mapH*point.y-marker/2)
+                            .size(marker)
+                            .clickable{selectedStepId=step.id},
                         shape=RoundedCornerShape(50),
                         color=when{
-                            done->MaterialTheme.colorScheme.primary
                             isNext->MaterialTheme.colorScheme.tertiary
-                            else->MaterialTheme.colorScheme.surface
+                            done->MaterialTheme.colorScheme.primary.copy(alpha=.82f)
+                            else->MaterialTheme.colorScheme.surface.copy(alpha=.94f)
                         },
-                        shadowElevation=if(isNext)6.dp else 2.dp
+                        border=if(isSelected) androidx.compose.foundation.BorderStroke(3.dp,MaterialTheme.colorScheme.onSurface) else null,
+                        shadowElevation=if(isNext||isSelected)8.dp else 3.dp
                     ){
                         Box(contentAlignment=Alignment.Center){
-                            if(done) Icon(Icons.Default.Check,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onPrimary)
-                            else Text(step.order.toString(),fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
+                            when{
+                                done->Icon(Icons.Default.Check,null,Modifier.size(17.dp),tint=MaterialTheme.colorScheme.onPrimary)
+                                step.kind==JourneyChallengeKind.GYM->Icon(Icons.Default.EmojiEvents,null,Modifier.size(19.dp))
+                                step.kind==JourneyChallengeKind.TITAN->Icon(Icons.Default.Landscape,null,Modifier.size(19.dp))
+                                step.kind==JourneyChallengeKind.STAR->Icon(Icons.Default.Stars,null,Modifier.size(19.dp))
+                                else->Icon(Icons.Default.Place,null,Modifier.size(19.dp))
+                            }
                         }
                     }
                 }
-                Column(Modifier.align(Alignment.BottomStart).padding(10.dp)){
-                    Text("● Concluído   ● Próximo   ○ Pendente",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold)
-                    next?.let{Text("Próximo: "+it.title+" · "+it.location,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))}
+            }
+
+            Row(
+                Modifier.align(Alignment.TopStart).fillMaxWidth().padding(12.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                Surface(shape=RoundedCornerShape(50),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
+                    IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
+                }
+                Surface(
+                    Modifier.padding(start=8.dp),
+                    shape=RoundedCornerShape(18.dp),
+                    color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),
+                    shadowElevation=4.dp
+                ){
+                    Column(Modifier.padding(horizontal=12.dp,vertical=8.dp)){
+                        Text("Mapa da Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                        Text(game.label,style=MaterialTheme.typography.labelSmall)
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                Surface(shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
+                    Text(
+                        completed.count{it in mappedSteps.map{step->step.id}}.toString()+"/"+mappedSteps.size,
+                        Modifier.padding(horizontal=12.dp,vertical=10.dp),
+                        fontWeight=FontWeight.Black
+                    )
+                }
+            }
+
+            Column(
+                Modifier.align(Alignment.CenterEnd).padding(end=12.dp),
+                verticalArrangement=Arrangement.spacedBy(8.dp)
+            ){
+                JourneyMapControl(Icons.Default.Add,"Aproximar"){zoom=(zoom+.35f).coerceAtMost(3.5f)}
+                JourneyMapControl(Icons.Default.Remove,"Afastar"){
+                    zoom=(zoom-.35f).coerceAtLeast(1f)
+                    if(zoom<=1.01f)pan=Offset.Zero
+                }
+                JourneyMapControl(Icons.Default.MyLocation,"Próximo objetivo"){
+                    selectedStepId=next?.id
+                    zoom=1f;pan=Offset.Zero
+                }
+            }
+
+            selected?.let{step->
+                val isDone=step.id in completed
+                val isNext=next?.id==step.id
+                Card(
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal=14.dp,vertical=18.dp),
+                    shape=RoundedCornerShape(24.dp),
+                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),
+                    elevation=CardDefaults.cardElevation(defaultElevation=8.dp)
+                ){
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Row(verticalAlignment=Alignment.CenterVertically){
+                            Surface(shape=RoundedCornerShape(14.dp),color=if(isNext)MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer){
+                                Icon(
+                                    when(step.kind){
+                                        JourneyChallengeKind.GYM->Icons.Default.EmojiEvents
+                                        JourneyChallengeKind.TITAN->Icons.Default.Landscape
+                                        JourneyChallengeKind.STAR->Icons.Default.Stars
+                                        else->Icons.Default.Place
+                                    },null,Modifier.padding(10.dp)
+                                )
+                            }
+                            Column(Modifier.weight(1f).padding(start=10.dp)){
+                                Text(
+                                    when{isDone->"CONCLUÍDO";isNext->"PRÓXIMO OBJETIVO";else->step.kind.label.uppercase()},
+                                    style=MaterialTheme.typography.labelSmall,
+                                    fontWeight=FontWeight.Black,
+                                    color=if(isNext)MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(step.title,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                                Text(step.location+" · "+step.levelLabel,style=MaterialTheme.typography.bodySmall)
+                            }
+                            IconButton(onClick={selectedStepId=null}){Icon(Icons.Default.Close,"Fechar")}
+                        }
+                        Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically){
+                            JourneyTypeChip(step.typeLabel)
+                            Spacer(Modifier.weight(1f))
+                            TextButton(onClick={onOpenStep(step.id)}){
+                                Text("Ver objetivo")
+                                Icon(Icons.Default.ChevronRight,null)
+                            }
+                        }
+                    }
                 }
             }
         }
-        Text("Mapa oficial de Paldea com os 18 objetivos principais posicionados por região. Toque em um ponto para abrir o objetivo.",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=8.dp))
     }
 }
 
+@Composable
+private fun JourneyMapControl(icon:ImageVector,description:String,onClick:()->Unit){
+    Surface(shape=RoundedCornerShape(50),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
+        IconButton(onClick=onClick){Icon(icon,description)}
+    }
+}
 
 @Composable
 private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
