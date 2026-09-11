@@ -817,7 +817,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.17.0",
+        "v6.20.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
