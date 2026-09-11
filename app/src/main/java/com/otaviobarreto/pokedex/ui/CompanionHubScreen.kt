@@ -22,6 +22,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 private data class UniversalResult(val kind:String,val title:String,val subtitle:String,val pokemonId:Int?=null,val refKind:String?=null,val refName:String?=null)
+private data class GameProgress(val game:String,val region:String,val source:String,val captured:Int,val total:Int)
 
 @Composable
 fun CompanionHubScreen(
@@ -37,6 +38,8 @@ fun CompanionHubScreen(
     var loadingGuide by remember { mutableStateOf(false) }
     var backupText by remember { mutableStateOf("") }
     var backupMessage by remember { mutableStateOf<String?>(null) }
+    var gameProgress by remember { mutableStateOf<List<GameProgress>>(emptyList()) }
+    var loadingProgress by remember { mutableStateOf(false) }
     val clipboard=LocalClipboardManager.current
     val dex=PokedexDataStore.cachedNationalDex().orEmpty()
     val captured=CollectionStore.capturedIds
@@ -64,6 +67,24 @@ fun CompanionHubScreen(
         loadingRefs=false
     }
 
+    LaunchedEffect(Unit){
+        loadingProgress=true
+        gameProgress=withContext(Dispatchers.IO){
+            coroutineScope {
+                AppGameCatalog.games.flatMap { game ->
+                    game.regions.map { region ->
+                        async {
+                            val context=GameContext.fromSource(region.source) ?: return@async null
+                            val dexEntries=runCatching { GameDexService.loadGameDex(context) }.getOrDefault(emptyList())
+                            GameProgress(game.label,region.label,region.source,dexEntries.count{it.nationalId in CollectionStore.capturedIds},dexEntries.size)
+                        }
+                    }
+                }.flatMap { it.await() }.filterNotNull()
+            }
+        }
+        loadingProgress=false
+    }
+
     LaunchedEffect(selectedPokemon){
         val id=selectedPokemon ?: return@LaunchedEffect
         loadingGuide=true
@@ -88,6 +109,23 @@ fun CompanionHubScreen(
                         Text(TeamStore.teams.size.toString()+" Times",style=MaterialTheme.typography.labelMedium)
                         Text(CollectionStore.boxes.values.sumOf{it.size}.toString()+" em Boxes",style=MaterialTheme.typography.labelMedium)
                     }
+                }
+            }
+        }
+        item {
+            Text("Progresso por jogo",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
+        }
+        if(loadingProgress)item{LinearProgressIndicator(Modifier.fillMaxWidth())}
+        items(gameProgress,key={it.source}){gp->
+            Card(Modifier.fillMaxWidth().clickable{onOpenGame(gp.source)}){
+                Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                    Icon(Icons.Default.Map,null)
+                    Column(Modifier.weight(1f).padding(start=10.dp)){
+                        Text(gp.game+" · "+gp.region,fontWeight=FontWeight.SemiBold)
+                        Text(gp.captured.toString()+" / "+gp.total.toString()+" capturados",style=MaterialTheme.typography.bodySmall)
+                        LinearProgressIndicator(progress={if(gp.total==0)0f else gp.captured.toFloat()/gp.total},modifier=Modifier.fillMaxWidth().padding(top=5.dp))
+                    }
+                    Icon(Icons.Default.ChevronRight,null)
                 }
             }
         }
