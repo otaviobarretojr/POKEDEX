@@ -1,0 +1,60 @@
+name: Import Pokémon HOME Audio
+
+on:
+  push:
+    branches: [ "feature/pokehome-audio-v616" ]
+    paths:
+      - "tools/audio/**"
+      - ".github/workflows/import-home-audio.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-audio:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/pokehome-audio-v616
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install importer dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install lz4 requests beautifulsoup4
+          sudo apt-get update
+          sudo apt-get install -y libogg0 libvorbis0a
+
+      - name: Import and convert HOME 4.0.3 audio
+        run: |
+          python3 tools/audio/import_home_audio.py --output app/src/main/res/raw
+
+      - name: Verify generated Android audio
+        run: |
+          test -s app/src/main/res/raw/pokehome_ps_01.ogg
+          test -s app/src/main/res/raw/pokehome_st_sys01.ogg
+          test -s app/src/main/res/raw/pokehome_st_sys02.ogg
+          test -s app/src/main/res/raw/pokehome_st_sys03.ogg
+          file app/src/main/res/raw/pokehome_*.ogg
+          sha256sum app/src/main/res/raw/pokehome_*.ogg
+
+      - name: Commit generated audio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/res/raw/pokehome_*.ogg
+          if git diff --cached --quiet; then
+            echo "Audio assets already up to date."
+            exit 0
+          fi
+          git commit -m "Add converted Pokémon HOME audio assets"
+          git push origin HEAD:feature/pokehome-audio-v616
