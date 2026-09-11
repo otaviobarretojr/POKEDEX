@@ -1,5 +1,6 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,11 +11,15 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
@@ -34,41 +39,187 @@ internal fun JourneyGamePicker(onSelect:(String)->Unit){
         }
         items(AppGameCatalog.adventureGames,key={it.label}){game->
             val progress by rememberJourneyCollectionProgress(game,captured)
-            Card(
-                Modifier.fillMaxWidth().clickable{onSelect(game.label)},
-                shape=RoundedCornerShape(22.dp)
-            ){
-                Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
-                    JourneyGameCover(
-                        gameLabel = game.label,
-                        modifier = Modifier.width(88.dp).height(74.dp)
+            JourneyGameReferenceCard(
+                game = game,
+                progress = progress,
+                onClick = { onSelect(game.label) }
+            )
+        }
+        item{Spacer(Modifier.height(20.dp))}
+    }
+}
+
+
+@Composable
+private fun JourneyGameReferenceCard(
+    game: AppGame,
+    progress: JourneyCollectionProgress,
+    onClick: () -> Unit
+) {
+    val heroIds = JourneyGameVisualCatalog.forGame(game.label).heroPokemonIds
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(142.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFE)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            JourneyHeroArtwork(
+                ids = heroIds,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(150.dp)
+            )
+
+            Box(
+                Modifier
+                    .fillMaxHeight()
+                    .width(190.dp)
+                    .align(Alignment.CenterEnd)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFFFDFDFE),
+                                Color(0xFFFDFDFE).copy(alpha = .74f),
+                                Color.Transparent
+                            )
+                        )
                     )
-                    Column(Modifier.weight(1f).padding(horizontal=12.dp)){
-                        Text(game.label,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
-                        Text(game.subtitle,style=MaterialTheme.typography.bodySmall)
-                        if(progress.total>0){
-                            Row(Modifier.fillMaxWidth().padding(top=8.dp),verticalAlignment=Alignment.CenterVertically){
-                                LinearProgressIndicator(
-                                    progress={progress.ratio},
-                                    modifier=Modifier.weight(1f).height(7.dp),
-                                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
-                                )
-                                Text(
-                                    progress.captured.toString()+"/"+progress.total+" · "+(progress.ratio*100).toInt()+"%",
-                                    style=MaterialTheme.typography.labelSmall,
-                                    fontWeight=FontWeight.Bold,
-                                    modifier=Modifier.padding(start=8.dp)
-                                )
-                            }
-                        }else{
-                            Text("Box · calculando progresso…",style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=6.dp))
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                JourneyGameCover(
+                    gameLabel = game.label,
+                    modifier = Modifier
+                        .width(108.dp)
+                        .fillMaxHeight()
+                )
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 14.dp, end = 42.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = game.label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = game.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        LinearProgressIndicator(
+                            progress = { progress.ratio },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(7.dp),
+                            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = progress.captured.toString() + "/" + progress.total,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .84f)
+                        ) {
+                            Text(
+                                text = (progress.ratio * 100).toInt().toString() + "%",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
-                    Icon(Icons.Default.ChevronRight,null)
+
+                    if (game.regions.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            game.regions.take(3).forEach { region ->
+                                Surface(
+                                    shape = RoundedCornerShape(999.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .92f)
+                                ) {
+                                    Text(
+                                        text = region.label.uppercase(),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .size(38.dp),
+                    shape = RoundedCornerShape(19.dp),
+                    color = Color(0xFF142548)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = "Abrir " + game.label,
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }
-        item{Spacer(Modifier.height(20.dp))}
+    }
+}
+
+@Composable
+private fun JourneyHeroArtwork(
+    ids: List<Int>,
+    modifier: Modifier = Modifier
+) {
+    if (ids.isEmpty()) return
+    Box(modifier) {
+        ids.take(2).forEachIndexed { index, id ->
+            AsyncImage(
+                model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png",
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(if (ids.size > 1) .72f else 1f)
+                    .align(if (index == 0) Alignment.CenterEnd else Alignment.CenterStart)
+                    .alpha(if (ids.size > 1) .34f else .28f),
+                contentScale = ContentScale.Fit
+            )
+        }
     }
 }
 
