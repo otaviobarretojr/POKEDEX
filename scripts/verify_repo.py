@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.3"' not in workflow or "versionCode = 633" not in workflow:
-    violations.append("CI v6.3.3 version stamping missing")
+if 'versionName = "6.3.4"' not in workflow or "versionCode = 634" not in workflow:
+    violations.append("CI v6.3.4 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -283,6 +283,18 @@ for required in ("detectHorizontalDragGestures", "Deslize para navegar entre as 
 for forbidden in ("ChevronLeft", "ChevronRight", 'Text("BOX"'):
     if forbidden in boxes:
         violations.append(f"Box duplicate/arrow chrome regression: {forbidden}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("Modifier.size(48.dp)", "Spacer(Modifier.height(1.dp))", "lineHeight=10.sp", "lineHeight=8.sp"):
+    if required not in boxes:
+        violations.append(f"Box progress ring polish missing {required}")
 
 if violations:
     print("Source verification failed:")

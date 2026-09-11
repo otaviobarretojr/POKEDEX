@@ -112,7 +112,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    }
   }
   Row(
-   Modifier.fillMaxWidth().height(48.dp).padding(horizontal=4.dp),
+   Modifier.fillMaxWidth().height(54.dp).padding(horizontal=4.dp),
    verticalAlignment=Alignment.CenterVertically
   ){
    Column(Modifier.weight(1f)){
@@ -129,7 +129,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      color=QBmuted
     )
    }
-   Box(Modifier.size(42.dp),contentAlignment=Alignment.Center){
+   Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
     CircularProgressIndicator(
      progress={progress.coerceIn(0f,1f)},
      modifier=Modifier.fillMaxSize(),
@@ -137,9 +137,24 @@ private val qbGames=AppGameCatalog.games.map{game->
      color=game.accent,
      trackColor=game.accent.copy(alpha=.12f)
     )
-    Column(horizontalAlignment=Alignment.CenterHorizontally){
-     Text(((progress*100).toInt()).toString()+"%",fontSize=8.5.sp,fontWeight=FontWeight.Black,color=game.accent)
-     Text(caught.toString()+"/"+dex.size,fontSize=6.5.sp,color=QBmuted)
+    Column(
+     horizontalAlignment=Alignment.CenterHorizontally,
+     verticalArrangement=Arrangement.Center
+    ){
+     Text(
+      ((progress*100).toInt()).toString()+"%",
+      fontSize=9.sp,
+      lineHeight=10.sp,
+      fontWeight=FontWeight.Black,
+      color=game.accent
+     )
+     Spacer(Modifier.height(1.dp))
+     Text(
+      caught.toString()+"/"+dex.size,
+      fontSize=7.sp,
+      lineHeight=8.sp,
+      color=QBmuted
+     )
     }
    }
   }
