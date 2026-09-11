@@ -9,36 +9,22 @@ import coil.memory.MemoryCache
 import com.otaviobarreto.pokedex.data.PersistentApiCache
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import java.io.File
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.CompanionPreferences
 import com.otaviobarreto.pokedex.data.RecentActivityStore
+import com.otaviobarreto.pokedex.data.AppSoundManager
 
 class PokedexApplication : Application(), ImageLoaderFactory {
-    private val preloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     override fun onCreate() {
         super.onCreate()
         PersistentApiCache.initialize(this)
         OfflineGamePackManager.initialize(this)
         CompanionPreferences.initialize(this)
         RecentActivityStore.initialize(this)
+        AppSoundManager.initialize(this)
         runCatching {
             HttpResponseCache.install(File(cacheDir, "pokeapi-http"), 32L * 1024L * 1024L)
         }
-        preloadScope.launch {
-            // Cold-start warm-up stays intentionally small. The home Pokédex is
-            // the only dataset prepared immediately; game/reference catalogs
-            // are loaded cache-first when their screens are opened.
-            runCatching { PokedexDataStore.nationalDex() }
-            val priorityIds = buildList {
-                addAll(RecentActivityStore.recentPokemon.take(10))
-                addAll(OfflineGamePackManager.manifestIds(CompanionPreferences.activeGame).take(14))
-            }
-            runCatching { PokedexDataStore.hydratePinned(priorityIds) }
-        }
+
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
