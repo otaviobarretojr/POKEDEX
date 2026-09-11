@@ -7,6 +7,11 @@ data class JourneyMapPoint(
 )
 
 object JourneyMapCatalog {
+    fun backgroundUrl(game:String):String? = when(game){
+        "Scarlet / Violet" -> "https://www.pokemon.co.jp/ex/sv/assets/img/story/ja/220803_02/story_img_01.jpg"
+        else -> null
+    }
+
     fun points(game:String):List<JourneyMapPoint> = when(game){
         "Scarlet / Violet" -> paldea
         else -> emptyList()
