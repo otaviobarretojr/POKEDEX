@@ -28,6 +28,7 @@ private fun smartSearchTerm(raw:String):String {
     return raw.lowercase().replace("#"," ").split(Regex("\\s+")).filter { it.isNotBlank() && it !in stop }.joinToString(" ")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompanionHubScreen(
     onPokemonClick:(Int)->Unit,
@@ -187,7 +188,7 @@ fun CompanionHubScreen(
                             Text(entry.game,fontWeight=FontWeight.Bold)
                             Text(entry.region+" · "+if(entry.encounterCount>0)entry.encounterCount.toString()+" áreas de encontro" else "Disponível nesta Pokédex",style=MaterialTheme.typography.bodySmall)
                             if(entry.sampleLocations.isNotEmpty()) Text(entry.sampleLocations.joinToString(" · "),style=MaterialTheme.typography.labelSmall)
-                            val methodText=listOfNotNull(entry.methods.takeIf{it.isNotEmpty()}?.joinToString("/"),entry.minLevel?.let{"Nv. "+it+(entry.maxLevel?.takeIf{m->m!=it}?.let{m->"–"+m}?:"")}).joinToString(" · ")
+                            val levelText=entry.minLevel?.let{min->"Nv. "+min+(entry.maxLevel?.takeIf{max->max!=min}?.let{max->"–"+max}?:"")};val methodText=listOfNotNull(entry.methods.takeIf{it.isNotEmpty()}?.joinToString("/"),levelText).joinToString(" · ")
                             if(methodText.isNotBlank()) Text(methodText,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                         }
                         Icon(Icons.Default.ChevronRight,null)
