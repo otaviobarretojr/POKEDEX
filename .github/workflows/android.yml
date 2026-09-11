@@ -51,10 +51,10 @@ jobs:
           name: artwork-audit
           path: artwork-audit
 
-      - name: Stamp v6.3.7 build
+      - name: Stamp v6.3.8 build
         run: |
-          sed -i 's/versionCode = [0-9]\+/versionCode = 637/' app/build.gradle.kts
-          sed -i 's/versionName = "[^"]*"/versionName = "6.3.7"/' app/build.gradle.kts
+          sed -i 's/versionCode = [0-9]\+/versionCode = 638/' app/build.gradle.kts
+          sed -i 's/versionName = "[^"]*"/versionName = "6.3.8"/' app/build.gradle.kts
 
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
