@@ -16,27 +16,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import com.otaviobarreto.pokedex.data.CollectionStore
-import com.otaviobarreto.pokedex.data.AppStatePreferences
-import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.data.RecentActivityStore
-import com.otaviobarreto.pokedex.data.JourneyProgressStore
-import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import com.otaviobarreto.pokedex.ui.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        CollectionStore.initialize(this)
-        TeamStore.initialize(this)
-        AppStatePreferences.initialize(this)
-        val legacySource = AppStatePreferences.activeRegionSource
-            ?: AppGameCatalog.games.firstOrNull { it.label == AppStatePreferences.activeGame }?.regions?.firstOrNull()?.source
-        CollectionStore.migrateLegacyCapturedToSource(legacySource)
-        RecentActivityStore.initialize(this)
-        JourneyProgressStore.initialize(this)
-        HomeAudioManager.initialize(this)
         HomeAudioManager.playBoot()
         setContent { PokedexTheme { PokedexRoot() } }
     }
