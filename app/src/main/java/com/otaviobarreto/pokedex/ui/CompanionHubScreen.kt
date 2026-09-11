@@ -1,5 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,6 +44,7 @@ fun CompanionHubScreen(
     var selectedPokemon by remember { mutableStateOf<Int?>(null) }
     var availability by remember { mutableStateOf<List<CaptureAvailability>>(emptyList()) }
     var loadingGuide by remember { mutableStateOf(false) }
+    var forms by remember { mutableStateOf<List<PokemonFormVariant>>(emptyList()) }
     var backupText by remember { mutableStateOf("") }
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var gameProgress by remember { mutableStateOf<List<GameProgress>>(emptyList()) }
@@ -48,10 +52,22 @@ fun CompanionHubScreen(
     var plannerGame by remember { mutableStateOf(CompanionPreferences.activeGame) }
     var plannerPlan by remember { mutableStateOf<CapturePlan?>(null) }
     var plannerLoading by remember { mutableStateOf(false) }
+    var routeGroups by remember { mutableStateOf<List<CaptureRouteGroup>>(emptyList()) }
     var plannerMenu by remember { mutableStateOf(false) }
     val clipboard=LocalClipboardManager.current
+    val context=LocalContext.current
     val dex=PokedexDataStore.cachedNationalDex().orEmpty()
     val captured=CollectionStore.capturedIds
+    val createBackupLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")){uri->
+        if(uri!=null) runCatching{context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use{it.write(BackupService.exportJson())}}.onSuccess{backupMessage="Backup salvo em arquivo."}.onFailure{backupMessage="Não foi possível salvar o backup."}
+    }
+    val openBackupLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            val raw=runCatching{context.contentResolver.openInputStream(uri)?.bufferedReader()?.use{it.readText()}}.getOrNull().orEmpty()
+            backupText=raw
+            backupMessage=if(raw.isNotBlank()&&BackupService.importJson(raw))"Backup restaurado com sucesso." else "Backup inválido ou incompatível."
+        }
+    }
     val pokemonResults=remember(query,dex){
         val q=smartSearchTerm(query).ifBlank { query.trim().removePrefix("#") }
         if(q.length<2) emptyList() else dex.asSequence().filter{it.name.contains(q,true)||it.id.toString()==q}.take(12)
@@ -97,13 +113,23 @@ fun CompanionHubScreen(
     LaunchedEffect(selectedPokemon){
         val id=selectedPokemon ?: return@LaunchedEffect
         loadingGuide=true
-        availability=CaptureGuideService.find(id)
+        coroutineScope {
+            val guideJob=async{CaptureGuideService.find(id)}
+            val formsJob=async{runCatching{withContext(Dispatchers.IO){PokemonFormsService.load(id)}}.getOrDefault(emptyList())}
+            availability=guideJob.await()
+            forms=formsJob.await()
+        }
         loadingGuide=false
     }
 
     LaunchedEffect(plannerGame){
         plannerLoading=true
-        plannerPlan=CapturePlannerService.build(plannerGame)
+        coroutineScope {
+            val planJob=async{CapturePlannerService.build(plannerGame)}
+            val routeJob=async{CaptureRouteService.build(plannerGame)}
+            plannerPlan=planJob.await()
+            routeGroups=routeJob.await()
+        }
         plannerLoading=false
     }
 
@@ -180,6 +206,16 @@ fun CompanionHubScreen(
                 }
             }
             if(loadingGuide)item{LinearProgressIndicator(Modifier.fillMaxWidth())}
+            if(forms.size>1)item{
+                Card(Modifier.fillMaxWidth()){
+                    Column(Modifier.fillMaxWidth().padding(12.dp)){
+                        Text("Formas e variantes",fontWeight=FontWeight.Bold)
+                        forms.forEach{form->
+                            Text((if(form.isDefault)"• Principal · " else "• ")+form.name,style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
             if(!loadingGuide && availability.isEmpty()) item { Text("Nenhuma disponibilidade regional encontrada para #"+id+".") }
             items(availability,key={it.source}){entry->
                 Card(Modifier.fillMaxWidth().clickable{onOpenGame(entry.source)}){
@@ -220,6 +256,22 @@ fun CompanionHubScreen(
                     }
                 }
             }
+            if(routeGroups.isNotEmpty()){
+                item { Text("Rota por região",fontWeight=FontWeight.Bold) }
+                items(routeGroups,key={"route-"+it.source}){group->
+                    Card(Modifier.fillMaxWidth().clickable{onOpenGame(group.source)}){
+                        Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                            Icon(Icons.Default.Route,null)
+                            Column(Modifier.weight(1f).padding(start=10.dp)){
+                                Text(group.region,fontWeight=FontWeight.SemiBold)
+                                Text(group.pokemon.size.toString()+" faltantes nesta região",style=MaterialTheme.typography.bodySmall)
+                                Text(group.pokemon.take(4).joinToString(" · "){it.name},style=MaterialTheme.typography.labelSmall)
+                            }
+                            Icon(Icons.Default.ChevronRight,null)
+                        }
+                    }
+                }
+            }
             if(plan.obtainableMissing.isNotEmpty()) {
                 item { Text("Próximos para capturar",fontWeight=FontWeight.Bold) }
                 items(plan.obtainableMissing.take(12),key={"plan-"+it.id}){p->
@@ -238,8 +290,12 @@ fun CompanionHubScreen(
             Text("Backup e restauração",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             Text("O backup inclui capturados, Boxes e Times.",style=MaterialTheme.typography.bodySmall)
             Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                Button(onClick={val data=BackupService.exportJson();backupText=data;clipboard.setText(AnnotatedString(data));backupMessage="Backup copiado para a área de transferência."},modifier=Modifier.weight(1f)){Icon(Icons.Default.Backup,null);Spacer(Modifier.width(6.dp));Text("Copiar backup")}
-                OutlinedButton(onClick={backupText=clipboard.getText()?.text.orEmpty()},modifier=Modifier.weight(1f)){Icon(Icons.Default.ContentPaste,null);Spacer(Modifier.width(6.dp));Text("Colar")}
+                Button(onClick={createBackupLauncher.launch("pokedex-backup-v6.json")},modifier=Modifier.weight(1f)){Icon(Icons.Default.Save,null);Spacer(Modifier.width(6.dp));Text("Salvar arquivo")}
+                OutlinedButton(onClick={openBackupLauncher.launch(arrayOf("application/json","text/plain"))},modifier=Modifier.weight(1f)){Icon(Icons.Default.FolderOpen,null);Spacer(Modifier.width(6.dp));Text("Abrir arquivo")}
+            }
+            Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                TextButton(onClick={val data=BackupService.exportJson();backupText=data;clipboard.setText(AnnotatedString(data));backupMessage="Backup copiado."},modifier=Modifier.weight(1f)){Text("Copiar JSON")}
+                TextButton(onClick={backupText=clipboard.getText()?.text.orEmpty()},modifier=Modifier.weight(1f)){Text("Colar JSON")}
             }
             OutlinedTextField(backupText,{backupText=it},Modifier.fillMaxWidth().heightIn(min=120.dp).padding(top=8.dp),label={Text("Backup JSON")})
             Button(onClick={backupMessage=if(BackupService.importJson(backupText))"Backup restaurado com sucesso." else "Backup inválido ou incompatível."},modifier=Modifier.fillMaxWidth().padding(top=8.dp),enabled=backupText.isNotBlank()){Text("Restaurar backup")}

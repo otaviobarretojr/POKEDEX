@@ -4,7 +4,18 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+
+private val PokedexShapes = Shapes(
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(30.dp)
+)
 
 private val PokedexLightColors = lightColorScheme(
     primary = Color(0xFF5B55E7),
@@ -32,6 +43,7 @@ private val PokedexLightColors = lightColorScheme(
 fun PokedexTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = PokedexLightColors,
+        shapes = PokedexShapes,
         content = content
     )
 }

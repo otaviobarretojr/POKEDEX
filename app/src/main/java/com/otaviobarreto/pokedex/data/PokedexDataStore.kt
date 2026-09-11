@@ -66,8 +66,10 @@ object PokedexDataStore {
                     coroutineScope {
                         val pokemonJob = async { pokemon(id) }
                         val speciesJob = async { species(id) }
+                        val formsJob = async { runCatching { PokemonFormsService.load(id) } }
                         pokemonJob.await()
                         speciesJob.await()
+                        formsJob.await()
                     }
                 }
             }

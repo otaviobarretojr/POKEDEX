@@ -34,6 +34,7 @@ import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.PokeApiService
+import com.otaviobarreto.pokedex.data.PokemonFormsService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -240,6 +241,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                                 colorFilter = if (caught) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
                             )
                             Text(p.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            val formsCount = PokemonFormsService.cached(p.id)?.size ?: 1
                             Text(
                                 if (caught && CollectionStore.boxesForPokemon(p.id).isNotEmpty()) "${CollectionStore.boxesForPokemon(p.id).size} Box · #${p.id.toString().padStart(4, '0')}"
                                 else regionalNumbers[p.id]?.let { "#${it.toString().padStart(3, '0')} regional · #${p.id.toString().padStart(4, '0')}" }
@@ -249,6 +251,7 @@ fun LivingDexScreen(onPokemonClick: (Int) -> Unit) {
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+                            if (formsCount > 1) Text("$formsCount formas", style = MaterialTheme.typography.labelSmall, color = Color(0xFF5B55E7))
                         }
                     }
                 }
