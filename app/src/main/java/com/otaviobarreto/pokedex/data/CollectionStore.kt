@@ -42,8 +42,23 @@ object CollectionStore {
     }
 
     fun isCaptured(id: Int): Boolean = id in capturedIds
-    fun toggleCaptured(id: Int) { capturedIds = if (id in capturedIds) capturedIds - id else capturedIds + id; persistCaptured() }
-    fun markCaptured(id: Int) { if (id !in capturedIds) { capturedIds = capturedIds + id; persistCaptured() } }
+    fun toggleCaptured(id: Int) = setCaptured(id, id !in capturedIds)
+    fun setCaptured(id: Int, captured: Boolean) {
+        if (captured) {
+            if (id !in capturedIds) { capturedIds = capturedIds + id; persistCaptured() }
+            return
+        }
+        if (id in capturedIds) {
+            capturedIds = capturedIds - id
+            persistCaptured()
+        }
+        val affected = boxes.filterValues { id in it }.keys
+        if (affected.isNotEmpty()) {
+            boxes = boxes.mapValues { (_, ids) -> ids - id }
+            affected.forEach(::persistBox)
+        }
+    }
+    fun markCaptured(id: Int) = setCaptured(id, true)
 
     fun ensureBox(name: String): String? {
         val clean = sanitizeBoxName(name)

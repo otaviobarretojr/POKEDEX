@@ -55,8 +55,8 @@ if "CollectionStore.toggleCaptured" not in detail:
     violations.append("Pokemon detail capture integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.3.4"' not in workflow or "versionCode = 634" not in workflow:
-    violations.append("CI v6.3.4 version stamping missing")
+if 'versionName = "6.3.5"' not in workflow or "versionCode = 635" not in workflow:
+    violations.append("CI v6.3.5 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -295,6 +295,23 @@ boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 for required in ("Modifier.size(48.dp)", "Spacer(Modifier.height(1.dp))", "lineHeight=10.sp", "lineHeight=8.sp"):
     if required not in boxes:
         violations.append(f"Box progress ring polish missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("combinedClickable", "Capturar Pokémon?", "Remover captura?", "Todas as Boxes", "QBAllBoxes", "GridView"):
+    if required not in boxes:
+        violations.append(f"Box capture/overview missing {required}")
+
+collection = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt").read_text(encoding="utf-8")
+for required in ("fun setCaptured", "affected = boxes.filterValues", "toggleCaptured(id: Int) = setCaptured"):
+    if required not in collection:
+        violations.append(f"Persistent capture state missing {required}")
 
 if violations:
     print("Source verification failed:")
