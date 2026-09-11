@@ -333,7 +333,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     val revision=JourneyProgressStore.revision
     val steps=remember(game.label,revision){JourneyCatalog.steps(game.label)}
     val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
-    val completedCount=steps.count{it.id in completed}
+    val completedCount=DataIntegrityRules.completedCount(steps.map{it.id},completed)
     val progress=if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
     val nextStep=steps.firstOrNull{it.id !in completed}
     val smart=remember(game.label,revision){JourneySmartProgress.context(game.label)}
