@@ -29,13 +29,17 @@ private data class FormPreview(
     val detailName:String,
     val formId:Int,
     val shiny:Boolean,
-    val kind:PokemonFormKind
+    val kind:PokemonFormKind,
+    val normalImageUrl:String?=null,
+    val shinyImageUrl:String?=null
 ){
     val imageUrl:String
-        get()="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+
-            (if(shiny)"shiny/" else "")+formId+".png"
+        get()=(if(shiny) shinyImageUrl else normalImageUrl)
+            ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+
+                (if(shiny)"shiny/" else "")+formId+".png"
     val fallbackImageUrl:String
-        get()="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
+        get()=normalImageUrl
+            ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
 }
 
 private fun prettyFormLabel(baseName:String,rawName:String,shiny:Boolean):String{
@@ -200,8 +204,8 @@ private fun PokedexFormsDialog(
                 val normalLabel=prettyFormLabel(base?.name ?: "",form.name,false)
                 val shinyLabel=prettyFormLabel(base?.name ?: "",form.name,true)
                 val prefix=base?.name ?: "Pokémon"
-                add(FormPreview(normalLabel,prefix+" — "+normalLabel,id,false,form.kind))
-                add(FormPreview(shinyLabel,prefix+" — "+shinyLabel,id,true,form.kind))
+                add(FormPreview(normalLabel,prefix+" — "+normalLabel,id,false,form.kind,form.spriteUrl,form.shinySpriteUrl))
+                add(FormPreview(shinyLabel,prefix+" — "+shinyLabel,id,true,form.kind,form.spriteUrl,form.shinySpriteUrl))
             }
         }
     }
