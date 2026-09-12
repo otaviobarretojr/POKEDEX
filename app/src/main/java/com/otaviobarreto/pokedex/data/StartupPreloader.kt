@@ -56,11 +56,26 @@ object StartupPreloader {
             }.awaitAll()
         }
 
+        val activeRegionSource = game?.let { AppStatePreferences.activeRegionForGame(it.label) }
+        val activeContext = GameContext.fromSource(activeRegionSource)
+        val activeDex = activeContext?.let { GameDexService.cached(it).orEmpty() }.orEmpty()
+        val activePage = activeRegionSource?.let { AppStatePreferences.boxPage(it) } ?: 0
+        val activePageIds = activeDex.drop(activePage.coerceAtLeast(0) * 30).take(30).map { it.nationalId }
+        val ownedVariantIds = VariantCollectionStore.ownedVariants
+            .asSequence()
+            .filter { activeRegionSource==null || it.source==activeRegionSource }
+            .map { it.speciesId }
+            .distinct()
+            .take(12)
+            .toList()
+
         val priorityIds = buildList {
             addAll(RecentActivityStore.recentPokemon.take(12))
+            addAll(activePageIds)
+            addAll(ownedVariantIds)
             addAll(OfflineGamePackManager.manifestIds(activeGame).take(18))
             addAll(gameDexIds.take(18))
-        }.distinct().take(48)
+        }.distinct().take(64)
 
         progress(.60f, "Aquecendo detalhes dos Pokémon")
         coroutineScope {
