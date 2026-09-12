@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "16200" not in workflow or "16.2.0" not in workflow:
-    violations.append("CI v16.2.0 version stamping missing")
+if "17000" not in workflow or "17.0.0" not in workflow:
+    violations.append("CI v17.0.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -926,8 +926,9 @@ local_v1613 = 'versionName = "16.1.3"' in local_gradle and "versionCode = 16130"
 local_v1614 = 'versionName = "16.1.4"' in local_gradle and "versionCode = 16140" in local_gradle
 local_v1615 = 'versionName = "16.1.5"' in local_gradle and "versionCode = 16150" in local_gradle
 local_v1620 = 'versionName = "16.2.0"' in local_gradle and "versionCode = 16200" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620):
-    violations.append("Local build version is not aligned with v16.1.x/v16.2.x")
+local_v1700 = 'versionName = "17.0.0"' in local_gradle and "versionCode = 17000" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700):
+    violations.append("Local build version is not aligned with supported v16/v17 releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1691,6 +1692,60 @@ workflow_v1620 = (root / ".github/workflows/android.yml").read_text(encoding="ut
 for required in ("Problem Forms audit", "audit_problem_forms.py"):
     if required not in workflow_v1620:
         violations.append(f"v16.2.0 targeted visual audit missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v17.0.0 stable milestone guards
+detail_v1700 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+for required in (
+    "DetailDexNavigator",
+    "Coleção · Formas e Shiny",
+    "prefetchCoreDetails(neighbor)",
+):
+    if required not in detail_v1700:
+        violations.append(f"v17.0.0 detail navigation/integration missing {required}")
+
+forms_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
+for required in (
+    "resourceUrlsFor",
+    "resourceCache",
+    "needsExactFormSprite",
+):
+    if required not in forms_v1700:
+        violations.append(f"v17.0.0 form/offline resource tracking missing {required}")
+
+offline_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
+for required in (
+    "PACK_VERSION = 16",
+    "PokemonFormsService.resourceUrlsFor(id)",
+    "form.spriteUrl",
+    "form.shinySpriteUrl",
+):
+    if required not in offline_v1700:
+        violations.append(f"v17.0.0 offline forms support missing {required}")
+
+startup_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+for required in (
+    "activePageIds",
+    "ownedVariantIds",
+    "take(64)",
+):
+    if required not in startup_v1700:
+        violations.append(f"v17.0.0 startup performance support missing {required}")
+
+collection_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt").read_text(encoding="utf-8")
+if "stillReferenced" not in collection_v1700:
+    violations.append("v17.0.0 collection consistency cleanup missing")
+
+presentation_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormPresentation.kt").read_text(encoding="utf-8")
+for required in ("categoryLabel", "behaviorLabel", "Forma de Alola", "Gigantamax"):
+    if required not in presentation_v1700:
+        violations.append(f"v17.0.0 Portuguese form presentation missing {required}")
 
 if violations:
     print("Source verification failed:")
