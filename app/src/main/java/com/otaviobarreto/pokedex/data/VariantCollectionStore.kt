@@ -58,12 +58,14 @@ object VariantCollectionStore {
         formName:String,
         shiny:Boolean,
         owned:Boolean,
+        formKey:String=formName.lowercase(),
         normalArtworkUrl:String?=null,
         shinyArtworkUrl:String?=null
     ){
         if(source.isBlank() || speciesId<=0 || formPokemonId<=0) return
         val entry=OwnedPokemonVariant(
             source,speciesId,formPokemonId,formName,shiny,
+            formKey=formKey,
             normalArtworkUrl=normalArtworkUrl,
             shinyArtworkUrl=shinyArtworkUrl
         )
