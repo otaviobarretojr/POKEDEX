@@ -406,7 +406,7 @@ journey = journey_source
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 
-for required in ("PRÓXIMO PASSO INTELIGENTE", "Preparação recomendada", "Pokémon úteis agora", "Mapa da Jornada", "JourneyMapScreen"):
+for required in ("OBJETIVO ATUAL", "Preparação recomendada", "Pokémon úteis agora", "Mapa da Jornada", "JourneyMapScreen"):
     if required not in journey:
         violations.append(f"Complete Journey UI missing {required}")
 for required in ("sv-01", "sv-18", "recommendedLevel", "pokemonIds", "items"):
