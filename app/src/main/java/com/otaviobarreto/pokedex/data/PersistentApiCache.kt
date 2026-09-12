@@ -14,6 +14,8 @@ import java.util.zip.GZIPOutputStream
  */
 object PersistentApiCache {
     private const val DEFAULT_MAX_AGE_MS = 7L * 24L * 60L * 60L * 1000L
+    private const val MAX_UNPINNED_BYTES = 96L * 1024L * 1024L
+    private const val MAX_UNPINNED_FILES = 1800
     private var directory: File? = null
     private val memory = ConcurrentHashMap<String, String>()
     private var pinsFile: File? = null
@@ -24,6 +26,7 @@ object PersistentApiCache {
         directory = File(context.filesDir, "api-cache-v1").apply { mkdirs() }
         pinsFile = File(context.filesDir, "api-cache-pins.txt")
         pinnedUrls = pinsFile?.takeIf { it.exists() }?.readLines()?.filter { it.isNotBlank() }?.toSet().orEmpty()
+        pruneUnpinned()
     }
 
     fun getOrFetch(
@@ -39,7 +42,11 @@ object PersistentApiCache {
         }
 
         return runCatching { fetch() }
-            .onSuccess { memory[url] = it; write(file, it) }
+            .onSuccess {
+                memory[url] = it
+                write(file, it)
+                pruneUnpinned()
+            }
             .getOrElse { error ->
                 read(file)?.also { memory[url] = it } ?: throw error
             }
@@ -88,7 +95,32 @@ object PersistentApiCache {
         persistPins()
     }
 
-    fun sizeBytes(): Long = directory?.listFiles()?.sumOf { it.length() } ?: 0L
+    fun sizeBytes(): Long = directory?.listFiles()?.filter { it.extension == "gz" }?.sumOf { it.length() } ?: 0L
+
+    fun pinnedCount(): Int = pinnedUrls.size
+
+    @Synchronized
+    fun pruneUnpinned() {
+        val dir = directory ?: return
+        val pinnedFiles = pinnedUrls.map { fileFor(it).absolutePath }.toSet()
+        val candidates = dir.listFiles()
+            .orEmpty()
+            .filter { it.isFile && it.extension == "gz" && it.absolutePath !in pinnedFiles }
+            .sortedBy { it.lastModified() }
+            .toMutableList()
+
+        var bytes = candidates.sumOf { it.length() }
+        var count = candidates.size
+        val iterator = candidates.iterator()
+        while ((bytes > MAX_UNPINNED_BYTES || count > MAX_UNPINNED_FILES) && iterator.hasNext()) {
+            val file = iterator.next()
+            val length = file.length()
+            if (file.delete()) {
+                bytes -= length
+                count--
+            }
+        }
+    }
 
     private fun fileFor(url: String): File {
         val dir = directory ?: error("PersistentApiCache not initialized")
