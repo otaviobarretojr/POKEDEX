@@ -171,7 +171,9 @@ object VariantCollectionStore {
                         speciesId=species,
                         formPokemonId=form,
                         formName=o.optString("formName","Forma"),
-                        shiny=o.optBoolean("shiny",false)
+                        shiny=o.optBoolean("shiny",false),
+                        normalArtworkUrl=o.optString("normalArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
+                        shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"}
                     )
                 )
             }
