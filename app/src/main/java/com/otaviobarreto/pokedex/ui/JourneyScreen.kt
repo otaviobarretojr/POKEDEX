@@ -737,7 +737,7 @@ private fun journeyOpponentPokemonId(
         "Heracross" to 214, "Machamp" to 68, "Medicham" to 308, "Falinks" to 870,
         "Mawile" to 303, "Barbaracle" to 689, "Arbok" to 24, "Roserade" to 407, "Scolipede" to 545,
         "Clawitzer" to 693, "Vanillish" to 583, "Emolga" to 587, "Staryu" to 120,
-        "Ariados" to 168, "Sableye" to 302, "Krookodile" to 553, "Scrafty" to 560,
+        "Ariados" to 168, "Sableye" to 302, "Krookodile" to 553, "Scrafty" to 560, "Gyarados" to 130,
         "Tyrantrum" to 697, "Noivern" to 715, "Garchomp" to 445, "Dragalge" to 691,
         "Froslass" to 478, "Venusaur" to 3, "Carbink" to 703, "Aurorus" to 699, "Clefable" to 36,
         "Dragonite" to 149, "Tyranitar" to 248, "Starmie" to 121,
