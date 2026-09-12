@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "16140" not in workflow or "16.1.4" not in workflow:
-    violations.append("CI v16.1.4 version stamping missing")
+if "16150" not in workflow or "16.1.5" not in workflow:
+    violations.append("CI v16.1.5 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -924,7 +924,8 @@ local_v1611 = 'versionName = "16.1.1"' in local_gradle and "versionCode = 16110"
 local_v1612 = 'versionName = "16.1.2"' in local_gradle and "versionCode = 16120" in local_gradle
 local_v1613 = 'versionName = "16.1.3"' in local_gradle and "versionCode = 16130" in local_gradle
 local_v1614 = 'versionName = "16.1.4"' in local_gradle and "versionCode = 16140" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614):
+local_v1615 = 'versionName = "16.1.5"' in local_gradle and "versionCode = 16150" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615):
     violations.append("Local build version is not aligned with v16.1.x")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1616,6 +1617,33 @@ pokedex_v1614 = (ui / "PokedexCatalogScreen.kt").read_text(encoding="utf-8")
 for required in ("form.spriteUrl", "form.shinySpriteUrl"):
     if required not in pokedex_v1614:
         violations.append(f"v16.1.4 Pokédex form artwork wiring missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v16.1.5 Box quick-action + visual framing guards
+boxes_v1615 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in (
+    "VariantCollectionStore.toggle(",
+    "dismiss()",
+    "Modifier.size(64.dp)",
+    "Modifier.fillMaxSize().padding(4.dp)",
+):
+    if required not in boxes_v1615:
+        violations.append(f"v16.1.5 Box quick UX missing {required}")
+
+pokedex_v1615 = (ui / "PokedexCatalogScreen.kt").read_text(encoding="utf-8")
+for required in (
+    "surfaceContainerLow",
+    "RoundedCornerShape(16.dp)",
+    "Modifier.fillMaxSize().padding(6.dp)",
+):
+    if required not in pokedex_v1615:
+        violations.append(f"v16.1.5 artwork framing missing {required}")
 
 if violations:
     print("Source verification failed:")
