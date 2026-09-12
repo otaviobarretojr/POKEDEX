@@ -17,6 +17,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.*
+import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,6 +32,8 @@ fun CompanionCenterScreen(
     var statusText by remember{mutableStateOf<String?>(null)}
     var activeDownload by remember{mutableStateOf<String?>(null)}
     var progress by remember{mutableStateOf<OfflineGamePackManager.Progress?>(null)}
+    var audioEnabled by remember{mutableStateOf(HomeAudioManager.enabled)}
+    var audioVolume by remember{mutableFloatStateOf(HomeAudioManager.volume)}
 
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
@@ -183,6 +186,58 @@ fun CompanionCenterScreen(
                         cache.total.toString()+" entradas · Pokémon "+cache.pokemon+
                             " · espécies "+cache.species+
                             " · evoluções "+cache.evolutions,
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        item{
+            SettingsSectionTitle("Áudio")
+            Card(shape=RoundedCornerShape(20.dp)){
+                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        Icon(Icons.Default.VolumeUp,null)
+                        Text("Música e sons",Modifier.weight(1f).padding(start=10.dp),fontWeight=FontWeight.Bold)
+                        Switch(
+                            checked=audioEnabled,
+                            onCheckedChange={
+                                audioEnabled=it
+                                HomeAudioManager.setEnabled(it)
+                            }
+                        )
+                    }
+                    Text(
+                        "Mantém o sistema de áudio atual do aplicativo.",
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Slider(
+                        value=audioVolume,
+                        onValueChange={
+                            audioVolume=it
+                            HomeAudioManager.volume=it
+                        },
+                        enabled=audioEnabled,
+                        valueRange=0f..1f
+                    )
+                }
+            }
+        }
+
+        item{
+            SettingsSectionTitle("Informações da versão")
+            val versionName=remember(context){
+                runCatching{
+                    context.packageManager.getPackageInfo(context.packageName,0).versionName ?: "—"
+                }.getOrDefault("—")
+            }
+            Card(shape=RoundedCornerShape(20.dp)){
+                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                    Text("POKEDEX v"+versionName,fontWeight=FontWeight.Bold)
+                    Text(
+                        "Pacote: "+context.packageName,
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
