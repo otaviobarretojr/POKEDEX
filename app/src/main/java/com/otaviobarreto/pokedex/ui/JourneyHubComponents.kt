@@ -100,7 +100,7 @@ private fun JourneyGameReferenceCard(
                 JourneyGameCover(
                     gameLabel = game.label,
                     modifier = Modifier
-                        .width(108.dp)
+                        .width(120.dp)
                         .fillMaxHeight()
                 )
 
