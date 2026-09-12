@@ -74,7 +74,7 @@ fun PokedexCatalogScreen(
         LazyVerticalGrid(
             columns=GridCells.Adaptive(112.dp),
             modifier=Modifier.fillMaxSize().padding(top=10.dp),
-            contentPadding=PaddingValues(horizontal=12.dp,bottom=24.dp),
+            contentPadding=PaddingValues(start=12.dp,end=12.dp,bottom=24.dp),
             horizontalArrangement=Arrangement.spacedBy(8.dp),
             verticalArrangement=Arrangement.spacedBy(8.dp)
         ){
