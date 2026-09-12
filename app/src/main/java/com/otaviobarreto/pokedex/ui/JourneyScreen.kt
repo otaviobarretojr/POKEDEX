@@ -1,18 +1,10 @@
 package com.otaviobarreto.pokedex.ui
 
-import android.graphics.BitmapFactory
-import android.util.Base64
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
@@ -33,35 +25,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.IntOffset
-import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import com.otaviobarreto.pokedex.data.*
 
-private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
+private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 
 @Composable
 fun JourneyScreen(
     onPokemonClick:(Int,String?)->Unit,
-    onOpenTeamGuide:(String,String?)->Unit,
-    onOpenBoxes:(String,String?)->Unit,
-    onMapFullscreenChange:(Boolean)->Unit={}
+    onOpenTeamGuide:(String,String?)->Unit
+    onOpenBoxes:(String,String?)->Unit
 ){
     var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
     var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
@@ -69,32 +49,17 @@ fun JourneyScreen(
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val routeListState=rememberLazyListState()
     var explicitGameSelectionRevision by remember { mutableIntStateOf(0) }
-    var mapSelectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
-    var mapSelectionInitialized by rememberSaveable { mutableStateOf(false) }
-    var mapZoom by rememberSaveable { mutableFloatStateOf(1f) }
-    var mapPanX by rememberSaveable { mutableFloatStateOf(0f) }
-    var mapPanY by rememberSaveable { mutableFloatStateOf(0f) }
-    var mapFullscreen by rememberSaveable { mutableStateOf(false) }
-    DisposableEffect(Unit){onDispose{onMapFullscreenChange(false)}}
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
 
     LaunchedEffect(explicitGameSelectionRevision){
         if(explicitGameSelectionRevision==0) return@LaunchedEffect
         routeListState.scrollToItem(0)
-        mapSelectedStepId=null
-        mapSelectionInitialized=false
-        mapZoom=1f
-        mapPanX=0f
-        mapPanY=0f
-        mapFullscreen=false
-        onMapFullscreenChange(false)
     }
 
     BackHandler(enabled=view!=JourneyView.GAMES){
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
             JourneyView.ROUTE -> view=JourneyView.GAME_MENU
-            JourneyView.MAP -> { if(mapFullscreen){ mapFullscreen=false; onMapFullscreenChange(false) } else view=JourneyView.GAME_MENU }
             JourneyView.DETAIL -> {
                 selectedStepId=null
                 view=detailReturnView
@@ -116,7 +81,6 @@ fun JourneyScreen(
             game=game,
             onBack={view=JourneyView.GAMES},
             onRoute={view=JourneyView.ROUTE},
-            onMap={view=JourneyView.MAP},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
             onBoxes={onOpenBoxes(game.label,AppStatePreferences.activeRegionForGame(game.label) ?: game.regions.firstOrNull()?.source)},
             onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
@@ -138,21 +102,6 @@ fun JourneyScreen(
                 onPokemonClick=onPokemonClick
             ) else view=JourneyView.ROUTE
         } else { view=JourneyView.GAMES }
-        JourneyView.MAP -> if(game!=null) JourneyMapScreen(
-            game=game,
-            selectedStepId=mapSelectedStepId,
-            selectionInitialized=mapSelectionInitialized,
-            zoom=mapZoom,
-            pan=Offset(mapPanX,mapPanY),
-            onSelectedStepChange={mapSelectedStepId=it},
-            onSelectionInitialized={mapSelectionInitialized=true},
-            onZoomChange={mapZoom=it},
-            onPanChange={mapPanX=it.x;mapPanY=it.y},
-            fullscreen=mapFullscreen,
-            onFullscreenChange={enabled->mapFullscreen=enabled;onMapFullscreenChange(enabled)},
-            onBack={mapFullscreen=false;onMapFullscreenChange(false);view=JourneyView.GAME_MENU},
-            onOpenStep={stepId->detailReturnView=JourneyView.MAP;selectedStepId=stepId;view=JourneyView.DETAIL}
-        ) else { view=JourneyView.GAMES }
     }
 }
 
@@ -1169,340 +1118,6 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
     }
 }
 
-
-private object JourneyMapBitmapCache{
-    private val cache=mutableMapOf<String,ImageBitmap>()
-    fun get(key:String)=cache[key]
-    fun put(key:String,value:ImageBitmap){cache[key]=value}
-}
-
-@Composable
-private fun rememberEmbeddedJourneyMap(assetPrefix:String?):ImageBitmap?{
-    val context=LocalContext.current
-    var bitmap by remember(assetPrefix){ mutableStateOf<ImageBitmap?>(null) }
-    LaunchedEffect(assetPrefix){
-        val cached=assetPrefix?.let(JourneyMapBitmapCache::get)
-        if(cached!=null){ bitmap=cached; return@LaunchedEffect }
-        bitmap = if(assetPrefix==null) null else withContext(Dispatchers.IO){
-            runCatching{
-                val encoded=buildString{
-                    repeat(17){index->
-                        val suffix=index.toString().padStart(2,'0')
-                        context.assets.open(assetPrefix+"_"+suffix+".b64")
-                            .bufferedReader()
-                            .use{append(it.readText())}
-                    }
-                }
-                val bytes=Base64.decode(encoded,Base64.DEFAULT)
-                BitmapFactory.decodeByteArray(bytes,0,bytes.size)?.asImageBitmap()
-            }.getOrNull()
-        }
-        if(assetPrefix!=null && bitmap!=null) JourneyMapBitmapCache.put(assetPrefix,bitmap!!)
-    }
-    return bitmap
-}
-
-@Composable
-private fun JourneyMapScreen(
-    game:AppGame,
-    selectedStepId:String?,
-    selectionInitialized:Boolean,
-    zoom:Float,
-    pan:Offset,
-    onSelectedStepChange:(String?)->Unit,
-    onSelectionInitialized:()->Unit,
-    onZoomChange:(Float)->Unit,
-    onPanChange:(Offset)->Unit,
-    fullscreen:Boolean,
-    onFullscreenChange:(Boolean)->Unit,
-    onBack:()->Unit,
-    onOpenStep:(String)->Unit
-){
-    val revision=JourneyProgressStore.revision
-    val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
-    val steps=remember(game.label){JourneyCatalog.steps(game.label)}
-    val points=remember(game.label){JourneyMapCatalog.points(game.label)}
-    val mappedSteps=steps.filter{step->points.any{it.stepId==step.id}}
-    val next=mappedSteps.firstOrNull{it.id !in completed}
-    LaunchedEffect(game.label,selectionInitialized){
-        if(!selectionInitialized){
-            onSelectedStepChange(next?.id)
-            onSelectionInitialized()
-        }
-    }
-    val selected=steps.firstOrNull{it.id==selectedStepId}
-    val currentZoom by rememberUpdatedState(zoom)
-    val currentPan by rememberUpdatedState(pan)
-    val embeddedMap=rememberEmbeddedJourneyMap(JourneyMapCatalog.embeddedAsset(game.label))
-    val density=LocalDensity.current
-    val mapScope=rememberCoroutineScope()
-    val pulse=rememberInfiniteTransition(label="mapTargetPulse").animateFloat(
-        initialValue=.92f,targetValue=1.08f,
-        animationSpec=infiniteRepeatable(tween(850),RepeatMode.Reverse),
-        label="mapTargetPulseScale"
-    ).value
-
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)){
-        BoxWithConstraints(Modifier.fillMaxSize()){
-            val mapAspect=JourneyMapCatalog.aspectRatio(game.label)
-            val viewportW=maxWidth
-            val viewportH=maxHeight
-            val fittedH=viewportW/mapAspect
-            val mapH=if(fittedH<viewportH) fittedH else viewportH
-            val mapW=mapH*mapAspect
-            val left=(viewportW-mapW)/2
-            val top=(viewportH-mapH)/2
-            val viewportWidthPx=with(density){viewportW.toPx()}
-            val viewportHeightPx=with(density){viewportH.toPx()}
-            val mapWidthPx=with(density){mapW.toPx()}
-            val mapHeightPx=with(density){mapH.toPx()}
-            fun clampPan(candidate:Offset,targetZoom:Float):Offset{
-                if(targetZoom<=1.01f)return Offset.Zero
-                val maxX=((mapWidthPx*targetZoom-viewportWidthPx)/2f).coerceAtLeast(0f)
-                val maxY=((mapHeightPx*targetZoom-viewportHeightPx)/2f).coerceAtLeast(0f)
-                return Offset(candidate.x.coerceIn(-maxX,maxX),candidate.y.coerceIn(-maxY,maxY))
-            }
-            fun focusStep(stepId:String?){
-                val point=points.firstOrNull{it.stepId==stepId} ?: return
-                val targetZoom=1.85f
-                val targetPan=clampPan(
-                    Offset(
-                        (0.5f-point.x)*mapWidthPx*targetZoom,
-                        (0.5f-point.y)*mapHeightPx*targetZoom
-                    ),targetZoom
-                )
-                val startZoom=currentZoom
-                val startPan=currentPan
-                onSelectedStepChange(stepId)
-                mapScope.launch{
-                    repeat(12){index->
-                        val t=(index+1)/12f
-                        val eased=1f-(1f-t)*(1f-t)
-                        val z=startZoom+(targetZoom-startZoom)*eased
-                        val p=Offset(
-                            startPan.x+(targetPan.x-startPan.x)*eased,
-                            startPan.y+(targetPan.y-startPan.y)*eased
-                        )
-                        onZoomChange(z)
-                        onPanChange(clampPan(p,z))
-                        delay(16)
-                    }
-                }
-            }
-            LaunchedEffect(fullscreen,viewportWidthPx,viewportHeightPx,zoom){
-                val corrected=clampPan(pan,zoom)
-                if(corrected!=pan)onPanChange(corrected)
-            }
-
-            Box(
-                Modifier.offset(x=left,y=top)
-                    .size(mapW,mapH)
-                    .pointerInput(game.label,points){
-                        detectTapGestures{tap->
-                            val hitRadiusPx=with(density){28.dp.toPx()}/currentZoom.coerceAtLeast(1f)
-                            val nearest=points.minByOrNull{point->
-                                val dx=tap.x-mapWidthPx*point.x
-                                val dy=tap.y-mapHeightPx*point.y
-                                dx*dx+dy*dy
-                            }
-                            if(nearest!=null){
-                                val dx=tap.x-mapWidthPx*nearest.x
-                                val dy=tap.y-mapHeightPx*nearest.y
-                                if(dx*dx+dy*dy<=hitRadiusPx*hitRadiusPx){
-                                    if(selectedStepId==nearest.stepId)onOpenStep(nearest.stepId)
-                                    else onSelectedStepChange(nearest.stepId)
-                                }
-                            }
-                        }
-                    }
-                    .pointerInput(game.label){
-                        detectTransformGestures{_,panChange,zoomChange,_->
-                            val newZoom=(currentZoom*zoomChange).coerceIn(1f,3.5f)
-                            onZoomChange(newZoom)
-                            onPanChange(clampPan(if(newZoom<=1.01f) Offset.Zero else currentPan+panChange,newZoom))
-                        }
-                    }
-                    .graphicsLayer{
-                        scaleX=zoom;scaleY=zoom
-                        translationX=pan.x;translationY=pan.y
-                    }
-                    .clip(RoundedCornerShape(18.dp))
-            ){
-                if(embeddedMap!=null){
-                    Image(
-                        bitmap=embeddedMap,
-                        contentDescription="Mapa oficial de Paldea",
-                        contentScale=ContentScale.FillBounds,
-                        modifier=Modifier.fillMaxSize()
-                    )
-                }else{
-                    val fallbackUrl=JourneyMapCatalog.backgroundUrl(game.label)
-                    if(fallbackUrl!=null){
-                        AsyncImage(
-                            model=fallbackUrl,
-                            contentDescription="Mapa da Jornada",
-                            contentScale=ContentScale.FillBounds,
-                            modifier=Modifier.fillMaxSize()
-                        )
-                    }else{
-                        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),contentAlignment=Alignment.Center){
-                            Column(horizontalAlignment=Alignment.CenterHorizontally){
-                                Icon(Icons.Default.BrokenImage,null,Modifier.size(42.dp))
-                                Text("Mapa indisponível",fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=8.dp))
-                                Text("Feche e abra o mapa novamente.",style=MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-
-                points.forEach{point->
-                    val step=steps.firstOrNull{it.id==point.stepId} ?: return@forEach
-                    val done=step.id in completed
-                    val isNext=next?.id==step.id
-                    val isSelected=selectedStepId==step.id
-                    val hitSize=56.dp
-                    Box(
-                        modifier=Modifier
-                            .offset(x=mapW*point.x-hitSize/2,y=mapH*point.y-hitSize/2)
-                            .size(hitSize),
-                        contentAlignment=Alignment.Center
-                    ){
-                        if(isNext || isSelected){
-                            Surface(
-                                modifier=Modifier.size(if(isNext)52.dp else 48.dp).then(if(isNext)Modifier.scale(pulse) else Modifier),
-                                shape=RoundedCornerShape(50),
-                                color=androidx.compose.ui.graphics.Color.Transparent,
-                                border=androidx.compose.foundation.BorderStroke(
-                                    if(isNext)3.dp else 2.dp,
-                                    if(isNext)MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface
-                                ),
-                                shadowElevation=if(isNext)7.dp else 2.dp
-                            ){}
-                        }
-                        if(done){
-                            Surface(
-                                modifier=Modifier.align(Alignment.TopEnd).size(20.dp),
-                                shape=RoundedCornerShape(50),
-                                color=MaterialTheme.colorScheme.primary,
-                                shadowElevation=4.dp
-                            ){
-                                Box(contentAlignment=Alignment.Center){
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription="Concluído",
-                                        modifier=Modifier.size(13.dp),
-                                        tint=MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            Row(
-                Modifier.align(Alignment.TopStart).fillMaxWidth().padding(12.dp),
-                verticalAlignment=Alignment.CenterVertically
-            ){
-                Surface(shape=RoundedCornerShape(50),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
-                    IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
-                }
-                Surface(
-                    Modifier.padding(start=8.dp),
-                    shape=RoundedCornerShape(18.dp),
-                    color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),
-                    shadowElevation=4.dp
-                ){
-                    Column(Modifier.padding(horizontal=12.dp,vertical=8.dp)){
-                        Text("Mapa oficial · Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                        Text(game.label,style=MaterialTheme.typography.labelSmall)
-                    }
-                }
-                Spacer(Modifier.weight(1f))
-                Surface(shape=RoundedCornerShape(50),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
-                    IconButton(onClick={onFullscreenChange(!fullscreen)}){
-                        Icon(if(fullscreen)Icons.Default.FullscreenExit else Icons.Default.Fullscreen,if(fullscreen)"Sair da tela cheia" else "Tela cheia")
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                Surface(shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
-                    Text(
-                        completed.count{it in mappedSteps.map{step->step.id}}.toString()+"/"+mappedSteps.size,
-                        Modifier.padding(horizontal=12.dp,vertical=10.dp),
-                        fontWeight=FontWeight.Black
-                    )
-                }
-            }
-
-            Column(
-                Modifier.align(Alignment.CenterEnd).padding(end=12.dp),
-                verticalArrangement=Arrangement.spacedBy(8.dp)
-            ){
-                JourneyMapControl(Icons.Default.Add,"Aproximar"){onZoomChange((zoom+.35f).coerceAtMost(3.5f))}
-                JourneyMapControl(Icons.Default.Remove,"Afastar"){
-                    val newZoom=(zoom-.35f).coerceAtLeast(1f)
-                    onZoomChange(newZoom)
-                    if(newZoom<=1.01f)onPanChange(Offset.Zero)
-                }
-                JourneyMapControl(Icons.Default.MyLocation,"Próximo objetivo"){
-                    focusStep(next?.id)
-                }
-            }
-
-            selected?.let{step->
-                val isDone=step.id in completed
-                val isNext=next?.id==step.id
-                Card(
-                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal=14.dp,vertical=18.dp),
-                    shape=RoundedCornerShape(24.dp),
-                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),
-                    elevation=CardDefaults.cardElevation(defaultElevation=8.dp)
-                ){
-                    Column(Modifier.fillMaxWidth().padding(14.dp)){
-                        Row(verticalAlignment=Alignment.CenterVertically){
-                            Surface(shape=RoundedCornerShape(14.dp),color=if(isNext)MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer){
-                                Icon(
-                                    when(step.kind){
-                                        JourneyChallengeKind.GYM->Icons.Default.EmojiEvents
-                                        JourneyChallengeKind.TITAN->Icons.Default.Landscape
-                                        JourneyChallengeKind.STAR->Icons.Default.Stars
-                                        else->Icons.Default.Place
-                                    },null,Modifier.padding(10.dp)
-                                )
-                            }
-                            Column(Modifier.weight(1f).padding(start=10.dp)){
-                                Text(
-                                    when{isDone->"CONCLUÍDO";isNext->"PRÓXIMO OBJETIVO";else->step.kind.label.uppercase()},
-                                    style=MaterialTheme.typography.labelSmall,
-                                    fontWeight=FontWeight.Black,
-                                    color=if(isNext)MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(step.title,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                                Text(step.location+" · "+step.levelLabel,style=MaterialTheme.typography.bodySmall)
-                            }
-                            IconButton(onClick={onSelectedStepChange(null)}){Icon(Icons.Default.Close,"Fechar")}
-                        }
-                        Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically){
-                            JourneyTypeChip(step.typeLabel)
-                            Spacer(Modifier.weight(1f))
-                            TextButton(onClick={onOpenStep(step.id)}){
-                                Text("Ver objetivo")
-                                Icon(Icons.Default.ChevronRight,null)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun JourneyMapControl(icon:ImageVector,description:String,onClick:()->Unit){
-    Surface(shape=RoundedCornerShape(50),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
-        IconButton(onClick=onClick){Icon(icon,description)}
-    }
-}
 
 @Composable
 private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
