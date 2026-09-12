@@ -30,10 +30,10 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Validate v18.4.0 Journey Map
+      - name: Validate v18.4.1 Journey Map
         run: |
-          grep -q 'versionCode = 18400' app/build.gradle.kts
-          grep -q 'versionName = "18.4.0"' app/build.gradle.kts
+          grep -q 'versionCode = 18401' app/build.gradle.kts
+          grep -q 'versionName = "18.4.1"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
@@ -41,6 +41,13 @@ jobs:
         run: python3 -m pip install Pillow
       - name: Second-pass artwork audit
         run: python3 scripts/audit_artwork.py
+      - name: Journey map hitbox audit
+        run: python3 scripts/audit_journey_map.py
+      - name: Upload Journey map hitbox audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: journey-map-hitbox-audit
+          path: journey-map-audit/
       - name: Upload artwork audit
         uses: actions/upload-artifact@v4
         with:
