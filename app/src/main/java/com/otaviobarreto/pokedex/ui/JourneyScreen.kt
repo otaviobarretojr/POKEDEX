@@ -139,6 +139,14 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     val progress=if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
     val nextStep=steps.firstOrNull{it.id !in completed}
     val smart=remember(game.label,revision){JourneySmartProgress.context(game.label)}
+    var selectedStarterId by rememberSaveable(game.label){
+        mutableIntStateOf(
+            AppStatePreferences.journeyStarterForGame(game.label)
+                ?: JourneyStarterCatalog.bestForGame(game.label)?.pokemonId
+                ?: TeamCampaignCatalog.starters(game.label).firstOrNull()?.second
+                ?: -1
+        )
+    }
     var showCompleted by rememberSaveable(game.label){mutableStateOf(false)}
     val hiddenCompletedCount=completedCount
     val visibleSteps=remember(steps,completed,showCompleted){
@@ -217,7 +225,11 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             item{
                 JourneyStarterGuideCard(
                     starters=starterOptions,
-                    onPokemonClick={id->onOpenStep("starter:"+id)}
+                    selectedStarterId=selectedStarterId,
+                    onSelectStarter={id->
+                        selectedStarterId=id
+                        AppStatePreferences.setJourneyStarterForGame(game.label,id)
+                    }
                 )
             }
         }
@@ -350,7 +362,11 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
 }
 
 @Composable
-private fun JourneyStarterGuideCard(starters:List<JourneyStarterRecommendation>,onPokemonClick:(Int)->Unit){
+private fun JourneyStarterGuideCard(
+    starters:List<JourneyStarterRecommendation>,
+    selectedStarterId:Int,
+    onSelectStarter:(Int)->Unit
+){
     var expanded by rememberSaveable{mutableStateOf(false)}
     val recommended=starters.maxByOrNull{it.rating.early*3+it.rating.mid*2+it.rating.late} ?: return
     Card(
@@ -371,8 +387,18 @@ private fun JourneyStarterGuideCard(starters:List<JourneyStarterRecommendation>,
             if(expanded){
                 starters.forEach{starter->
                     HorizontalDivider(Modifier.padding(vertical=10.dp))
-                    Text(starter.name+" → "+starter.finalName,fontWeight=FontWeight.Black)
-                    Text(starter.types+" · "+starter.verdict,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        Column(Modifier.weight(1f)){
+                            Text(starter.name+" → "+starter.finalName,fontWeight=FontWeight.Black)
+                            Text(starter.types+" · "+starter.verdict,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+                        }
+                        FilterChip(
+                            selected=selectedStarterId==starter.pokemonId,
+                            onClick={onSelectStarter(starter.pokemonId)},
+                            label={Text(if(selectedStarterId==starter.pokemonId)"Escolhido" else "Escolher")},
+                            leadingIcon=if(selectedStarterId==starter.pokemonId){{Icon(Icons.Default.Check,null)}}else null
+                        )
+                    }
                     Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                         StarterStagePill("INÍCIO",starter.rating.early)
                         StarterStagePill("MEIO",starter.rating.mid)
