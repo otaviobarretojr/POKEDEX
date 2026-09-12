@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "16130" not in workflow or "16.1.3" not in workflow:
-    violations.append("CI v16.1.3 version stamping missing")
+if "16140" not in workflow or "16.1.4" not in workflow:
+    violations.append("CI v16.1.4 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -923,7 +923,8 @@ local_v1610 = 'versionName = "16.1.0"' in local_gradle and "versionCode = 16100"
 local_v1611 = 'versionName = "16.1.1"' in local_gradle and "versionCode = 16110" in local_gradle
 local_v1612 = 'versionName = "16.1.2"' in local_gradle and "versionCode = 16120" in local_gradle
 local_v1613 = 'versionName = "16.1.3"' in local_gradle and "versionCode = 16130" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613):
+local_v1614 = 'versionName = "16.1.4"' in local_gradle and "versionCode = 16140" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614):
     violations.append("Local build version is not aligned with v16.1.x")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1576,6 +1577,45 @@ workflow_v1613 = (root / ".github/workflows/android.yml").read_text(encoding="ut
 for required in ("National Forms audit", "audit_national_forms.py"):
     if required not in workflow_v1613:
         violations.append(f"v16.1.3 forms audit workflow missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v16.1.4 exact visual-form artwork guards
+forms_v1614 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
+for required in (
+    'val spriteUrl: String? = null',
+    'val shinySpriteUrl: String? = null',
+    'optJSONObject("sprites")',
+    'optString("front_default")',
+    'optString("front_shiny")',
+):
+    if required not in forms_v1614:
+        violations.append(f"v16.1.4 form artwork support missing {required}")
+
+variant_v1614 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt").read_text(encoding="utf-8")
+for required in (
+    'normalArtworkUrl:String?=null',
+    'shinyArtworkUrl:String?=null',
+    '.put("normalArtworkUrl",v.normalArtworkUrl)',
+    '.put("shinyArtworkUrl",v.shinyArtworkUrl)',
+):
+    if required not in variant_v1614:
+        violations.append(f"v16.1.4 persisted artwork support missing {required}")
+
+boxes_v1614 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("normalArtworkUrl=form.spriteUrl", "shinyArtworkUrl=form.shinySpriteUrl"):
+    if required not in boxes_v1614:
+        violations.append(f"v16.1.4 Box form artwork wiring missing {required}")
+
+pokedex_v1614 = (ui / "PokedexCatalogScreen.kt").read_text(encoding="utf-8")
+for required in ("form.spriteUrl", "form.shinySpriteUrl"):
+    if required not in pokedex_v1614:
+        violations.append(f"v16.1.4 Pokédex form artwork wiring missing {required}")
 
 if violations:
     print("Source verification failed:")
