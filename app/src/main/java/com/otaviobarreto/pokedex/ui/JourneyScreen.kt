@@ -215,9 +215,43 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                         Modifier.fillMaxWidth().padding(top=12.dp),
                         horizontalArrangement=Arrangement.spacedBy(8.dp)
                     ){
-                        JourneyCountPill(Icons.Default.EmojiEvents,"8 Ginásios")
-                        JourneyCountPill(Icons.Default.Landscape,"5 Titãs")
-                        JourneyCountPill(Icons.Default.Stars,"5 Team Star")
+                        when(game.label){
+                            "Pokémon Legends: Z-A" -> {
+                                JourneyCountPill(Icons.Default.EmojiEvents,"Z-A Royale")
+                                JourneyCountPill(Icons.Default.AutoAwesome,"Rogue Megas")
+                                JourneyCountPill(Icons.Default.Explore,"Mega Dimension")
+                            }
+                            "Pokémon Scarlet / Violet" -> {
+                                JourneyCountPill(Icons.Default.EmojiEvents,"8 Ginásios")
+                                JourneyCountPill(Icons.Default.Landscape,"5 Titãs")
+                                JourneyCountPill(Icons.Default.Stars,"5 Team Star")
+                            }
+                            "Pokémon Sword / Shield" -> {
+                                JourneyCountPill(Icons.Default.EmojiEvents,"Ginásios de Galar")
+                                JourneyCountPill(Icons.Default.Stars,"Champion Cup")
+                                JourneyCountPill(Icons.Default.Explore,"Expansion Pass")
+                            }
+                            "Pokémon Legends: Arceus" -> {
+                                JourneyCountPill(Icons.Default.Explore,"Hisui")
+                                JourneyCountPill(Icons.Default.AutoAwesome,"Nobres")
+                                JourneyCountPill(Icons.Default.Stars,"Placas")
+                            }
+                            "Pokémon Let's Go Pikachu / Eevee" -> {
+                                JourneyCountPill(Icons.Default.EmojiEvents,"8 Ginásios")
+                                JourneyCountPill(Icons.Default.Stars,"Liga Pokémon")
+                                JourneyCountPill(Icons.Default.Explore,"Kanto")
+                            }
+                            "Pokémon Brilliant Diamond / Shining Pearl" -> {
+                                JourneyCountPill(Icons.Default.EmojiEvents,"8 Ginásios")
+                                JourneyCountPill(Icons.Default.Stars,"Liga Pokémon")
+                                JourneyCountPill(Icons.Default.Explore,"Sinnoh")
+                            }
+                            else -> {
+                                JourneyCountPill(Icons.Default.EmojiEvents,"Campanha")
+                                JourneyCountPill(Icons.Default.Stars,"Chefes")
+                                JourneyCountPill(Icons.Default.Explore,"Pós-jogo")
+                            }
+                        }
                     }
                 }
             }
