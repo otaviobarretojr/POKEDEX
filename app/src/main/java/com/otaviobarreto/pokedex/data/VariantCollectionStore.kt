@@ -24,6 +24,18 @@ data class OwnedPokemonVariant(
                 (if(shiny)"shiny/" else "") + formPokemonId + ".png"
 }
 
+internal fun sameOwnedVariantIdentity(
+    existing: OwnedPokemonVariant,
+    candidate: OwnedPokemonVariant
+): Boolean =
+    existing.key == candidate.key || (
+        existing.source == candidate.source &&
+            existing.speciesId == candidate.speciesId &&
+            existing.formPokemonId == candidate.formPokemonId &&
+            existing.formName.equals(candidate.formName, true) &&
+            existing.shiny == candidate.shiny
+    )
+
 object VariantCollectionStore {
     private const val PREFS = "pokedex_variant_collection"
     private const val KEY_VARIANTS = "owned_variants_v1"
@@ -70,13 +82,7 @@ object VariantCollectionStore {
             shinyArtworkUrl=shinyArtworkUrl
         )
         fun matchesExisting(value:OwnedPokemonVariant):Boolean =
-            value.key==entry.key || (
-                value.source==entry.source &&
-                    value.speciesId==entry.speciesId &&
-                    value.formPokemonId==entry.formPokemonId &&
-                    value.formName.equals(entry.formName,true) &&
-                    value.shiny==entry.shiny
-            )
+            sameOwnedVariantIdentity(value, entry)
         val exists=ownedVariants.any(::matchesExisting)
         ownedVariants=when{
             owned && !exists -> ownedVariants + entry
