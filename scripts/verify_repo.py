@@ -47,7 +47,7 @@ print("Source verification passed.")
 
 # v6.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 12" not in offline:
+if "PACK_VERSION = 13" not in offline:
     violations.append("Offline pack version is not v8")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "13000" not in workflow or "13.0.0" not in workflow:
-    violations.append("CI v13.0.0 version stamping missing")
+if "14000" not in workflow or "14.0.0" not in workflow:
+    violations.append("CI v14.0.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -706,7 +706,7 @@ if "LaunchedEffect(selectedGame){" in journey_v615:
     violations.append("Journey must not reset saved navigation state merely because selectedGame was restored")
 
 offline_v615 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-for required in ("PACK_VERSION = 12", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
+for required in ("PACK_VERSION = 13", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
     if required not in offline_v615:
         violations.append(f"Offline artwork integrity audit missing {required}")
 
@@ -834,7 +834,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v13.0.0",
+        "v14.0.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -915,8 +915,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "13.0.0"' not in local_gradle or "versionCode = 13000" not in local_gradle:
-    violations.append("Local build version is not aligned with v13.0.0")
+if 'versionName = "14.0.0"' not in local_gradle or "versionCode = 14000" not in local_gradle:
+    violations.append("Local build version is not aligned with v14.0.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1071,7 +1071,7 @@ for required in (
 
 offline_v631 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 for required in (
-    "PACK_VERSION = 12",
+    "PACK_VERSION = 13",
     "cachedJourneyVisuals",
     "expectedJourneyVisuals",
     "JourneyReadinessAudit.referenceCatalogUrls",
@@ -1326,7 +1326,7 @@ if "PokemonFormsService.collectible" not in startup_v12:
     violations.append("v12 startup form preload missing")
 
 offline_v12 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-for required in ("PACK_VERSION = 12", "pokemon-form-offline-", "pokemon-form-shiny-offline-", "countsForLivingDex"):
+for required in ("PACK_VERSION = 13", "pokemon-form-offline-", "pokemon-form-shiny-offline-", "countsForLivingDex"):
     if required not in offline_v12:
         violations.append(f"v12 offline forms/shiny cache missing {required}")
 
@@ -1368,8 +1368,35 @@ for required in ("COSMETIC", "countsForLivingDex", "family of three", "three seg
         violations.append(f"v13 forms curation missing {required}")
 
 offline_v13 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 12" not in offline_v13:
+if "PACK_VERSION = 13" not in offline_v13:
     violations.append("v13 offline pack version missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v14 Living Dex companion / capture planner guards
+advisor_v14 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionAdvisor.kt").read_text(encoding="utf-8")
+for required in ("CaptureTarget", "capturePlan", "preferredOption", "Melhor opção na sua base"):
+    if required not in advisor_v14:
+        violations.append(f"v14 capture planner missing {required}")
+
+central_v14 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
+for required in ("Plano de captura", "CollectionAdvisor.capturePlan", "Abrir "+'"'+"+option.region"+'"'+", "Progresso por geração"):
+    if required not in central_v14:
+        violations.append(f"v14 Central capture planner missing {required}")
+
+detail_v14 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+for required in ('"Onde conseguir"', "CollectionAdvisor.recommendation", "CollectionAdvisor.cachedOptions"):
+    if required not in detail_v14:
+        violations.append(f"v14 Pokémon detail advisor missing {required}")
+
+offline_v14 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
+if "PACK_VERSION = 13" not in offline_v14:
+    violations.append("v14 offline pack version missing")
 
 if violations:
     print("Source verification failed:")
