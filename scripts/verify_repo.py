@@ -577,7 +577,7 @@ for required in ("activeRegionForGame", "setActiveRegionForGame", "boxPage", "se
         violations.append(f"Persistent navigation context missing {required}")
 
 boxes_v612 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("activeRegionForGame(game.label)", "AppStatePreferences.boxPage(regionSource)", "setBoxPage(region.source,current)", "missingDetails.take(12)", "missingDetails.drop(12)"):
+for required in ("activeRegionForGame(game.label)", "AppStatePreferences.boxPage(regionSource)", "setBoxPage(region.source,current)", "missingDetails.take(18)", "missingDetails.drop(18)"):
     if required not in boxes_v612:
         violations.append(f"Box state/performance hardening missing {required}")
 
