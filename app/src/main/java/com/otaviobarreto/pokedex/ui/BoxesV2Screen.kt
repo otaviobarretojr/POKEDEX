@@ -450,11 +450,12 @@ private fun QBVariantManager(
                                     }
                                     Column(Modifier.weight(1f).padding(start=8.dp)){
                                         Text(
-                                            when{
-                                                form.isDefault -> form.name+" · padrão"
-                                                !form.countsForLivingDex -> form.name+" · temporária"
-                                                else -> form.name
-                                            },
+                                            PokemonFormPresentation.label(pretty(pk.name),form.name,false)+
+                                                when{
+                                                    form.isDefault -> " · padrão"
+                                                    !form.countsForLivingDex -> " · temporária"
+                                                    else -> ""
+                                                },
                                             fontWeight=FontWeight.Bold,
                                             maxLines=1,
                                             overflow=TextOverflow.Ellipsis
