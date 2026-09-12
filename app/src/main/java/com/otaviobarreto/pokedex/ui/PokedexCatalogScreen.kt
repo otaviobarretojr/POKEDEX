@@ -25,7 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private data class FormPreview(
-    val name:String,
+    val label:String,
+    val detailName:String,
     val formId:Int,
     val shiny:Boolean,
     val kind:PokemonFormKind
@@ -33,6 +34,52 @@ private data class FormPreview(
     val imageUrl:String
         get()="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+
             (if(shiny)"shiny/" else "")+formId+".png"
+    val fallbackImageUrl:String
+        get()="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
+}
+
+private fun prettyFormLabel(baseName:String,rawName:String,shiny:Boolean):String{
+    val suffix=rawName.removePrefix(baseName).trim().ifBlank{"Padrão"}
+    val pretty=when{
+        suffix.equals("Alola",true) -> "Forma de Alola"
+        suffix.equals("Galar",true) -> "Forma de Galar"
+        suffix.equals("Hisui",true) -> "Forma de Hisui"
+        suffix.startsWith("Paldea",true) -> "Forma de "+suffix
+        else -> suffix
+    }
+    return pretty+(if(shiny)" · Shiny" else "")
+}
+
+@Composable
+private fun ArtworkWithFallback(
+    model:String,
+    fallbackModel:String?=null,
+    contentDescription:String?,
+    modifier:Modifier
+){
+    var current by remember(model,fallbackModel){mutableStateOf(model)}
+    var failed by remember(model,fallbackModel){mutableStateOf(false)}
+    Box(modifier,contentAlignment=Alignment.Center){
+        if(!failed){
+            AsyncImage(
+                model=current,
+                contentDescription=contentDescription,
+                modifier=Modifier.fillMaxSize(),
+                contentScale=ContentScale.Fit,
+                onError={
+                    if(!fallbackModel.isNullOrBlank() && current!=fallbackModel) current=fallbackModel
+                    else failed=true
+                }
+            )
+        }else{
+            Icon(
+                Icons.Default.CatchingPokemon,
+                contentDescription="Arte indisponível",
+                modifier=Modifier.fillMaxSize(.42f),
+                tint=MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 @Composable
@@ -60,7 +107,7 @@ fun PokedexCatalogScreen(
             Icon(Icons.Default.MenuBook,null,Modifier.size(30.dp))
             Column(Modifier.padding(start=10.dp)){
                 Text("Pokédex",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                Text("Todas as espécies, formas e Shiny",color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Nacional #0001–#1025 · formas e Shiny",color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         OutlinedTextField(
@@ -69,7 +116,7 @@ fun PokedexCatalogScreen(
             modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp),
             singleLine=true,
             leadingIcon={Icon(Icons.Default.Search,null)},
-            placeholder={Text("Nome, número ou tipo")}
+            placeholder={Text("Nome ou número da National Dex")}
         )
         LazyVerticalGrid(
             columns=GridCells.Adaptive(112.dp),
@@ -87,11 +134,10 @@ fun PokedexCatalogScreen(
                         Modifier.fillMaxWidth().padding(8.dp),
                         horizontalAlignment=Alignment.CenterHorizontally
                     ){
-                        AsyncImage(
+                        ArtworkWithFallback(
                             model=pk.spriteUrl,
                             contentDescription=pk.name,
-                            modifier=Modifier.size(88.dp),
-                            contentScale=ContentScale.Fit
+                            modifier=Modifier.size(88.dp)
                         )
                         Text(
                             "#"+pk.id.toString().padStart(4,'0'),
@@ -151,8 +197,11 @@ private fun PokedexFormsDialog(
         buildList{
             source.forEach{form->
                 val id=form.pokemonId ?: return@forEach
-                add(FormPreview(form.name,id,false,form.kind))
-                add(FormPreview(form.name+" Shiny",id,true,form.kind))
+                val normalLabel=prettyFormLabel(base?.name ?: "",form.name,false)
+                val shinyLabel=prettyFormLabel(base?.name ?: "",form.name,true)
+                val prefix=base?.name ?: "Pokémon"
+                add(FormPreview(normalLabel,prefix+" — "+normalLabel,id,false,form.kind))
+                add(FormPreview(shinyLabel,prefix+" — "+shinyLabel,id,true,form.kind))
             }
         }
     }
@@ -182,7 +231,7 @@ private fun PokedexFormsDialog(
                         horizontalArrangement=Arrangement.spacedBy(8.dp),
                         verticalArrangement=Arrangement.spacedBy(8.dp)
                     ){
-                        items(previews,key={it.name+"-"+it.formId+"-"+it.shiny}){preview->
+                        items(previews,key={it.label+"-"+it.formId+"-"+it.shiny}){preview->
                             Card(
                                 onClick={selectedPreview=preview},
                                 shape=RoundedCornerShape(18.dp)
@@ -191,14 +240,14 @@ private fun PokedexFormsDialog(
                                     Modifier.fillMaxWidth().padding(10.dp),
                                     horizontalAlignment=Alignment.CenterHorizontally
                                 ){
-                                    AsyncImage(
+                                    ArtworkWithFallback(
                                         model=preview.imageUrl,
-                                        contentDescription=preview.name,
-                                        modifier=Modifier.size(96.dp),
-                                        contentScale=ContentScale.Fit
+                                        fallbackModel=preview.fallbackImageUrl,
+                                        contentDescription=preview.label,
+                                        modifier=Modifier.size(96.dp)
                                     )
                                     Text(
-                                        preview.name,
+                                        preview.label,
                                         fontWeight=FontWeight.Bold,
                                         maxLines=2,
                                         overflow=TextOverflow.Ellipsis
@@ -227,14 +276,14 @@ private fun PokedexFormsDialog(
     selectedPreview?.let{preview->
         AlertDialog(
             onDismissRequest={selectedPreview=null},
-            title={Text(preview.name)},
+            title={Text(preview.label)},
             text={
                 Column(horizontalAlignment=Alignment.CenterHorizontally){
-                    AsyncImage(
+                    ArtworkWithFallback(
                         model=preview.imageUrl,
-                        contentDescription=preview.name,
-                        modifier=Modifier.fillMaxWidth().height(260.dp),
-                        contentScale=ContentScale.Fit
+                        fallbackModel=preview.fallbackImageUrl,
+                        contentDescription=preview.label,
+                        modifier=Modifier.fillMaxWidth().height(260.dp)
                     )
                     if(preview.kind==PokemonFormKind.BATTLE){
                         Text(
@@ -248,7 +297,7 @@ private fun PokedexFormsDialog(
                 if(preview.kind==PokemonFormKind.BATTLE){
                     Button(onClick={
                         selectedPreview=null
-                        onOpenFormDetail(preview.formId,preview.name,preview.shiny)
+                        onOpenFormDetail(preview.formId,preview.detailName,preview.shiny)
                     }){Text("Ver ficha completa")}
                 }else{
                     TextButton(onClick={selectedPreview=null}){Text("Fechar")}
