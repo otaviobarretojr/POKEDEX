@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.25.0"' not in workflow or "versionCode = 6250" not in workflow:
+if 'versionName = "6.26.0"' not in workflow or "versionCode = 6260" not in workflow:
     violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.25.0",
+        "v6.26.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,7 +907,7 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "6.25.0"' not in local_gradle or "versionCode = 6250" not in local_gradle:
+if 'versionName = "6.26.0"' not in local_gradle or "versionCode = 6260" not in local_gradle:
     violations.append("Local build version is not aligned with v6.21.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -994,6 +994,41 @@ for required in ("scarlet_user_art_", "Base64.decode", "Arte enviada pelo usuár
 for part in range(1, 4):
     if not (root / f"app/src/main/assets/journey/scarlet_user_art_{part}.b64").exists():
         violations.append(f"Scarlet user artwork chunk {part} missing")
+
+
+# v6.26.0 Journey hardening guards
+journey_hub_v626 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in (
+    "BoxWithConstraints",
+    "maxWidth < 360.dp",
+    "PokedexDesignTokens.Journey.CardHeightCompact",
+    "PokedexDesignTokens.Journey.CoverWidthCompact",
+    "JourneyLocalArtworkCache",
+    "rememberJourneyDexIdsByGame",
+):
+    if required not in journey_hub_v626:
+        violations.append(f"Journey hardening missing {required}")
+
+design_v626 = (ui / "PokedexDesignTokens.kt").read_text(encoding="utf-8")
+for required in (
+    "object Journey",
+    "CardSurface",
+    "ArtworkBackdrop",
+    "CardHeightCompact",
+    "CoverWidthCompact",
+    "HeroWidthCompact",
+    "FadeWidthCompact",
+):
+    if required not in design_v626:
+        violations.append(f"Journey design token missing {required}")
+
+startup_v626 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+for required in (
+    'filterNot { it.label == "Scarlet / Violet" }',
+    "journeyArtworkUrls",
+):
+    if required not in startup_v626:
+        violations.append(f"Journey preload hardening missing {required}")
 
 if violations:
     print("Source verification failed:")
