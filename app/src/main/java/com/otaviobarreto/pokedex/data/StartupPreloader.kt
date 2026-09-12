@@ -1,6 +1,7 @@
 package com.otaviobarreto.pokedex.data
 
 import android.content.Context
+import android.os.SystemClock
 import coil.imageLoader
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
@@ -15,10 +16,14 @@ data class StartupPreloadProgress(
 )
 
 object StartupPreloader {
+    @Volatile var lastWarmDurationMs: Long = 0L
+        private set
+
     suspend fun warm(
         context: Context,
         onProgress: (StartupPreloadProgress) -> Unit
     ) = withContext(Dispatchers.IO) {
+        val startedAt = SystemClock.elapsedRealtime()
         suspend fun progress(value: Float, label: String) {
             withContext(Dispatchers.Main.immediate) {
                 onProgress(StartupPreloadProgress(value.coerceIn(0f, 1f), label))
@@ -142,5 +147,6 @@ object StartupPreloader {
         }
 
         progress(1f, "Tudo pronto")
+        lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
     }
 }
