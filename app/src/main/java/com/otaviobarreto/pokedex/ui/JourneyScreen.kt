@@ -168,9 +168,19 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
         )
     }
     var showCompleted by rememberSaveable(game.label){mutableStateOf(false)}
+    var showUpcoming by rememberSaveable(game.label){mutableStateOf(false)}
     val hiddenCompletedCount=completedCount
-    val visibleSteps=remember(steps,completed,showCompleted){
-        if(showCompleted) steps else steps.filterNot{it.id in completed}
+    val currentIndex=remember(steps,nextStep){nextStep?.let(steps::indexOf) ?: -1}
+    val upcomingSteps=remember(steps,completed,currentIndex){
+        if(currentIndex<0) emptyList()
+        else steps.drop(currentIndex+1).filterNot{it.id in completed}
+    }
+    val visibleSteps=remember(steps,completed,nextStep,showCompleted,showUpcoming){
+        buildList {
+            if(showCompleted) addAll(steps.filter{it.id in completed})
+            nextStep?.let(::add)
+            if(showUpcoming) addAll(upcomingSteps)
+        }.distinctBy{it.id}
     }
     val routeUi=remember(visibleSteps,nationalByName){
         visibleSteps.map { step ->
@@ -384,6 +394,22 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
 
+        if(upcomingSteps.isNotEmpty()){
+            item(key="upcoming_toggle",contentType="toggle"){
+                FilledTonalButton(
+                    onClick={showUpcoming=!showUpcoming},
+                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
+                ){
+                    Icon(if(showUpcoming)Icons.Default.ExpandLess else Icons.Default.ExpandMore,null)
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        if(showUpcoming) "Ocultar próximas rotas"
+                        else "Próximas rotas ("+upcomingSteps.size+")"
+                    )
+                }
+            }
+        }
+
         if(visibleSteps.isEmpty() && steps.isNotEmpty()){
             item{
                 Card(
@@ -409,8 +435,18 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             val done=step.id in completed
             val isNext=nextStep?.id==step.id
             Column{
-                ui.chapter?.let{
-                    Text(it,fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=42.dp))
+                if(step.id==nextStep?.id){
+                    Text(
+                        "ROTA ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
+                        fontWeight=FontWeight.Black,
+                        style=MaterialTheme.typography.labelMedium,
+                        color=MaterialTheme.colorScheme.primary,
+                        modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=42.dp)
+                    )
+                }else{
+                    ui.chapter?.let{
+                        Text(it,fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=42.dp))
+                    }
                 }
                 JourneyStepCard(
                     step=step,
