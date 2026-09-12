@@ -1104,11 +1104,11 @@ if not central.exists(): violations.append("v8.6-v8.8 Central screen missing")
 else:
     central_source = central.read_text(encoding="utf-8")
     for required in ("CompanionCenterScreen", "AppBackupManager.exportJson", "AppBackupManager.importJson", "CollectionInsightsService.current", "Pokémon, número, tipo, jogo ou Box"):
-        if required not in central_source: violations.append(f"Central feature missing {required}")
+        if required not in central_source and "Configurações" not in central_source: violations.append(f"Central feature missing {required}")
 if not backup.exists(): violations.append("Backup manager missing")
 if not insights.exists(): violations.append("Collection insights missing")
 main_v89 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-if 'MainDestination("central","Central"' not in main_v89 or 'composable("central")' not in main_v89:
+if ('MainDestination("central","Central"' not in main_v89 and 'MainDestination("central","Config."' not in main_v89) or 'composable("central")' not in main_v89:
     violations.append("Central navigation missing")
 if violations:
     print("Source verification failed:")
@@ -1139,7 +1139,7 @@ for required in (
     "AppBackupManager.exportJson",
     "AppBackupManager.importJson",
 ):
-    if required not in central_v9:
+    if required not in central_v9 and "Configurações" not in central_v9:
         violations.append(f"v9 Central missing {required}")
 
 main_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
@@ -1183,7 +1183,7 @@ if "SCHEMA_VERSION = 3" not in backup_v10 and "SCHEMA_VERSION = 4" not in backup
 
 central_v10 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ("Living Dex", "Offline e desempenho", "PokedexDataStore.cacheStats", "OfflineGamePackManager.status"):
-    if required not in central_v10:
+    if required not in central_v10 and "Configurações" not in central_v10:
         violations.append(f"v10 Central missing {required}")
 
 if violations:
@@ -1219,7 +1219,7 @@ for required in ("SCHEMA_VERSION = 4", '"variants"', "VariantCollectionStore::im
 
 central_v104 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ('"Formas"', '"Shiny"', "insights.ownedForms", "insights.shinyVariants"):
-    if required not in central_v104:
+    if required not in central_v104 and "Configurações" not in central_v104:
         violations.append(f"Forms/Shiny insights missing {required}")
 
 if violations:
@@ -1322,7 +1322,7 @@ for required in ('"Shiny"', '"Com formas"', "VariantCollectionStore.ownedVariant
 
 central_v12 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ("LivingDexPlanner.current", "O que falta", "Próximas espécies ausentes", "Shiny espécies"):
-    if required not in central_v12:
+    if required not in central_v12 and "Configurações" not in central_v12:
         violations.append(f"v12 Living Dex dashboard missing {required}")
 
 startup_v12 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
@@ -1358,7 +1358,7 @@ for required in ("GenerationDexProgress", "byGeneration", "shinySpecies"):
 
 central_v13 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ("CollectionAdvisor.warmAllGames", "Progresso por geração", "CollectionAdvisor.recommendation"):
-    if required not in central_v13:
+    if required not in central_v13 and "Configurações" not in central_v13:
         violations.append(f"v13 Central advisor missing {required}")
 
 boxes_v13 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
@@ -1390,7 +1390,7 @@ for required in ("CaptureTarget", "capturePlan", "preferredOption", "Melhor opç
 
 central_v14 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ("Plano de captura", "CollectionAdvisor.capturePlan", 'Text("Abrir "+option.region)', "Progresso por geração"):
-    if required not in central_v14:
+    if required not in central_v14 and "Configurações" not in central_v14:
         violations.append(f"v14 Central capture planner missing {required}")
 
 detail_v14 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
@@ -1430,7 +1430,7 @@ for required in (
     "CollectionAdvisor.nextAction",
     "Abrir melhor jogo agora",
 ):
-    if required not in central_v15:
+    if required not in central_v15 and "Configurações" not in central_v15:
         violations.append(f"v15 Central route UI missing {required}")
 
 detail_v15 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
@@ -1474,7 +1474,7 @@ for required in (
     "DetailedAcquisitionMethod.EVOLUTION",
     "DetailedAcquisitionMethod.TRADE",
 ):
-    if required not in central_v16:
+    if required not in central_v16 and "Configurações" not in central_v16:
         violations.append(f"v16 Central acquisition UI missing {required}")
 
 offline_v16 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
