@@ -156,6 +156,9 @@ fun PokemonDetailV2Screen(
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
         HeroCard(b,context,collectionSource,accent,saveLocation,back)
         DetailTabs(tab,setTab)
+        if(openPokemon!=null){
+            DetailDexNavigator(b.pokemon.id,openPokemon)
+        }
         when(tab){
             0->InfoTab(b,accent,context,collectionSource,openRef)
             1->V2Stats(b.pokemon.stats)
@@ -246,6 +249,35 @@ private fun resolveSaveLocation(
 private fun gameFromBox(box:String):String=when{box.contains("Scarlet / Violet",true)->"Scarlet / Violet";box.contains("Sword / Shield",true)->"Sword / Shield";box.contains("Let's Go",true)->"Let's Go Pikachu / Eevee";box.contains("Arceus",true)->"Legends Arceus";box.contains("HOME",true)->"Pokémon HOME";else->box.substringBefore(" · Box").substringBefore(" Box ").trim()}
 private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->box.substringAfter("· ").trim();Regex("Box \\d+",RegexOption.IGNORE_CASE).containsMatchIn(box)->Regex("Box \\d+",RegexOption.IGNORE_CASE).find(box)?.value?:box;else->box}
 @Composable private fun DetailMetric(icon:androidx.compose.ui.graphics.vector.ImageVector,text:String){Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(vertical=4.dp)){Icon(icon,null,tint=Color(0xFF243477),modifier=Modifier.size(19.dp));Spacer(Modifier.width(9.dp));Text(text,fontWeight=FontWeight.SemiBold,color=Color(0xFF2F3650),maxLines=1,overflow=TextOverflow.Ellipsis)}}
+@Composable
+private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
+    val previous=(currentId-1).takeIf{it>=1}
+    val next=(currentId+1).takeIf{it<=PokeApiService.MAX_NATIONAL_DEX_ID}
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=6.dp),
+        horizontalArrangement=Arrangement.spacedBy(8.dp)
+    ){
+        OutlinedButton(
+            onClick={previous?.let(openPokemon)},
+            enabled=previous!=null,
+            modifier=Modifier.weight(1f)
+        ){
+            Icon(Icons.AutoMirrored.Filled.ArrowBack,null,Modifier.size(17.dp))
+            Spacer(Modifier.width(5.dp))
+            Text(previous?.let{"#"+it.toString().padStart(4,'0')} ?: "Início")
+        }
+        OutlinedButton(
+            onClick={next?.let(openPokemon)},
+            enabled=next!=null,
+            modifier=Modifier.weight(1f)
+        ){
+            Text(next?.let{"#"+it.toString().padStart(4,'0')} ?: "Fim")
+            Spacer(Modifier.width(5.dp))
+            Icon(Icons.Default.ArrowForward,null,Modifier.size(17.dp))
+        }
+    }
+}
+
 @Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit){val tabs=listOf("Info" to Icons.Default.Info,"Stats" to Icons.Default.BarChart,"Evolução" to Icons.Default.AccountTree,"Golpes" to Icons.Default.AutoAwesome,"Localização" to Icons.Default.LocationOn);Surface(color=Color.White,shadowElevation=4.dp){Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)){tabs.forEachIndexed{i,(label,icon)->val active=i==selected;Surface(Modifier.weight(1f).clickable{setSelected(i)},shape=RoundedCornerShape(24.dp),color=if(active)Color(0xFF5B55E7)else Color.Transparent){Column(Modifier.padding(vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(icon,null,tint=if(active)Color.White else Color(0xFF243477),modifier=Modifier.size(18.dp));Text(label,fontSize=10.sp,fontWeight=FontWeight.Bold,color=if(active)Color.White else Color(0xFF1E2A55),maxLines=1)}}}}}}
 @Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,source:String?,openRef:((String,String)->Unit)?){
     var advisorReady by remember { mutableStateOf(CollectionAdvisor.isWarm()) }
