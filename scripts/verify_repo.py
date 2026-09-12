@@ -1183,9 +1183,9 @@ for required in ('"Capturados"', '"Faltando"', '"Regional"', '"Nacional"', '"Nom
         violations.append(f"v10 Box filter/sort missing {required}")
 
 journey_v10 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
-for required in ("nextMissing", "Próximo alvo"):
+for required in ("Próximo:", "PRÓXIMO OBJETIVO", "JourneyProgressStore.completed"):
     if required not in journey_v10:
-        violations.append(f"v10 intelligent Journey missing {required}")
+        violations.append(f"v10+ story-first Journey missing {required}")
 
 backup_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
 if '"teams"' not in backup_v10:
