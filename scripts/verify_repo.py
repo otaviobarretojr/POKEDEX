@@ -1385,7 +1385,7 @@ for required in ("CaptureTarget", "capturePlan", "preferredOption", "Melhor opç
         violations.append(f"v14 capture planner missing {required}")
 
 central_v14 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
-for required in ("Plano de captura", "CollectionAdvisor.capturePlan", "Abrir "+'"'+"+option.region"+'"'+", "Progresso por geração"):
+for required in ("Plano de captura", "CollectionAdvisor.capturePlan", 'Text("Abrir "+option.region)', "Progresso por geração"):
     if required not in central_v14:
         violations.append(f"v14 Central capture planner missing {required}")
 
