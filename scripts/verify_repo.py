@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.24.0"' not in workflow or "versionCode = 6240" not in workflow:
+if 'versionName = "6.25.0"' not in workflow or "versionCode = 6250" not in workflow:
     violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.24.0",
+        "v6.25.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,7 +907,7 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "6.24.0"' not in local_gradle or "versionCode = 6240" not in local_gradle:
+if 'versionName = "6.25.0"' not in local_gradle or "versionCode = 6250" not in local_gradle:
     violations.append("Local build version is not aligned with v6.21.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -984,6 +984,16 @@ for required in (
 
 if 'color = Color(0xFF142548)' in journey_hub_v624 and 'contentDescription = "Abrir " + game.label' in journey_hub_v624:
     violations.append("Obsolete black Journey arrow returned")
+
+
+# v6.25.0 user-provided Scarlet/Violet card artwork guards
+journey_hub_v625 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in ("scarlet_user_art_", "Base64.decode", "Arte enviada pelo usuário para Scarlet / Violet"):
+    if required not in journey_hub_v625:
+        violations.append(f"Scarlet user artwork integration missing {required}")
+for part in range(1, 4):
+    if not (root / f"app/src/main/assets/journey/scarlet_user_art_{part}.b64").exists():
+        violations.append(f"Scarlet user artwork chunk {part} missing")
 
 if violations:
     print("Source verification failed:")
