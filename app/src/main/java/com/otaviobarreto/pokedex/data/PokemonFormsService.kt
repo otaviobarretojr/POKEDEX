@@ -23,12 +23,15 @@ data class PokemonFormVariant(
 
 object PokemonFormsService {
     private val cache = ConcurrentHashMap<Int, List<PokemonFormVariant>>()
+    private val resourceCache = ConcurrentHashMap<Int, Set<String>>()
 
     fun cached(id: Int): List<PokemonFormVariant>? = cache[id]
+    fun resourceUrlsFor(id:Int):Set<String> = resourceCache[id].orEmpty()
 
     fun load(id: Int): List<PokemonFormVariant> {
         cache[id]?.let { return it }
         val speciesUrl = "https://pokeapi.co/api/v2/pokemon-species/$id"
+        val resources = linkedSetOf(speciesUrl)
         val species = JSONObject(fetch(speciesUrl))
         val varieties = species.optJSONArray("varieties") ?: JSONArray()
 
@@ -41,8 +44,10 @@ object PokemonFormsService {
                 val varietyName = pokemon.optString("name")
                 val varietyDefault = item.optBoolean("is_default")
 
+                val pokemonUrl = "https://pokeapi.co/api/v2/pokemon/$pid"
+                resources += pokemonUrl
                 val pokemonJson = runCatching {
-                    JSONObject(fetch("https://pokeapi.co/api/v2/pokemon/$pid"))
+                    JSONObject(fetch(pokemonUrl))
                 }.getOrNull()
                 val forms = pokemonJson?.optJSONArray("forms")
 
@@ -76,9 +81,11 @@ object PokemonFormsService {
                     val display = pretty(rawName)
                     val defaultForm = varietyDefault && j == 0
                     val needsExactFormSprite = forms.length() > 1 || rawName != varietyName
-                    val formJson = if(needsExactFormSprite) {
+                    val formUrl = form.optString("url")
+                    if(needsExactFormSprite && formUrl.isNotBlank()) resources += formUrl
+                    val formJson = if(needsExactFormSprite && formUrl.isNotBlank()) {
                         runCatching {
-                            JSONObject(fetch(form.optString("url")))
+                            JSONObject(fetch(formUrl))
                         }.getOrNull()
                     } else null
                     val formSprites = formJson?.optJSONObject("sprites")
@@ -103,6 +110,7 @@ object PokemonFormsService {
         }
 
         cache[id] = result
+        resourceCache[id] = resources
         return result
     }
 
