@@ -1,5 +1,6 @@
 package com.otaviobarreto.pokedex.data
 
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
@@ -11,7 +12,8 @@ data class PokemonFormVariant(
     val name: String,
     val pokemonId: Int?,
     val isDefault: Boolean,
-    val kind: PokemonFormKind = PokemonFormKind.OTHER
+    val kind: PokemonFormKind = PokemonFormKind.OTHER,
+    val formKey: String = (pokemonId?.toString() ?: name)
 ) {
     val countsForLivingDex:Boolean
         get() = kind != PokemonFormKind.BATTLE
@@ -24,44 +26,68 @@ object PokemonFormsService {
 
     fun load(id: Int): List<PokemonFormVariant> {
         cache[id]?.let { return it }
-        val url = "https://pokeapi.co/api/v2/pokemon-species/$id"
-        val json = JSONObject(
-            PersistentApiCache.getOrFetch(url) {
-                val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
-                connection.connectTimeout = 12_000
-                connection.readTimeout = 12_000
-                connection.requestMethod = "GET"
-                connection.connect()
-                try {
-                    if (connection.responseCode !in 200..299) error("HTTP " + connection.responseCode)
-                    connection.inputStream.bufferedReader().use { it.readText() }
-                } finally {
-                    connection.disconnect()
-                }
-            }
-        )
-        val array = json.optJSONArray("varieties") ?: org.json.JSONArray()
+        val speciesUrl = "https://pokeapi.co/api/v2/pokemon-species/$id"
+        val species = JSONObject(fetch(speciesUrl))
+        val varieties = species.optJSONArray("varieties") ?: JSONArray()
+
         val result = buildList {
-            for (i in 0 until array.length()) {
-                val item = array.getJSONObject(i)
+            for (i in 0 until varieties.length()) {
+                val item = varieties.getJSONObject(i)
                 val pokemon = item.getJSONObject("pokemon")
                 val purl = pokemon.optString("url")
-                val pid = purl.trimEnd('/').substringAfterLast('/').toIntOrNull()
-                val display = pokemon.optString("name").split('-').joinToString(" ") { part ->
-                    part.replaceFirstChar { ch -> ch.uppercase() }
+                val pid = purl.trimEnd('/').substringAfterLast('/').toIntOrNull() ?: continue
+                val varietyName = pokemon.optString("name")
+                val varietyDefault = item.optBoolean("is_default")
+
+                val pokemonJson = runCatching {
+                    JSONObject(fetch("https://pokeapi.co/api/v2/pokemon/$pid"))
+                }.getOrNull()
+                val forms = pokemonJson?.optJSONArray("forms")
+
+                if (forms == null || forms.length() == 0) {
+                    val display = pretty(varietyName)
+                    add(
+                        PokemonFormVariant(
+                            name = display,
+                            pokemonId = pid,
+                            isDefault = varietyDefault,
+                            kind = classify(display, varietyDefault),
+                            formKey = varietyName.ifBlank { pid.toString() }
+                        )
+                    )
+                    continue
                 }
-                val isDefault=item.optBoolean("is_default")
-                add(PokemonFormVariant(display, pid, isDefault, classify(display,isDefault)))
+
+                for (j in 0 until forms.length()) {
+                    val form = forms.getJSONObject(j)
+                    val rawName = form.optString("name").ifBlank { varietyName }
+                    val display = pretty(rawName)
+                    val defaultForm = varietyDefault && j == 0
+                    add(
+                        PokemonFormVariant(
+                            name = display,
+                            pokemonId = pid,
+                            isDefault = defaultForm,
+                            kind = classify(display, defaultForm),
+                            formKey = rawName
+                        )
+                    )
+                }
             }
         }
+
         cache[id] = result
         return result
     }
 
     fun collectible(id:Int):List<PokemonFormVariant> =
         (cached(id) ?: load(id))
-            .distinctBy{it.pokemonId}
-            .sortedWith(compareByDescending<PokemonFormVariant>{it.isDefault}.thenBy{it.name})
+            .distinctBy{it.formKey}
+            .sortedWith(
+                compareByDescending<PokemonFormVariant>{it.isDefault}
+                    .thenBy{kindOrder(it.kind)}
+                    .thenBy{it.name}
+            )
 
     fun livingDexForms(id:Int):List<PokemonFormVariant> =
         collectible(id).filter{it.countsForLivingDex}
@@ -72,15 +98,12 @@ object PokemonFormsService {
         return when{
             listOf("alola","galar","hisui","paldea").any{it in n} -> PokemonFormKind.REGIONAL
             "female" in n || "male" in n -> PokemonFormKind.GENDER
-
-            // Temporary transformations: visible in details, but not required for Living Dex completion.
             listOf(
                 "mega","gmax","gigantamax","primal","eternamax",
                 "busted","school","zen","blade","shield","complete",
-                "crowned","gulping","gorging","hero","hangry"
+                "crowned","gulping","gorging","hero","hangry",
+                "sunny","rainy","snowy","attack","defense","speed"
             ).any{it in n} -> PokemonFormKind.BATTLE
-
-            // Persistent/collectible identity variants.
             listOf(
                 "red striped","blue striped","white striped",
                 "midday","midnight","dusk",
@@ -94,19 +117,47 @@ object PokemonFormsService {
                 "terastal","stellar",
                 "male","female"
             ).any{it in n} -> PokemonFormKind.SPECIAL
-
-            // Cosmetic collections that users may want to track independently.
             listOf(
                 "cap","cosplay","partner","original","hoenn","sinnoh","unova","kalos","alola",
                 "world","fancy","pokeball","poke ball","garden","meadow","marine","archipelago",
                 "high plains","sandstorm","river","monsoon","savanna","sun","ocean","jungle",
                 "elegant","modern","polar","tundra","continental","icy snow",
                 "debutante","diamond","heart","kabuki","la reine","matron","dandy","star",
-                "lemon","matcha","mint","ruby","salted","ruby swirl","caramel swirl","rainbow swirl"
+                "lemon","matcha","mint","ruby","salted","ruby swirl","caramel swirl","rainbow swirl",
+                "unown","spinda"
             ).any{it in n} -> PokemonFormKind.COSMETIC
-
             listOf("starter","battle bond","ash").any{it in n} -> PokemonFormKind.SPECIAL
             else -> PokemonFormKind.OTHER
         }
     }
+
+    private fun kindOrder(kind:PokemonFormKind):Int = when(kind){
+        PokemonFormKind.DEFAULT -> 0
+        PokemonFormKind.REGIONAL -> 1
+        PokemonFormKind.SPECIAL -> 2
+        PokemonFormKind.GENDER -> 3
+        PokemonFormKind.COSMETIC -> 4
+        PokemonFormKind.BATTLE -> 5
+        PokemonFormKind.OTHER -> 6
+    }
+
+    private fun pretty(raw:String):String =
+        raw.split('-').joinToString(" "){part->
+            part.replaceFirstChar{ch->ch.uppercase()}
+        }
+
+    private fun fetch(url:String):String =
+        PersistentApiCache.getOrFetch(url) {
+            val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+            connection.connectTimeout = 12_000
+            connection.readTimeout = 12_000
+            connection.requestMethod = "GET"
+            connection.connect()
+            try {
+                if (connection.responseCode !in 200..299) error("HTTP " + connection.responseCode)
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } finally {
+                connection.disconnect()
+            }
+        }
 }
