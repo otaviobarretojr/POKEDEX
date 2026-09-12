@@ -60,8 +60,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "18400" not in workflow or "18.4.0" not in workflow:
-    violations.append("CI v18.3.0 version validation missing")
+if "18401" not in workflow or "18.4.1" not in workflow:
+    violations.append("CI v18.4.1 version validation missing")
 
 if violations:
     print("Source verification failed:")
@@ -953,7 +953,8 @@ local_v1810 = 'versionName = "18.1.0"' in local_gradle and "versionCode = 18100"
 local_v1820 = 'versionName = "18.2.0"' in local_gradle and "versionCode = 18200" in local_gradle
 local_v1830 = 'versionName = "18.3.0"' in local_gradle and "versionCode = 18300" in local_gradle
 local_v1840 = 'versionName = "18.4.0"' in local_gradle and "versionCode = 18400" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840):
+local_v1841 = 'versionName = "18.4.1"' in local_gradle and "versionCode = 18401" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841):
     violations.append("Local build version is not aligned with supported v16/v17/v18 releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
