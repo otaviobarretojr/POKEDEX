@@ -63,7 +63,12 @@ private fun ArtworkWithFallback(
 ){
     var current by remember(model,fallbackModel){mutableStateOf(model)}
     var failed by remember(model,fallbackModel){mutableStateOf(false)}
-    Box(modifier,contentAlignment=Alignment.Center){
+    Surface(
+        modifier=modifier,
+        shape=RoundedCornerShape(16.dp),
+        color=MaterialTheme.colorScheme.surfaceContainerLow
+    ){
+        Box(Modifier.fillMaxSize().padding(6.dp),contentAlignment=Alignment.Center){
         if(!failed){
             AsyncImage(
                 model=current,
@@ -82,6 +87,7 @@ private fun ArtworkWithFallback(
                 modifier=Modifier.fillMaxSize(.42f),
                 tint=MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
         }
     }
 }
