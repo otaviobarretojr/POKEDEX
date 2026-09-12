@@ -75,10 +75,12 @@ object PokemonFormsService {
                     val rawName = form.optString("name").ifBlank { varietyName }
                     val display = pretty(rawName)
                     val defaultForm = varietyDefault && j == 0
-                    val formUrl = form.optString("url")
-                    val formJson = runCatching {
-                        JSONObject(fetch(formUrl))
-                    }.getOrNull()
+                    val needsExactFormSprite = forms.length() > 1 || rawName != varietyName
+                    val formJson = if(needsExactFormSprite) {
+                        runCatching {
+                            JSONObject(fetch(form.optString("url")))
+                        }.getOrNull()
+                    } else null
                     val formSprites = formJson?.optJSONObject("sprites")
                     val normalSprite = formSprites?.optString("front_default")?.takeIf { it.isNotBlank() }
                     val shinySprite = formSprites?.optString("front_shiny")?.takeIf { it.isNotBlank() }
