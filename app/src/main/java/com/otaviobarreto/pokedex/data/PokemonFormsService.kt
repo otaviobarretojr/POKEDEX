@@ -66,7 +66,7 @@ object PokemonFormsService {
     fun livingDexForms(id:Int):List<PokemonFormVariant> =
         collectible(id).filter{it.countsForLivingDex}
 
-    private fun classify(name:String,isDefault:Boolean):PokemonFormKind{
+    internal fun classify(name:String,isDefault:Boolean):PokemonFormKind{
         if(isDefault) return PokemonFormKind.DEFAULT
         val n=name.lowercase()
         return when{
