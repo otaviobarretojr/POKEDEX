@@ -31,6 +31,7 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun JourneyGamePicker(onSelect:(String)->Unit){
     val captured=CollectionStore.contextualCapturedIds
+    val dexIdsByGame by rememberJourneyDexIdsByGame()
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding=PaddingValues(16.dp),
@@ -41,7 +42,11 @@ internal fun JourneyGamePicker(onSelect:(String)->Unit){
             Text("Escolha um jogo para abrir sua central de rota, time e guias.",style=MaterialTheme.typography.bodyMedium)
         }
         items(AppGameCatalog.adventureGames,key={it.label}){game->
-            val progress by rememberJourneyCollectionProgress(game,captured)
+            val progress = rememberJourneyCollectionProgress(
+                game = game,
+                capturedBySource = captured,
+                ids = dexIdsByGame[game.label].orEmpty()
+            )
             JourneyGameReferenceCard(
                 game = game,
                 progress = progress,
@@ -60,34 +65,42 @@ private fun JourneyGameReferenceCard(
     onClick: () -> Unit
 ) {
     val heroIds = JourneyGameVisualCatalog.forGame(game.label).heroPokemonIds
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(142.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFE)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = maxWidth < 360.dp
+        val cardHeight = if (compact) PokedexDesignTokens.Journey.CardHeightCompact else PokedexDesignTokens.Journey.CardHeight
+        val coverWidth = if (compact) PokedexDesignTokens.Journey.CoverWidthCompact else PokedexDesignTokens.Journey.CoverWidth
+        val heroWidth = if (compact) PokedexDesignTokens.Journey.HeroWidthCompact else PokedexDesignTokens.Journey.HeroWidth
+        val fadeWidth = if (compact) PokedexDesignTokens.Journey.FadeWidthCompact else PokedexDesignTokens.Journey.FadeWidth
+        val maxRegionChips = if (compact) 2 else 3
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(cardHeight)
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(PokedexDesignTokens.Journey.CardRadius),
+            colors = CardDefaults.cardColors(containerColor = PokedexDesignTokens.Journey.CardSurface),
+            elevation = CardDefaults.cardElevation(defaultElevation = PokedexDesignTokens.Elevation.Low)
+        ) {
+            Box(Modifier.fillMaxSize()) {
             JourneyHeroArtwork(
                 ids = heroIds,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
-                    .width(150.dp)
+                    .width(heroWidth)
             )
 
             Box(
                 Modifier
                     .fillMaxHeight()
-                    .width(190.dp)
+                    .width(fadeWidth)
                     .align(Alignment.CenterEnd)
                     .background(
                         Brush.horizontalGradient(
                             colors = listOf(
-                                Color(0xFFFDFDFE),
-                                Color(0xFFFDFDFE).copy(alpha = .74f),
+                                PokedexDesignTokens.Journey.CardSurface,
+                                PokedexDesignTokens.Journey.CardSurface.copy(alpha = .74f),
                                 Color.Transparent
                             )
                         )
@@ -97,13 +110,16 @@ private fun JourneyGameReferenceCard(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 12.dp, vertical = 11.dp),
+                    .padding(
+                        horizontal = PokedexDesignTokens.Journey.CardHorizontalPadding,
+                        vertical = PokedexDesignTokens.Journey.CardVerticalPadding
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 JourneyGameCover(
                     gameLabel = game.label,
                     modifier = Modifier
-                        .width(120.dp)
+                        .width(coverWidth)
                         .fillMaxHeight()
                 )
 
@@ -166,7 +182,7 @@ private fun JourneyGameReferenceCard(
                     if (game.regions.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            game.regions.take(3).forEach { region ->
+                            game.regions.take(maxRegionChips).forEach { region ->
                                 Surface(
                                     shape = RoundedCornerShape(999.dp),
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .92f)
@@ -187,8 +203,29 @@ private fun JourneyGameReferenceCard(
             }
         }
     }
+    }
 }
 
+
+
+private object JourneyLocalArtworkCache {
+    @Volatile
+    private var scarletBytes: ByteArray? = null
+
+    fun scarlet(context: android.content.Context): ByteArray? {
+        scarletBytes?.let { return it }
+        return synchronized(this) {
+            scarletBytes ?: runCatching {
+                val encoded = (1..3).joinToString(separator = "") { part ->
+                    context.assets.open("journey/scarlet_user_art_" + part + ".b64")
+                        .bufferedReader()
+                        .use { it.readText() }
+                }
+                Base64.decode(encoded, Base64.DEFAULT).also { scarletBytes = it }
+            }.getOrNull()
+        }
+    }
+}
 
 private fun compactJourneyRegionLabel(label: String): String = when (label) {
     "Isle of Armor" -> "ARMOR"
@@ -226,23 +263,16 @@ private fun JourneyGameCover(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val userScarletArtwork = remember(gameLabel) {
+    val userScarletArtwork = remember(gameLabel, context.applicationContext) {
         if (gameLabel == "Scarlet / Violet") {
-            runCatching {
-                val encoded = (1..3).joinToString(separator = "") { part ->
-                    context.assets.open("journey/scarlet_user_art_" + part + ".b64")
-                        .bufferedReader()
-                        .use { it.readText() }
-                }
-                Base64.decode(encoded, Base64.DEFAULT)
-            }.getOrNull()
+            JourneyLocalArtworkCache.scarlet(context.applicationContext)
         } else null
     }
     val covers = GameCoverCatalog.coversFor(gameLabel)
     if (covers.isEmpty()) {
         Box(
             modifier = modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(PokedexDesignTokens.Journey.ArtworkRadius))
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
@@ -253,8 +283,8 @@ private fun JourneyGameCover(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF101820))
+            .clip(RoundedCornerShape(PokedexDesignTokens.Journey.ArtworkRadius))
+            .background(PokedexDesignTokens.Journey.ArtworkBackdrop)
     ) {
         if (userScarletArtwork != null) {
             AsyncImage(
@@ -403,6 +433,35 @@ internal fun JourneyGameMenu(
 
 private data class JourneyCollectionProgress(val captured:Int=0,val total:Int=0){
     val ratio:Float get()=if(total<=0)0f else captured.toFloat()/total
+}
+
+@Composable
+private fun rememberJourneyDexIdsByGame(): State<Map<String, Set<Int>>> =
+    produceState(initialValue = emptyMap()) {
+        value = withContext(Dispatchers.IO) {
+            AppGameCatalog.adventureGames.associate { game ->
+                game.label to game.regions.flatMap { region ->
+                    val ctx = GameContext.fromSource(region.source)
+                    if (ctx == null) emptyList()
+                    else runCatching { GameDexService.loadGameDex(ctx).map { it.nationalId } }
+                        .getOrDefault(emptyList())
+                }.toSet()
+            }
+        }
+    }
+
+@Composable
+private fun rememberJourneyCollectionProgress(
+    game: AppGame,
+    capturedBySource: Map<String, Set<Int>>,
+    ids: Set<Int>
+): JourneyCollectionProgress {
+    val registered = remember(game.label, capturedBySource) {
+        game.regions.flatMap { capturedBySource[it.source].orEmpty() }.toSet()
+    }
+    return remember(ids, registered) {
+        JourneyCollectionProgress(ids.count { it in registered }, ids.size)
+    }
 }
 
 @Composable
