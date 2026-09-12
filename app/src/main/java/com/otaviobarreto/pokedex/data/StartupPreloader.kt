@@ -63,17 +63,23 @@ object StartupPreloader {
         }
 
         val gameCoverUrls = AppGameCatalog.adventureGames
-            .flatMap { GameCoverCatalog.coversFor(it.label) }
+            .asSequence()
+            .filterNot { it.label == "Scarlet / Violet" }
+            .flatMap { GameCoverCatalog.coversFor(it.label).asSequence() }
             .distinct()
+            .toList()
         val journeyHeroUrls = AppGameCatalog.adventureGames
-            .flatMap { JourneyGameVisualCatalog.forGame(it.label).heroPokemonIds }
+            .asSequence()
+            .flatMap { JourneyGameVisualCatalog.forGame(it.label).heroPokemonIds.asSequence() }
             .distinct()
             .map { id ->
                 "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
             }
+            .toList()
+        val journeyArtworkUrls = (gameCoverUrls + journeyHeroUrls).distinct()
 
         progress(.84f, "Preparando arte da Jornada")
-        (gameCoverUrls + journeyHeroUrls).distinct().forEachIndexed { index, artwork ->
+        journeyArtworkUrls.forEachIndexed { index, artwork ->
             runCatching {
                 context.imageLoader.execute(
                     ImageRequest.Builder(context)
@@ -83,8 +89,7 @@ object StartupPreloader {
                         .build()
                 )
             }
-            val totalArtwork = (gameCoverUrls + journeyHeroUrls).distinct().size.coerceAtLeast(1)
-            val local = .84f + ((index + 1f) / totalArtwork) * .07f
+            val local = .84f + ((index + 1f) / journeyArtworkUrls.size.coerceAtLeast(1)) * .07f
             progress(local, "Preparando arte da Jornada")
         }
 
