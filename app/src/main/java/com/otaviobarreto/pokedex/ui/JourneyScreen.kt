@@ -1,6 +1,8 @@
 package com.otaviobarreto.pokedex.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -176,12 +178,25 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
         if(currentIndex<0) emptyList()
         else steps.drop(currentIndex+1).filterNot{it.id in completed}
     }
-    val visibleSteps=remember(steps,completed,nextStep,showCompleted,showUpcoming){
+    val visibleSteps=remember(steps,completed,showCompleted,showUpcoming,upcomingSteps){
         buildList {
-            if(showCompleted) addAll(steps.filter{it.id in completed})
-            nextStep?.let(::add)
             if(showUpcoming) addAll(upcomingSteps)
+            if(showCompleted) addAll(steps.filter{it.id in completed})
         }.distinctBy{it.id}
+    }
+    val currentUi=remember(nextStep,nationalByName){
+        nextStep?.let { step ->
+            val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+            JourneyRouteStepUi(
+                step=step,
+                visual=JourneyVisualAssetCatalog.forStep(step.id),
+                detail=detail,
+                opponentPokemonIds=detail?.opponents?.map { member ->
+                    journeyOpponentPokemonId(member.name,nationalByName)
+                }.orEmpty(),
+                chapter=journeyChapterHeader(step)
+            )
+        }
     }
     val routeUi=remember(visibleSteps,nationalByName){
         visibleSteps.map { step ->
@@ -314,71 +329,48 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
 
-        if(visibleSteps.isEmpty() && steps.isNotEmpty()){
-            item{
-                Card(
-                    shape=RoundedCornerShape(20.dp),
-                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
-                    modifier=Modifier.fillMaxWidth().padding(vertical=8.dp)
-                ){
-                    Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
-                        Icon(Icons.Default.TaskAlt,null,Modifier.size(34.dp))
-                        Text("Jornada concluída!",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge,modifier=Modifier.padding(top=8.dp))
-                        Text("Todos os objetivos estão concluídos. Abra “Objetivos concluídos” para revisar a Jornada.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
+        item(key="current_objective",contentType="current_objective"){
+            Crossfade(
+                targetState=currentUi?.step?.id,
+                animationSpec=tween(durationMillis=220),
+                label="currentObjectiveTransition"
+            ){currentId->
+                val ui=currentUi?.takeIf{it.step.id==currentId}
+                if(ui!=null){
+                    val step=ui.step
+                    Column{
+                        Text(
+                            "OBJETIVO ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
+                            fontWeight=FontWeight.Black,
+                            style=MaterialTheme.typography.labelMedium,
+                            color=MaterialTheme.colorScheme.primary,
+                            modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=8.dp)
+                        )
+                        JourneyStepCard(
+                            step=step,
+                            visual=ui.visual,
+                            detail=ui.detail,
+                            opponentPokemonIds=ui.opponentPokemonIds,
+                            done=false,
+                            isNext=true,
+                            journeyRecommendation=smart.recommendation,
+                            displayTitle=journeyDisplayTitle(step),
+                            onOpen={onOpenStep(step.id)},
+                            onToggle={JourneyProgressStore.toggle(game.label,step.id)}
+                        )
                     }
-                }
-            }
-        }
-
-        items(
-            items=routeUi,
-            key={it.step.id},
-            contentType={"route_step"}
-        ){ui->
-            val step=ui.step
-            val done=step.id in completed
-            val isNext=nextStep?.id==step.id
-            Column{
-                if(step.id==nextStep?.id){
-                    Text(
-                        "OBJETIVO ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
-                        fontWeight=FontWeight.Black,
-                        style=MaterialTheme.typography.labelMedium,
-                        color=MaterialTheme.colorScheme.primary,
-                        modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=42.dp)
-                    )
-                }else{
-                    ui.chapter?.let{
-                        Text(it,fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=42.dp))
+                }else if(steps.isNotEmpty()){
+                    Card(
+                        shape=RoundedCornerShape(20.dp),
+                        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
+                        modifier=Modifier.fillMaxWidth().padding(vertical=8.dp)
+                    ){
+                        Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
+                            Icon(Icons.Default.TaskAlt,null,Modifier.size(34.dp))
+                            Text("Jornada concluída!",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge,modifier=Modifier.padding(top=8.dp))
+                            Text("Todos os objetivos estão concluídos. Abra “Objetivos concluídos” para revisar a Jornada.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
+                        }
                     }
-                }
-                JourneyStepCard(
-                    step=step,
-                    visual=ui.visual,
-                    detail=ui.detail,
-                    opponentPokemonIds=ui.opponentPokemonIds,
-                    done=done,
-                    isNext=isNext,
-                    journeyRecommendation=if(isNext) smart.recommendation else null,
-                    displayTitle=journeyDisplayTitle(step),
-                    onOpen={onOpenStep(step.id)},
-                    onToggle={JourneyProgressStore.toggle(game.label,step.id)}
-                )
-            }
-        }
-
-        if(hiddenCompletedCount>0){
-            item{
-                FilledTonalButton(
-                    onClick={showCompleted=!showCompleted},
-                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
-                ){
-                    Icon(if(showCompleted)Icons.Default.VisibilityOff else Icons.Default.Visibility,null)
-                    Spacer(Modifier.width(7.dp))
-                    Text(
-                        if(showCompleted) "Ocultar objetivos concluídos"
-                        else "Objetivos concluídos ("+hiddenCompletedCount+")"
-                    )
                 }
             }
         }
@@ -396,6 +388,54 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                         else "Próximos objetivos ("+upcomingSteps.size+")"
                     )
                 }
+            }
+        }
+
+        if(hiddenCompletedCount>0){
+            item(key="completed_toggle",contentType="toggle"){
+                FilledTonalButton(
+                    onClick={showCompleted=!showCompleted},
+                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
+                ){
+                    Icon(if(showCompleted)Icons.Default.VisibilityOff else Icons.Default.Visibility,null)
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        if(showCompleted) "Ocultar objetivos concluídos"
+                        else "Objetivos concluídos ("+hiddenCompletedCount+")"
+                    )
+                }
+            }
+        }
+
+        items(
+            items=routeUi,
+            key={it.step.id},
+            contentType={"route_step"}
+        ){ui->
+            val step=ui.step
+            val done=step.id in completed
+            Column{
+                ui.chapter?.let{
+                    Text(
+                        it,
+                        fontWeight=FontWeight.Black,
+                        style=MaterialTheme.typography.labelMedium,
+                        color=MaterialTheme.colorScheme.primary,
+                        modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=8.dp)
+                    )
+                }
+                JourneyStepCard(
+                    step=step,
+                    visual=ui.visual,
+                    detail=ui.detail,
+                    opponentPokemonIds=ui.opponentPokemonIds,
+                    done=done,
+                    isNext=false,
+                    journeyRecommendation=null,
+                    displayTitle=journeyDisplayTitle(step),
+                    onOpen={onOpenStep(step.id)},
+                    onToggle={JourneyProgressStore.toggle(game.label,step.id)}
+                )
             }
         }
 
