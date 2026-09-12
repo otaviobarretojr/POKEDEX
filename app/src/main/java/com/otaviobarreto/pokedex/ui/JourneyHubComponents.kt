@@ -137,6 +137,12 @@ private fun JourneyGameReferenceCard(
     onClick: () -> Unit
 ) {
     val heroIds = JourneyGameVisualCatalog.forGame(game.label).heroPokemonIds
+    val routeRevision = JourneyProgressStore.revision
+    val routeSteps = remember(game.label, routeRevision) { JourneyCatalog.steps(game.label) }
+    val completedSteps = remember(game.label, routeRevision) { JourneyProgressStore.completed(game.label) }
+    val nextJourneyStep = remember(routeSteps, completedSteps) { routeSteps.firstOrNull { it.id !in completedSteps } }
+    val journeyDone = remember(routeSteps, completedSteps) { DataIntegrityRules.completedCount(routeSteps.map { it.id }, completedSteps) }
+    val journeyRatio = if(routeSteps.isEmpty()) 0f else journeyDone.toFloat()/routeSteps.size
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val compact = maxWidth < 360.dp
         val cardHeight = if (compact) PokedexDesignTokens.Journey.CardHeightCompact else PokedexDesignTokens.Journey.CardHeight
@@ -218,33 +224,39 @@ private fun JourneyGameReferenceCard(
                     )
 
                     Spacer(Modifier.height(8.dp))
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        LinearProgressIndicator(
-                            progress = { progress.ratio },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(7.dp),
-                            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
-                        )
-                        Spacer(Modifier.width(8.dp))
+                    if(routeSteps.isNotEmpty()){
                         Text(
-                            text = progress.captured.toString() + "/" + progress.total,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
+                            text = nextJourneyStep?.let { "Próximo: " + it.title } ?: "Jornada principal concluída",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Spacer(Modifier.width(6.dp))
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .84f)
-                        ) {
+                        nextJourneyStep?.let { step ->
                             Text(
-                                text = (progress.ratio * 100).toInt().toString() + "%",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                text = JourneyTeamProgressCatalog.chapterFor(step.id) + " · " + step.levelLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                        Row(
+                            Modifier.fillMaxWidth().padding(top=6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            LinearProgressIndicator(
+                                progress = { journeyRatio },
+                                modifier = Modifier.weight(1f).height(7.dp),
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = journeyDone.toString() + "/" + routeSteps.size,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold
                             )
@@ -466,6 +478,20 @@ internal fun JourneyGameMenu(
                             color=MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier=Modifier.padding(top=7.dp)
                         )
+                        val nextStep=route.firstOrNull{it.id !in completed}
+                        nextStep?.let{step->
+                            Surface(
+                                shape=RoundedCornerShape(16.dp),
+                                color=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.72f),
+                                modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                            ){
+                                Column(Modifier.padding(horizontal=12.dp,vertical=9.dp)){
+                                    Text("PRÓXIMO OBJETIVO",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+                                    Text(step.title,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleSmall,modifier=Modifier.padding(top=2.dp))
+                                    Text(JourneyTeamProgressCatalog.chapterFor(step.id)+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=2.dp))
+                                }
+                            }
+                        }
                     }
                 }
             }
