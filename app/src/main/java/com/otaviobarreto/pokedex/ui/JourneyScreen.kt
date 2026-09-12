@@ -357,7 +357,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                                 HorizontalDivider(Modifier.padding(vertical=9.dp))
                                 Text("CAPTURE NO CAMINHO",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
                                 catches.take(2).forEach{rec->
-                                    val name=PokedexDataStore.cachedNationalDex().orEmpty().firstOrNull{it.id==rec.pokemonId}?.name ?: "#"+rec.pokemonId
+                                    val name=national.firstOrNull{it.id==rec.pokemonId}?.name ?: "#"+rec.pokemonId
                                     Text(name+" · "+rec.area,style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=4.dp))
                                     Text(rec.reason,style=MaterialTheme.typography.labelSmall)
                                 }
