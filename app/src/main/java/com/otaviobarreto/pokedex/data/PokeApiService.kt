@@ -184,7 +184,10 @@ object PokeApiService {
         964 to "Subir Finizen ao nível 38 ou mais enquanto estiver em uma sessão multiplayer/Union Circle",
         979 to "Usar Rage Fist 20 vezes • Depois subir de nível",
         983 to "Bisharp segurando Leader's Crest • Derrotar 3 Bisharp líderes que também seguram Leader's Crest • Depois subir de nível",
-        1000 to "Coletar 999 Gimmighoul Coins • Depois subir Gimmighoul de nível"
+        925 to "Tandemaus evolui a partir do nível 25 após participar de uma batalha; a forma Family of Three é rara",
+        982 to "Dunsparce evolui ao subir de nível conhecendo Hyper Drill; a forma Three-Segment é rara",
+        1000 to "Coletar 999 Gimmighoul Coins • Depois subir Gimmighoul de nível",
+        1019 to "Dipplin evolui ao subir de nível conhecendo Dragon Cheer"
     )
     private fun getJson(url:String)=JSONObject(getText(url));private fun getJsonArray(url:String)=JSONArray(getText(url));private fun getText(url:String):String = PersistentApiCache.getOrFetch(url) { val connection=URL(url).openConnection() as HttpURLConnection;connection.connectTimeout=12_000;connection.readTimeout=12_000;connection.requestMethod="GET";connection.setRequestProperty("Accept","application/json");connection.connect();try{if(connection.responseCode !in 200..299)error("HTTP ${connection.responseCode} while loading $url");connection.inputStream.bufferedReader().use{it.readText()}}finally{connection.disconnect()}}
     private fun idFromUrl(url:String)=url.trimEnd('/').substringAfterLast('/').toInt()
