@@ -411,17 +411,62 @@ internal fun JourneyGameMenu(
     onRegion:(String)->Unit
 ){
     val route=JourneyCatalog.steps(game.label)
+    val routeRevision=JourneyProgressStore.revision
+    val completed=remember(game.label,routeRevision){JourneyProgressStore.completed(game.label)}
+    val routeDone=DataIntegrityRules.completedCount(route.map{it.id},completed)
+    val routeProgress=if(route.isEmpty())0f else routeDone.toFloat()/route.size
+    Box(
+        Modifier.fillMaxSize().background(
+            Brush.verticalGradient(
+                listOf(
+                    MaterialTheme.colorScheme.background,
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha=.16f),
+                    MaterialTheme.colorScheme.background
+                )
+            )
+        )
+    ){
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding=PaddingValues(16.dp),
+        contentPadding=PaddingValues(horizontal=16.dp,vertical=14.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)
     ){
         item{
-            Row(verticalAlignment=Alignment.CenterVertically){
-                IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
-                Column{
-                    Text(game.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
-                    Text("Central da Jornada",style=MaterialTheme.typography.labelMedium)
+            Card(
+                shape=RoundedCornerShape(26.dp),
+                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),
+                elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
+            ){
+                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
+                        Column(Modifier.weight(1f).padding(start=4.dp)){
+                            Text(game.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
+                            Text("Central da Jornada",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Surface(shape=RoundedCornerShape(999.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                            Text(
+                                (routeProgress*100).toInt().toString()+"%",
+                                Modifier.padding(horizontal=10.dp,vertical=6.dp),
+                                style=MaterialTheme.typography.labelMedium,
+                                fontWeight=FontWeight.Bold,
+                                color=MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    if(route.isNotEmpty()){
+                        LinearProgressIndicator(
+                            progress={routeProgress},
+                            modifier=Modifier.fillMaxWidth().padding(top=10.dp).height(7.dp),
+                            strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                        )
+                        Text(
+                            routeDone.toString()+" de "+route.size+" objetivos concluídos",
+                            style=MaterialTheme.typography.bodySmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier=Modifier.padding(top=7.dp)
+                        )
+                    }
                 }
             }
         }
@@ -499,6 +544,7 @@ internal fun JourneyGameMenu(
             }
         }
         item{Spacer(Modifier.height(20.dp))}
+    }
     }
 }
 
