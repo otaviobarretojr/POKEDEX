@@ -88,7 +88,8 @@ object HomeAudioManager {
         releasePlayer(clearTrack = false)
         val context = appContext ?: return
         val descriptor = runCatching { context.resources.openRawResourceFd(track.rawResId) }.getOrNull() ?: return
-        player = runCatching {
+
+        val candidate = runCatching {
             MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
@@ -100,20 +101,41 @@ object HomeAudioManager {
                 isLooping = track.looping
                 val level = volume
                 setVolume(level, level)
-                prepare()
-                start()
             }
         }.getOrNull()
-        loadedTrack = if (player != null) track else null
         descriptor.close()
+
+        if (candidate == null) {
+            loadedTrack = null
+            return
+        }
+
+        player = candidate
+        loadedTrack = track
+        candidate.setOnPreparedListener { prepared ->
+            if (player === prepared && loadedTrack == track && currentTrack == track && enabled && appInForeground) {
+                runCatching { prepared.start() }
+            }
+        }
+        candidate.setOnErrorListener { failed, _, _ ->
+            if (player === failed) releasePlayer(clearTrack = false)
+            true
+        }
+        runCatching { candidate.prepareAsync() }
+            .onFailure {
+                if (player === candidate) releasePlayer(clearTrack = false)
+            }
     }
 
     private fun releasePlayer(clearTrack: Boolean = false) {
-        runCatching { player?.stop() }
-        runCatching { player?.reset() }
-        runCatching { player?.release() }
+        val active = player
         player = null
         loadedTrack = null
+        runCatching { active?.setOnPreparedListener(null) }
+        runCatching { active?.setOnErrorListener(null) }
+        runCatching { active?.stop() }
+        runCatching { active?.reset() }
+        runCatching { active?.release() }
         if (clearTrack) currentTrack = null
     }
 
