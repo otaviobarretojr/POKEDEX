@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 17
+    private const val PACK_VERSION = 18
     private var context: Context? = null
 
     data class PackStatus(
@@ -214,13 +214,13 @@ object OfflineGamePackManager {
                         val pokemonJob = async { PokedexDataStore.pokemon(id) }
                         val speciesJob = async { PokedexDataStore.species(id) }
                         val encounterJob = async { PokedexDataStore.encounters(id) }
-                        val formsJob = async { runCatching { PokemonFormsService.collectible(id) } }
+                        val formsJob = async { PokemonFormsService.collectible(id) }
                         val pokemon = pokemonJob.await()
                         val species = speciesJob.await()
                         val evolutionUrl = species.evolutionChainUrl
                         evolutionUrl?.let { PokedexDataStore.evolutions(it) }
                         encounterJob.await()
-                        val forms = formsJob.await().getOrDefault(emptyList())
+                        val forms = formsJob.await()
 
                         val resourceUrls = buildSet {
                             add(PokeApiService.pokemonUrl(id))
