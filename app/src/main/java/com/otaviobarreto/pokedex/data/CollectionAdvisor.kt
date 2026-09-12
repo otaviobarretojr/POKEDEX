@@ -11,6 +11,14 @@ data class AcquisitionOption(
     val regionalNumber:Int
 )
 
+data class CaptureTarget(
+    val pokemonId:Int,
+    val preferred:AcquisitionOption?,
+    val alternatives:List<AcquisitionOption>
+){
+    val totalOptions:Int get() = alternatives.size
+}
+
 object CollectionAdvisor {
     private val availability=ConcurrentHashMap<Int,MutableList<AcquisitionOption>>()
     @Volatile private var warmed=false
@@ -47,6 +55,29 @@ object CollectionAdvisor {
         warmed=true
     }
 
+    fun preferredOption(pokemonId:Int):AcquisitionOption? =
+        cachedOptions(pokemonId).firstOrNull()
+
+    fun capturePlan(pokemonIds:List<Int>,limit:Int=12):List<CaptureTarget> =
+        pokemonIds.asSequence()
+            .distinct()
+            .filter{it !in CollectionStore.capturedIds}
+            .map{ id ->
+                val options=cachedOptions(id)
+                CaptureTarget(
+                    pokemonId=id,
+                    preferred=options.firstOrNull(),
+                    alternatives=options
+                )
+            }
+            .sortedWith(
+                compareByDescending<CaptureTarget>{it.preferred!=null}
+                    .thenBy{it.totalOptions.takeIf{count->count>0} ?: Int.MAX_VALUE}
+                    .thenBy{it.pokemonId}
+            )
+            .take(limit)
+            .toList()
+
     fun recommendation(pokemonId:Int):String {
         val options=cachedOptions(pokemonId)
         if(options.isEmpty()){
@@ -56,13 +87,13 @@ object CollectionAdvisor {
         val first=options.first()
         val extra=(options.size-1).coerceAtLeast(0)
         return buildString {
-            append("Disponível em ")
+            append("Melhor opção na sua base: ")
             append(first.game)
             append(" · ")
             append(first.region)
             append(" #")
             append(first.regionalNumber)
-            if(extra>0) append(" · +").append(extra).append(" opção(ões)")
+            if(extra>0) append(" · +").append(extra).append(" alternativa(s)")
         }
     }
 }
