@@ -29,7 +29,13 @@ fun CampaignTeamGuideScreen(
 ){
     val initial=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames} ?: AppStatePreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames} ?: TeamCampaignCatalog.switchGames.first()
     var game by remember(initial) { mutableStateOf(initial) }
-    var starterId by remember(game) { mutableIntStateOf(TeamCampaignCatalog.starters(game).first().second) }
+    var starterId by remember(game) {
+        mutableIntStateOf(
+            AppStatePreferences.journeyStarterForGame(game)
+                ?: JourneyStarterCatalog.bestForGame(game)?.pokemonId
+                ?: TeamCampaignCatalog.starters(game).first().second
+        )
+    }
     val suggestedPhase=remember(initialPhase){CampaignPhase.values().firstOrNull{it.name==initialPhase} ?: CampaignPhase.EARLY}
     var phase by remember(initialGame,initialPhase) { mutableStateOf(suggestedPhase) }
     var gameMenu by remember { mutableStateOf(false) }
@@ -70,7 +76,9 @@ fun CampaignTeamGuideScreen(
                             TeamCampaignCatalog.switchGames.forEach{g->
                                 DropdownMenuItem(text={Text(g)},onClick={
                                     game=g
-                                    starterId=TeamCampaignCatalog.starters(g).first().second
+                                    starterId=AppStatePreferences.journeyStarterForGame(g)
+                                        ?: JourneyStarterCatalog.bestForGame(g)?.pokemonId
+                                        ?: TeamCampaignCatalog.starters(g).first().second
                                     AppStatePreferences.activeGame=g.takeIf{candidate->AppGameCatalog.games.any{it.label==candidate}} ?: AppStatePreferences.activeGame
                                     gameMenu=false
                                 })
@@ -82,7 +90,10 @@ fun CampaignTeamGuideScreen(
                         TeamCampaignCatalog.starters(game).forEach{(name,id)->
                             FilterChip(
                                 selected=starterId==id,
-                                onClick={starterId=id},
+                                onClick={
+                                    starterId=id
+                                    AppStatePreferences.setJourneyStarterForGame(game,id)
+                                },
                                 label={Text(name)},
                                 leadingIcon=if(starterId==id){{Icon(Icons.Default.Check,null)}}else null
                             )
@@ -116,6 +127,16 @@ fun CampaignTeamGuideScreen(
                             Text(smart.reason,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
                             smart.focusStep?.let{step->
                                 Text("Foco atual: "+step.title+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=6.dp))
+                            }
+                            if(smart.swaps.isNotEmpty()){
+                                HorizontalDivider(Modifier.padding(vertical=10.dp))
+                                Text("AJUSTES RECOMENDADOS",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
+                                smart.swaps.forEach{swap->
+                                    val outName=swap.outPokemonId?.let{id->national.firstOrNull{it.id==id}?.name ?: "#"+id} ?: "Slot livre"
+                                    val inName=national.firstOrNull{it.id==swap.inPokemonId}?.name ?: "#"+swap.inPokemonId
+                                    Text("Sai: "+outName+"  →  Entra: "+inName,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
+                                    Text(swap.reason,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=2.dp))
+                                }
                             }
                         }
                     }
