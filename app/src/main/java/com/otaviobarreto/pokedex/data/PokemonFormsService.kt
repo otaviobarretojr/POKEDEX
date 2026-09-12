@@ -15,7 +15,8 @@ data class PokemonFormVariant(
     val kind: PokemonFormKind = PokemonFormKind.OTHER,
     val formKey: String = (pokemonId?.toString() ?: name),
     val spriteUrl: String? = null,
-    val shinySpriteUrl: String? = null
+    val shinySpriteUrl: String? = null,
+    val hasBattleDataChanges: Boolean = false
 ) {
     val countsForLivingDex:Boolean
         get() = kind != PokemonFormKind.BATTLE
@@ -34,6 +35,22 @@ object PokemonFormsService {
         val resources = linkedSetOf(speciesUrl)
         val species = JSONObject(fetch(speciesUrl))
         val varieties = species.optJSONArray("varieties") ?: JSONArray()
+        val defaultPokemonId = (0 until varieties.length())
+            .asSequence()
+            .map { varieties.getJSONObject(it) }
+            .firstOrNull { it.optBoolean("is_default") }
+            ?.optJSONObject("pokemon")
+            ?.optString("url")
+            ?.trimEnd('/')
+            ?.substringAfterLast('/')
+            ?.toIntOrNull()
+            ?: id
+        val defaultPokemonJson = runCatching {
+            val url = "https://pokeapi.co/api/v2/pokemon/$defaultPokemonId"
+            resources += url
+            JSONObject(fetch(url))
+        }.getOrNull()
+        val defaultBattleSignature = defaultPokemonJson?.let(::battleSignature)
 
         val result = buildList {
             for (i in 0 until varieties.length()) {
@@ -69,7 +86,10 @@ object PokemonFormsService {
                                 ?.optJSONObject("other")
                                 ?.optJSONObject("official-artwork")
                                 ?.optString("front_shiny")
-                                ?.takeIf { it.isNotBlank() }
+                                ?.takeIf { it.isNotBlank() },
+                            hasBattleDataChanges = pokemonJson?.let(::battleSignature)
+                                ?.let { defaultBattleSignature != null && it != defaultBattleSignature }
+                                ?: false
                         )
                     )
                     continue
@@ -102,7 +122,10 @@ object PokemonFormsService {
                             kind = classify(display, defaultForm),
                             formKey = rawName,
                             spriteUrl = normalSprite ?: official?.optString("front_default")?.takeIf { it.isNotBlank() },
-                            shinySpriteUrl = shinySprite ?: official?.optString("front_shiny")?.takeIf { it.isNotBlank() }
+                            shinySpriteUrl = shinySprite ?: official?.optString("front_shiny")?.takeIf { it.isNotBlank() },
+                            hasBattleDataChanges = pokemonJson?.let(::battleSignature)
+                                ?.let { defaultBattleSignature != null && it != defaultBattleSignature }
+                                ?: false
                         )
                     )
                 }
@@ -179,6 +202,34 @@ object PokemonFormsService {
         raw.split('-').joinToString(" "){part->
             part.replaceFirstChar{ch->ch.uppercase()}
         }
+
+    private fun battleSignature(json:JSONObject):String {
+        val types = json.optJSONArray("types") ?: JSONArray()
+        val typeSignature = (0 until types.length())
+            .mapNotNull { types.optJSONObject(it)?.optJSONObject("type")?.optString("name") }
+            .sorted().joinToString(",")
+        val stats = json.optJSONArray("stats") ?: JSONArray()
+        val statSignature = (0 until stats.length())
+            .mapNotNull { index ->
+                stats.optJSONObject(index)?.let { statRow ->
+                    statRow.optJSONObject("stat")?.optString("name")?.let { statName ->
+                        statName + ":" + statRow.optInt("base_stat")
+                    }
+                }
+            }
+            .sorted().joinToString(",")
+        val abilities = json.optJSONArray("abilities") ?: JSONArray()
+        val abilitySignature = (0 until abilities.length())
+            .mapNotNull { index ->
+                abilities.optJSONObject(index)?.let { abilityRow ->
+                    abilityRow.optJSONObject("ability")?.optString("name")?.let { abilityName ->
+                        abilityName + ":" + abilityRow.optBoolean("is_hidden")
+                    }
+                }
+            }
+            .sorted().joinToString(",")
+        return typeSignature + "|" + statSignature + "|" + abilitySignature
+    }
 
     private fun fetch(url:String):String =
         PersistentApiCache.getOrFetch(url) {
