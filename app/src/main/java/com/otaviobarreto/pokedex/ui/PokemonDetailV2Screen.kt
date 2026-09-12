@@ -142,7 +142,7 @@ fun PokemonDetailV2Screen(
         resolveSaveLocation(b.pokemon.id,context,source,legacyBoxes)
     }
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
-        HeroCard(b,context,accent,saveLocation,back)
+        HeroCard(b,context,source,accent,saveLocation,back)
         DetailTabs(tab,setTab)
         when(tab){
             0->InfoTab(b,accent,context,source,openRef)
@@ -199,10 +199,9 @@ private fun resolveSaveLocation(
     )
 }
 
-@Composable private fun HeroCard(b:DetailV2Bundle,context:GameContext?,accent:Color,saveLocation:DetailSaveLocation,back:()->Unit){
+@Composable private fun HeroCard(b:DetailV2Bundle,context:GameContext?,source:String?,accent:Color,saveLocation:DetailSaveLocation,back:()->Unit){
     val inCollection=saveLocation.saved
-    val preferredVariant=remember(b.pokemon.id,context,VariantCollectionStore.ownedVariants){
-        val source=context?.source
+    val preferredVariant=remember(b.pokemon.id,source,VariantCollectionStore.ownedVariants){
         if(source.isNullOrBlank()) null else VariantCollectionStore.preferred(source,b.pokemon.id)
     }
     val heroImage=preferredVariant?.artworkUrl ?: b.pokemon.spriteUrl
