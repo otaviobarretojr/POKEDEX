@@ -24,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import com.otaviobarreto.pokedex.BuildConfig
 import com.otaviobarreto.pokedex.data.*
 
 private data class BootState(val progress: Float, val label: String)
@@ -32,6 +31,11 @@ private data class BootState(val progress: Float, val label: String)
 @Composable
 fun BootExperienceScreen(onReady: () -> Unit) {
     val context = LocalContext.current.applicationContext
+    val versionName = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "—"
+        }.getOrDefault("—")
+    }
     var state by remember { mutableStateOf(BootState(.04f, "Preparando sua Pokédex")) }
     var finished by remember { mutableStateOf(false) }
     val animatedProgress by animateFloatAsState(state.progress, tween(420), label = "bootProgress")
@@ -95,7 +99,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
             Spacer(Modifier.height(38.dp))
-            Text("POKEDEX  ·  v"+BuildConfig.VERSION_NAME, style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
+            Text("POKEDEX  ·  v"+versionName, style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
         }
         if(finished) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha=glow*.15f)))
