@@ -707,21 +707,25 @@ private fun journeyOpponentPokemonId(
     national:List<PokeApiService.DexIndexEntry>
 ):Int?{
     val aliases=mapOf(
+        "Nymble" to 919, "Tarountula" to 917, "Teddiursa" to 216,
+        "Klawf" to 950, "Petilil" to 548, "Smoliv" to 928, "Sudowoodo" to 185,
+        "Bombirdier" to 962, "Pawniard" to 624,
         "Segin Starmobile" to 966,
-        "Schedar Starmobile" to 966,
-        "Navi Starmobile" to 966,
-        "Ruchbah Starmobile" to 966,
+        "Wattrel" to 940, "Bellibolt" to 939, "Luxio" to 404, "Mismagius" to 429,
+        "Torkoal" to 324, "Schedar Starmobile" to 966,
+        "Orthworm" to 968, "Veluza" to 976, "Wugtrio" to 961, "Crabominable" to 740,
+        "Skuntank" to 435, "Muk" to 89, "Revavroom" to 966, "Navi Starmobile" to 966,
+        "Komala" to 775, "Dudunsparce" to 982, "Staraptor" to 398,
+        "Banette" to 354, "Mimikyu" to 778, "Houndstone" to 972, "Toxtricity" to 849,
+        "Great Tusk" to 984, "Iron Treads" to 990,
+        "Farigiraf" to 981, "Gardevoir" to 282, "Espathra" to 956, "Florges" to 671,
+        "Frosmoth" to 873, "Beartic" to 614, "Cetitan" to 975, "Altaria" to 334,
+        "Azumarill" to 184, "Wigglytuff" to 40, "Dachsbun" to 927, "Ruchbah Starmobile" to 966,
+        "Dondozo" to 977, "Tatsugiri" to 978,
+        "Toxicroak" to 454, "Passimian" to 766, "Lucario" to 448, "Annihilape" to 979,
         "Caph Starmobile" to 966,
-        "Great Tusk" to 984,
-        "Iron Treads" to 990,
-        "Dondozo" to 977,
-        "Tatsugiri" to 978,
-        "Okidogi" to 1014,
-        "Munkidori" to 1015,
-        "Fezandipiti" to 1016,
-        "Ogerpon" to 1017,
-        "Terapagos" to 1024,
-        "Pecharunt" to 1025,
+        "Okidogi" to 1014, "Munkidori" to 1015, "Fezandipiti" to 1016,
+        "Ogerpon" to 1017, "Terapagos" to 1024, "Pecharunt" to 1025,
         "Bloodmoon Ursaluna" to 901
     )
     aliases[rawName]?.let{return it}
