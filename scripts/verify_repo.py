@@ -341,7 +341,7 @@ if violations:
 
 # Compatibility guard — Journey route visual
 journey_visual = journey_source
-for required in ("Minha Jornada", "Progresso da campanha", "OBJETIVO ATUAL", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Objetivo atual", "Próximos objetivos", "Objetivos concluídos"):
+for required in ("Minha Jornada", "Progresso da campanha", "OBJETIVO ATUAL", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Próximos objetivos", "Objetivos concluídos", "Reiniciar Jornada"):
     if required not in journey_visual:
         violations.append(f"Journey route visual missing {required}")
 
@@ -381,7 +381,7 @@ for required in ("setCompleted", "completeThrough"):
     if required not in journey_progress:
         violations.append(f"Smart Journey progress operation missing {required}")
 journey_ui = journey_source
-for required in ("FASE DA JORNADA", "Concluir progresso até aqui", "JourneySmartProgress.context"):
+for required in ("Concluir progresso até aqui", "JourneySmartProgress.context", "Time recomendado"):
     if required not in journey_ui:
         violations.append(f"Smart Journey UI missing {required}")
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
