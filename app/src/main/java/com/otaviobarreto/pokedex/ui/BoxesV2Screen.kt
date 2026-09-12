@@ -423,7 +423,11 @@ private fun QBVariantManager(
                                     )
                                     Column(Modifier.weight(1f).padding(start=8.dp)){
                                         Text(
-                                            if(form.isDefault) form.name+" · padrão" else form.name,
+                                            when{
+                                                form.isDefault -> form.name+" · padrão"
+                                                !form.countsForLivingDex -> form.name+" · temporária"
+                                                else -> form.name
+                                            },
                                             fontWeight=FontWeight.Bold,
                                             maxLines=1,
                                             overflow=TextOverflow.Ellipsis
