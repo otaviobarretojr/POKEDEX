@@ -107,7 +107,7 @@ private fun JourneyGameReferenceCard(
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 14.dp, end = 42.dp),
+                        .padding(start = 14.dp, end = 10.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
@@ -181,21 +181,6 @@ private fun JourneyGameReferenceCard(
                     }
                 }
 
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .size(38.dp),
-                    shape = RoundedCornerShape(19.dp),
-                    color = Color(0xFF142548)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = "Abrir " + game.label,
-                            tint = Color.White
-                        )
-                    }
-                }
             }
         }
     }
@@ -239,40 +224,52 @@ private fun JourneyGameCover(
 ) {
     val covers = GameCoverCatalog.coversFor(gameLabel)
     if (covers.isEmpty()) {
-        Surface(
-            modifier = modifier,
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.primaryContainer
+        Box(
+            modifier = modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.SportsEsports, contentDescription = null)
-            }
+            Icon(Icons.Default.SportsEsports, contentDescription = null)
         }
         return
     }
 
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF101820))
     ) {
-        Row(
-            Modifier.fillMaxSize().padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(Modifier.fillMaxSize()) {
             covers.take(2).forEach { cover ->
-                AsyncImage(
-                    model = cover,
-                    contentDescription = "Capa oficial de $gameLabel",
+                Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(11.dp)),
-                    contentScale = ContentScale.Fit
-                )
+                ) {
+                    AsyncImage(
+                        model = cover,
+                        contentDescription = "Arte oficial de $gameLabel",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
+
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = .04f),
+                            Color.Black.copy(alpha = .16f)
+                        )
+                    )
+                )
+        )
     }
 }
 
