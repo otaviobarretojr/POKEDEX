@@ -1171,7 +1171,7 @@ for required in ("Semaphore(permits = 6)", "data class CacheStats", "fun cacheSt
         violations.append(f"v10 performance store missing {required}")
 
 startup_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
-for required in (".distinct().take(64)", "priorityIds.take(12)", "chunked(6)", "priorityIds.take(28)"):
+for required in (".distinct().take(48)", "priorityIds.take(8)", "chunked(6)", "priorityIds.take(18)"):
     if required not in startup_v10:
         violations.append(f"v10 startup preload missing {required}")
 
