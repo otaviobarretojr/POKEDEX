@@ -484,8 +484,9 @@ for required in ("sv-dlc-05","sv-dlc-06","sv-dlc-13","sv-dlc-15","sv-epi-04"):
         violations.append(f"DLC objective detail missing {required}")
     if required not in prep:
         violations.append(f"DLC preparation missing {required}")
+journey_progress_catalog=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTeamProgressCatalog.kt").read_text(encoding="utf-8")
 for required in ("THE TEAL MASK","THE INDIGO DISK","MOCHI MAYHEM"):
-    if required not in journey:
+    if required not in journey and required not in journey_progress_catalog:
         violations.append(f"Journey section header missing {required}")
 if "The Teal Mask" not in smart or "The Indigo Disk" not in smart or "Mochi Mayhem" not in smart:
     violations.append("Smart progress is not DLC-aware")
