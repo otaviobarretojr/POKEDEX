@@ -542,12 +542,16 @@ main_nav=(root/"app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").re
 journey_v611=journey_source
 boxes_v611=(ui/"BoxesV2Screen.kt").read_text(encoding="utf-8")
 prefs_v611=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/AppStatePreferences.kt").read_text(encoding="utf-8")
-main_line=next((line for line in main_nav.splitlines() if line.startswith("private val mainDestinations=")),"")
-for forbidden in ('"Pokédex"','"Living Dex"','"Companion"'):
-    if forbidden in main_line:
+for forbidden in ('"Living Dex"','"Companion"'):
+    if forbidden in main_nav:
         violations.append(f"Legacy primary tab still present: {forbidden}")
-for required in ('MainDestination("home","Jornada"','MainDestination("boxes","Boxes"'):
-    if required not in main_line:
+for required in (
+    'MainDestination("home","Jornada"',
+    'MainDestination("pokedex","Pokédex"',
+    'MainDestination("central","Config."',
+    'MainDestination("boxes","Boxes"'
+):
+    if required not in main_nav:
         violations.append(f"Primary navigation missing {required}")
 for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.contextualCapturedIds","onOpenBoxes"):
     if required not in journey_v611:
