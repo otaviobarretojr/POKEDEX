@@ -432,7 +432,7 @@ private fun QBVariantManager(
                                     verticalAlignment=Alignment.CenterVertically
                                 ){
                                     AsyncImage(
-                                        model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
+                                        model=form.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
                                         contentDescription=form.name,
                                         modifier=Modifier.size(58.dp),
                                         contentScale=ContentScale.Fit
@@ -453,7 +453,9 @@ private fun QBVariantManager(
                                                 selected=normalOwned,
                                                 onClick={
                                                     VariantCollectionStore.toggle(
-                                                        source,pk.nationalId,formId,form.name,false
+                                                        source,pk.nationalId,formId,form.name,false,
+                                                        normalArtworkUrl=form.spriteUrl,
+                                                        shinyArtworkUrl=form.shinySpriteUrl
                                                     )
                                                 },
                                                 label={Text("Normal",fontSize=10.sp)},
@@ -463,7 +465,9 @@ private fun QBVariantManager(
                                                 selected=shinyOwned,
                                                 onClick={
                                                     VariantCollectionStore.toggle(
-                                                        source,pk.nationalId,formId,form.name,true
+                                                        source,pk.nationalId,formId,form.name,true,
+                                                        normalArtworkUrl=form.spriteUrl,
+                                                        shinyArtworkUrl=form.shinySpriteUrl
                                                     )
                                                 },
                                                 label={Text("★ Shiny",fontSize=10.sp)},
