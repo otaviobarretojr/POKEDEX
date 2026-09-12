@@ -59,6 +59,23 @@ object PokedexDesignTokens {
         val High = 10.dp
     }
 
+    object Journey {
+        val CardSurface = Color(0xFFFDFDFE)
+        val ArtworkBackdrop = Color(0xFF101820)
+        val CardHeight = 142.dp
+        val CardHeightCompact = 138.dp
+        val CoverWidth = 120.dp
+        val CoverWidthCompact = 104.dp
+        val HeroWidth = 150.dp
+        val HeroWidthCompact = 132.dp
+        val FadeWidth = 190.dp
+        val FadeWidthCompact = 165.dp
+        val CardRadius = 24.dp
+        val ArtworkRadius = 16.dp
+        val CardHorizontalPadding = 12.dp
+        val CardVerticalPadding = 11.dp
+    }
+
     val Shapes = Shapes(
         extraSmall = RoundedCornerShape(Radius.Xs),
         small = RoundedCornerShape(Radius.Sm),
