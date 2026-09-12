@@ -230,7 +230,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    }
   }
  }
- if(search)QBSearch(dex,capturedIds,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
+ if(search)QBSearch(dex,capturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
  if(allBoxes)QBAllBoxes(
   dex=dex,
   current=current,
@@ -544,6 +544,7 @@ private fun QBAllBoxes(
 private fun QBSearch(
     dex:List<GameDexService.GameDexEntry>,
     captured:Set<Int>,
+    source:String,
     dismiss:()->Unit,
     select:(GameDexService.GameDexEntry)->Unit,
     open:(GameDexService.GameDexEntry)->Unit
