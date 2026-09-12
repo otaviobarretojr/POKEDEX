@@ -1344,7 +1344,7 @@ if "PokemonFormsService.collectible" not in startup_v12:
     violations.append("v12 startup form preload missing")
 
 offline_v12 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-for required in ("PACK_VERSION = 17", "pokemon-form-offline-", "pokemon-form-shiny-offline-", "countsForLivingDex"):
+for required in ("PACK_VERSION = 17", "formArtworkKey(", '"shiny" else "normal"', "countsForLivingDex"):
     if required not in offline_v12:
         violations.append(f"v12 offline forms/shiny cache missing {required}")
 
