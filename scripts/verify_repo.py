@@ -47,7 +47,7 @@ print("Source verification passed.")
 
 # v6.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 9" not in offline:
+if "PACK_VERSION = 10" not in offline:
     violations.append("Offline pack version is not v8")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
