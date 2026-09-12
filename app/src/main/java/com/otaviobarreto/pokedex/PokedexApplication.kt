@@ -8,6 +8,7 @@ import coil.memory.MemoryCache
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.CollectionStore
+import com.otaviobarreto.pokedex.data.CollectionIntegrityService
 import com.otaviobarreto.pokedex.data.JourneyProgressStore
 import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
@@ -37,6 +38,7 @@ class PokedexApplication : Application(), ImageLoaderFactory {
                 ?.firstOrNull()
                 ?.source
         CollectionStore.migrateLegacyCapturedToSource(legacySource)
+        CollectionIntegrityService.repair()
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
