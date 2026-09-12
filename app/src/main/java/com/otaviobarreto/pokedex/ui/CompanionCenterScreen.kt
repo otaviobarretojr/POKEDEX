@@ -46,6 +46,13 @@ fun CompanionCenterScreen(
     val livingPlan=remember(CollectionStore.capturedIds,VariantCollectionStore.ownedVariants){
         LivingDexPlanner.current(limit=18)
     }
+    var advisorReady by remember { mutableStateOf(CollectionAdvisor.isWarm()) }
+    LaunchedEffect(Unit){
+        if(!advisorReady){
+            runCatching{ CollectionAdvisor.warmAllGames() }
+            advisorReady=CollectionAdvisor.isWarm()
+        }
+    }
 
     val normalizedQuery=query.trim()
     val pokemonResults=remember(normalizedQuery){
@@ -240,16 +247,27 @@ fun CompanionCenterScreen(
                             ){
                                 items(livingPlan.missingSpecies,key={it}){id->
                                     val pk=PokemonRepository.byId(id)
-                                    AssistChip(
-                                        onClick={onPokemonClick(id)},
-                                        label={
-                                            Text(
-                                                "#"+id.toString().padStart(4,'0')+
-                                                    (pk?.name?.let{" · "+it} ?: "")
-                                            )
-                                        },
-                                        leadingIcon={Icon(Icons.Default.CatchingPokemon,null,Modifier.size(16.dp))}
-                                    )
+                                    Column(
+                                        Modifier.widthIn(max=240.dp),
+                                        verticalArrangement=Arrangement.spacedBy(4.dp)
+                                    ){
+                                        AssistChip(
+                                            onClick={onPokemonClick(id)},
+                                            label={
+                                                Text(
+                                                    "#"+id.toString().padStart(4,'0')+
+                                                        (pk?.name?.let{" · "+it} ?: "")
+                                                )
+                                            },
+                                            leadingIcon={Icon(Icons.Default.CatchingPokemon,null,Modifier.size(16.dp))}
+                                        )
+                                        Text(
+                                            CollectionAdvisor.recommendation(id),
+                                            style=MaterialTheme.typography.labelSmall,
+                                            color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines=3
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -257,6 +275,33 @@ fun CompanionCenterScreen(
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                             InsightCard("Shiny espécies",livingPlan.shinySpecies.toString(),Modifier.weight(1f))
                             InsightCard("Registros de forma",livingPlan.formRegistrations.toString(),Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+
+        if(normalizedQuery.isBlank()){
+            item{
+                SectionTitle("Progresso por geração")
+                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    livingPlan.byGeneration.forEach{gen->
+                        Card(shape=RoundedCornerShape(18.dp)){
+                            Column(Modifier.fillMaxWidth().padding(14.dp)){
+                                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                                    Text("Geração "+gen.generation,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
+                                    Text(
+                                        gen.captured.toString()+"/"+gen.total+" · ★ "+gen.shiny,
+                                        style=MaterialTheme.typography.labelLarge,
+                                        color=MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                LinearProgressIndicator(
+                                    progress={if(gen.total==0)0f else gen.captured.toFloat()/gen.total},
+                                    modifier=Modifier.fillMaxWidth().padding(top=8.dp).height(6.dp),
+                                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                                )
+                            }
                         }
                     }
                 }
