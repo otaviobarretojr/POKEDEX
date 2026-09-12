@@ -1,5 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
+import android.util.Base64
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -222,6 +225,19 @@ private fun JourneyGameCover(
     gameLabel: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val userScarletArtwork = remember(gameLabel) {
+        if (gameLabel == "Scarlet / Violet") {
+            runCatching {
+                val encoded = (1..3).joinToString(separator = "") { part ->
+                    context.assets.open("journey/scarlet_user_art_" + part + ".b64")
+                        .bufferedReader()
+                        .use { it.readText() }
+                }
+                Base64.decode(encoded, Base64.DEFAULT)
+            }.getOrNull()
+        } else null
+    }
     val covers = GameCoverCatalog.coversFor(gameLabel)
     if (covers.isEmpty()) {
         Box(
@@ -240,19 +256,28 @@ private fun JourneyGameCover(
             .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFF101820))
     ) {
-        Row(Modifier.fillMaxSize()) {
-            covers.take(2).forEach { cover ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                ) {
-                    AsyncImage(
-                        model = cover,
-                        contentDescription = "Arte oficial de $gameLabel",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
+        if (userScarletArtwork != null) {
+            AsyncImage(
+                model = userScarletArtwork,
+                contentDescription = "Arte enviada pelo usuário para Scarlet / Violet",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Row(Modifier.fillMaxSize()) {
+                covers.take(2).forEach { cover ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        AsyncImage(
+                            model = cover,
+                            contentDescription = "Arte oficial de $gameLabel",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
             }
         }
