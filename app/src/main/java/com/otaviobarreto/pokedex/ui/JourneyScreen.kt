@@ -743,7 +743,8 @@ private fun journeyOpponentPokemonId(
         "Dragonite" to 149, "Tyranitar" to 248, "Starmie" to 121,
         "Pangoro" to 675, "Malamar" to 687, "Pyroar" to 668, "Salamence" to 373, "Charizard" to 6,
         "Absol" to 359, "Gourgeist" to 711, "Chandelure" to 609,
-        "Groudon" to 383, "Kyogre" to 382, "Rayquaza" to 384
+        "Groudon" to 383, "Kyogre" to 382, "Rayquaza" to 384,
+        "Lopunny" to 428, "Lucario" to 448, "Talonflame" to 663, "Aerodactyl" to 142, "Metagross" to 376
     )
     aliases[rawName]?.let{return it}
     val simple=rawName
