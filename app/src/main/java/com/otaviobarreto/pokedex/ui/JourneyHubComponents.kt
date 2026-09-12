@@ -214,16 +214,7 @@ private fun JourneyGameReferenceCard(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = game.subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     if(routeSteps.isNotEmpty()){
                         Text(
                             text = nextJourneyStep?.let { "Próximo: " + it.title } ?: "Jornada principal concluída",
@@ -254,15 +245,15 @@ private fun JourneyGameReferenceCard(
                                 color = MaterialTheme.colorScheme.primary,
                                 trackColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(10.dp))
                             Text(
                                 text = journeyDone.toString() + "/" + routeSteps.size,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 modifier = Modifier
-                                    .padding(start = 2.dp, end = 6.dp)
-                                    .widthIn(min = 38.dp),
+                                    .padding(start = 2.dp, end = 2.dp)
+                                    .widthIn(min = 42.dp),
                                 textAlign = TextAlign.End
                             )
                         }
