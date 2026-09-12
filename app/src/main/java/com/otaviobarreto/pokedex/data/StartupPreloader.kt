@@ -8,6 +8,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 data class StartupPreloadProgress(
@@ -35,6 +39,22 @@ object StartupPreloader {
 
         val activeGame = AppStatePreferences.activeGame
         val game = AppGameCatalog.games.firstOrNull { it.label == activeGame }
+        val journeySteps = JourneyCatalog.steps(activeGame)
+        val journeyCompleted = JourneyProgressStore.completed(activeGame)
+        val nextJourneyIndex = journeySteps.indexOfFirst { it.id !in journeyCompleted }.let { if (it < 0) 0 else it }
+        val journeyWarmSteps = journeySteps
+            .drop((nextJourneyIndex - 1).coerceAtLeast(0))
+            .take(7)
+
+        // Materializa os catálogos que a Melhor rota usa antes da primeira composição.
+        journeyWarmSteps.forEach { step ->
+            JourneyObjectiveDetailsCatalog.detail(step.id)
+            JourneyPreparationCatalog.forStep(step.id)
+            JourneyWalkthroughCatalog.forStep(step.id)
+            JourneyVisualAssetCatalog.forStep(step.id)
+        }
+        JourneySmartProgress.context(activeGame)
+        JourneyStarterCatalog.forGame(activeGame)
 
         progress(.20f, "Preparando sua Jornada")
         val activeContexts = game?.regions.orEmpty()
@@ -99,51 +119,116 @@ object StartupPreloader {
             }
         }
 
-        val gameCoverUrls = AppGameCatalog.adventureGames
-            .asSequence()
-            .filterNot { it.label == "Scarlet / Violet" }
-            .flatMap { GameCoverCatalog.coversFor(it.label).asSequence() }
-            .distinct()
-            .toList()
-        val journeyHeroUrls = AppGameCatalog.adventureGames
-            .asSequence()
-            .flatMap { JourneyGameVisualCatalog.forGame(it.label).heroPokemonIds.asSequence() }
-            .distinct()
+        val activeCoverUrls = GameCoverCatalog.coversFor(activeGame)
+        val activeHeroUrls = JourneyGameVisualCatalog.forGame(activeGame).heroPokemonIds
             .map { id ->
                 "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
             }
-            .toList()
-        val journeyArtworkUrls = (gameCoverUrls + journeyHeroUrls).distinct()
+        val activeRouteArtworkUrls = journeyWarmSteps
+            .mapNotNull { JourneyVisualAssetCatalog.forStep(it.id)?.imageUrl }
 
-        progress(.84f, "Preparando arte da Jornada")
-        journeyArtworkUrls.forEachIndexed { index, artwork ->
-            runCatching {
-                context.imageLoader.execute(
-                    ImageRequest.Builder(context)
-                        .data(artwork)
-                        .memoryCacheKey("startup-journey-art-$index")
-                        .diskCacheKey("startup-journey-art-$index")
-                        .build()
-                )
+        val activeOpponentIds = journeyWarmSteps
+            .flatMap { step -> JourneyObjectiveDetailsCatalog.detail(step.id)?.opponents.orEmpty() }
+            .mapNotNull { member ->
+                val simple = member.name
+                    .substringBefore(" / ")
+                    .substringBefore(" & ")
+                    .substringBefore(" · ")
+                    .trim()
+                PokedexDataStore.cachedNationalDex().orEmpty()
+                    .firstOrNull { it.name.equals(simple, true) }
+                    ?.id
             }
-            val local = .84f + ((index + 1f) / journeyArtworkUrls.size.coerceAtLeast(1)) * .07f
-            progress(local, "Preparando arte da Jornada")
+            .distinct()
+            .take(18)
+
+        val activeOpponentArtworkUrls = activeOpponentIds.map { id ->
+            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
+        }
+
+        val activeJourneyArtworkUrls = (
+            activeCoverUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls
+        ).distinct()
+
+        progress(.84f, "Aquecendo sua rota")
+        val artworkSemaphore = Semaphore(4)
+        supervisorScope {
+            activeJourneyArtworkUrls.mapIndexed { index, artwork ->
+                async {
+                    artworkSemaphore.withPermit {
+                        runCatching {
+                            context.imageLoader.execute(
+                                ImageRequest.Builder(context)
+                                    .data(artwork)
+                                    .size(320)
+                                    .memoryCacheKey("startup-active-journey-" + artwork.hashCode())
+                                    .diskCacheKey("startup-active-journey-" + artwork.hashCode())
+                                    .build()
+                            )
+                        }
+                    }
+                    val local = .84f + ((index + 1f) / activeJourneyArtworkUrls.size.coerceAtLeast(1)) * .07f
+                    progress(local, "Aquecendo sua rota")
+                }
+            }.awaitAll()
         }
 
         progress(.91f, "Preparando imagens")
-        priorityIds.take(18).forEachIndexed { index, id ->
-            val sprite = PokedexDataStore.cachedPokemon(id)?.spriteUrl ?: return@forEachIndexed
-            runCatching {
-                context.imageLoader.execute(
-                    ImageRequest.Builder(context)
-                        .data(sprite)
-                        .memoryCacheKey("startup-pokemon-$id")
-                        .diskCacheKey("startup-pokemon-$id")
-                        .build()
-                )
+        val spriteIds = priorityIds.take(18)
+        val spriteSemaphore = Semaphore(4)
+        supervisorScope {
+            spriteIds.mapIndexed { index, id ->
+                async {
+                    val sprite = PokedexDataStore.cachedPokemon(id)?.spriteUrl
+                    if (sprite != null) {
+                        spriteSemaphore.withPermit {
+                            runCatching {
+                                context.imageLoader.execute(
+                                    ImageRequest.Builder(context)
+                                        .data(sprite)
+                                        .size(192)
+                                        .memoryCacheKey("startup-pokemon-$id")
+                                        .diskCacheKey("startup-pokemon-$id")
+                                        .build()
+                                )
+                            }
+                        }
+                    }
+                    val local = .91f + ((index + 1f) / spriteIds.size.coerceAtLeast(1)) * .08f
+                    progress(local, "Preparando imagens")
+                }
+            }.awaitAll()
+        }
+
+        // O restante das capas/artes entra no cache após liberar a UI.
+        // Não bloqueia o splash e evita gastar o boot com conteúdo que talvez nem seja aberto.
+        launch(Dispatchers.IO) {
+            val secondaryArtwork = AppGameCatalog.adventureGames
+                .asSequence()
+                .filterNot { it.label == activeGame }
+                .flatMap { gameEntry ->
+                    sequence {
+                        yieldAll(GameCoverCatalog.coversFor(gameEntry.label))
+                        JourneyGameVisualCatalog.forGame(gameEntry.label).heroPokemonIds.forEach { id ->
+                            yield("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png")
+                        }
+                    }
+                }
+                .distinct()
+                .take(16)
+                .toList()
+
+            secondaryArtwork.forEach { artwork ->
+                runCatching {
+                    context.imageLoader.enqueue(
+                        ImageRequest.Builder(context)
+                            .data(artwork)
+                            .size(256)
+                            .diskCacheKey("startup-secondary-" + artwork.hashCode())
+                            .build()
+                    )
+                }
             }
-            val local = .91f + ((index + 1f) / priorityIds.take(18).size.coerceAtLeast(1)) * .08f
-            progress(local, "Preparando imagens")
         }
 
         progress(1f, "Tudo pronto")
