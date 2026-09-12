@@ -726,7 +726,24 @@ private fun journeyOpponentPokemonId(
         "Caph Starmobile" to 966,
         "Okidogi" to 1014, "Munkidori" to 1015, "Fezandipiti" to 1016,
         "Ogerpon" to 1017, "Terapagos" to 1024, "Pecharunt" to 1025,
-        "Bloodmoon Ursaluna" to 901
+        "Bloodmoon Ursaluna" to 901,
+        "Spritzee" to 682, "Swirlix" to 684, "Vivillon" to 666,
+        "Venipede" to 543, "Kadabra" to 64, "Roselia" to 315, "Furfrou" to 676,
+        "Simisage" to 512, "Simipour" to 516, "Simisear" to 514,
+        "Houndoom" to 229, "Sharpedo" to 319, "Buneary" to 427, "Drampa" to 780,
+        "Slowbro" to 80, "Camerupt" to 323, "Victreebel" to 71,
+        "Heliolisk" to 695, "Ampharos" to 181, "Stunfisk" to 618, "Eelektross" to 604,
+        "Beedrill" to 15, "Hawlucha" to 701,
+        "Heracross" to 214, "Machamp" to 68, "Medicham" to 308, "Falinks" to 870,
+        "Mawile" to 303, "Barbaracle" to 689, "Arbok" to 24, "Roserade" to 407, "Scolipede" to 545,
+        "Clawitzer" to 693, "Vanillish" to 583, "Emolga" to 587, "Staryu" to 120,
+        "Ariados" to 168, "Sableye" to 302, "Krookodile" to 553, "Scrafty" to 560,
+        "Tyrantrum" to 697, "Noivern" to 715, "Garchomp" to 445, "Dragalge" to 691,
+        "Froslass" to 478, "Venusaur" to 3, "Carbink" to 703, "Aurorus" to 699, "Clefable" to 36,
+        "Dragonite" to 149, "Tyranitar" to 248, "Starmie" to 121,
+        "Pangoro" to 675, "Malamar" to 687, "Pyroar" to 668, "Salamence" to 373, "Charizard" to 6,
+        "Absol" to 359, "Gourgeist" to 711, "Chandelure" to 609,
+        "Groudon" to 383, "Kyogre" to 382, "Rayquaza" to 384
     )
     aliases[rawName]?.let{return it}
     val simple=rawName
