@@ -23,6 +23,7 @@ object JourneyDynamicTeamCatalog {
             .filter { it in CollectionStore.capturedIds || it in availableCatchIds }
             .sortedByDescending{it in CollectionStore.capturedIds}
         val result=adjustSlots(
+            game=game,
             base=preset?.slots.orEmpty(),
             recommended=recommended,
             starterId=starterId,
@@ -45,6 +46,7 @@ object JourneyDynamicTeamCatalog {
     )
 
     private fun adjustSlots(
+        game:String,
         base:List<CampaignSlot>,
         recommended:List<Int>,
         starterId:Int,
@@ -60,7 +62,7 @@ object JourneyDynamicTeamCatalog {
 
         val expectedStarter=JourneyTeamProgressCatalog.starterMemberForPhase(
             starterId,
-            JourneySmartProgress.context("Scarlet / Violet").phase
+            JourneySmartProgress.context(game).phase
         )
         val currentStarter=out[starterIndex].pokemonId
         if(currentStarter!=expectedStarter && expectedStarter in starterLine){
