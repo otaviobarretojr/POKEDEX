@@ -394,8 +394,24 @@ private fun QBVariantManager(
                     "Você pode registrar mais de uma forma e manter Normal + Shiny ao mesmo tempo.",
                     style=MaterialTheme.typography.bodySmall,
                     color=QBmuted,
-                    modifier=Modifier.padding(bottom=10.dp)
+                    modifier=Modifier.padding(bottom=8.dp)
                 )
+                val isCaptured=CollectionStore.isCapturedIn(source,pk.nationalId)
+                if(isCaptured){
+                    OutlinedButton(
+                        onClick={
+                            VariantCollectionStore.removeAll(source,pk.nationalId)
+                            dismiss()
+                        },
+                        modifier=Modifier.fillMaxWidth(),
+                        shape=RoundedCornerShape(14.dp)
+                    ){
+                        Icon(Icons.Default.DeleteOutline,null,Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Remover Pokémon da Box")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
                 if(loading){
                     Box(
                         Modifier.fillMaxWidth().height(120.dp),
