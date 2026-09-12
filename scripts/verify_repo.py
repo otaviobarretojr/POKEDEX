@@ -960,7 +960,7 @@ for required in (
     "Brush.horizontalGradient",
     "JourneyGameCover",
     "compactJourneyRegionLabel",
-    "RoundedCornerShape(24.dp)",
+    "RoundedCornerShape(PokedexDesignTokens.Journey.CardRadius)",
 ):
     if required not in journey_hub_v623:
         violations.append(f"Journey reference-card visual missing {required}")
@@ -975,7 +975,7 @@ for required in ("JourneyGameVisualCatalog.forGame", "startup-journey-art", "Pre
 journey_hub_v624 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 for required in (
     "ContentScale.Crop",
-    ".width(120.dp)",
+    ".width(coverWidth)",
     "Brush.verticalGradient",
     "Arte oficial de $gameLabel",
 ):
