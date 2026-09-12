@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "16110" not in workflow or "16.1.1" not in workflow:
-    violations.append("CI v16.1.1 version stamping missing")
+if "16120" not in workflow or "16.1.2" not in workflow:
+    violations.append("CI v16.1.2 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -921,7 +921,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
 local_v1610 = 'versionName = "16.1.0"' in local_gradle and "versionCode = 16100" in local_gradle
 local_v1611 = 'versionName = "16.1.1"' in local_gradle and "versionCode = 16110" in local_gradle
-if not (local_v1610 or local_v1611):
+local_v1612 = 'versionName = "16.1.2"' in local_gradle and "versionCode = 16120" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612):
     violations.append("Local build version is not aligned with v16.1.x")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1513,6 +1514,35 @@ form_detail_v161 = (ui / "PokemonFormDetailScreen.kt").read_text(encoding="utf-8
 for required in ("Status base", "Habilidades", "PokedexDataStore.pokemon"):
     if required not in form_detail_v161:
         violations.append(f"v16.1 form detail missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v16.1.2 navigation + Box removal guards
+main_v1612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+expected_order = [
+    'MainDestination("home","Jornada"',
+    'MainDestination("pokedex","Pokédex"',
+    'MainDestination("boxes","Boxes"',
+    'MainDestination("central","Config."',
+]
+positions = [main_v1612.find(marker) for marker in expected_order]
+if any(pos < 0 for pos in positions) or positions != sorted(positions):
+    violations.append("v16.1.2 bottom navigation order must be Jornada, Pokédex, Boxes, Config.")
+
+variant_v1612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt").read_text(encoding="utf-8")
+for required in ("fun removeAll(", "CollectionStore.setCapturedIn(source,speciesId,false)"):
+    if required not in variant_v1612:
+        violations.append(f"v16.1.2 variant removal missing {required}")
+
+boxes_v1612 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("Remover Pokémon da Box", "VariantCollectionStore.removeAll(source,pk.nationalId)", "DeleteOutline"):
+    if required not in boxes_v1612:
+        violations.append(f"v16.1.2 Box removal UI missing {required}")
 
 if violations:
     print("Source verification failed:")
