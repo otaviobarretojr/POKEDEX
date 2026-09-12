@@ -568,6 +568,10 @@ private fun QBSearch(
                     "Capturados" -> it.nationalId in captured
                     "Faltando" -> it.nationalId !in captured
                     "Shiny" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && v.shiny}
+                    "Ambos" -> {
+                        val variants=VariantCollectionStore.ownedVariants.filter{v->v.source==source && v.speciesId==it.nationalId}
+                        variants.any{!it.shiny} && variants.any{it.shiny}
+                    }
                     "Com formas" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && v.formPokemonId!=it.nationalId}
                     else -> true
                 }
@@ -593,7 +597,7 @@ private fun QBSearch(
             )
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                listOf("Todos","Capturados","Faltando","Shiny","Com formas").forEach{option->
+                listOf("Todos","Capturados","Faltando","Shiny","Ambos","Com formas").forEach{option->
                     FilterChip(selected=status==option,onClick={status=option},label={Text(option,fontSize=10.sp)})
                 }
             }
