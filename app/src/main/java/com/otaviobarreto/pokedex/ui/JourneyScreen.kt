@@ -1251,6 +1251,9 @@ private fun JourneyVisualHero(asset:JourneyVisualAsset){
                         JourneyVisualRole.DLC_CHARACTER->"Personagem do DLC"
                         JourneyVisualRole.LEGENDARY->"Pokémon lendário / especial"
                         JourneyVisualRole.EPILOGUE->"Epílogo"
+                        JourneyVisualRole.PROMOTION->"Promotion Match · Z-A Royale"
+                        JourneyVisualRole.ROGUE_MEGA->"Rogue Mega"
+                        JourneyVisualRole.HYPERSPACE->"Hyperspace · Mega Dimension"
                     },
                     style=MaterialTheme.typography.bodySmall,
                     modifier=Modifier.padding(top=4.dp)
