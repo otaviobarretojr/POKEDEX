@@ -34,6 +34,7 @@ fun CompanionCenterScreen(
     var progress by remember{mutableStateOf<OfflineGamePackManager.Progress?>(null)}
     var audioEnabled by remember{mutableStateOf(HomeAudioManager.enabled)}
     var audioVolume by remember{mutableFloatStateOf(HomeAudioManager.volume)}
+    var storageRevision by remember{mutableIntStateOf(0)}
 
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
@@ -181,6 +182,11 @@ fun CompanionCenterScreen(
         item{
             SettingsSectionTitle("Armazenamento e desempenho")
             val cache=PokedexDataStore.cacheStats()
+            val apiCacheBytes=remember(storageRevision){PersistentApiCache.sizeBytes()}
+            val apiCacheMb=apiCacheBytes/1024f/1024f
+            val downloadedPacks=remember(storageRevision){
+                AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
+            }
             Card(shape=RoundedCornerShape(20.dp)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Text("Cache da sessão",fontWeight=FontWeight.Bold)
@@ -191,9 +197,26 @@ fun CompanionCenterScreen(
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Text(
+                        "API persistente: "+String.format("%.1f MB",apiCacheMb)+
+                            " · recursos fixados "+PersistentApiCache.pinnedCount()+
+                            " · pacotes offline "+downloadedPacks,
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val startupMs=StartupPreloader.lastWarmDurationMs
+                    if(startupMs>0){
+                        Text(
+                            "Última preparação inicial: "+startupMs+" ms",
+                            style=MaterialTheme.typography.bodySmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     FilledTonalButton(
                         onClick={
                             PokedexDataStore.clearSessionCache()
+                            PersistentApiCache.pruneUnpinned()
+                            storageRevision++
                             statusText="Cache da sessão limpo. Pacotes offline foram preservados."
                         },
                         modifier=Modifier.fillMaxWidth().padding(top=10.dp)
@@ -201,6 +224,25 @@ fun CompanionCenterScreen(
                         Icon(Icons.Default.CleaningServices,null)
                         Spacer(Modifier.width(6.dp))
                         Text("Limpar cache da sessão")
+                    }
+                    FilledTonalButton(
+                        onClick={
+                            val downloaded=AppGameCatalog.adventureGames
+                                .filter{OfflineGamePackManager.status(it.label).downloaded}
+                            val invalid=downloaded.filterNot{OfflineGamePackManager.audit(it.label).valid}
+                            val collection=CollectionIntegrityService.repair()
+                            storageRevision++
+                            statusText=when{
+                                invalid.isNotEmpty() -> "Integridade: "+invalid.size+" pacote(s) precisam de reparo."
+                                !collection.clean -> "Coleção reparada; verifique novamente."
+                                else -> "Integridade verificada: coleção e pacotes offline estão consistentes."
+                            }
+                        },
+                        modifier=Modifier.fillMaxWidth().padding(top=8.dp)
+                    ){
+                        Icon(Icons.Default.VerifiedUser,null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Verificar integridade")
                     }
                 }
             }
