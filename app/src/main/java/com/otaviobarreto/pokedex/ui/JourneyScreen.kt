@@ -783,6 +783,14 @@ private fun JourneyOpponentMiniCard(
 
 private fun journeyOpponentPokemonId(
     rawName:String,
+    national:List<PokeApiService.DexIndexEntry>
+):Int? = journeyOpponentPokemonId(
+    rawName,
+    national.associateBy { it.name.lowercase() }
+)
+
+private fun journeyOpponentPokemonId(
+    rawName:String,
     nationalByName:Map<String,PokeApiService.DexIndexEntry>
 ):Int?{
     val aliases=mapOf(
