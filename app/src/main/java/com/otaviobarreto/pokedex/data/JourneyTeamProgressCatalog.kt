@@ -42,14 +42,20 @@ object JourneyTeamProgressCatalog {
 
     fun catchRecommendationsBefore(step:JourneyStep?):List<JourneyCatchRecommendation> {
         val order=step?.order ?: return emptyList()
-        val plan=if(step.id.startsWith("za-")) lumioseCatchPlan else paldeaCatchPlan
+        val plan=catchPlanFor(step.id)
         return plan.filter{it.availableBeforeStepOrder<=order}
     }
 
     fun newlyRelevantCatches(step:JourneyStep?):List<JourneyCatchRecommendation> {
         val order=step?.order ?: return emptyList()
-        val plan=if(step.id.startsWith("za-")) lumioseCatchPlan else paldeaCatchPlan
+        val plan=catchPlanFor(step.id)
         return plan.filter{it.availableBeforeStepOrder==order}
+    }
+
+    private fun catchPlanFor(stepId:String):List<JourneyCatchRecommendation> = when {
+        stepId.startsWith("za-") -> lumioseCatchPlan
+        stepId.startsWith("sv-") -> paldeaCatchPlan
+        else -> emptyList()
     }
 
     fun chapterFor(stepId:String):String = when{
