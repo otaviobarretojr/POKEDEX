@@ -1,47 +1,57 @@
 # POKEDEX
 
-Aplicativo Android pessoal para organizar a jornada nos jogos Pokémon, acompanhar Boxes e consultar informações contextualizadas por jogo.
+Aplicativo Android pessoal para organizar a jornada nos jogos Pokémon, acompanhar a coleção por jogo/região e consultar a National Dex com formas e variantes.
 
-## Estado atual — v6.21.0
+## Estado atual — v18.1.0
 
-O produto foi consolidado em dois pilares principais:
+A v18.1.0 é a baseline estável de saneamento da arquitetura atual. Ela preserva o comportamento aprovado da v18.0.0 e reforça segurança de restauração, inicialização de áudio, documentação e guards de regressão.
 
-- **Jornada:** escolha do jogo, rota recomendada, mapa, objetivos, progresso e guia de time.
-- **Boxes:** coleção contextual por jogo/região, progresso e acesso à ficha de cada Pokémon.
+### Navegação principal
 
-Telas auxiliares permanecem acessíveis a partir desses fluxos: detalhes do Pokémon, evolução, tipos, localização/mapa regional, referências de golpes/habilidades/itens e guia de campanha.
+1. **Jornada** — escolha do jogo, objetivos, mapas, progresso e guia de campanha.
+2. **Pokédex** — National Dex #0001–#1025, formas, variantes e Shiny.
+3. **Boxes** — coleção contextual por jogo/região, 30 Pokémon por Box, busca, progresso e gerenciamento Normal/Shiny/formas.
+4. **Config.** — downloads offline, backup/restauração, áudio, cache e informações da versão.
 
-## Arquitetura
+## Fundação técnica
 
 - Kotlin + Jetpack Compose
-- Navegação com Navigation Compose
-- PokéAPI com cache persistente em disco e memória
-- Cache de imagens via Coil
-- Preload real na abertura
-- Pacotes offline por jogo
-- Persistência de Jornada, Boxes, jogo/região ativa e atividade recente
-- Uma trilha contínua durante o app, com música própria no preload
-- CI com auditoria estrutural, auditoria de assets, testes, lint e build do APK
+- Navigation Compose com back stack compatível com o botão Voltar do Android
+- PokéAPI com cache em memória + cache persistente GZIP
+- Coil com cache de imagens e preload priorizado
+- Pacotes offline por jogo/região com auditoria de integridade
+- Persistência de Jornada, coleção, variantes, jogo/região ativa, página da Box, times e atividade recente
+- Backup local com rollback de segurança em restaurações incompletas
+- Áudio local com preparação assíncrona
+- Identidade canônica de formas para evitar conflito entre variantes que compartilham Pokémon ID
 
-## Design foundation
+## Qualidade e regressão
 
-A v6.21.0 prepara a próxima fase visual sem alterar a aparência atual:
+O workflow **Android Build** executa em cada atualização relevante:
 
-- tokens centrais de cor, tipografia, espaçamento, raio e elevação;
-- tema centralizado;
-- componentes da Jornada separados em arquivos menores;
-- inicialização de estado centralizada no Application;
-- nomenclatura de estado desvinculada do antigo Companion;
-- versionamento local e CI alinhados.
+- validação da versão;
+- auditoria da arquitetura;
+- auditoria de artwork;
+- auditoria de visuais da Jornada;
+- auditoria completa da National Dex;
+- auditoria de formas;
+- auditoria de formas problemáticas;
+- testes unitários;
+- Android Lint;
+- build do APK atualizável.
 
-## Princípios para o redesign
+Os guards históricos permanecem no repositório como **compatibility guards**: eles protegem comportamentos estabilizados ao longo das versões anteriores sem representar a versão atual do aplicativo.
 
-1. A lógica funcional fica congelada enquanto a camada visual evolui.
-2. Jornada e Boxes permanecem como navegação principal.
-3. Cache, offline, áudio e back stack não devem depender de componentes visuais.
-4. Novos componentes devem consumir o design system central.
-5. Cada tela deve continuar passando por testes, lint e build antes de merge.
+## Performance
+
+A estratégia de dados prioriza:
+
+1. memória;
+2. cache persistente;
+3. rede.
+
+O preload de abertura é limitado e prioriza Pokémon recentes, Box ativa, variantes possuídas e conteúdo do jogo atual. A Box também aquece uma janela limitada ao redor da página atual.
 
 ## Build
 
-O build oficial é gerado pelo workflow Android Build e usa a assinatura estável do projeto para permitir atualização sobre versões anteriores.
+O APK oficial é gerado pelo workflow **Android Build**. A assinatura estável atual foi preservada nesta atualização para manter compatibilidade de instalação com APKs anteriores.
