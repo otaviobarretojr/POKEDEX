@@ -12,12 +12,15 @@ data class OwnedPokemonVariant(
     val speciesId:Int,
     val formPokemonId:Int,
     val formName:String,
-    val shiny:Boolean
+    val shiny:Boolean,
+    val normalArtworkUrl:String?=null,
+    val shinyArtworkUrl:String?=null
 ) {
     val key:String get() = listOf(source,speciesId,formPokemonId,formName.lowercase(),shiny).joinToString("|")
     val artworkUrl:String
-        get() = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" +
-            (if(shiny)"shiny/" else "") + formPokemonId + ".png"
+        get() = (if(shiny) shinyArtworkUrl else normalArtworkUrl)
+            ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" +
+                (if(shiny)"shiny/" else "") + formPokemonId + ".png"
 }
 
 object VariantCollectionStore {
@@ -53,10 +56,16 @@ object VariantCollectionStore {
         formPokemonId:Int,
         formName:String,
         shiny:Boolean,
-        owned:Boolean
+        owned:Boolean,
+        normalArtworkUrl:String?=null,
+        shinyArtworkUrl:String?=null
     ){
         if(source.isBlank() || speciesId<=0 || formPokemonId<=0) return
-        val entry=OwnedPokemonVariant(source,speciesId,formPokemonId,formName,shiny)
+        val entry=OwnedPokemonVariant(
+            source,speciesId,formPokemonId,formName,shiny,
+            normalArtworkUrl=normalArtworkUrl,
+            shinyArtworkUrl=shinyArtworkUrl
+        )
         val exists=ownedVariants.any{it.key==entry.key}
         ownedVariants=when{
             owned && !exists -> ownedVariants + entry
@@ -72,10 +81,14 @@ object VariantCollectionStore {
         speciesId:Int,
         formPokemonId:Int,
         formName:String,
-        shiny:Boolean
+        shiny:Boolean,
+        normalArtworkUrl:String?=null,
+        shinyArtworkUrl:String?=null
     ) = setOwned(
         source,speciesId,formPokemonId,formName,shiny,
-        !isOwned(source,speciesId,formPokemonId,formName,shiny)
+        !isOwned(source,speciesId,formPokemonId,formName,shiny),
+        normalArtworkUrl=normalArtworkUrl,
+        shinyArtworkUrl=shinyArtworkUrl
     )
 
     fun preferred(source:String,speciesId:Int):OwnedPokemonVariant? =
@@ -104,6 +117,8 @@ object VariantCollectionStore {
                         .put("formPokemonId",v.formPokemonId)
                         .put("formName",v.formName)
                         .put("shiny",v.shiny)
+                        .put("normalArtworkUrl",v.normalArtworkUrl)
+                        .put("shinyArtworkUrl",v.shinyArtworkUrl)
                 )
             }
     }
@@ -122,7 +137,9 @@ object VariantCollectionStore {
                         speciesId=species,
                         formPokemonId=form,
                         formName=o.optString("formName","Forma"),
-                        shiny=o.optBoolean("shiny",false)
+                        shiny=o.optBoolean("shiny",false),
+                        normalArtworkUrl=o.optString("normalArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
+                        shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"}
                     )
                 )
             }
