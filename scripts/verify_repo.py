@@ -919,8 +919,10 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "16.1.0"' not in local_gradle or "versionCode = 16100" not in local_gradle:
-    violations.append("Local build version is not aligned with v16.1.0")
+local_v1610 = 'versionName = "16.1.0"' in local_gradle and "versionCode = 16100" in local_gradle
+local_v1611 = 'versionName = "16.1.1"' in local_gradle and "versionCode = 16110" in local_gradle
+if not (local_v1610 or local_v1611):
+    violations.append("Local build version is not aligned with v16.1.x")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
