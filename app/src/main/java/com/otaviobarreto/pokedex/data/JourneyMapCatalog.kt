@@ -8,8 +8,18 @@ data class JourneyMapPoint(
 
 object JourneyMapCatalog {
     fun backgroundUrl(game:String):String? = when(game){
-        "Scarlet / Violet" -> "https://www.pokemon.co.jp/ex/sv/assets/img/story/ja/220803_02/story_img_01.jpg"
+        "Scarlet / Violet" -> null // Paldea usa o mapa oficial incorporado ao APK.
         else -> null
+    }
+
+    fun embeddedAsset(game:String):String? = when(game){
+        "Scarlet / Violet" -> "maps/paldea_journey_map"
+        else -> null
+    }
+
+    fun aspectRatio(game:String):Float = when(game){
+        "Scarlet / Violet" -> 900f/831f
+        else -> 1.414f
     }
 
     fun points(game:String):List<JourneyMapPoint> = when(game){
@@ -17,24 +27,26 @@ object JourneyMapCatalog {
         else -> emptyList()
     }
 
+    // Coordenadas calibradas sobre o mapa oficial enviado pelo usuário.
+    // O mapa já contém os retratos/ícones; estes pontos são somente hitboxes e estados.
     private val paldea=listOf(
-        JourneyMapPoint("sv-01",.39f,.75f), // Cortondo
-        JourneyMapPoint("sv-02",.64f,.72f), // Stony Cliff
-        JourneyMapPoint("sv-03",.72f,.64f), // Artazon
-        JourneyMapPoint("sv-04",.23f,.53f), // Open Sky Titan
-        JourneyMapPoint("sv-05",.18f,.47f), // Segin Squad
-        JourneyMapPoint("sv-06",.84f,.55f), // Levincia
-        JourneyMapPoint("sv-07",.78f,.42f), // Schedar Squad
-        JourneyMapPoint("sv-08",.67f,.43f), // Lurking Steel Titan
-        JourneyMapPoint("sv-09",.29f,.54f), // Cascarrafa
-        JourneyMapPoint("sv-10",.70f,.30f), // Navi Squad
-        JourneyMapPoint("sv-11",.35f,.43f), // Medali
-        JourneyMapPoint("sv-12",.50f,.22f), // Montenevera
-        JourneyMapPoint("sv-13",.34f,.64f), // Asado Desert
-        JourneyMapPoint("sv-14",.18f,.76f), // Alfornada
-        JourneyMapPoint("sv-15",.49f,.15f), // Glaseado
-        JourneyMapPoint("sv-16",.61f,.18f), // Ruchbah Squad
-        JourneyMapPoint("sv-17",.30f,.27f), // Casseroya Lake
-        JourneyMapPoint("sv-18",.82f,.27f)  // Caph Squad
+        JourneyMapPoint("sv-01",.310f,.775f), // Katy · Cortondo
+        JourneyMapPoint("sv-02",.670f,.741f), // Klawf · Stony Cliff
+        JourneyMapPoint("sv-03",.749f,.793f), // Brassius · Artazon
+        JourneyMapPoint("sv-04",.161f,.543f), // Bombirdier · Open Sky
+        JourneyMapPoint("sv-05",.295f,.635f), // Giacomo · Segin Squad
+        JourneyMapPoint("sv-06",.797f,.575f), // Iono · Levincia
+        JourneyMapPoint("sv-07",.735f,.690f), // Mela · Schedar Squad
+        JourneyMapPoint("sv-08",.794f,.518f), // Orthworm · Lurking Steel
+        JourneyMapPoint("sv-09",.344f,.538f), // Kofu · Cascarrafa
+        JourneyMapPoint("sv-10",.662f,.444f), // Atticus · Navi Squad
+        JourneyMapPoint("sv-11",.426f,.446f), // Larry · Medali
+        JourneyMapPoint("sv-12",.556f,.253f), // Ryme · Montenevera
+        JourneyMapPoint("sv-13",.146f,.662f), // Great Tusk / Iron Treads
+        JourneyMapPoint("sv-14",.228f,.893f), // Tulip · Alfornada
+        JourneyMapPoint("sv-15",.598f,.349f), // Grusha · Glaseado
+        JourneyMapPoint("sv-16",.484f,.139f), // Ortega · Ruchbah Squad
+        JourneyMapPoint("sv-17",.354f,.281f), // Dondozo / Tatsugiri
+        JourneyMapPoint("sv-18",.866f,.343f)  // Eri · Caph Squad
     )
 }
