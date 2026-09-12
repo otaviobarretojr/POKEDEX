@@ -40,7 +40,7 @@ private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 @Composable
 fun JourneyScreen(
     onPokemonClick:(Int,String?)->Unit,
-    onOpenTeamGuide:(String,String?)->Unit
+    onOpenTeamGuide:(String,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit
 ){
     var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
