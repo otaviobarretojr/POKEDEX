@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -133,15 +134,31 @@ fun JourneyScreen(
     }
 }
 
+private data class JourneyRouteStepUi(
+    val step: JourneyStep,
+    val visual: JourneyVisualAsset?,
+    val detail: JourneyObjectiveDetail?,
+    val opponentPokemonIds: List<Int?>,
+    val chapter: String?
+)
+
 @Composable
 private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:LazyListState,onOpenStep:(String)->Unit){
     val revision=JourneyProgressStore.revision
     val steps=remember(game.label,revision){JourneyCatalog.steps(game.label)}
     val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
-    val completedCount=DataIntegrityRules.completedCount(steps.map{it.id},completed)
-    val progress=if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
-    val nextStep=steps.firstOrNull{it.id !in completed}
+    val completedCount=remember(steps,completed){
+        DataIntegrityRules.completedCount(steps.map{it.id},completed)
+    }
+    val progress=remember(completedCount,steps.size){
+        if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
+    }
+    val nextStep=remember(steps,completed){steps.firstOrNull{it.id !in completed}}
     val smart=remember(game.label,revision){JourneySmartProgress.context(game.label)}
+    val national=remember { PokedexDataStore.cachedNationalDex().orEmpty() }
+    val nationalByName=remember(national){
+        national.associateBy { it.name.lowercase() }
+    }
     var selectedStarterId by rememberSaveable(game.label){
         mutableIntStateOf(
             AppStatePreferences.journeyStarterForGame(game.label)
@@ -155,6 +172,20 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     val visibleSteps=remember(steps,completed,showCompleted){
         if(showCompleted) steps else steps.filterNot{it.id in completed}
     }
+    val routeUi=remember(visibleSteps,nationalByName){
+        visibleSteps.map { step ->
+            val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+            JourneyRouteStepUi(
+                step=step,
+                visual=JourneyVisualAssetCatalog.forStep(step.id),
+                detail=detail,
+                opponentPokemonIds=detail?.opponents?.map { member ->
+                    journeyOpponentPokemonId(member.name,nationalByName)
+                }.orEmpty(),
+                chapter=journeyChapterHeader(step)
+            )
+        }
+    }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -162,7 +193,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
         contentPadding=PaddingValues(horizontal=16.dp,vertical=12.dp),
         verticalArrangement=Arrangement.spacedBy(0.dp)
     ){
-        item{
+        item(key="route_header",contentType="header"){
             Row(
                 Modifier.fillMaxWidth().padding(bottom=10.dp),
                 verticalAlignment=Alignment.CenterVertically
@@ -180,7 +211,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
 
-        item{
+        item(key="route_progress",contentType="summary"){
             Card(
                 shape=RoundedCornerShape(24.dp),
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer),
@@ -259,7 +290,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
 
         val starterOptions=JourneyStarterCatalog.forGame(game.label)
         if(starterOptions.isNotEmpty()){
-            item{
+            item(key="starter_guide",contentType="guide"){
                 JourneyStarterGuideCard(
                     starters=starterOptions,
                     selectedStarterId=selectedStarterId,
@@ -271,7 +302,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
 
-        item{
+        item(key="automatic_phase",contentType="summary"){
             Card(
                 shape=RoundedCornerShape(20.dp),
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
@@ -294,7 +325,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             val prep=JourneyPreparationCatalog.forStep(step.id)
             val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
             val walkthrough=JourneyWalkthroughCatalog.forStep(step.id)
-            item{
+            item(key="smart_next_"+step.id,contentType="next_step"){
                 Card(
                     shape=RoundedCornerShape(20.dp),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.tertiaryContainer),
@@ -369,20 +400,23 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
 
-        items(visibleSteps,key={it.id}){step->
+        items(
+            items=routeUi,
+            key={it.step.id},
+            contentType={"route_step"}
+        ){ui->
+            val step=ui.step
             val done=step.id in completed
             val isNext=nextStep?.id==step.id
             Column{
-                val section=when(step.id){
-                    "sv-01","sv-pg-01","sv-pg-04","sv-pg-05","sv-dlc-01","sv-dlc-08","sv-epi-01" -> JourneyTeamProgressCatalog.chapterFor(step.id)
-                    else->null
-                }
-                section?.let{
+                ui.chapter?.let{
                     Text(it,fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=42.dp))
                 }
                 JourneyStepCard(
                     step=step,
-                    visual=JourneyVisualAssetCatalog.forStep(step.id),
+                    visual=ui.visual,
+                    detail=ui.detail,
+                    opponentPokemonIds=ui.opponentPokemonIds,
                     done=done,
                     isNext=isNext,
                     onOpen={onOpenStep(step.id)},
@@ -480,10 +514,20 @@ private fun JourneyCountPill(icon:ImageVector,label:String){
     }
 }
 
+private fun journeyChapterHeader(step:JourneyStep):String? = when {
+    step.id in setOf("sv-01","sv-pg-01","sv-pg-04","sv-pg-05","sv-dlc-01","sv-dlc-08","sv-epi-01") ->
+        JourneyTeamProgressCatalog.chapterFor(step.id)
+    step.id in setOf("za-01","za-06","za-10","za-15","za-20","za-25","za-31","za-36","za-38","za-dlc-00") ->
+        JourneyTeamProgressCatalog.chapterFor(step.id)
+    else -> null
+}
+
 @Composable
 private fun JourneyStepCard(
     step:JourneyStep,
     visual:JourneyVisualAsset?,
+    detail:JourneyObjectiveDetail?,
+    opponentPokemonIds:List<Int?>,
     done:Boolean,
     isNext:Boolean,
     onOpen:()->Unit,
@@ -498,8 +542,6 @@ private fun JourneyStepCard(
         JourneyChallengeKind.DLC->Icons.Default.TravelExplore
         JourneyChallengeKind.EPILOGUE->Icons.Default.CatchingPokemon
     }
-    val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
-    val national=PokedexDataStore.cachedNationalDex().orEmpty()
     val kindColor=when(step.kind){
         JourneyChallengeKind.GYM->MaterialTheme.colorScheme.primaryContainer
         JourneyChallengeKind.TITAN->MaterialTheme.colorScheme.secondaryContainer
@@ -623,12 +665,15 @@ private fun JourneyStepCard(
                         fontWeight=FontWeight.Black,
                         color=MaterialTheme.colorScheme.primary
                     )
-                    Row(
-                        Modifier.fillMaxWidth().padding(top=7.dp).horizontalScroll(rememberScrollState()),
+                    LazyRow(
+                        Modifier.fillMaxWidth().padding(top=7.dp),
                         horizontalArrangement=Arrangement.spacedBy(8.dp)
                     ){
-                        members.take(6).forEach{member->
-                            val pokemonId=journeyOpponentPokemonId(member.name,national)
+                        items(
+                            items=members.take(6).mapIndexed { index, member -> member to opponentPokemonIds.getOrNull(index) },
+                            key={it.first.name+"_"+it.first.level},
+                            contentType={"opponent"}
+                        ){(member,pokemonId)->
                             JourneyOpponentMiniCard(
                                 name=member.name,
                                 level=member.level,
@@ -738,7 +783,7 @@ private fun JourneyOpponentMiniCard(
 
 private fun journeyOpponentPokemonId(
     rawName:String,
-    national:List<PokeApiService.DexIndexEntry>
+    nationalByName:Map<String,PokeApiService.DexIndexEntry>
 ):Int?{
     val aliases=mapOf(
         "Nymble" to 919, "Tarountula" to 917, "Teddiursa" to 216,
@@ -786,7 +831,7 @@ private fun journeyOpponentPokemonId(
         .substringBefore(" & ")
         .substringBefore(" · ")
         .trim()
-    return national.firstOrNull{it.name.equals(simple,true)}?.id
+    return nationalByName[simple.lowercase()]?.id
 }
 
 private fun journeySourceForStep(game:AppGame,step:JourneyStep):String?{
