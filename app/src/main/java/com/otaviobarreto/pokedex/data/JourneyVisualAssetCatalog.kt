@@ -1,6 +1,6 @@
 package com.otaviobarreto.pokedex.data
 
-enum class JourneyVisualRole { GYM_LEADER, TEAM_STAR_BOSS, TITAN, STORY, TOURNAMENT, RAID, EXPLORATION, DLC_CHARACTER, LEGENDARY, EPILOGUE }
+enum class JourneyVisualRole { GYM_LEADER, TEAM_STAR_BOSS, TITAN, STORY, TOURNAMENT, RAID, EXPLORATION, DLC_CHARACTER, LEGENDARY, EPILOGUE, PROMOTION, ROGUE_MEGA, HYPERSPACE }
 
 data class JourneyVisualAsset(
     val stepId:String,
@@ -65,6 +65,36 @@ object JourneyVisualAssetCatalog {
         "sv-epi-01" to JourneyVisualAsset("sv-epi-01",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Mochi Mayhem"),
         "sv-epi-02" to JourneyVisualAsset("sv-epi-02",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Mochi Mayhem"),
         "sv-epi-03" to JourneyVisualAsset("sv-epi-03",JourneyVisualRole.DLC_CHARACTER,"Nemona","https://www.pokemon.co.jp/ex/sv/assets/img/character/220601_02/ja/img_01.jpg","Mochi Mayhem"),
-        "sv-epi-04" to JourneyVisualAsset("sv-epi-04",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Final do epílogo")
+        "sv-epi-04" to JourneyVisualAsset("sv-epi-04",JourneyVisualRole.EPILOGUE,"Pecharunt",ART+"1025.png","Final do epílogo"),
+        "za-06" to JourneyVisualAsset("za-06",JourneyVisualRole.PROMOTION,"Yvon",ART+"666.png","Promotion Match · Rank X","Pokémon Legends: Z-A"),
+        "za-07" to JourneyVisualAsset("za-07",JourneyVisualRole.PROMOTION,"Xavi",ART+"676.png","Promotion Match · Rank W","Pokémon Legends: Z-A"),
+        "za-08" to JourneyVisualAsset("za-08",JourneyVisualRole.PROMOTION,"Rintaro",ART+"512.png","Promotion Match · Rank V","Pokémon Legends: Z-A"),
+        "za-10" to JourneyVisualAsset("za-10",JourneyVisualRole.PROMOTION,"Vinnie",ART+"780.png","Mega Evolution · Rank F","Pokémon Legends: Z-A"),
+        "za-11" to JourneyVisualAsset("za-11",JourneyVisualRole.ROGUE_MEGA,"Mega Slowbro",ART+"80.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-12" to JourneyVisualAsset("za-12",JourneyVisualRole.ROGUE_MEGA,"Mega Camerupt",ART+"323.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-13" to JourneyVisualAsset("za-13",JourneyVisualRole.ROGUE_MEGA,"Mega Victreebel",ART+"71.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-14" to JourneyVisualAsset("za-14",JourneyVisualRole.PROMOTION,"Canari",ART+"604.png","Promotion Match · Rank E","Pokémon Legends: Z-A"),
+        "za-16" to JourneyVisualAsset("za-16",JourneyVisualRole.ROGUE_MEGA,"Mega Beedrill",ART+"15.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-17" to JourneyVisualAsset("za-17",JourneyVisualRole.ROGUE_MEGA,"Mega Hawlucha",ART+"701.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-18" to JourneyVisualAsset("za-18",JourneyVisualRole.ROGUE_MEGA,"Mega Banette",ART+"354.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-19" to JourneyVisualAsset("za-19",JourneyVisualRole.PROMOTION,"Ivor",ART+"870.png","Promotion Match · Rank D","Pokémon Legends: Z-A"),
+        "za-21" to JourneyVisualAsset("za-21",JourneyVisualRole.ROGUE_MEGA,"Mega Mawile",ART+"303.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-22" to JourneyVisualAsset("za-22",JourneyVisualRole.ROGUE_MEGA,"Mega Barbaracle",ART+"689.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-23" to JourneyVisualAsset("za-23",JourneyVisualRole.ROGUE_MEGA,"Mega Ampharos",ART+"181.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-24" to JourneyVisualAsset("za-24",JourneyVisualRole.PROMOTION,"Corbeau",ART+"545.png","Promotion Match · Rank C","Pokémon Legends: Z-A"),
+        "za-27" to JourneyVisualAsset("za-27",JourneyVisualRole.ROGUE_MEGA,"Mega Froslass",ART+"478.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-28" to JourneyVisualAsset("za-28",JourneyVisualRole.ROGUE_MEGA,"Mega Altaria",ART+"334.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-29" to JourneyVisualAsset("za-29",JourneyVisualRole.ROGUE_MEGA,"Mega Venusaur",ART+"3.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-30" to JourneyVisualAsset("za-30",JourneyVisualRole.PROMOTION,"Jacinthe",ART+"36.png","Promotion Match · Rank B","Pokémon Legends: Z-A"),
+        "za-32" to JourneyVisualAsset("za-32",JourneyVisualRole.ROGUE_MEGA,"Mega Dragonite",ART+"149.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-33" to JourneyVisualAsset("za-33",JourneyVisualRole.ROGUE_MEGA,"Mega Tyranitar",ART+"248.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-34" to JourneyVisualAsset("za-34",JourneyVisualRole.ROGUE_MEGA,"Mega Starmie",ART+"121.png","Rogue Mega","Pokémon Legends: Z-A"),
+        "za-35" to JourneyVisualAsset("za-35",JourneyVisualRole.PROMOTION,"Grisham",ART+"6.png","Promotion Match · Rank A","Pokémon Legends: Z-A"),
+        "za-dlc-01" to JourneyVisualAsset("za-dlc-01",JourneyVisualRole.HYPERSPACE,"Mega Absol Z",ART+"359.png","Hyperspace Survey No. 1","Mega Dimension"),
+        "za-dlc-03" to JourneyVisualAsset("za-dlc-03",JourneyVisualRole.HYPERSPACE,"Mega Staraptor",ART+"398.png","Hyperspace Survey No. 2","Mega Dimension"),
+        "za-dlc-06" to JourneyVisualAsset("za-dlc-06",JourneyVisualRole.HYPERSPACE,"Mega Tatsugiri",ART+"978.png","Hyperspace Survey No. 3","Mega Dimension"),
+        "za-dlc-12" to JourneyVisualAsset("za-dlc-12",JourneyVisualRole.LEGENDARY,"Rayquaza",ART+"384.png","The Greatest Gift","Mega Dimension"),
+        "za-dlc-13" to JourneyVisualAsset("za-dlc-13",JourneyVisualRole.LEGENDARY,"Primal Groudon",ART+"383.png","A Ruby-Red Legend","Mega Dimension"),
+        "za-dlc-14" to JourneyVisualAsset("za-dlc-14",JourneyVisualRole.LEGENDARY,"Primal Kyogre",ART+"382.png","A Sapphire-Blue Legend","Mega Dimension")
     )
 }
