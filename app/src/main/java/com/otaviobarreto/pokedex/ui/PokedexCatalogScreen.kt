@@ -32,6 +32,7 @@ private data class FormPreview(
     val formId:Int,
     val shiny:Boolean,
     val kind:PokemonFormKind,
+    val hasBattleDataChanges:Boolean,
     val normalImageUrl:String?=null,
     val shinyImageUrl:String?=null
 ){
@@ -204,8 +205,8 @@ private fun PokedexFormsDialog(
                 val normalLabel=prettyFormLabel(base?.name ?: "",form.name,false)
                 val shinyLabel=prettyFormLabel(base?.name ?: "",form.name,true)
                 val prefix=base?.name ?: "Pokémon"
-                add(FormPreview(normalLabel,prefix+" — "+normalLabel,id,false,form.kind,form.spriteUrl,form.shinySpriteUrl))
-                add(FormPreview(shinyLabel,prefix+" — "+shinyLabel,id,true,form.kind,form.spriteUrl,form.shinySpriteUrl))
+                add(FormPreview(normalLabel,prefix+" — "+normalLabel,id,false,form.kind,form.hasBattleDataChanges,form.spriteUrl,form.shinySpriteUrl))
+                add(FormPreview(shinyLabel,prefix+" — "+shinyLabel,id,true,form.kind,form.hasBattleDataChanges,form.spriteUrl,form.shinySpriteUrl))
             }
         }
     }
@@ -321,16 +322,16 @@ private fun PokedexFormsDialog(
                         contentDescription=preview.label,
                         modifier=Modifier.fillMaxWidth().height(260.dp)
                     )
-                    if(preview.kind==PokemonFormKind.BATTLE){
+                    if(preview.hasBattleDataChanges){
                         Text(
-                            "Esta forma pode alterar atributos, tipos ou habilidades.",
+                            "Esta forma possui dados próprios de batalha: atributos, tipos ou habilidades diferentes da forma padrão.",
                             style=MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
             },
             confirmButton={
-                if(preview.kind==PokemonFormKind.BATTLE){
+                if(preview.hasBattleDataChanges){
                     Button(onClick={
                         selectedPreview=null
                         onOpenFormDetail(preview.formId,preview.detailName,preview.shiny)
@@ -340,7 +341,7 @@ private fun PokedexFormsDialog(
                 }
             },
             dismissButton={
-                if(preview.kind==PokemonFormKind.BATTLE){
+                if(preview.hasBattleDataChanges){
                     TextButton(onClick={selectedPreview=null}){Text("Fechar")}
                 }
             }
