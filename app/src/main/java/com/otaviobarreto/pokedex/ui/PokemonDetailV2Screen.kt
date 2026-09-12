@@ -259,8 +259,15 @@ private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->
         item{
             SectionCard("Onde conseguir",Icons.Default.Route){
                 Text(
+                    CollectionAdvisor.acquisitionLabel(b.pokemon.id),
+                    style=MaterialTheme.typography.labelLarge,
+                    color=accent,
+                    fontWeight=FontWeight.Bold
+                )
+                Text(
                     CollectionAdvisor.recommendation(b.pokemon.id),
-                    style=MaterialTheme.typography.bodyMedium
+                    style=MaterialTheme.typography.bodyMedium,
+                    modifier=Modifier.padding(top=4.dp)
                 )
                 val options=CollectionAdvisor.cachedOptions(b.pokemon.id)
                 if(options.isNotEmpty()){
