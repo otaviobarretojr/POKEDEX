@@ -247,9 +247,13 @@ if violations:
 
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("combinedClickable", "Capturar Pokémon?", "Remover captura?", "Todas as Boxes", "QBAllBoxes", "GridView"):
+for required in ("combinedClickable", "Todas as Boxes", "QBAllBoxes", "GridView"):
     if required not in boxes:
         violations.append(f"Box capture/overview missing {required}")
+if "Capturar Pokémon?" not in boxes and "QBVariantManager" not in boxes:
+    violations.append("Box capture/variant manager missing")
+if "Remover captura?" not in boxes and "★ Shiny" not in boxes:
+    violations.append("Box removal/variant controls missing")
 
 collection = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt").read_text(encoding="utf-8")
 for required in ("fun setCaptured", "affected = boxes.filterValues", "toggleCaptured(id: Int) = setCaptured"):
