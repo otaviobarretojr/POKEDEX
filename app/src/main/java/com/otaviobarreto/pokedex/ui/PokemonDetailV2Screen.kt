@@ -50,6 +50,17 @@ fun PokemonDetailV2Screen(
     var retry by remember{ mutableIntStateOf(0) }
     var tab by rememberSaveable(id){ mutableIntStateOf(0) }
     val context=remember(source){ GameContext.fromSource(source) }
+    val collectionSource=remember(source,AppStatePreferences.activeGame){
+        source ?: AppStatePreferences.activeRegionForGame(AppStatePreferences.activeGame)
+    }
+    LaunchedEffect(id){
+        listOf(id-2,id-1,id+1,id+2)
+            .filter{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
+            .forEach{neighbor->
+                runCatching{ PokedexDataStore.prefetchCoreDetails(neighbor) }
+            }
+    }
+
     LaunchedEffect(id,retry){
         error=null
 
@@ -93,7 +104,7 @@ fun PokemonDetailV2Screen(
 
     when{
         bundle!=null -> DetailV2Content(
-            bundle!!,tab,{tab=it},context,source,onBack,onOpenLocation,onOpenReference,onOpenPokemon
+            bundle!!,tab,{tab=it},context,source,collectionSource,onBack,onOpenLocation,onOpenReference,onOpenPokemon
         )
         error!=null -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
             Column(horizontalAlignment=Alignment.CenterHorizontally){
@@ -130,6 +141,7 @@ fun PokemonDetailV2Screen(
     setTab:(Int)->Unit,
     context:GameContext?,
     source:String?,
+    collectionSource:String?,
     back:()->Unit,
     openLocation:(()->Unit)?,
     openRef:((String,String)->Unit)?,
@@ -142,10 +154,10 @@ fun PokemonDetailV2Screen(
         resolveSaveLocation(b.pokemon.id,context,source,legacyBoxes)
     }
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
-        HeroCard(b,context,source,accent,saveLocation,back)
+        HeroCard(b,context,collectionSource,accent,saveLocation,back)
         DetailTabs(tab,setTab)
         when(tab){
-            0->InfoTab(b,accent,context,source,openRef)
+            0->InfoTab(b,accent,context,collectionSource,openRef)
             1->V2Stats(b.pokemon.stats)
             2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
             3->V2Moves(b.pokemon.moves,context,openRef)
@@ -339,32 +351,41 @@ private fun PokemonFormsSummaryCard(
     if(available.size<=1 && source.isNullOrBlank()) return
 
     val owned=if(source.isNullOrBlank()) emptyList() else VariantCollectionStore.variantsFor(source,pokemonId)
-    SectionCard("Formas e Shiny",Icons.Default.AutoAwesome){
+    val contextLabel=source?.let{GameContext.fromSource(it)?.label}
+        ?: AppStatePreferences.activeGame
+    SectionCard("Coleção · Formas e Shiny",Icons.Default.AutoAwesome){
+        Text(
+            if(source.isNullOrBlank())
+                "Abra este Pokémon por uma Box para registrar variantes."
+            else
+                contextLabel+" · "+owned.size+" variante(s) registrada(s)",
+            style=MaterialTheme.typography.bodySmall,
+            color=Color(0xFF667085)
+        )
         if(available.isEmpty()){
             Text("Carregando formas…",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))
         }else{
-            Text(
-                available.size.toString()+" forma(s) catalogada(s) · "+owned.count{it.shiny}+" shiny registrada(s)",
-                style=MaterialTheme.typography.bodySmall,
-                color=Color(0xFF667085)
-            )
             LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                items(available,key={it.pokemonId ?: it.name}){form->
+                items(available,key={it.formKey}){form->
                     val formId=form.pokemonId ?: pokemonId
-                    val normalOwned=owned.any{it.formPokemonId==formId && !it.shiny}
-                    val shinyOwned=owned.any{it.formPokemonId==formId && it.shiny}
+                    val normalOwned=owned.any{
+                        it.formPokemonId==formId && it.formName.equals(form.name,true) && !it.shiny
+                    }
+                    val shinyOwned=owned.any{
+                        it.formPokemonId==formId && it.formName.equals(form.name,true) && it.shiny
+                    }
                     Surface(
                         shape=RoundedCornerShape(16.dp),
                         color=accent.copy(alpha=.08f)
                     ){
                         Column(
-                            Modifier.width(118.dp).padding(10.dp),
+                            Modifier.width(132.dp).padding(10.dp),
                             horizontalAlignment=Alignment.CenterHorizontally
                         ){
                             PokemonArtwork(
-                                model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
+                                model=form.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
                                 contentDescription=form.name,
-                                modifier=Modifier.size(68.dp),
+                                modifier=Modifier.size(72.dp),
                                 pokemonId=formId
                             )
                             Text(
@@ -374,17 +395,54 @@ private fun PokemonFormsSummaryCard(
                                 maxLines=2,
                                 overflow=TextOverflow.Ellipsis
                             )
-                            Text(
-                                listOfNotNull(
-                                    if(normalOwned)"Normal" else null,
-                                    if(shinyOwned)"★ Shiny" else null
-                                ).joinToString(" · ").ifBlank{"Não registrado"},
-                                fontSize=9.sp,
-                                color=if(normalOwned||shinyOwned)accent else Color(0xFF7A8194),
-                                maxLines=1
-                            )
+                            if(!source.isNullOrBlank()){
+                                Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                                    FilterChip(
+                                        selected=normalOwned,
+                                        onClick={
+                                            VariantCollectionStore.toggle(
+                                                source,pokemonId,formId,form.name,false,
+                                                normalArtworkUrl=form.spriteUrl,
+                                                shinyArtworkUrl=form.shinySpriteUrl
+                                            )
+                                        },
+                                        label={Text("Normal",fontSize=8.sp)}
+                                    )
+                                    FilterChip(
+                                        selected=shinyOwned,
+                                        onClick={
+                                            VariantCollectionStore.toggle(
+                                                source,pokemonId,formId,form.name,true,
+                                                normalArtworkUrl=form.spriteUrl,
+                                                shinyArtworkUrl=form.shinySpriteUrl
+                                            )
+                                        },
+                                        label={Text("★",fontSize=9.sp)}
+                                    )
+                                }
+                            }else{
+                                Text(
+                                    listOfNotNull(
+                                        if(normalOwned)"Normal" else null,
+                                        if(shinyOwned)"★ Shiny" else null
+                                    ).joinToString(" · ").ifBlank{"Não registrado"},
+                                    fontSize=9.sp,
+                                    color=if(normalOwned||shinyOwned)accent else Color(0xFF7A8194),
+                                    maxLines=1
+                                )
+                            }
                         }
                     }
+                }
+            }
+            if(!source.isNullOrBlank() && CollectionStore.isCapturedIn(source,pokemonId)){
+                TextButton(
+                    onClick={VariantCollectionStore.removeAll(source,pokemonId)},
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Icon(Icons.Default.DeleteOutline,null,Modifier.size(17.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Remover da Box")
                 }
             }
         }
