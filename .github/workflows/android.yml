@@ -33,7 +33,7 @@ jobs:
       - name: Validate v18.4.0 Journey Map
         run: |
           grep -q 'versionCode = 18400' app/build.gradle.kts
-          grep -q 'versionName = "18.3.0"' app/build.gradle.kts
+          grep -q 'versionName = "18.4.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
