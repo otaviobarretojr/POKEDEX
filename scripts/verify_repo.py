@@ -1063,7 +1063,7 @@ for required in (
 
 offline_v631 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 for required in (
-    "PACK_VERSION = 9",
+    "PACK_VERSION = 10",
     "cachedJourneyVisuals",
     "expectedJourneyVisuals",
     "JourneyReadinessAudit.referenceCatalogUrls",
