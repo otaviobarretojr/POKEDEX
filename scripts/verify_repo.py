@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "16120" not in workflow or "16.1.2" not in workflow:
-    violations.append("CI v16.1.2 version stamping missing")
+if "16130" not in workflow or "16.1.3" not in workflow:
+    violations.append("CI v16.1.3 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -922,7 +922,8 @@ local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
 local_v1610 = 'versionName = "16.1.0"' in local_gradle and "versionCode = 16100" in local_gradle
 local_v1611 = 'versionName = "16.1.1"' in local_gradle and "versionCode = 16110" in local_gradle
 local_v1612 = 'versionName = "16.1.2"' in local_gradle and "versionCode = 16120" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612):
+local_v1613 = 'versionName = "16.1.3"' in local_gradle and "versionCode = 16130" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613):
     violations.append("Local build version is not aligned with v16.1.x")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1543,6 +1544,38 @@ boxes_v1612 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 for required in ("Remover Pokémon da Box", "VariantCollectionStore.removeAll(source,pk.nationalId)", "DeleteOutline"):
     if required not in boxes_v1612:
         violations.append(f"v16.1.2 Box removal UI missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v16.1.3 complete National Forms guards
+forms_v1613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
+for required in (
+    'https://pokeapi.co/api/v2/pokemon/$pid',
+    'formKey',
+    '.distinctBy{it.formKey}',
+    'pokemonJson?.optJSONArray("forms")',
+):
+    if required not in forms_v1613:
+        violations.append(f"v16.1.3 complete forms discovery missing {required}")
+
+variant_v1613 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt").read_text(encoding="utf-8")
+for required in (
+    'formName.lowercase()',
+    'formName:String?=null',
+    'it.formName.equals(formName,true)',
+):
+    if required not in variant_v1613:
+        violations.append(f"v16.1.3 exact form identity missing {required}")
+
+workflow_v1613 = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
+for required in ("National Forms audit", "audit_national_forms.py"):
+    if required not in workflow_v1613:
+        violations.append(f"v16.1.3 forms audit workflow missing {required}")
 
 if violations:
     print("Source verification failed:")
