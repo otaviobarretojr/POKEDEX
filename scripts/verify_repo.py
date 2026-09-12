@@ -1083,7 +1083,7 @@ for required in (
 
 offline_v631 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 for required in (
-    "PACK_VERSION = 15",
+    "PACK_VERSION = 16",
     "cachedJourneyVisuals",
     "expectedJourneyVisuals",
     "JourneyReadinessAudit.referenceCatalogUrls",
@@ -1338,7 +1338,7 @@ if "PokemonFormsService.collectible" not in startup_v12:
     violations.append("v12 startup form preload missing")
 
 offline_v12 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-for required in ("PACK_VERSION = 15", "pokemon-form-offline-", "pokemon-form-shiny-offline-", "countsForLivingDex"):
+for required in ("PACK_VERSION = 16", "pokemon-form-offline-", "pokemon-form-shiny-offline-", "countsForLivingDex"):
     if required not in offline_v12:
         violations.append(f"v12 offline forms/shiny cache missing {required}")
 
@@ -1380,7 +1380,7 @@ for required in ("COSMETIC", "countsForLivingDex", "family of three", "three seg
         violations.append(f"v13 forms curation missing {required}")
 
 offline_v13 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 15" not in offline_v13:
+if "PACK_VERSION = 16" not in offline_v13:
     violations.append("v13 offline pack version missing")
 
 if violations:
@@ -1407,7 +1407,7 @@ for required in ('"Onde conseguir"', "CollectionAdvisor.recommendation", "Collec
         violations.append(f"v14 Pokémon detail advisor missing {required}")
 
 offline_v14 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 15" not in offline_v14:
+if "PACK_VERSION = 16" not in offline_v14:
     violations.append("v14 offline pack version missing")
 
 if violations:
@@ -1447,7 +1447,7 @@ for required in ("CollectionAdvisor.acquisitionLabel", "Onde conseguir"):
         violations.append(f"v15 acquisition classification missing {required}")
 
 offline_v15 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 15" not in offline_v15:
+if "PACK_VERSION = 16" not in offline_v15:
     violations.append("v15 offline pack version missing")
 
 if violations:
@@ -1486,7 +1486,7 @@ for required in (
         violations.append(f"v16 Central acquisition UI missing {required}")
 
 offline_v16 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 15" not in offline_v16:
+if "PACK_VERSION = 16" not in offline_v16:
     violations.append("v16 offline pack version missing")
 
 if violations:
