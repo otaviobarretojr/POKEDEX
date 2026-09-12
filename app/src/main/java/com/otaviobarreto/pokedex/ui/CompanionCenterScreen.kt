@@ -189,6 +189,17 @@ fun CompanionCenterScreen(
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    FilledTonalButton(
+                        onClick={
+                            PokedexDataStore.clearSessionCache()
+                            statusText="Cache da sessão limpo. Pacotes offline foram preservados."
+                        },
+                        modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                    ){
+                        Icon(Icons.Default.CleaningServices,null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Limpar cache da sessão")
+                    }
                 }
             }
         }
