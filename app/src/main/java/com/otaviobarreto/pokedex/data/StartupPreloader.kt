@@ -8,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -36,6 +35,8 @@ object StartupPreloader {
 
         progress(.08f, "Abrindo dados locais")
         runCatching { PokedexDataStore.nationalDex() }
+        val nationalSnapshot = PokedexDataStore.cachedNationalDex().orEmpty()
+        val nationalByName = nationalSnapshot.associateBy { it.name.lowercase() }
 
         val activeGame = AppStatePreferences.activeGame
         val game = AppGameCatalog.games.firstOrNull { it.label == activeGame }
@@ -135,9 +136,7 @@ object StartupPreloader {
                     .substringBefore(" & ")
                     .substringBefore(" · ")
                     .trim()
-                PokedexDataStore.cachedNationalDex().orEmpty()
-                    .firstOrNull { it.name.equals(simple, true) }
-                    ?.id
+                nationalByName[simple.lowercase()]?.id
             }
             .distinct()
             .take(18)
@@ -161,8 +160,6 @@ object StartupPreloader {
                                 ImageRequest.Builder(context)
                                     .data(artwork)
                                     .size(320)
-                                    .memoryCacheKey("startup-active-journey-" + artwork.hashCode())
-                                    .diskCacheKey("startup-active-journey-" + artwork.hashCode())
                                     .build()
                             )
                         }
@@ -187,8 +184,6 @@ object StartupPreloader {
                                     ImageRequest.Builder(context)
                                         .data(sprite)
                                         .size(192)
-                                        .memoryCacheKey("startup-pokemon-$id")
-                                        .diskCacheKey("startup-pokemon-$id")
                                         .build()
                                 )
                             }
@@ -198,37 +193,6 @@ object StartupPreloader {
                     progress(local, "Preparando imagens")
                 }
             }.awaitAll()
-        }
-
-        // O restante das capas/artes entra no cache após liberar a UI.
-        // Não bloqueia o splash e evita gastar o boot com conteúdo que talvez nem seja aberto.
-        launch(Dispatchers.IO) {
-            val secondaryArtwork = AppGameCatalog.adventureGames
-                .asSequence()
-                .filterNot { it.label == activeGame }
-                .flatMap { gameEntry ->
-                    sequence {
-                        yieldAll(GameCoverCatalog.coversFor(gameEntry.label))
-                        JourneyGameVisualCatalog.forGame(gameEntry.label).heroPokemonIds.forEach { id ->
-                            yield("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png")
-                        }
-                    }
-                }
-                .distinct()
-                .take(16)
-                .toList()
-
-            secondaryArtwork.forEach { artwork ->
-                runCatching {
-                    context.imageLoader.enqueue(
-                        ImageRequest.Builder(context)
-                            .data(artwork)
-                            .size(256)
-                            .diskCacheKey("startup-secondary-" + artwork.hashCode())
-                            .build()
-                    )
-                }
-            }
         }
 
         progress(1f, "Tudo pronto")
