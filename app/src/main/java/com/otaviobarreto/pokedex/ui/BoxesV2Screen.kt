@@ -375,11 +375,14 @@ private fun QBVariantManager(
 
     Dialog(onDismissRequest=dismiss,properties=DialogProperties(usePlatformDefaultWidth=false)){
         Surface(
-            Modifier.fillMaxWidth(.94f).fillMaxHeight(.86f),
+            Modifier
+                .fillMaxWidth(.92f)
+                .widthIn(max=560.dp)
+                .heightIn(max=620.dp),
             shape=RoundedCornerShape(24.dp),
             color=QBbg
         ){
-            Column(Modifier.fillMaxSize().padding(16.dp)){
+            Column(Modifier.fillMaxWidth().padding(16.dp)){
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text(pretty(pk.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
@@ -394,9 +397,15 @@ private fun QBVariantManager(
                     modifier=Modifier.padding(bottom=10.dp)
                 )
                 if(loading){
-                    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
+                    Box(
+                        Modifier.fillMaxWidth().height(120.dp),
+                        contentAlignment=Alignment.Center
+                    ){CircularProgressIndicator()}
                 }else{
-                    LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    LazyColumn(
+                        modifier=Modifier.weight(1f,fill=false),
+                        verticalArrangement=Arrangement.spacedBy(8.dp)
+                    ){
                         items(available,key={it.pokemonId!!}){form->
                             val formId=form.pokemonId!!
                             val normalOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,false)
