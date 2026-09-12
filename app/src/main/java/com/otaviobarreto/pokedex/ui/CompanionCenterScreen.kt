@@ -66,7 +66,9 @@ fun CompanionCenterScreen(
                         context.contentResolver.openInputStream(uri)?.bufferedReader()?.use{it.readText()}.orEmpty()
                     }.getOrDefault("")
                 }
-                val ok=raw.isNotBlank() && AppBackupManager.importJson(raw)
+                val ok=raw.isNotBlank() && withContext(Dispatchers.IO){
+                    AppBackupManager.importJson(raw)
+                }
                 statusText=if(ok)"Backup restaurado com sucesso." else "Arquivo inválido ou incompatível."
             }
         }
@@ -341,11 +343,16 @@ fun CompanionCenterScreen(
             },
             confirmButton={
                 TextButton(onClick={
-                    val ok=AppBackupManager.importJson(restoreText)
-                    statusText=if(ok)"Backup restaurado com sucesso." else "Backup inválido ou incompatível."
-                    if(ok){
-                        restoreText=""
-                        restoreOpen=false
+                    val pasted=restoreText
+                    scope.launch{
+                        val ok=withContext(Dispatchers.IO){
+                            AppBackupManager.importJson(pasted)
+                        }
+                        statusText=if(ok)"Backup restaurado com sucesso." else "Backup inválido ou incompatível."
+                        if(ok){
+                            restoreText=""
+                            restoreOpen=false
+                        }
                     }
                 }){Text("Restaurar")}
             },
