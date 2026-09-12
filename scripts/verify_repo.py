@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "16150" not in workflow or "16.1.5" not in workflow:
-    violations.append("CI v16.1.5 version stamping missing")
+if "16200" not in workflow or "16.2.0" not in workflow:
+    violations.append("CI v16.2.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -925,8 +925,9 @@ local_v1612 = 'versionName = "16.1.2"' in local_gradle and "versionCode = 16120"
 local_v1613 = 'versionName = "16.1.3"' in local_gradle and "versionCode = 16130" in local_gradle
 local_v1614 = 'versionName = "16.1.4"' in local_gradle and "versionCode = 16140" in local_gradle
 local_v1615 = 'versionName = "16.1.5"' in local_gradle and "versionCode = 16150" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615):
-    violations.append("Local build version is not aligned with v16.1.x")
+local_v1620 = 'versionName = "16.2.0"' in local_gradle and "versionCode = 16200" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620):
+    violations.append("Local build version is not aligned with v16.1.x/v16.2.x")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1644,6 +1645,52 @@ for required in (
 ):
     if required not in pokedex_v1615:
         violations.append(f"v16.1.5 artwork framing missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v16.2.0 integrated collection + performance milestone guards
+detail_v1620 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+for required in (
+    "collectionSource",
+    "Coleção · Formas e Shiny",
+    "VariantCollectionStore.toggle(",
+    "VariantCollectionStore.removeAll(",
+    "prefetchCoreDetails(neighbor)",
+):
+    if required not in detail_v1620:
+        violations.append(f"v16.2.0 detail/collection integration missing {required}")
+
+pokedex_v1620 = (ui / "PokedexCatalogScreen.kt").read_text(encoding="utf-8")
+for required in (
+    "selectedKind",
+    "PokemonFormKind.COSMETIC",
+    "Regionais",
+    "Cosméticas",
+):
+    if required not in pokedex_v1620:
+        violations.append(f"v16.2.0 form grouping missing {required}")
+
+boxes_v1620 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+if "items(available,key={it.formKey})" not in boxes_v1620:
+    violations.append("v16.2.0 Box exact-form list key missing")
+
+forms_v1620 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
+for required in (
+    "needsExactFormSprite",
+    "forms.length() > 1 || rawName != varietyName",
+):
+    if required not in forms_v1620:
+        violations.append(f"v16.2.0 forms performance guard missing {required}")
+
+workflow_v1620 = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
+for required in ("Problem Forms audit", "audit_problem_forms.py"):
+    if required not in workflow_v1620:
+        violations.append(f"v16.2.0 targeted visual audit missing {required}")
 
 if violations:
     print("Source verification failed:")
