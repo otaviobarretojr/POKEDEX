@@ -4,8 +4,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -28,73 +26,15 @@ fun CompanionCenterScreen(
     onPokemonClick:(Int)->Unit,
     onOpenBoxes:(String?,String?)->Unit
 ){
-    var query by remember { mutableStateOf("") }
-    var restoreOpen by remember { mutableStateOf(false) }
-    var restoreText by remember { mutableStateOf("") }
-    var restoreStatus by remember { mutableStateOf<String?>(null) }
+    var restoreOpen by remember{mutableStateOf(false)}
+    var restoreText by remember{mutableStateOf("")}
+    var statusText by remember{mutableStateOf<String?>(null)}
+    var activeDownload by remember{mutableStateOf<String?>(null)}
+    var progress by remember{mutableStateOf<OfflineGamePackManager.Progress?>(null)}
 
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
-
-    val insights=remember(
-        CollectionStore.capturedIds,
-        CollectionStore.contextualCapturedIds,
-        CollectionStore.boxes,
-        VariantCollectionStore.ownedVariants
-    ){ CollectionInsightsService.current() }
-    val livingPlan=remember(CollectionStore.capturedIds,VariantCollectionStore.ownedVariants){
-        LivingDexPlanner.current(limit=18)
-    }
-    var advisorReady by remember { mutableStateOf(CollectionAdvisor.isWarm()) }
-    LaunchedEffect(Unit){
-        if(!advisorReady){
-            runCatching{ CollectionAdvisor.warmAllGames() }
-            advisorReady=CollectionAdvisor.isWarm()
-        }
-    }
-    val allMissing=remember(CollectionStore.capturedIds){
-        (1..PokeApiService.MAX_NATIONAL_DEX_ID).filter{it !in CollectionStore.capturedIds}
-    }
-    val capturePlan=remember(advisorReady,allMissing,CollectionStore.capturedIds){
-        if(advisorReady) CollectionAdvisor.capturePlan(allMissing,limit=10) else emptyList()
-    }
-    val routePlan=remember(advisorReady,allMissing,CollectionStore.capturedIds){
-        if(advisorReady) CollectionAdvisor.gameRoutePlan(allMissing) else emptyList()
-    }
-    val nextAction=remember(advisorReady,allMissing,CollectionStore.capturedIds){
-        if(advisorReady) CollectionAdvisor.nextAction(allMissing) else null
-    }
-    var acquisitionAdvices by remember { mutableStateOf<List<AcquisitionAdvice>>(emptyList()) }
-    LaunchedEffect(advisorReady,allMissing){
-        acquisitionAdvices=if(advisorReady){
-            runCatching{
-                AcquisitionMethodResolver.resolveBatch(allMissing,limit=48)
-            }.getOrDefault(emptyList())
-        }else emptyList()
-    }
-
-    val normalizedQuery=query.trim()
-    val pokemonResults=remember(normalizedQuery){
-        val q=normalizedQuery.removePrefix("#")
-        if(q.isBlank()) emptyList() else PokemonRepository.all().filter{
-            it.name.contains(q,true) ||
-                it.id.toString()==q ||
-                it.types.any{type->type.contains(q,true)}
-        }.take(30)
-    }
-    val gameResults=remember(normalizedQuery){
-        if(normalizedQuery.isBlank()) emptyList() else AppGameCatalog.games.filter{
-            it.label.contains(normalizedQuery,true) ||
-                it.subtitle.contains(normalizedQuery,true) ||
-                it.regions.any{region->region.label.contains(normalizedQuery,true)}
-        }.take(8)
-    }
-    val boxResults=remember(normalizedQuery,CollectionStore.boxNames){
-        if(normalizedQuery.isBlank()) emptyList() else CollectionStore.boxNames.filter{
-            it.contains(normalizedQuery,true)
-        }.take(8)
-    }
 
     val createBackup=rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -108,7 +48,7 @@ fun CompanionCenterScreen(
                         } ?: error("Não foi possível abrir o arquivo.")
                     }.isSuccess
                 }
-                restoreStatus=if(ok)"Backup salvo em arquivo." else "Não foi possível salvar o backup."
+                statusText=if(ok)"Backup salvo em arquivo." else "Não foi possível salvar o backup."
             }
         }
     }
@@ -124,542 +64,139 @@ fun CompanionCenterScreen(
                     }.getOrDefault("")
                 }
                 val ok=raw.isNotBlank() && AppBackupManager.importJson(raw)
-                restoreStatus=if(ok)"Backup restaurado com sucesso." else "Arquivo de backup inválido ou incompatível."
+                statusText=if(ok)"Backup restaurado com sucesso." else "Arquivo inválido ou incompatível."
             }
         }
     }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal=16.dp),
-        contentPadding=PaddingValues(top=18.dp,bottom=26.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)
+        contentPadding=PaddingValues(top=18.dp,bottom=28.dp),
+        verticalArrangement=Arrangement.spacedBy(14.dp)
     ){
         item{
-            Text("Central",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Icon(Icons.Default.Settings,null,Modifier.size(34.dp))
+                Column(Modifier.padding(start=10.dp)){
+                    Text("Configurações",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+                    Text(
+                        "Downloads, armazenamento, backup e manutenção do aplicativo.",
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        item{
+            SettingsSectionTitle("Downloads dos jogos")
             Text(
-                "Busca global, coleção, atividade recente e backup.",
+                "Baixe dados, formas, artes e informações necessárias para usar cada jogo com menos dependência da internet.",
+                style=MaterialTheme.typography.bodyMedium,
                 color=MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        item{
-            OutlinedTextField(
-                value=query,
-                onValueChange={query=it},
-                modifier=Modifier.fillMaxWidth(),
-                singleLine=true,
-                leadingIcon={Icon(Icons.Default.Search,null)},
-                label={Text("Pokémon, número, tipo, jogo ou Box")}
-            )
-        }
-
-        if(normalizedQuery.isNotBlank()){
-            if(pokemonResults.isEmpty() && gameResults.isEmpty() && boxResults.isEmpty()){
-                item{Text("Nenhum resultado encontrado.")}
-            }
-
-            if(gameResults.isNotEmpty()){
-                item{SectionTitle("Jogos")}
-                items(gameResults,key={it.label}){game->
-                    ResultCard(
-                        icon={Icon(Icons.Default.Map,null)},
-                        title=game.label,
-                        subtitle=game.subtitle.ifBlank{"Abrir jogo"},
-                        onClick={onOpenBoxes(game.label,game.regions.firstOrNull()?.source)}
-                    )
-                }
-            }
-
-            if(boxResults.isNotEmpty()){
-                item{SectionTitle("Boxes")}
-                items(boxResults,key={it}){box->
-                    val count=CollectionStore.boxes[box].orEmpty().size
-                    ResultCard(
-                        icon={Icon(Icons.Default.GridView,null)},
-                        title=box,
-                        subtitle=count.toString()+" Pokémon registrados",
-                        onClick={onOpenBoxes(null,null)}
-                    )
-                }
-            }
-
-            if(pokemonResults.isNotEmpty()){
-                item{SectionTitle("Pokémon")}
-                items(pokemonResults,key={it.id}){pk->
-                    ResultCard(
-                        icon={Icon(Icons.Default.CatchingPokemon,null)},
-                        title="#"+pk.id.toString().padStart(4,'0')+" · "+pk.name,
-                        subtitle=pk.types.joinToString(" / ")+" · Gen "+pk.generation,
-                        onClick={onPokemonClick(pk.id)}
-                    )
-                }
-            }
-        }
-
-        if(normalizedQuery.isBlank() && RecentActivityStore.recentPokemon.isNotEmpty()){
-            item{SectionTitle("Vistos recentemente")}
-            items(RecentActivityStore.recentPokemon.take(6),key={it}){id->
-                val pk=PokemonRepository.byId(id)
-                ResultCard(
-                    icon={Icon(Icons.Default.History,null)},
-                    title=pk?.let{"#"+id.toString().padStart(4,'0')+" · "+it.name} ?: "#"+id,
-                    subtitle="Abrir ficha novamente",
-                    onClick={onPokemonClick(id)}
-                )
-            }
-        }
-
-        item{
-            SectionTitle("Living Dex")
-            Card(shape=RoundedCornerShape(20.dp)){
-                Column(Modifier.fillMaxWidth().padding(16.dp)){
-                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                        Column(Modifier.weight(1f)){
-                            Text(
-                                insights.totalCaptured.toString()+" / "+insights.nationalDexTotal,
-                                style=MaterialTheme.typography.headlineSmall,
-                                fontWeight=FontWeight.Black
-                            )
-                            Text("Pokémon únicos registrados",color=MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Text(
-                            (insights.livingDexRatio*100).toInt().toString()+"%",
-                            style=MaterialTheme.typography.titleLarge,
-                            fontWeight=FontWeight.Black,
-                            color=MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    LinearProgressIndicator(
-                        progress={insights.livingDexRatio},
-                        modifier=Modifier.fillMaxWidth().padding(top=10.dp).height(8.dp),
-                        strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        InsightCard("Formas",insights.ownedForms.toString(),Modifier.weight(1f))
-                        InsightCard("Shiny",insights.shinyVariants.toString(),Modifier.weight(1f))
-                        InsightCard("Espécies c/ variantes",insights.speciesWithVariants.toString(),Modifier.weight(1f))
-                    }
-                }
-            }
-        }
-
-        if(normalizedQuery.isBlank()){
-            item{
-                SectionTitle("O que falta")
+        AppGameCatalog.adventureGames.forEach{game->
+            item(key=game.label){
+                val pack=OfflineGamePackManager.status(game.label)
+                val audit=OfflineGamePackManager.audit(game.label)
                 Card(shape=RoundedCornerShape(20.dp)){
-                    Column(Modifier.fillMaxWidth().padding(16.dp)){
-                        Text(
-                            if(livingPlan.missingSpecies.isEmpty()) "Species Dex concluída!"
-                            else "Próximas espécies ausentes",
-                            fontWeight=FontWeight.Bold
-                        )
-                        if(livingPlan.missingSpecies.isEmpty()){
-                            Text(
-                                "Agora você pode focar em formas alternativas e Shiny.",
-                                style=MaterialTheme.typography.bodySmall,
-                                color=MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }else{
-                            LazyRow(
-                                modifier=Modifier.padding(top=10.dp),
-                                horizontalArrangement=Arrangement.spacedBy(8.dp)
-                            ){
-                                items(livingPlan.missingSpecies,key={it}){id->
-                                    val pk=PokemonRepository.byId(id)
-                                    Column(
-                                        Modifier.widthIn(max=240.dp),
-                                        verticalArrangement=Arrangement.spacedBy(4.dp)
-                                    ){
-                                        AssistChip(
-                                            onClick={onPokemonClick(id)},
-                                            label={
-                                                Text(
-                                                    "#"+id.toString().padStart(4,'0')+
-                                                        (pk?.name?.let{" · "+it} ?: "")
-                                                )
-                                            },
-                                            leadingIcon={Icon(Icons.Default.CatchingPokemon,null,Modifier.size(16.dp))}
-                                        )
-                                        Text(
-                                            CollectionAdvisor.recommendation(id),
-                                            style=MaterialTheme.typography.labelSmall,
-                                            color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines=3
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                            InsightCard("Shiny espécies",livingPlan.shinySpecies.toString(),Modifier.weight(1f))
-                            InsightCard("Registros de forma",livingPlan.formRegistrations.toString(),Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-
-        if(normalizedQuery.isBlank()){
-            item{
-                SectionTitle("O que faço agora?")
-                Card(shape=RoundedCornerShape(20.dp)){
-                    Column(Modifier.fillMaxWidth().padding(16.dp)){
-                        if(!advisorReady || nextAction==null){
-                            Row(verticalAlignment=Alignment.CenterVertically){
-                                CircularProgressIndicator(Modifier.size(22.dp),strokeWidth=2.dp)
-                                Text(
-                                    "Calculando a melhor próxima ação…",
-                                    Modifier.padding(start=10.dp),
-                                    style=MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }else{
-                            Text(
-                                nextAction.title,
-                                style=MaterialTheme.typography.titleLarge,
-                                fontWeight=FontWeight.Black
-                            )
-                            Text(
-                                nextAction.subtitle,
-                                style=MaterialTheme.typography.bodyMedium,
-                                color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier=Modifier.padding(top=4.dp)
-                            )
-                            val preview=nextAction.targetIds.take(6)
-                            if(preview.isNotEmpty()){
-                                LazyRow(
-                                    modifier=Modifier.padding(top=10.dp),
-                                    horizontalArrangement=Arrangement.spacedBy(6.dp)
-                                ){
-                                    items(preview,key={it}){id->
-                                        AssistChip(
-                                            onClick={onPokemonClick(id)},
-                                            label={Text("#"+id.toString().padStart(4,'0'))}
-                                        )
-                                    }
-                                }
-                            }
-                            if(nextAction.game!=null && nextAction.source!=null){
-                                Button(
-                                    onClick={onOpenBoxes(nextAction.game,nextAction.source)},
-                                    modifier=Modifier.fillMaxWidth().padding(top=12.dp)
-                                ){
-                                    Icon(Icons.Default.PlayArrow,null)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Abrir melhor jogo agora")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if(normalizedQuery.isBlank() && advisorReady && routePlan.isNotEmpty()){
-            item{
-                SectionTitle("Rota recomendada")
-                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    routePlan.take(6).forEachIndexed{index,step->
-                        Card(shape=RoundedCornerShape(18.dp)){
-                            Row(
-                                Modifier.fillMaxWidth().padding(14.dp),
-                                verticalAlignment=Alignment.CenterVertically
-                            ){
-                                Surface(
-                                    shape=RoundedCornerShape(50),
-                                    color=MaterialTheme.colorScheme.primaryContainer
-                                ){
-                                    Text(
-                                        (index+1).toString(),
-                                        Modifier.padding(horizontal=10.dp,vertical=6.dp),
-                                        fontWeight=FontWeight.Black
-                                    )
-                                }
-                                Column(Modifier.weight(1f).padding(start=10.dp)){
-                                    Text(step.game,fontWeight=FontWeight.Bold)
-                                    Text(
-                                        (step.region?.let{it+" · "} ?: "")+
-                                            step.count+" espécie(s) pendente(s)",
-                                        style=MaterialTheme.typography.bodySmall,
-                                        color=MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                if(step.source!=null){
-                                    TextButton(onClick={onOpenBoxes(step.game,step.source)}){
-                                        Text("Abrir")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if(normalizedQuery.isBlank() && advisorReady){
-            item{
-                SectionTitle("Métodos de obtenção")
-                val captureCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.CAPTURE}
-                val evolutionCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.EVOLUTION}
-                val tradeCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.TRADE}
-                val specialCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.SPECIAL_OR_TRANSFER}
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                    InsightCard("Capturar",captureCount.toString(),Modifier.weight(1f))
-                    InsightCard("Evoluir",evolutionCount.toString(),Modifier.weight(1f))
-                    InsightCard("Troca",tradeCount.toString(),Modifier.weight(1f))
-                    InsightCard("Especial",specialCount.toString(),Modifier.weight(1f))
-                }
-            }
-        }
-
-        val ownedEvolutionTargets=acquisitionAdvices.filter{
-            it.sourceOwned && (it.method==DetailedAcquisitionMethod.EVOLUTION || it.method==DetailedAcquisitionMethod.TRADE)
-        }
-        if(normalizedQuery.isBlank() && ownedEvolutionTargets.isNotEmpty()){
-            item{
-                SectionTitle("Evoluir primeiro")
-                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    ownedEvolutionTargets.take(8).forEach{advice->
-                        val pk=PokemonRepository.byId(advice.pokemonId)
-                        Card(
-                            onClick={onPokemonClick(advice.pokemonId)},
-                            shape=RoundedCornerShape(18.dp)
-                        ){
-                            Column(Modifier.fillMaxWidth().padding(14.dp)){
-                                Row(verticalAlignment=Alignment.CenterVertically){
-                                    Icon(
-                                        if(advice.method==DetailedAcquisitionMethod.TRADE) Icons.Default.SwapHoriz else Icons.Default.TrendingUp,
-                                        null,
-                                        tint=MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        "#"+advice.pokemonId.toString().padStart(4,'0')+
-                                            (pk?.name?.let{" · "+it} ?: ""),
-                                        Modifier.padding(start=8.dp),
-                                        fontWeight=FontWeight.Bold
-                                    )
-                                }
-                                Text(
-                                    advice.label,
-                                    style=MaterialTheme.typography.bodySmall,
-                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier=Modifier.padding(top=4.dp)
-                                )
-                                advice.requirement?.let{
-                                    Text(
-                                        it,
-                                        style=MaterialTheme.typography.labelSmall,
-                                        color=MaterialTheme.colorScheme.primary,
-                                        modifier=Modifier.padding(top=4.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if(normalizedQuery.isBlank()){
-            item{
-                SectionTitle("Plano de captura")
-                if(!advisorReady){
-                    Card(shape=RoundedCornerShape(18.dp)){
-                        Row(
-                            Modifier.fillMaxWidth().padding(14.dp),
-                            verticalAlignment=Alignment.CenterVertically
-                        ){
-                            CircularProgressIndicator(Modifier.size(22.dp),strokeWidth=2.dp)
-                            Text(
-                                "Cruzando as Pokédex regionais dos seus jogos…",
-                                Modifier.padding(start=10.dp),
-                                style=MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-                }else if(capturePlan.isEmpty()){
-                    Text(
-                        "Nenhum alvo pendente com rota regional disponível.",
-                        color=MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }else{
-                    Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                        capturePlan.forEach{target->
-                            val pk=PokemonRepository.byId(target.pokemonId)
-                            Card(
-                                onClick={onPokemonClick(target.pokemonId)},
-                                shape=RoundedCornerShape(18.dp)
-                            ){
-                                Column(Modifier.fillMaxWidth().padding(14.dp)){
-                                    Row(
-                                        Modifier.fillMaxWidth(),
-                                        verticalAlignment=Alignment.CenterVertically
-                                    ){
-                                        Icon(Icons.Default.Route,null,tint=MaterialTheme.colorScheme.primary)
-                                        Column(Modifier.weight(1f).padding(start=10.dp)){
-                                            Text(
-                                                "#"+target.pokemonId.toString().padStart(4,'0')+
-                                                    (pk?.name?.let{" · "+it} ?: ""),
-                                                fontWeight=FontWeight.Bold
-                                            )
-                                            Text(
-                                                CollectionAdvisor.recommendation(target.pokemonId),
-                                                style=MaterialTheme.typography.bodySmall,
-                                                color=MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                    target.preferred?.let{option->
-                                        Row(
-                                            Modifier.fillMaxWidth().padding(top=8.dp),
-                                            horizontalArrangement=Arrangement.End
-                                        ){
-                                            TextButton(
-                                                onClick={onOpenBoxes(option.game,option.source)}
-                                            ){
-                                                Icon(Icons.Default.GridView,null,Modifier.size(16.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text("Abrir "+option.region)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if(normalizedQuery.isBlank()){
-            item{
-                SectionTitle("Progresso por geração")
-                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    livingPlan.byGeneration.forEach{gen->
-                        Card(shape=RoundedCornerShape(18.dp)){
-                            Column(Modifier.fillMaxWidth().padding(14.dp)){
-                                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                                    Text("Geração "+gen.generation,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
-                                    Text(
-                                        gen.captured.toString()+"/"+gen.total+" · ★ "+gen.shiny,
-                                        style=MaterialTheme.typography.labelLarge,
-                                        color=MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                LinearProgressIndicator(
-                                    progress={if(gen.total==0)0f else gen.captured.toFloat()/gen.total},
-                                    modifier=Modifier.fillMaxWidth().padding(top=8.dp).height(6.dp),
-                                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        item{
-            SectionTitle("Sua coleção")
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                InsightCard("Capturados",insights.totalCaptured.toString(),Modifier.weight(1f))
-                InsightCard("Jogos",insights.gamesWithProgress.toString()+"/"+insights.totalGames,Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                InsightCard("Registros",insights.contextualRegistrations.toString(),Modifier.weight(1f))
-                InsightCard("Duplicados",insights.duplicates.toString(),Modifier.weight(1f))
-                InsightCard("Sem Box",insights.unboxed.toString(),Modifier.weight(1f))
-            }
-        }
-
-        item{
-            SectionTitle("Progresso por jogo")
-            Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                insights.byGame.forEach{progress->
-                    Card(
-                        onClick={
-                            val game=AppGameCatalog.adventureGames.firstOrNull{it.label==progress.game}
-                            onOpenBoxes(progress.game,game?.regions?.firstOrNull()?.source)
-                        },
-                        shape=RoundedCornerShape(18.dp)
-                    ){
-                        Row(
-                            Modifier.fillMaxWidth().padding(14.dp),
-                            verticalAlignment=Alignment.CenterVertically
-                        ){
-                            Column(Modifier.weight(1f)){
-                                Text(progress.game,fontWeight=FontWeight.Bold)
-                                Text(
-                                    progress.regionsWithProgress.toString()+"/"+progress.totalRegions+" regiões com progresso",
-                                    style=MaterialTheme.typography.bodySmall,
-                                    color=MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Text(
-                                progress.captured.toString(),
-                                style=MaterialTheme.typography.titleMedium,
-                                fontWeight=FontWeight.Black,
-                                color=MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        item{
-            SectionTitle("Offline e desempenho")
-            val cache=PokedexDataStore.cacheStats()
-            Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                AppGameCatalog.adventureGames.forEach{game->
-                    val status=OfflineGamePackManager.status(game.label)
-                    Card(shape=RoundedCornerShape(18.dp)){
-                        Row(
-                            Modifier.fillMaxWidth().padding(14.dp),
-                            verticalAlignment=Alignment.CenterVertically
-                        ){
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Row(verticalAlignment=Alignment.CenterVertically){
                             Icon(
-                                if(status.verified) Icons.Default.CloudDone else Icons.Default.CloudDownload,
+                                if(audit.valid) Icons.Default.CloudDone else Icons.Default.CloudDownload,
                                 null,
-                                tint=if(status.verified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                tint=if(audit.valid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Column(Modifier.weight(1f).padding(start=10.dp)){
                                 Text(game.label,fontWeight=FontWeight.Bold)
                                 Text(
-                                    if(status.verified) "Pacote offline pronto · "+status.pokemonCount+" Pokémon"
-                                    else "Pacote offline não verificado",
+                                    when{
+                                        activeDownload==game.label -> progress?.label ?: "Preparando download…"
+                                        audit.valid -> "Offline pronto · "+pack.pokemonCount+" Pokémon"
+                                        pack.downloaded -> audit.summary
+                                        else -> "Ainda não baixado"
+                                    },
                                     style=MaterialTheme.typography.bodySmall,
                                     color=MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                    }
-                }
-                Card(shape=RoundedCornerShape(18.dp)){
-                    Column(Modifier.fillMaxWidth().padding(14.dp)){
-                        Text("Cache desta sessão",fontWeight=FontWeight.Bold)
-                        Text(
-                            cache.total.toString()+" entradas · Pokémon "+cache.pokemon+
-                                " · espécies "+cache.species+
-                                " · evoluções "+cache.evolutions,
-                            style=MaterialTheme.typography.bodySmall,
-                            color=MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+                        if(activeDownload==game.label){
+                            LinearProgressIndicator(
+                                progress={progress?.fraction ?: 0f},
+                                modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                            )
+                        }
+
+                        Row(
+                            Modifier.fillMaxWidth().padding(top=10.dp),
+                            horizontalArrangement=Arrangement.spacedBy(8.dp)
+                        ){
+                            Button(
+                                enabled=activeDownload==null,
+                                onClick={
+                                    activeDownload=game.label
+                                    progress=null
+                                    scope.launch{
+                                        val result=runCatching{
+                                            OfflineGamePackManager.download(game){p->progress=p}
+                                        }
+                                        statusText=if(result.isSuccess) game.label+": pacote offline atualizado."
+                                        else game.label+": falha no download."
+                                        activeDownload=null
+                                        progress=null
+                                    }
+                                },
+                                modifier=Modifier.weight(1f)
+                            ){
+                                Icon(Icons.Default.Download,null)
+                                Spacer(Modifier.width(6.dp))
+                                Text(if(pack.downloaded)"Atualizar" else "Baixar")
+                            }
+                            FilledTonalButton(
+                                enabled=activeDownload==null && pack.downloaded,
+                                onClick={
+                                    OfflineGamePackManager.remove(game.label)
+                                    statusText=game.label+": pacote offline removido."
+                                },
+                                modifier=Modifier.weight(1f)
+                            ){
+                                Icon(Icons.Default.DeleteOutline,null)
+                                Spacer(Modifier.width(6.dp))
+                                Text("Remover")
+                            }
+                        }
                     }
                 }
             }
         }
 
         item{
-            SectionTitle("Backup")
+            SettingsSectionTitle("Armazenamento e desempenho")
+            val cache=PokedexDataStore.cacheStats()
+            Card(shape=RoundedCornerShape(20.dp)){
+                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                    Text("Cache da sessão",fontWeight=FontWeight.Bold)
+                    Text(
+                        cache.total.toString()+" entradas · Pokémon "+cache.pokemon+
+                            " · espécies "+cache.species+
+                            " · evoluções "+cache.evolutions,
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        item{
+            SettingsSectionTitle("Backup e restauração")
             Text(
-                "Salve toda a coleção, Jornada, contexto atual e atividade recente. Backups antigos continuam compatíveis. A v12 preserva coleção, Jornada, times, formas e Shiny.",
+                "O backup preserva coleção, Jornada, times, formas, Shiny e preferências compatíveis.",
                 style=MaterialTheme.typography.bodyMedium,
                 color=MaterialTheme.colorScheme.onSurfaceVariant
             )
-
             Row(
                 Modifier.fillMaxWidth().padding(top=8.dp),
                 horizontalArrangement=Arrangement.spacedBy(8.dp)
@@ -667,7 +204,7 @@ fun CompanionCenterScreen(
                 Button(
                     onClick={
                         clipboard.setText(AnnotatedString(AppBackupManager.exportJson()))
-                        restoreStatus="Backup copiado."
+                        statusText="Backup copiado."
                     },
                     modifier=Modifier.weight(1f)
                 ){
@@ -684,7 +221,6 @@ fun CompanionCenterScreen(
                     Text("Arquivo")
                 }
             }
-
             Row(
                 Modifier.fillMaxWidth().padding(top=8.dp),
                 horizontalArrangement=Arrangement.spacedBy(8.dp)
@@ -695,7 +231,7 @@ fun CompanionCenterScreen(
                 ){
                     Icon(Icons.Default.Restore,null)
                     Spacer(Modifier.width(6.dp))
-                    Text("Colar backup")
+                    Text("Colar")
                 }
                 FilledTonalButton(
                     onClick={openBackup.launch(arrayOf("application/json","text/plain"))},
@@ -706,14 +242,18 @@ fun CompanionCenterScreen(
                     Text("Importar")
                 }
             }
+        }
 
-            restoreStatus?.let{
-                Text(
-                    it,
-                    Modifier.padding(top=8.dp),
-                    color=MaterialTheme.colorScheme.primary,
-                    fontWeight=FontWeight.SemiBold
-                )
+        statusText?.let{message->
+            item{
+                Card(shape=RoundedCornerShape(16.dp)){
+                    Text(
+                        message,
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        color=MaterialTheme.colorScheme.primary,
+                        fontWeight=FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
@@ -726,9 +266,9 @@ fun CompanionCenterScreen(
                 Column{
                     Text("Cole abaixo o backup exportado anteriormente.")
                     OutlinedTextField(
-                        restoreText,
-                        {restoreText=it},
-                        Modifier.fillMaxWidth().heightIn(min=140.dp).padding(top=8.dp),
+                        value=restoreText,
+                        onValueChange={restoreText=it},
+                        modifier=Modifier.fillMaxWidth().heightIn(min=140.dp).padding(top=8.dp),
                         label={Text("Backup JSON")}
                     )
                 }
@@ -736,57 +276,26 @@ fun CompanionCenterScreen(
             confirmButton={
                 TextButton(onClick={
                     val ok=AppBackupManager.importJson(restoreText)
-                    restoreStatus=if(ok)"Backup restaurado com sucesso." else "Backup inválido ou incompatível."
-                    if(ok){restoreText="";restoreOpen=false}
+                    statusText=if(ok)"Backup restaurado com sucesso." else "Backup inválido ou incompatível."
+                    if(ok){
+                        restoreText=""
+                        restoreOpen=false
+                    }
                 }){Text("Restaurar")}
             },
-            dismissButton={TextButton(onClick={restoreOpen=false}){Text("Cancelar")}}
+            dismissButton={
+                TextButton(onClick={restoreOpen=false}){Text("Cancelar")}
+            }
         )
     }
 }
 
 @Composable
-private fun SectionTitle(text:String){
+private fun SettingsSectionTitle(text:String){
     Text(
         text,
         style=MaterialTheme.typography.titleLarge,
         fontWeight=FontWeight.Bold,
         modifier=Modifier.padding(top=4.dp)
     )
-}
-
-@Composable
-private fun ResultCard(
-    icon:@Composable ()->Unit,
-    title:String,
-    subtitle:String,
-    onClick:()->Unit
-){
-    Card(onClick=onClick,shape=RoundedCornerShape(18.dp)){
-        Row(
-            Modifier.fillMaxWidth().padding(14.dp),
-            verticalAlignment=Alignment.CenterVertically
-        ){
-            Box(Modifier.size(34.dp),contentAlignment=Alignment.Center){icon()}
-            Column(Modifier.weight(1f).padding(start=8.dp)){
-                Text(title,fontWeight=FontWeight.Bold)
-                Text(
-                    subtitle,
-                    style=MaterialTheme.typography.bodySmall,
-                    color=MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(Icons.Default.ChevronRight,null)
-        }
-    }
-}
-
-@Composable
-private fun InsightCard(label:String,value:String,modifier:Modifier=Modifier){
-    Card(modifier,shape=RoundedCornerShape(18.dp)){
-        Column(Modifier.padding(13.dp)){
-            Text(value,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-            Text(label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
 }
