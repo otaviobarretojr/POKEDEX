@@ -14,6 +14,7 @@ import com.otaviobarreto.pokedex.data.TeamStore
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import com.otaviobarreto.pokedex.data.PersistentApiCache
 import com.otaviobarreto.pokedex.data.RecentActivityStore
+import com.otaviobarreto.pokedex.data.VariantCollectionStore
 import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import java.io.File
 
@@ -25,6 +26,7 @@ class PokedexApplication : Application(), ImageLoaderFactory {
         AppStatePreferences.initialize(this)
         RecentActivityStore.initialize(this)
         CollectionStore.initialize(this)
+        VariantCollectionStore.initialize(this)
         TeamStore.initialize(this)
         JourneyProgressStore.initialize(this)
         HomeAudioManager.initialize(this)
