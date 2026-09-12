@@ -69,10 +69,19 @@ object VariantCollectionStore {
             normalArtworkUrl=normalArtworkUrl,
             shinyArtworkUrl=shinyArtworkUrl
         )
-        val exists=ownedVariants.any{it.key==entry.key}
+        fun matchesExisting(value:OwnedPokemonVariant):Boolean =
+            value.key==entry.key || (
+                value.source==entry.source &&
+                    value.speciesId==entry.speciesId &&
+                    value.formPokemonId==entry.formPokemonId &&
+                    value.formName.equals(entry.formName,true) &&
+                    value.shiny==entry.shiny
+            )
+        val exists=ownedVariants.any(::matchesExisting)
         ownedVariants=when{
             owned && !exists -> ownedVariants + entry
-            !owned && exists -> ownedVariants.filterNot{it.key==entry.key}
+            owned && exists -> ownedVariants.map{if(matchesExisting(it)) entry else it}.distinctBy{it.key}
+            !owned && exists -> ownedVariants.filterNot(::matchesExisting)
             else -> ownedVariants
         }
         if(owned) {
