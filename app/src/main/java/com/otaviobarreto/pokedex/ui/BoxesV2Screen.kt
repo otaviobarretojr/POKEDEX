@@ -431,12 +431,23 @@ private fun QBVariantManager(
                                     Modifier.fillMaxWidth().padding(10.dp),
                                     verticalAlignment=Alignment.CenterVertically
                                 ){
-                                    AsyncImage(
-                                        model=form.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
-                                        contentDescription=form.name,
-                                        modifier=Modifier.size(58.dp),
-                                        contentScale=ContentScale.Fit
-                                    )
+                                    Surface(
+                                        modifier=Modifier.size(64.dp),
+                                        shape=RoundedCornerShape(14.dp),
+                                        color=Color.White
+                                    ){
+                                        Box(
+                                            Modifier.fillMaxSize().padding(4.dp),
+                                            contentAlignment=Alignment.Center
+                                        ){
+                                            AsyncImage(
+                                                model=form.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
+                                                contentDescription=form.name,
+                                                modifier=Modifier.fillMaxSize(),
+                                                contentScale=ContentScale.Fit
+                                            )
+                                        }
+                                    }
                                     Column(Modifier.weight(1f).padding(start=8.dp)){
                                         Text(
                                             when{
@@ -457,6 +468,7 @@ private fun QBVariantManager(
                                                         normalArtworkUrl=form.spriteUrl,
                                                         shinyArtworkUrl=form.shinySpriteUrl
                                                     )
+                                                    dismiss()
                                                 },
                                                 label={Text("Normal",fontSize=10.sp)},
                                                 leadingIcon=if(normalOwned){{Icon(Icons.Default.Check,null,Modifier.size(14.dp))}}else null
@@ -469,6 +481,7 @@ private fun QBVariantManager(
                                                         normalArtworkUrl=form.spriteUrl,
                                                         shinyArtworkUrl=form.shinySpriteUrl
                                                     )
+                                                    dismiss()
                                                 },
                                                 label={Text("★ Shiny",fontSize=10.sp)},
                                                 leadingIcon=if(shinyOwned){{Icon(Icons.Default.AutoAwesome,null,Modifier.size(14.dp))}}else null
