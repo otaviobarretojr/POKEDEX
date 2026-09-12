@@ -508,6 +508,9 @@ for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/ja/img
         violations.append(f"Validated official Journey artwork missing {required}")
 if "embeddedAsset" not in journey_map or "maps/paldea_journey_map" not in journey_map:
     violations.append("Embedded Paldea map asset wiring missing")
+for required in ("onMapFullscreenChange", "FullscreenExit", "clampPan", "focusStep", "mapTargetPulse", "JourneyMapBitmapCache"):
+    if required not in journey_ui and required not in main:
+        violations.append(f"v18.4 Journey map enhancement missing {required}")
 if "rememberEmbeddedJourneyMap" not in journey_ui or "contentDescription=\"Mapa oficial de Paldea\"" not in journey_ui:
     violations.append("Embedded Paldea map is not rendered in Journey")
 
@@ -949,7 +952,8 @@ local_v1800 = 'versionName = "18.0.0"' in local_gradle and "versionCode = 18000"
 local_v1810 = 'versionName = "18.1.0"' in local_gradle and "versionCode = 18100" in local_gradle
 local_v1820 = 'versionName = "18.2.0"' in local_gradle and "versionCode = 18200" in local_gradle
 local_v1830 = 'versionName = "18.3.0"' in local_gradle and "versionCode = 18300" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830):
+local_v1840 = 'versionName = "18.4.0"' in local_gradle and "versionCode = 18400" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840):
     violations.append("Local build version is not aligned with supported v16/v17/v18 releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1824,8 +1828,8 @@ if "sameOwnedVariantIdentity" not in variant_v1810:
     violations.append("v18.1 canonical variant regression helper missing")
 
 readme_v1810 = (root / "README.md").read_text(encoding="utf-8")
-if "Estado atual — v18.3.0" not in readme_v1810:
-    violations.append("README current version is not v18.3.0")
+if "Estado atual — v18.4.0" not in readme_v1810:
+    violations.append("README current version is not v18.4.0")
 
 if violations:
     print("Source verification failed:")
