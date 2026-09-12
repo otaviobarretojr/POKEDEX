@@ -65,6 +65,14 @@ fun CompanionCenterScreen(
     val nextAction=remember(advisorReady,allMissing,CollectionStore.capturedIds){
         if(advisorReady) CollectionAdvisor.nextAction(allMissing) else null
     }
+    var acquisitionAdvices by remember { mutableStateOf<List<AcquisitionAdvice>>(emptyList()) }
+    LaunchedEffect(advisorReady,allMissing){
+        acquisitionAdvices=if(advisorReady){
+            runCatching{
+                AcquisitionMethodResolver.resolveBatch(allMissing,limit=48)
+            }.getOrDefault(emptyList())
+        }else emptyList()
+    }
 
     val normalizedQuery=query.trim()
     val pokemonResults=remember(normalizedQuery){
@@ -382,6 +390,70 @@ fun CompanionCenterScreen(
                                     TextButton(onClick={onOpenBoxes(step.game,step.source)}){
                                         Text("Abrir")
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if(normalizedQuery.isBlank() && advisorReady){
+            item{
+                SectionTitle("Métodos de obtenção")
+                val captureCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.CAPTURE}
+                val evolutionCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.EVOLUTION}
+                val tradeCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.TRADE}
+                val specialCount=acquisitionAdvices.count{it.method==DetailedAcquisitionMethod.SPECIAL_OR_TRANSFER}
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                    InsightCard("Capturar",captureCount.toString(),Modifier.weight(1f))
+                    InsightCard("Evoluir",evolutionCount.toString(),Modifier.weight(1f))
+                    InsightCard("Troca",tradeCount.toString(),Modifier.weight(1f))
+                    InsightCard("Especial",specialCount.toString(),Modifier.weight(1f))
+                }
+            }
+        }
+
+        val ownedEvolutionTargets=acquisitionAdvices.filter{
+            it.sourceOwned && (it.method==DetailedAcquisitionMethod.EVOLUTION || it.method==DetailedAcquisitionMethod.TRADE)
+        }
+        if(normalizedQuery.isBlank() && ownedEvolutionTargets.isNotEmpty()){
+            item{
+                SectionTitle("Evoluir primeiro")
+                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    ownedEvolutionTargets.take(8).forEach{advice->
+                        val pk=PokemonRepository.byId(advice.pokemonId)
+                        Card(
+                            onClick={onPokemonClick(advice.pokemonId)},
+                            shape=RoundedCornerShape(18.dp)
+                        ){
+                            Column(Modifier.fillMaxWidth().padding(14.dp)){
+                                Row(verticalAlignment=Alignment.CenterVertically){
+                                    Icon(
+                                        if(advice.method==DetailedAcquisitionMethod.TRADE) Icons.Default.SwapHoriz else Icons.Default.TrendingUp,
+                                        null,
+                                        tint=MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        "#"+advice.pokemonId.toString().padStart(4,'0')+
+                                            (pk?.name?.let{" · "+it} ?: ""),
+                                        Modifier.padding(start=8.dp),
+                                        fontWeight=FontWeight.Bold
+                                    )
+                                }
+                                Text(
+                                    advice.label,
+                                    style=MaterialTheme.typography.bodySmall,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier=Modifier.padding(top=4.dp)
+                                )
+                                advice.requirement?.let{
+                                    Text(
+                                        it,
+                                        style=MaterialTheme.typography.labelSmall,
+                                        color=MaterialTheme.colorScheme.primary,
+                                        modifier=Modifier.padding(top=4.dp)
+                                    )
                                 }
                             }
                         }
