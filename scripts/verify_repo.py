@@ -915,7 +915,7 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "10.5.0"' not in local_gradle or "versionCode = 10501" not in local_gradle:
+if 'versionName = "10.5.1"' not in local_gradle or "versionCode = 10501" not in local_gradle:
     violations.append("Local build version is not aligned with v10.5.1")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
