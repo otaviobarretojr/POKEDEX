@@ -520,7 +520,8 @@ internal fun JourneyGameMenu(
                             Text(
                                 boxProgress.captured.toString()+" de "+boxProgress.total+" Pokémon · "+(boxProgress.ratio*100).toInt()+"%",
                                 style=MaterialTheme.typography.bodySmall
-                            )                            LinearProgressIndicator(
+                            )
+                            LinearProgressIndicator(
                                 progress={boxProgress.ratio},
                                 modifier=Modifier.fillMaxWidth().padding(top=8.dp).height(7.dp),
                                 strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
