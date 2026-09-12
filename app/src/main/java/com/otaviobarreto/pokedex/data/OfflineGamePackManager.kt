@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 15
+    private const val PACK_VERSION = 16
     private var context: Context? = null
 
     data class PackStatus(
@@ -202,6 +202,7 @@ object OfflineGamePackManager {
                             add(PokeApiService.speciesUrl(id))
                             add(PokeApiService.encountersUrl(id))
                             evolutionUrl?.let(::add)
+                            addAll(PokemonFormsService.resourceUrlsFor(id))
                         }
                         PersistentApiCache.pinAll(resourceUrls)
                         synchronized(lock) {
@@ -220,8 +221,10 @@ object OfflineGamePackManager {
 
                         forms.filter{it.countsForLivingDex}.forEach { form ->
                             val formId=form.pokemonId ?: return@forEach
-                            val normalUrl="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
-                            val shinyUrl="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+formId+".png"
+                            val normalUrl=form.spriteUrl
+                                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
+                            val shinyUrl=form.shinySpriteUrl
+                                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+formId+".png"
                             runCatching {
                                 appContext.imageLoader.execute(
                                     ImageRequest.Builder(appContext)
