@@ -1789,9 +1789,9 @@ if violations:
 
 # v18.1.0 audit-hardening guards
 backup_v1810 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
-for required in ("previous", "applySnapshot(incoming)", "applySnapshot(it)", "isSupported"):
+for required in ("previous", "applySnapshot(incoming)", "normalizeForRestore", "CollectionIntegrityService.repair()"):
     if required not in backup_v1810:
-        violations.append(f"v18.1 backup rollback guard missing {required}")
+        violations.append(f"v18.1+ backup rollback guard missing {required}")
 
 audio_v1810 = (root / "app/src/main/java/com/otaviobarreto/pokedex/audio/HomeAudioManager.kt").read_text(encoding="utf-8")
 if "prepareAsync()" not in audio_v1810:
@@ -1805,7 +1805,7 @@ if "sameOwnedVariantIdentity" not in variant_v1810:
 
 readme_v1810 = (root / "README.md").read_text(encoding="utf-8")
 if "Estado atual — v18.3.0" not in readme_v1810:
-    violations.append("README current version is not v18.2.0")
+    violations.append("README current version is not v18.3.0")
 
 if violations:
     print("Source verification failed:")
