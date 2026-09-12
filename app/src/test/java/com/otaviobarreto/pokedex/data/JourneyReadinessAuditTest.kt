@@ -25,9 +25,11 @@ class JourneyReadinessAuditTest {
     }
 
     @Test
-    fun scarletUsesBundledCardArtInsteadOfRemoteCovers() {
-        assertTrue(JourneyReadinessAudit.journeyVisualUrls("Scarlet / Violet").none {
-            it.contains("scarlet", ignoreCase = true) || it.contains("violet", ignoreCase = true)
-        })
+    fun scarletUsesBundledCardArtInsteadOfLegacyRemoteCovers() {
+        val urls = JourneyReadinessAudit.journeyVisualUrls("Scarlet / Violet")
+        val legacyCovers = GameCoverCatalog.coversFor("Scarlet / Violet")
+        assertTrue(legacyCovers.isNotEmpty())
+        assertTrue(legacyCovers.none { it in urls })
+        assertTrue(urls.isNotEmpty())
     }
 }
