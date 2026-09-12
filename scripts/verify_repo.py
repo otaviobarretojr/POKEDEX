@@ -962,7 +962,7 @@ for required in ("JourneyGameCover", "GameCoverCatalog.coversFor", "AsyncImage",
         violations.append(f"Journey official cover rendering missing {required}")
 
 startup_v622 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
-for required in ("GameCoverCatalog.coversFor", "activeJourneyArtworkUrls", "Aquecendo sua rota"):
+for required in ("GameCoverCatalog.coversFor", "activeJourneyArtworkUrls", "Aquecendo sua Jornada"):
     if required not in startup_v622:
         violations.append(f"Journey cover preload missing {required}")
 
@@ -990,7 +990,7 @@ for required in (
         violations.append(f"Journey reference-card visual missing {required}")
 
 startup_v623 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
-for required in ("JourneyGameVisualCatalog.forGame", "activeJourneyArtworkUrls", "Aquecendo sua rota"):
+for required in ("JourneyGameVisualCatalog.forGame", "activeJourneyArtworkUrls", "Aquecendo sua Jornada"):
     if required not in startup_v623:
         violations.append(f"Journey reference art preload missing {required}")
 
