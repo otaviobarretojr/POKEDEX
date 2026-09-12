@@ -19,6 +19,28 @@ data class CaptureTarget(
     val totalOptions:Int get() = alternatives.size
 }
 
+enum class AcquisitionKind {
+    REGIONAL_CAPTURE,
+    SPECIAL_OR_TRANSFER
+}
+
+data class GameRouteStep(
+    val game:String,
+    val source:String?,
+    val region:String?,
+    val targetIds:List<Int>
+){
+    val count:Int get() = targetIds.size
+}
+
+data class NextCollectionAction(
+    val title:String,
+    val subtitle:String,
+    val game:String?,
+    val source:String?,
+    val targetIds:List<Int>
+)
+
 object CollectionAdvisor {
     private val availability=ConcurrentHashMap<Int,MutableList<AcquisitionOption>>()
     @Volatile private var warmed=false
@@ -77,6 +99,84 @@ object CollectionAdvisor {
             )
             .take(limit)
             .toList()
+
+    fun acquisitionKind(pokemonId:Int):AcquisitionKind =
+        if(cachedOptions(pokemonId).isNotEmpty()) AcquisitionKind.REGIONAL_CAPTURE
+        else AcquisitionKind.SPECIAL_OR_TRANSFER
+
+    fun acquisitionLabel(pokemonId:Int):String =
+        when(acquisitionKind(pokemonId)){
+            AcquisitionKind.REGIONAL_CAPTURE -> "Captura/registro regional disponível na sua base"
+            AcquisitionKind.SPECIAL_OR_TRANSFER -> "Sem entrada regional na sua base: verificar evolução, troca, HOME, evento ou método especial"
+        }
+
+    fun gameRoutePlan(pokemonIds:List<Int>):List<GameRouteStep>{
+        val remaining=pokemonIds.asSequence()
+            .distinct()
+            .filter{it !in CollectionStore.capturedIds}
+            .toMutableSet()
+        val steps=mutableListOf<GameRouteStep>()
+        while(remaining.isNotEmpty()){
+            val gameCoverage=mutableMapOf<String,MutableList<Pair<Int,AcquisitionOption>>>()
+            remaining.forEach{id->
+                cachedOptions(id).forEach{option->
+                    gameCoverage.getOrPut(option.game){mutableListOf()}.add(id to option)
+                }
+            }
+            val best=gameCoverage.maxByOrNull{(_,pairs)->pairs.map{it.first}.distinct().size} ?: break
+            val unique=best.value.distinctBy{it.first}
+            val ids=unique.map{it.first}.filter{it in remaining}
+            if(ids.isEmpty()) break
+            val preferred=unique.first().second
+            steps+=GameRouteStep(
+                game=best.key,
+                source=preferred.source,
+                region=preferred.region,
+                targetIds=ids.sorted()
+            )
+            remaining.removeAll(ids.toSet())
+        }
+        if(remaining.isNotEmpty()){
+            steps+=GameRouteStep(
+                game="Transferência / especial",
+                source=null,
+                region=null,
+                targetIds=remaining.sorted()
+            )
+        }
+        return steps
+    }
+
+    fun nextAction(pokemonIds:List<Int>):NextCollectionAction{
+        val route=gameRoutePlan(pokemonIds)
+        val first=route.firstOrNull()
+        if(first==null){
+            return NextCollectionAction(
+                title="Coleção em dia",
+                subtitle="Nenhuma espécie pendente foi encontrada.",
+                game=null,
+                source=null,
+                targetIds=emptyList()
+            )
+        }
+        return if(first.source!=null){
+            NextCollectionAction(
+                title="Jogue ${first.game}",
+                subtitle="Você pode avançar ${first.count} espécie(s) pendente(s) nesta etapa.",
+                game=first.game,
+                source=first.source,
+                targetIds=first.targetIds
+            )
+        }else{
+            NextCollectionAction(
+                title="Resolver espécies especiais",
+                subtitle="${first.count} espécie(s) exigem evolução, troca, HOME, evento ou outro método fora das Pokédex regionais carregadas.",
+                game=null,
+                source=null,
+                targetIds=first.targetIds
+            )
+        }
+    }
 
     fun recommendation(pokemonId:Int):String {
         val options=cachedOptions(pokemonId)
