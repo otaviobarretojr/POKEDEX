@@ -1,6 +1,7 @@
 package com.otaviobarreto.pokedex
 
 import android.net.Uri
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.os.Build
 import android.view.View
@@ -30,7 +31,18 @@ import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import com.otaviobarreto.pokedex.ui.*
 
 class MainActivity : ComponentActivity() {
+    private var mapOrientationLocked=false
+    private var previousMapOrientation=ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
     fun setMapFullscreen(enabled:Boolean){
+        if(enabled && !mapOrientationLocked){
+            previousMapOrientation=requestedOrientation
+            requestedOrientation=ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            mapOrientationLocked=true
+        }else if(!enabled && mapOrientationLocked){
+            requestedOrientation=previousMapOrientation
+            mapOrientationLocked=false
+        }
         if(Build.VERSION.SDK_INT>=30){
             window.insetsController?.let{controller->
                 if(enabled){
