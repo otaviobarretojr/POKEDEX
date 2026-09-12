@@ -72,10 +72,40 @@ object PokemonFormsService {
         return when{
             listOf("alola","galar","hisui","paldea").any{it in n} -> PokemonFormKind.REGIONAL
             "female" in n || "male" in n -> PokemonFormKind.GENDER
-            listOf("mega","gmax","gigantamax","primal").any{it in n} -> PokemonFormKind.BATTLE
-            listOf("totem","eternamax").any{it in n} -> PokemonFormKind.BATTLE
-            listOf("cap","cosplay","starter","battle bond").any{it in n} -> PokemonFormKind.SPECIAL
-            listOf("red striped","blue striped","white striped","dusk","midnight","school","solo","amped","low key","family of","three segment","two segment").any{it in n} -> PokemonFormKind.SPECIAL
+
+            // Temporary transformations: visible in details, but not required for Living Dex completion.
+            listOf(
+                "mega","gmax","gigantamax","primal","eternamax",
+                "busted","school","zen","blade","shield","complete",
+                "crowned","gulping","gorging","hero","hangry"
+            ).any{it in n} -> PokemonFormKind.BATTLE
+
+            // Persistent/collectible identity variants.
+            listOf(
+                "red striped","blue striped","white striped",
+                "midday","midnight","dusk",
+                "amped","low key",
+                "family of three","family of four",
+                "three segment","two segment",
+                "curly","droopy","stretchy",
+                "chest","roaming",
+                "artisan","counterfeit","antique","phony",
+                "teal mask","wellspring","hearthflame","cornerstone",
+                "terastal","stellar",
+                "male","female"
+            ).any{it in n} -> PokemonFormKind.SPECIAL
+
+            // Cosmetic collections that users may want to track independently.
+            listOf(
+                "cap","cosplay","partner","original","hoenn","sinnoh","unova","kalos","alola",
+                "world","fancy","pokeball","poke ball","garden","meadow","marine","archipelago",
+                "high plains","sandstorm","river","monsoon","savanna","sun","ocean","jungle",
+                "elegant","modern","polar","tundra","continental","icy snow",
+                "debutante","diamond","heart","kabuki","la reine","matron","dandy","star",
+                "lemon","matcha","mint","ruby","salted","ruby swirl","caramel swirl","rainbow swirl"
+            ).any{it in n} -> PokemonFormKind.COSMETIC
+
+            listOf("starter","battle bond","ash").any{it in n} -> PokemonFormKind.SPECIAL
             else -> PokemonFormKind.OTHER
         }
     }
