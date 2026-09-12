@@ -424,8 +424,8 @@ private fun QBVariantManager(
                     ){
                         items(available,key={it.pokemonId!!}){form->
                             val formId=form.pokemonId!!
-                            val normalOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,false)
-                            val shinyOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,true)
+                            val normalOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,form.name,false)
+                            val shinyOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,form.name,true)
                             Card(shape=RoundedCornerShape(18.dp)){
                                 Row(
                                     Modifier.fillMaxWidth().padding(10.dp),
