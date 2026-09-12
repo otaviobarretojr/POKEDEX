@@ -461,6 +461,8 @@ private fun JourneyStepCard(
         JourneyChallengeKind.DLC->Icons.Default.TravelExplore
         JourneyChallengeKind.EPILOGUE->Icons.Default.CatchingPokemon
     }
+    val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+    val national=PokedexDataStore.cachedNationalDex().orEmpty()
     val kindColor=when(step.kind){
         JourneyChallengeKind.GYM->MaterialTheme.colorScheme.primaryContainer
         JourneyChallengeKind.TITAN->MaterialTheme.colorScheme.secondaryContainer
@@ -576,6 +578,29 @@ private fun JourneyStepCard(
                     }
                 }
 
+                detail?.opponents?.takeIf{it.isNotEmpty()}?.let{members->
+                    HorizontalDivider(Modifier.padding(top=10.dp,bottom=8.dp))
+                    Text(
+                        if(step.kind==JourneyChallengeKind.TITAN)"ALVO" else "EQUIPE",
+                        style=MaterialTheme.typography.labelSmall,
+                        fontWeight=FontWeight.Black,
+                        color=MaterialTheme.colorScheme.primary
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().padding(top=7.dp).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                    ){
+                        members.take(6).forEach{member->
+                            val pokemonId=journeyOpponentPokemonId(member.name,national)
+                            JourneyOpponentMiniCard(
+                                name=member.name,
+                                level=member.level,
+                                pokemonId=pokemonId
+                            )
+                        }
+                    }
+                }
+
                 Row(
                     Modifier.fillMaxWidth().padding(top=10.dp),
                     verticalAlignment=Alignment.CenterVertically
@@ -626,6 +651,84 @@ private fun JourneyInfoChip(
 }
 
 
+
+@Composable
+private fun JourneyOpponentMiniCard(
+    name:String,
+    level:String,
+    pokemonId:Int?
+){
+    Surface(
+        shape=RoundedCornerShape(14.dp),
+        color=MaterialTheme.colorScheme.surface,
+        tonalElevation=1.dp,
+        modifier=Modifier.width(86.dp)
+    ){
+        Column(
+            Modifier.padding(7.dp),
+            horizontalAlignment=Alignment.CenterHorizontally
+        ){
+            Surface(
+                shape=RoundedCornerShape(12.dp),
+                color=MaterialTheme.colorScheme.surfaceContainer,
+                modifier=Modifier.size(58.dp)
+            ){
+                if(pokemonId!=null){
+                    PokemonArtwork(
+                        model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
+                        contentDescription=name,
+                        modifier=Modifier.fillMaxSize().padding(4.dp),
+                        pokemonId=pokemonId
+                    )
+                }else{
+                    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                        Icon(Icons.Default.CatchingPokemon,null,Modifier.size(24.dp))
+                    }
+                }
+            }
+            Text(
+                name,
+                style=MaterialTheme.typography.labelSmall,
+                fontWeight=FontWeight.Bold,
+                maxLines=1,
+                overflow=TextOverflow.Ellipsis,
+                modifier=Modifier.padding(top=5.dp)
+            )
+            Text(level,style=MaterialTheme.typography.labelSmall,maxLines=1)
+        }
+    }
+}
+
+private fun journeyOpponentPokemonId(
+    rawName:String,
+    national:List<NationalDexEntry>
+):Int?{
+    val aliases=mapOf(
+        "Segin Starmobile" to 966,
+        "Schedar Starmobile" to 966,
+        "Navi Starmobile" to 966,
+        "Ruchbah Starmobile" to 966,
+        "Caph Starmobile" to 966,
+        "Great Tusk" to 984,
+        "Iron Treads" to 990,
+        "Dondozo" to 977,
+        "Tatsugiri" to 978,
+        "Okidogi" to 1014,
+        "Munkidori" to 1015,
+        "Fezandipiti" to 1016,
+        "Ogerpon" to 1017,
+        "Terapagos" to 1024,
+        "Pecharunt" to 1025,
+        "Bloodmoon Ursaluna" to 901
+    )
+    aliases[rawName]?.let{return it}
+    val simple=rawName
+        .substringBefore(" / ")
+        .substringBefore(" & ")
+        .substringBefore(" · ")
+        .trim()
+    return national.firstOrNull{it.name.equals(simple,true)}?.id
+}
 
 private fun journeySourceForStep(game:AppGame,step:JourneyStep):String?{
     val preferred=AppStatePreferences.activeRegionForGame(game.label)
@@ -732,16 +835,39 @@ private fun JourneyObjectiveDetailScreen(
         detail?.let{info->
             item{JourneyDetailSectionTitle(Icons.Default.Groups,"Equipe / adversários")}
             items(info.opponents){member->
-                Card(shape=RoundedCornerShape(18.dp)){
-                    Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
-                        Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.secondaryContainer){
-                            Icon(Icons.Default.CatchingPokemon,null,Modifier.padding(10.dp))
+                val pokemonId=journeyOpponentPokemonId(member.name,national)
+                Card(
+                    Modifier.fillMaxWidth().then(
+                        if(pokemonId!=null) Modifier.clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))}
+                        else Modifier
+                    ),
+                    shape=RoundedCornerShape(18.dp)
+                ){
+                    Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                        Surface(
+                            shape=RoundedCornerShape(14.dp),
+                            color=MaterialTheme.colorScheme.secondaryContainer,
+                            modifier=Modifier.size(72.dp)
+                        ){
+                            if(pokemonId!=null){
+                                PokemonArtwork(
+                                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
+                                    contentDescription=member.name,
+                                    modifier=Modifier.fillMaxSize().padding(6.dp),
+                                    pokemonId=pokemonId
+                                )
+                            }else{
+                                Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                                    Icon(Icons.Default.CatchingPokemon,null,Modifier.size(30.dp))
+                                }
+                            }
                         }
-                        Column(Modifier.weight(1f).padding(start=10.dp)){
-                            Text(member.name,fontWeight=FontWeight.Bold)
-                            if(member.detail.isNotBlank())Text(member.detail,style=MaterialTheme.typography.bodySmall)
+                        Column(Modifier.weight(1f).padding(start=12.dp)){
+                            Text(member.name,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                            Text(member.level,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)
+                            if(member.detail.isNotBlank())Text(member.detail,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=3.dp))
                         }
-                        Text(member.level,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelMedium)
+                        if(pokemonId!=null)Icon(Icons.Default.ChevronRight,null)
                     }
                 }
             }
