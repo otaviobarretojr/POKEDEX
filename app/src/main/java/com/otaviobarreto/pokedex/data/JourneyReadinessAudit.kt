@@ -45,7 +45,6 @@ object JourneyReadinessAudit {
             buildList {
                 addAll(JourneyVisualAssetCatalog.allUrls())
                 addAll(JourneyTypeIconCatalog.allUrls())
-                JourneyMapCatalog.backgroundUrl(gameLabel)?.let(::add)
             }
         } else emptyList()
         return (covers + heroes + scarletExtras).distinct()
