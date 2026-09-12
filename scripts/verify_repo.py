@@ -60,8 +60,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "18401" not in workflow or "18.4.1" not in workflow:
-    violations.append("CI v18.4.1 version validation missing")
+if "18402" not in workflow or "18.4.2" not in workflow:
+    violations.append("CI v18.4.2 version validation missing")
 
 if violations:
     print("Source verification failed:")
@@ -401,21 +401,17 @@ if violations:
 
 # v6.5.4-v6.7.0 Complete Journey guards
 prep = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyPreparationCatalog.kt").read_text(encoding="utf-8")
-map_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
 dynamic_team = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyDynamicTeamCatalog.kt").read_text(encoding="utf-8")
 journey = journey_source
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 
-for required in ("OBJETIVO ATUAL", "Preparação recomendada", "Pokémon úteis agora", "Mapa oficial · Jornada", "JourneyMapScreen"):
+for required in ("OBJETIVO ATUAL", "Preparação recomendada", "Pokémon úteis agora"):
     if required not in journey:
         violations.append(f"Complete Journey UI missing {required}")
 for required in ("sv-01", "sv-18", "recommendedLevel", "pokemonIds", "items"):
     if required not in prep:
         violations.append(f"Journey preparation catalog missing {required}")
-for required in ("JourneyMapPoint", "sv-01", "sv-18"):
-    if required not in map_catalog:
-        violations.append(f"Journey map catalog missing {required}")
 for required in ("adjustedSlots", "CollectionStore.capturedIds", "adjustSlots"):
     if required not in dynamic_team:
         violations.append(f"Dynamic Journey team missing {required}")
@@ -501,56 +497,15 @@ if violations:
 
 # Compatibility guard — Journey visual audit
 journey_visual_catalog=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
-journey_map=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
 journey_ui=journey_source
 for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/ja/img_01.jpg","230112_07/img_01.jpg"):
     if required not in journey_visual_catalog:
         violations.append(f"Validated official Journey artwork missing {required}")
-if "embeddedAsset" not in journey_map or "maps/paldea_journey_map" not in journey_map:
-    violations.append("Embedded Paldea map asset wiring missing")
-for required in ("onMapFullscreenChange", "FullscreenExit", "clampPan", "focusStep", "mapTargetPulse", "JourneyMapBitmapCache"):
-    if required not in journey_ui and required not in main:
-        violations.append(f"v18.4 Journey map enhancement missing {required}")
-if "rememberEmbeddedJourneyMap" not in journey_ui or "contentDescription=\"Mapa oficial de Paldea\"" not in journey_ui:
-    violations.append("Embedded Paldea map is not rendered in Journey")
-
-paldea_map_parts = []
-for index in range(17):
-    part = root / f"app/src/main/assets/maps/paldea_journey_map_{index:02d}.b64"
-    if not part.exists():
-        violations.append(f"Embedded Paldea map chunk missing {index:02d}")
-    else:
-        paldea_map_parts.append(part.read_text(encoding="utf-8").strip())
-if len(paldea_map_parts) == 17:
-    try:
-        paldea_map_bytes = base64.b64decode("".join(paldea_map_parts), validate=True)
-        if not (paldea_map_bytes.startswith(b"RIFF") and paldea_map_bytes[8:12] == b"WEBP"):
-            violations.append("Embedded Paldea map is not a valid WebP")
-        if len(paldea_map_bytes) < 50000:
-            violations.append("Embedded Paldea map unexpectedly small")
-    except Exception as exc:
-        violations.append(f"Embedded Paldea map base64 invalid: {exc}")
 type_icons=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTypeIconCatalog.kt").read_text(encoding="utf-8")
 if "generation-ix/scarlet-violet" not in type_icons or "JourneyTypeIconCatalog" not in journey_ui:
     violations.append("Scarlet/Violet type icons are not wired into Journey")
 if not (root/"scripts/audit_journey_visuals.py").exists():
     violations.append("Journey visual URL audit script missing")
-
-if violations:
-    print("Source verification failed:")
-    for item in violations:
-        print(" -", item)
-    sys.exit(1)
-
-
-# Compatibility guard — immersive Paldea map
-journey_ui_v610=journey_source
-for required in ("detectTransformGestures","ContentScale.FillBounds","JourneyMapControl","PRÓXIMO OBJETIVO","Ver objetivo","Icons.Default.MyLocation"):
-    if required not in journey_ui_v610:
-        violations.append(f"Immersive Journey map missing {required}")
-for obsolete in ("● Concluído   ● Próximo   ○ Pendente","Mapa oficial de Paldea com os 18 objetivos principais posicionados por região. Toque em um ponto para abrir o objetivo."):
-    if obsolete in journey_ui_v610:
-        violations.append(f"Legacy map UI still present: {obsolete}")
 
 if violations:
     print("Source verification failed:")
@@ -954,7 +909,8 @@ local_v1820 = 'versionName = "18.2.0"' in local_gradle and "versionCode = 18200"
 local_v1830 = 'versionName = "18.3.0"' in local_gradle and "versionCode = 18300" in local_gradle
 local_v1840 = 'versionName = "18.4.0"' in local_gradle and "versionCode = 18400" in local_gradle
 local_v1841 = 'versionName = "18.4.1"' in local_gradle and "versionCode = 18401" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841):
+local_v1842 = 'versionName = "18.4.2"' in local_gradle and "versionCode = 18402" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842):
     violations.append("Local build version is not aligned with supported v16/v17/v18 releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1094,7 +1050,6 @@ else:
         "referenceCatalogUrls",
         "JourneyVisualAssetCatalog.allUrls",
         "JourneyTypeIconCatalog.allUrls",
-        "JourneyMapCatalog.backgroundUrl",
     ):
         if required not in readiness_source:
             violations.append(f"v6.31 Journey readiness missing {required}")
