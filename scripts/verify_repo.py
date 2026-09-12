@@ -1371,9 +1371,9 @@ for required in ("CollectionAdvisor.warmAllGames", "Progresso por geração", "C
         violations.append(f"v13 Central advisor missing {required}")
 
 boxes_v13 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ('"Shiny"', '"Ambos"', '"Com formas"'):
+for required in ('"Normal"', '"Shiny"', '"Formas"'):
     if required not in boxes_v13:
-        violations.append(f"v13 Box variant filter missing {required}")
+        violations.append(f"v13/v18 Box variant filter missing {required}")
 
 forms_v13 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
 for required in ("COSMETIC", "countsForLivingDex", "family of three", "three segment", "teal mask"):
