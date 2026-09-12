@@ -60,7 +60,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
 if "10501" not in workflow or "10.5.1" not in workflow:
-    violations.append("CI v10.5.1 version stamping missing")
+    violations.append("CI v11.0.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -834,7 +834,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v10.5.1",
+        "v11.0.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -915,8 +915,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "10.5.1"' not in local_gradle or "versionCode = 10501" not in local_gradle:
-    violations.append("Local build version is not aligned with v10.5.1")
+if 'versionName = "11.0.0"' not in local_gradle or "versionCode = 11000" not in local_gradle:
+    violations.append("Local build version is not aligned with v11.0.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1261,6 +1261,33 @@ for special_id in (
 
 if "getJSONObject(0)?.let(::evolutionRequirement)" in pokeapi_v105:
     violations.append("Evolution parser must not keep only the first evolution_details entry")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v11 definitive evolution/forms/detail guards
+forms_v11 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
+for required in ("PokemonFormKind", "REGIONAL", "GENDER", "BATTLE", "SPECIAL", "fun collectible", "classify("):
+    if required not in forms_v11:
+        violations.append(f"v11 forms catalog missing {required}")
+
+detail_v11 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
+for required in ("PokemonFormsSummaryCard", "Formas e Shiny", "VariantCollectionStore.preferred", "preferredVariant?.artworkUrl"):
+    if required not in detail_v11:
+        violations.append(f"v11 detail forms integration missing {required}")
+
+boxes_v11 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+if "PokemonFormsService.collectible" not in boxes_v11:
+    violations.append("v11 Box does not use normalized collectible forms")
+
+pokeapi_v11 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokeApiService.kt").read_text(encoding="utf-8")
+for required in ('925 to', '982 to', '1019 to', "mergeEvolutionRequirements", "specialEvolutionRequirements"):
+    if required not in pokeapi_v11:
+        violations.append(f"v11 evolution curation missing {required}")
 
 if violations:
     print("Source verification failed:")
