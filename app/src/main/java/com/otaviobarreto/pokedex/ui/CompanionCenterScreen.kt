@@ -178,6 +178,35 @@ fun CompanionCenterScreen(
         }
 
         item{
+            SectionTitle("Living Dex")
+            Card(shape=RoundedCornerShape(20.dp)){
+                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Column(Modifier.weight(1f)){
+                            Text(
+                                insights.totalCaptured.toString()+" / "+insights.nationalDexTotal,
+                                style=MaterialTheme.typography.headlineSmall,
+                                fontWeight=FontWeight.Black
+                            )
+                            Text("Pokémon únicos registrados",color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text(
+                            (insights.livingDexRatio*100).toInt().toString()+"%",
+                            style=MaterialTheme.typography.titleLarge,
+                            fontWeight=FontWeight.Black,
+                            color=MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress={insights.livingDexRatio},
+                        modifier=Modifier.fillMaxWidth().padding(top=10.dp).height(8.dp),
+                        strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                    )
+                }
+            }
+        }
+
+        item{
             SectionTitle("Sua coleção")
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                 InsightCard("Capturados",insights.totalCaptured.toString(),Modifier.weight(1f))
@@ -227,9 +256,52 @@ fun CompanionCenterScreen(
         }
 
         item{
+            SectionTitle("Offline e desempenho")
+            val cache=PokedexDataStore.cacheStats()
+            Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                AppGameCatalog.adventureGames.forEach{game->
+                    val status=OfflineGamePackManager.status(game.label)
+                    Card(shape=RoundedCornerShape(18.dp)){
+                        Row(
+                            Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment=Alignment.CenterVertically
+                        ){
+                            Icon(
+                                if(status.verified) Icons.Default.CloudDone else Icons.Default.CloudDownload,
+                                null,
+                                tint=if(status.verified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Column(Modifier.weight(1f).padding(start=10.dp)){
+                                Text(game.label,fontWeight=FontWeight.Bold)
+                                Text(
+                                    if(status.verified) "Pacote offline pronto · "+status.pokemonCount+" Pokémon"
+                                    else "Pacote offline não verificado",
+                                    style=MaterialTheme.typography.bodySmall,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+                Card(shape=RoundedCornerShape(18.dp)){
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Text("Cache desta sessão",fontWeight=FontWeight.Bold)
+                        Text(
+                            cache.total.toString()+" entradas · Pokémon "+cache.pokemon+
+                                " · espécies "+cache.species+
+                                " · evoluções "+cache.evolutions,
+                            style=MaterialTheme.typography.bodySmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        item{
             SectionTitle("Backup")
             Text(
-                "Salve toda a coleção, Jornada, contexto atual e atividade recente. Backups antigos da v8 continuam compatíveis.",
+                "Salve toda a coleção, Jornada, contexto atual e atividade recente. Backups antigos da v8 e v9 continuam compatíveis; a v10 também salva seus times.",
                 style=MaterialTheme.typography.bodyMedium,
                 color=MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -14,6 +14,8 @@ data class CollectionInsights(
     val contextualRegistrations: Int,
     val duplicates: Int,
     val unboxed: Int,
+    val nationalDexTotal: Int,
+    val livingDexRatio: Float,
     val byGame: List<GameCollectionProgress>
 )
 
@@ -36,6 +38,8 @@ object CollectionInsightsService {
             contextualRegistrations = contextual.values.sumOf { it.size },
             duplicates = CollectionStore.duplicateIds().size,
             unboxed = CollectionStore.unboxedCapturedIds().size,
+            nationalDexTotal = PokeApiService.MAX_NATIONAL_DEX_ID,
+            livingDexRatio = (CollectionStore.capturedIds.size.toFloat() / PokeApiService.MAX_NATIONAL_DEX_ID.coerceAtLeast(1)).coerceIn(0f,1f),
             byGame = byGame
         )
     }

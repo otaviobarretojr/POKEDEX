@@ -16,7 +16,7 @@ object PokedexDataStore {
     private val evolutionCache = ConcurrentHashMap<String, List<PokeApiService.EvolutionStage>>()
     private val encounterCache = ConcurrentHashMap<Int, List<PokeApiService.EncounterLocation>>()
     private val typeCache = ConcurrentHashMap<String, Set<Int>>()
-    private val prefetchSemaphore = Semaphore(permits = 4)
+    private val prefetchSemaphore = Semaphore(permits = 6)
 
     fun nationalDex(): List<PokeApiService.DexIndexEntry> {
         nationalDexCache?.let { return it }
@@ -58,6 +58,24 @@ object PokedexDataStore {
     fun cachedSpecies(id: Int) = speciesCache[id]
     fun cachedEncounters(id: Int) = encounterCache[id]
     fun cachedEvolutions(url: String?) = url?.let { evolutionCache[it] }
+
+    data class CacheStats(
+        val pokemon:Int,
+        val species:Int,
+        val evolutions:Int,
+        val encounters:Int,
+        val types:Int
+    ) {
+        val total:Int get() = pokemon + species + evolutions + encounters + types
+    }
+
+    fun cacheStats(): CacheStats = CacheStats(
+        pokemon=pokemonCache.size,
+        species=speciesCache.size,
+        evolutions=evolutionCache.size,
+        encounters=encounterCache.size,
+        types=typeCache.size
+    )
 
     /**
      * Warm only the data required to render the detail screen hero + Info/Stats/Moves.

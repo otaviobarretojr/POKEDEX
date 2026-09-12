@@ -60,19 +60,19 @@ object StartupPreloader {
             addAll(RecentActivityStore.recentPokemon.take(12))
             addAll(OfflineGamePackManager.manifestIds(activeGame).take(18))
             addAll(gameDexIds.take(18))
-        }.distinct().take(32)
+        }.distinct().take(48)
 
         progress(.60f, "Aquecendo detalhes dos Pokémon")
         coroutineScope {
-            priorityIds.take(8).map { id ->
+            priorityIds.take(12).map { id ->
                 async { runCatching { PokedexDataStore.prefetchFullDetails(id) } }
             }.awaitAll()
 
-            priorityIds.drop(8).chunked(4).forEachIndexed { index, chunk ->
+            priorityIds.drop(12).chunked(6).forEachIndexed { index, chunk ->
                 chunk.map { id ->
                     async { runCatching { PokedexDataStore.prefetchCoreDetails(id) } }
                 }.awaitAll()
-                val groups = ((priorityIds.drop(8).size + 3) / 4).coerceAtLeast(1)
+                val groups = ((priorityIds.drop(12).size + 5) / 6).coerceAtLeast(1)
                 val local = .66f + ((index + 1f) / groups) * .17f
                 progress(local, "Aquecendo detalhes dos Pokémon")
             }
@@ -110,7 +110,7 @@ object StartupPreloader {
         }
 
         progress(.91f, "Preparando imagens")
-        priorityIds.take(20).forEachIndexed { index, id ->
+        priorityIds.take(28).forEachIndexed { index, id ->
             val sprite = PokedexDataStore.cachedPokemon(id)?.spriteUrl ?: return@forEachIndexed
             runCatching {
                 context.imageLoader.execute(
@@ -121,7 +121,7 @@ object StartupPreloader {
                         .build()
                 )
             }
-            val local = .91f + ((index + 1f) / priorityIds.take(20).size.coerceAtLeast(1)) * .08f
+            val local = .91f + ((index + 1f) / priorityIds.take(28).size.coerceAtLeast(1)) * .08f
             progress(local, "Preparando imagens")
         }
 

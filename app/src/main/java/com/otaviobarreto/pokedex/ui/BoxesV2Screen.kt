@@ -413,10 +413,31 @@ private fun QBSearch(
     open:(GameDexService.GameDexEntry)->Unit
 ){
     var q by remember{mutableStateOf("")}
+    var status by remember{mutableStateOf("Todos")}
+    var order by remember{mutableStateOf("Regional")}
     val key=q.trim().removePrefix("#")
-    val results=if(key.isBlank()) emptyList() else dex.filter{
-        it.name.contains(key,true)||it.gameNumber.toString()==key||it.nationalId.toString()==key
-    }.take(10)
+    val results=remember(key,status,order,dex,captured){
+        dex.asSequence()
+            .filter{
+                key.isBlank() || it.name.contains(key,true) ||
+                    it.gameNumber.toString()==key || it.nationalId.toString()==key
+            }
+            .filter{
+                when(status){
+                    "Capturados" -> it.nationalId in captured
+                    "Faltando" -> it.nationalId !in captured
+                    else -> true
+                }
+            }
+            .let{seq->
+                when(order){
+                    "Nome" -> seq.sortedBy{it.name.lowercase()}
+                    "Nacional" -> seq.sortedBy{it.nationalId}
+                    else -> seq.sortedBy{it.gameNumber}
+                }
+            }
+            .take(30).toList()
+    }
 
     AlertDialog(
         onDismissRequest=dismiss,
@@ -428,17 +449,35 @@ private fun QBSearch(
                 placeholder={Text("Nome ou número")}
             )
             Spacer(Modifier.height(8.dp))
-            results.forEach{pk->
-                Row(
-                    Modifier.fillMaxWidth().clickable{select(pk)}.padding(vertical=5.dp),
-                    verticalAlignment=Alignment.CenterVertically
-                ){
-                    AsyncImage(pk.spriteUrl,pk.name,Modifier.size(48.dp))
-                    Column(Modifier.weight(1f)){
-                        Text(pretty(pk.name),fontWeight=FontWeight.SemiBold)
-                        Text(if(pk.nationalId in captured)"Capturado" else "Faltando",fontSize=11.sp,color=QBmuted)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                listOf("Todos","Capturados","Faltando").forEach{option->
+                    FilterChip(selected=status==option,onClick={status=option},label={Text(option,fontSize=10.sp)})
+                }
+            }
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                listOf("Regional","Nacional","Nome").forEach{option->
+                    FilterChip(selected=order==option,onClick={order=option},label={Text(option,fontSize=10.sp)})
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(results.size.toString()+" resultado(s)",fontSize=10.sp,color=QBmuted)
+            LazyColumn(Modifier.heightIn(max=360.dp)){
+                items(results,key={it.nationalId}){pk->
+                    Row(
+                        Modifier.fillMaxWidth().clickable{select(pk)}.padding(vertical=5.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        AsyncImage(pk.spriteUrl,pk.name,Modifier.size(48.dp))
+                        Column(Modifier.weight(1f)){
+                            Text(pretty(pk.name),fontWeight=FontWeight.SemiBold)
+                            Text(
+                                (if(pk.nationalId in captured)"Capturado" else "Faltando")+
+                                    " · Regional #"+pk.gameNumber+" · Nacional #"+pk.nationalId,
+                                fontSize=10.sp,color=QBmuted
+                            )
+                        }
+                        TextButton({open(pk)}){Text("Ficha")}
                     }
-                    TextButton({open(pk)}){Text("Ficha")}
                 }
             }
         }},

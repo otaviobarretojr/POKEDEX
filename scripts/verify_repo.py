@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "9000" not in workflow or "9.0.0" not in workflow:
-    violations.append("CI v9.0.0 version stamping missing")
+if "10000" not in workflow or "10.0.0" not in workflow:
+    violations.append("CI v10.0.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v9.0.0",
+        "v10.0.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,8 +907,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "9.0.0"' not in local_gradle or "versionCode = 9000" not in local_gradle:
-    violations.append("Local build version is not aligned with v9.0.0")
+if 'versionName = "10.0.0"' not in local_gradle or "versionCode = 10000" not in local_gradle:
+    violations.append("Local build version is not aligned with v10.0.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1131,6 +1131,44 @@ for required in (
 main_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
 if "onOpenBoxes=::openBoxes" not in main_v9:
     violations.append("v9 Central navigation wiring missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v10 Living Dex / performance / intelligence guards
+store_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokedexDataStore.kt").read_text(encoding="utf-8")
+for required in ("Semaphore(permits = 6)", "data class CacheStats", "fun cacheStats()"):
+    if required not in store_v10:
+        violations.append(f"v10 performance store missing {required}")
+
+startup_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+for required in (".distinct().take(48)", "priorityIds.take(12)", "chunked(6)", "priorityIds.take(28)"):
+    if required not in startup_v10:
+        violations.append(f"v10 startup preload missing {required}")
+
+boxes_v10 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ('"Capturados"', '"Faltando"', '"Regional"', '"Nacional"', '"Nome"'):
+    if required not in boxes_v10:
+        violations.append(f"v10 Box filter/sort missing {required}")
+
+journey_v10 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in ("nextMissing", "Próximo alvo"):
+    if required not in journey_v10:
+        violations.append(f"v10 intelligent Journey missing {required}")
+
+backup_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
+for required in ("SCHEMA_VERSION = 3", '"teams"', "TeamStore::importSnapshot"):
+    if required not in backup_v10:
+        violations.append(f"v10 backup missing {required}")
+
+central_v10 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
+for required in ("Living Dex", "Offline e desempenho", "PokedexDataStore.cacheStats", "OfflineGamePackManager.status"):
+    if required not in central_v10:
+        violations.append(f"v10 Central missing {required}")
 
 if violations:
     print("Source verification failed:")

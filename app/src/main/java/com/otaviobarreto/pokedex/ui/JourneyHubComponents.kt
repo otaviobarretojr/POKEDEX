@@ -251,6 +251,16 @@ private fun JourneyGameReferenceCard(
                         }
                     }
 
+                    progress.nextMissing?.let { next ->
+                        Spacer(Modifier.height(5.dp))
+                        Text(
+                            text = "Próximo alvo #"+next.toString().padStart(4,'0'),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                     if (game.regions.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -515,6 +525,14 @@ internal fun JourneyGameMenu(
                                 boxProgress.captured.toString()+" de "+boxProgress.total+" Pokémon · "+(boxProgress.ratio*100).toInt()+"%",
                                 style=MaterialTheme.typography.bodySmall
                             )
+                            boxProgress.nextMissing?.let{next->
+                                Text(
+                                    "Próximo alvo: #"+next.toString().padStart(4,'0'),
+                                    style=MaterialTheme.typography.labelSmall,
+                                    color=MaterialTheme.colorScheme.primary,
+                                    fontWeight=FontWeight.Bold
+                                )
+                            }
                             LinearProgressIndicator(
                                 progress={boxProgress.ratio},
                                 modifier=Modifier.fillMaxWidth().padding(top=8.dp).height(7.dp),
@@ -549,7 +567,11 @@ internal fun JourneyGameMenu(
 }
 
 
-private data class JourneyCollectionProgress(val captured:Int=0,val total:Int=0){
+private data class JourneyCollectionProgress(
+    val captured:Int=0,
+    val total:Int=0,
+    val nextMissing:Int?=null
+){
     val ratio:Float get()=if(total<=0)0f else captured.toFloat()/total
 }
 
@@ -578,7 +600,11 @@ private fun rememberJourneyCollectionProgress(
         game.regions.flatMap { capturedBySource[it.source].orEmpty() }.toSet()
     }
     return remember(ids, registered) {
-        JourneyCollectionProgress(ids.count { it in registered }, ids.size)
+        JourneyCollectionProgress(
+            captured=ids.count { it in registered },
+            total=ids.size,
+            nextMissing=ids.sorted().firstOrNull { it !in registered }
+        )
     }
 }
 
@@ -599,7 +625,13 @@ private fun rememberJourneyCollectionProgress(
         game.regions.flatMap{capturedBySource[it.source].orEmpty()}.toSet()
     }
     return remember(ids,registered){
-        mutableStateOf(JourneyCollectionProgress(ids.count{it in registered},ids.size))
+        mutableStateOf(
+            JourneyCollectionProgress(
+                captured=ids.count{it in registered},
+                total=ids.size,
+                nextMissing=ids.sorted().firstOrNull{it !in registered}
+            )
+        )
     }
 }
 
