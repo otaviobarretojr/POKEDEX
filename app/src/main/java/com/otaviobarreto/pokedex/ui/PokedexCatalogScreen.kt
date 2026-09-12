@@ -44,17 +44,8 @@ private data class FormPreview(
             ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
 }
 
-private fun prettyFormLabel(baseName:String,rawName:String,shiny:Boolean):String{
-    val suffix=rawName.removePrefix(baseName).trim().ifBlank{"Padrão"}
-    val pretty=when{
-        suffix.equals("Alola",true) -> "Forma de Alola"
-        suffix.equals("Galar",true) -> "Forma de Galar"
-        suffix.equals("Hisui",true) -> "Forma de Hisui"
-        suffix.startsWith("Paldea",true) -> "Forma de "+suffix
-        else -> suffix
-    }
-    return pretty+(if(shiny)" · Shiny" else "")
-}
+private fun prettyFormLabel(baseName:String,rawName:String,shiny:Boolean):String =
+    PokemonFormPresentation.label(baseName,rawName,shiny)
 
 @Composable
 private fun ArtworkWithFallback(
@@ -305,14 +296,7 @@ private fun PokedexFormsDialog(
                                         overflow=TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        when(preview.kind){
-                                            PokemonFormKind.BATTLE -> "Forma de batalha"
-                                            PokemonFormKind.REGIONAL -> "Forma regional"
-                                            PokemonFormKind.COSMETIC -> "Forma cosmética"
-                                            PokemonFormKind.GENDER -> "Diferença de gênero"
-                                            PokemonFormKind.DEFAULT -> if(preview.shiny)"Shiny" else "Padrão"
-                                            else -> "Variante"
-                                        },
+                                        PokemonFormPresentation.behaviorLabel(preview.kind),
                                         style=MaterialTheme.typography.labelSmall,
                                         color=MaterialTheme.colorScheme.onSurfaceVariant
                                     )
