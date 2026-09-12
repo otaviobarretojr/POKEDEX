@@ -2,9 +2,9 @@
 
 Aplicativo Android pessoal para organizar a jornada nos jogos Pokémon, acompanhar a coleção por jogo/região e consultar a National Dex com formas e variantes.
 
-## Estado atual — v18.3.0
+## Estado atual — v18.4.0
 
-A v18.3.0 é a **Foundation Lock** da base v18. O foco desta versão é encerrar a fase de saneamento da infraestrutura antes das próximas atualizações funcionais e visuais.
+A v18.4.0 evolui a Jornada com o mapa interativo de Paldea: asset oficial incorporado ao APK, modo tela cheia imersivo, câmera limitada, foco animado no próximo objetivo, marcadores de progresso e cache local do bitmap, preservando a Foundation Lock da v18.3.0.
 
 ### Principais garantias
 
