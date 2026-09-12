@@ -33,13 +33,20 @@ internal fun JourneyGamePicker(onSelect:(String)->Unit){
     val captured=CollectionStore.contextualCapturedIds
     val dexIdsByGame by rememberJourneyDexIdsByGame()
     LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding=PaddingValues(16.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(
+            start = PokedexDesignTokens.Journey.ScreenHorizontalPadding,
+            end = PokedexDesignTokens.Journey.ScreenHorizontalPadding,
+            top = PokedexDesignTokens.Journey.ScreenTopPadding,
+            bottom = PokedexDesignTokens.Spacing.Xl
+        ),
+        verticalArrangement = Arrangement.spacedBy(PokedexDesignTokens.Journey.CardGap)
     ){
         item{
-            Text("JORNADA",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-            Text("Escolha um jogo para abrir sua central de rota, time e guias.",style=MaterialTheme.typography.bodyMedium)
+            JourneyHomeHeader()
+            Spacer(Modifier.height(PokedexDesignTokens.Journey.HeaderBottomPadding))
         }
         items(AppGameCatalog.adventureGames,key={it.label}){game->
             val progress = rememberJourneyCollectionProgress(
@@ -57,6 +64,68 @@ internal fun JourneyGamePicker(onSelect:(String)->Unit){
     }
 }
 
+
+
+@Composable
+private fun JourneyHomeHeader() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(PokedexDesignTokens.Journey.HeroRadius),
+        color = PokedexDesignTokens.Journey.HeroSurface
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 20.dp)
+        ) {
+            Box(
+                Modifier
+                    .size(112.dp)
+                    .align(Alignment.CenterEnd)
+                    .offset(x = 30.dp, y = (-22).dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(PokedexDesignTokens.Journey.HeroAccentSoft.copy(alpha = .62f))
+            )
+            Icon(
+                imageVector = Icons.Default.CatchingPokemon,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(74.dp)
+                    .align(Alignment.CenterEnd)
+                    .offset(x = 10.dp)
+                    .alpha(.12f),
+                tint = PokedexDesignTokens.Journey.HeroAccent
+            )
+            Column(Modifier.fillMaxWidth(.78f)) {
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = PokedexDesignTokens.Journey.HeroAccent.copy(alpha = .10f)
+                ) {
+                    Text(
+                        "MINHA AVENTURA",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = PokedexDesignTokens.Journey.HeroAccent
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Jornada",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    "Escolha seu jogo e continue exatamente de onde parou.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun JourneyGameReferenceCard(

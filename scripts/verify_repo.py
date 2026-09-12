@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.31.0"' not in workflow or "versionCode = 6310" not in workflow:
+if 'versionName = "7.0.0"' not in workflow or "versionCode = 7000" not in workflow:
     violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.31.0",
+        "v7.0.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,7 +907,7 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "6.31.0"' not in local_gradle or "versionCode = 6310" not in local_gradle:
+if 'versionName = "7.0.0"' not in local_gradle or "versionCode = 7000" not in local_gradle:
     violations.append("Local build version is not aligned with v6.21.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1076,6 +1076,24 @@ for required in (
 
 if not (root / "app/src/test/java/com/otaviobarreto/pokedex/data/JourneyReadinessAuditTest.kt").exists():
     violations.append("v6.31 Journey readiness regression tests missing")
+
+
+# v7.0.0 Journey visual foundation guards
+journey_v700 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in (
+    "JourneyHomeHeader",
+    "MINHA AVENTURA",
+    "continue exatamente de onde parou",
+    "PokedexDesignTokens.Journey.HeroSurface",
+    "PokedexDesignTokens.Journey.ScreenHorizontalPadding",
+):
+    if required not in journey_v700:
+        violations.append(f"v7 Journey visual foundation missing {required}")
+
+main_v700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for required in ("alwaysShowLabel=true", "indicatorColor=MaterialTheme.colorScheme.primaryContainer"):
+    if required not in main_v700:
+        violations.append(f"v7 navigation polish missing {required}")
 
 if violations:
     print("Source verification failed:")
