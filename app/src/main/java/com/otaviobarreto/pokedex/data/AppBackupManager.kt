@@ -3,7 +3,7 @@ package com.otaviobarreto.pokedex.data
 import org.json.JSONObject
 
 object AppBackupManager {
-    private const val SCHEMA_VERSION = 3
+    private const val SCHEMA_VERSION = 4
 
     fun exportJson(): String = JSONObject()
         .put("schemaVersion", SCHEMA_VERSION)
@@ -13,6 +13,7 @@ object AppBackupManager {
         .put("appState", AppStatePreferences.exportSnapshot())
         .put("recentActivity", RecentActivityStore.exportSnapshot())
         .put("teams", TeamStore.exportSnapshot())
+        .put("variants", VariantCollectionStore.exportSnapshot())
         .toString()
 
     fun importJson(raw: String): Boolean = runCatching {
@@ -33,6 +34,9 @@ object AppBackupManager {
         }
         if (schema >= 3) {
             root.optJSONArray("teams")?.let(TeamStore::importSnapshot)
+        }
+        if (schema >= 4) {
+            root.optJSONArray("variants")?.let(VariantCollectionStore::importSnapshot)
         }
         true
     }.getOrDefault(false)
