@@ -10,21 +10,24 @@ data class CollectionIntegrityReport(
 
 object CollectionIntegrityService {
     fun audit(): CollectionIntegrityReport {
-        val boxIds = CollectionStore.boxes.values.flatten().toSet()
-        val contextualIds = CollectionStore.contextualCapturedIds.values.flatten().toSet()
+        val boxIds = CollectionStore.boxes.values.flatten()
+        val contextualIds = CollectionStore.contextualCapturedIds.values.flatten()
         val variantPairs = VariantCollectionStore.ownedVariants
             .map { it.source to it.speciesId }
             .distinct()
 
-        val missingGlobal = (boxIds + contextualIds + variantPairs.map { it.second })
-            .filterNot(CollectionStore::isCaptured)
-            .toSet()
-
-        val missingContextual = variantPairs.filterNot { (source, id) ->
-            CollectionStore.isCapturedIn(source, id)
-        }
-
-        return CollectionIntegrityReport(missingGlobal, missingContextual)
+        return CollectionIntegrityReport(
+            missingGlobalOwnership = DataIntegrityRules.missingGlobalOwnership(
+                global = CollectionStore.capturedIds,
+                boxIds = boxIds,
+                contextualIds = contextualIds,
+                variantIds = variantPairs.map { it.second }
+            ),
+            missingContextualOwnership = DataIntegrityRules.missingContextualVariantOwnership(
+                contextual = CollectionStore.contextualCapturedIds,
+                variantPairs = variantPairs
+            )
+        )
     }
 
     fun repair(): CollectionIntegrityReport {
