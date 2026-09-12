@@ -53,8 +53,8 @@ data class MainDestination(val route:String,val label:String,val icon:ImageVecto
 private val mainDestinations=listOf(
  MainDestination("home","Jornada",Icons.Default.Map),
  MainDestination("pokedex","Pokédex",Icons.Default.MenuBook),
- MainDestination("central","Config.",Icons.Default.Settings),
- MainDestination("boxes","Boxes",Icons.Default.GridView)
+ MainDestination("boxes","Boxes",Icons.Default.GridView),
+ MainDestination("central","Config.",Icons.Default.Settings)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
