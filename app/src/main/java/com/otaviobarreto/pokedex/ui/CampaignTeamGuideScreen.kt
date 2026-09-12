@@ -128,14 +128,20 @@ fun CampaignTeamGuideScreen(
                             smart.focusStep?.let{step->
                                 Text("Foco atual: "+step.title+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=6.dp))
                             }
-                            if(smart.swaps.isNotEmpty()){
+                            if(smart.actions.isNotEmpty()){
                                 HorizontalDivider(Modifier.padding(vertical=10.dp))
                                 Text("AJUSTES RECOMENDADOS",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
-                                smart.swaps.forEach{swap->
-                                    val outName=swap.outPokemonId?.let{id->national.firstOrNull{it.id==id}?.name ?: "#"+id} ?: "Slot livre"
-                                    val inName=national.firstOrNull{it.id==swap.inPokemonId}?.name ?: "#"+swap.inPokemonId
-                                    Text("Sai: "+outName+"  →  Entra: "+inName,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
-                                    Text(swap.reason,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=2.dp))
+                                smart.actions.forEach{action->
+                                    val outName=action.fromPokemonId?.let{id->national.firstOrNull{it.id==id}?.name ?: "#"+id}
+                                    val inName=national.firstOrNull{it.id==action.toPokemonId}?.name ?: "#"+action.toPokemonId
+                                    val headline=when(action.type){
+                                        JourneyTeamActionType.EVOLVE -> "Evolua: "+(outName ?: "Inicial")+" → "+inName
+                                        JourneyTeamActionType.CATCH -> "Capture: "+inName
+                                        JourneyTeamActionType.SWAP -> "Troque: "+(outName ?: "slot")+" → "+inName
+                                        JourneyTeamActionType.KEEP -> "Mantenha: "+inName
+                                    }
+                                    Text(headline,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
+                                    Text(action.reason,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=2.dp))
                                 }
                             }
                         }
