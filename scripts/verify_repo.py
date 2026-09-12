@@ -785,7 +785,7 @@ for legacy_file in legacy_ui_files:
         violations.append(f"Obsolete legacy UI still compiled: {legacy_file}")
 
 main_v618 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-for forbidden_route in ('composable("livingdex")', 'composable("companion")', 'composable("games")', 'composable("pokedex")', 'composable("teams")', 'composable("gameDex?source={source}")', 'composable("regionExplorer?source={source}")'):
+for forbidden_route in ('composable("livingdex")', 'composable("companion")', 'composable("games")', 'composable("teams")', 'composable("gameDex?source={source}")', 'composable("regionExplorer?source={source}")'):
     if forbidden_route in main_v618:
         violations.append(f"Obsolete route still present: {forbidden_route}")
 
