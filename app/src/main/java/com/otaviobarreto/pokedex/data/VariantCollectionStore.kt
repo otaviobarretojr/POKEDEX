@@ -122,6 +122,7 @@ object VariantCollectionStore {
                         .put("formPokemonId",v.formPokemonId)
                         .put("formName",v.formName)
                         .put("shiny",v.shiny)
+                        .put("formKey",v.formKey)
                         .put("normalArtworkUrl",v.normalArtworkUrl)
                         .put("shinyArtworkUrl",v.shinyArtworkUrl)
                 )
@@ -143,6 +144,8 @@ object VariantCollectionStore {
                         formPokemonId=form,
                         formName=o.optString("formName","Forma"),
                         shiny=o.optBoolean("shiny",false),
+                        formKey=o.optString("formKey").takeIf{it.isNotBlank()}
+                            ?: o.optString("formName","Forma").lowercase(),
                         normalArtworkUrl=o.optString("normalArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
                         shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"}
                     )
@@ -177,6 +180,8 @@ object VariantCollectionStore {
                         formPokemonId=form,
                         formName=o.optString("formName","Forma"),
                         shiny=o.optBoolean("shiny",false),
+                        formKey=o.optString("formKey").takeIf{it.isNotBlank()}
+                            ?: o.optString("formName","Forma").lowercase(),
                         normalArtworkUrl=o.optString("normalArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
                         shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"}
                     )
