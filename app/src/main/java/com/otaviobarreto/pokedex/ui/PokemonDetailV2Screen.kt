@@ -145,7 +145,7 @@ fun PokemonDetailV2Screen(
         HeroCard(b,context,accent,saveLocation,back)
         DetailTabs(tab,setTab)
         when(tab){
-            0->InfoTab(b,accent,context,openRef)
+            0->InfoTab(b,accent,context,source,openRef)
             1->V2Stats(b.pokemon.stats)
             2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
             3->V2Moves(b.pokemon.moves,context,openRef)
@@ -201,6 +201,11 @@ private fun resolveSaveLocation(
 
 @Composable private fun HeroCard(b:DetailV2Bundle,context:GameContext?,accent:Color,saveLocation:DetailSaveLocation,back:()->Unit){
     val inCollection=saveLocation.saved
+    val preferredVariant=remember(b.pokemon.id,context,VariantCollectionStore.ownedVariants){
+        val source=context?.source
+        if(source.isNullOrBlank()) null else VariantCollectionStore.preferred(source,b.pokemon.id)
+    }
+    val heroImage=preferredVariant?.artworkUrl ?: b.pokemon.spriteUrl
     Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(accent.copy(alpha=.16f),Color(0xFFF8FBFF),Color.White)))){
         repeat(5){i->Box(Modifier.offset(x=(45+i*62).dp,y=(42+i*48).dp).size((30+i*6).dp).alpha(.08f).background(accent,CircleShape))}
         Row(Modifier.align(Alignment.TopStart).padding(start=16.dp,top=14.dp),verticalAlignment=Alignment.CenterVertically){
@@ -222,7 +227,7 @@ private fun resolveSaveLocation(
             DetailMetric(Icons.Default.LocationOn,context?.regionLabel?:"Nacional")
         }
         Box(Modifier.align(Alignment.CenterEnd).padding(end=12.dp,top=62.dp).size(width=174.dp,height=214.dp),contentAlignment=Alignment.Center){
-            PokemonArtwork(model=b.pokemon.spriteUrl,contentDescription=b.pokemon.name,modifier=Modifier.fillMaxSize().padding(horizontal=10.dp,vertical=12.dp),pokemonId=b.pokemon.id)
+            PokemonArtwork(model=heroImage,contentDescription=b.pokemon.name,modifier=Modifier.fillMaxSize().padding(horizontal=10.dp,vertical=12.dp),pokemonId=preferredVariant?.formPokemonId ?: b.pokemon.id)
         }
     }
 }
@@ -231,7 +236,77 @@ private fun gameFromBox(box:String):String=when{box.contains("Scarlet / Violet",
 private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->box.substringAfter("· ").trim();Regex("Box \\d+",RegexOption.IGNORE_CASE).containsMatchIn(box)->Regex("Box \\d+",RegexOption.IGNORE_CASE).find(box)?.value?:box;else->box}
 @Composable private fun DetailMetric(icon:androidx.compose.ui.graphics.vector.ImageVector,text:String){Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(vertical=4.dp)){Icon(icon,null,tint=Color(0xFF243477),modifier=Modifier.size(19.dp));Spacer(Modifier.width(9.dp));Text(text,fontWeight=FontWeight.SemiBold,color=Color(0xFF2F3650),maxLines=1,overflow=TextOverflow.Ellipsis)}}
 @Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit){val tabs=listOf("Info" to Icons.Default.Info,"Stats" to Icons.Default.BarChart,"Evolução" to Icons.Default.AccountTree,"Golpes" to Icons.Default.AutoAwesome,"Localização" to Icons.Default.LocationOn);Surface(color=Color.White,shadowElevation=4.dp){Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)){tabs.forEachIndexed{i,(label,icon)->val active=i==selected;Surface(Modifier.weight(1f).clickable{setSelected(i)},shape=RoundedCornerShape(24.dp),color=if(active)Color(0xFF5B55E7)else Color.Transparent){Column(Modifier.padding(vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(icon,null,tint=if(active)Color.White else Color(0xFF243477),modifier=Modifier.size(18.dp));Text(label,fontSize=10.sp,fontWeight=FontWeight.Bold,color=if(active)Color.White else Color(0xFF1E2A55),maxLines=1)}}}}}}
-@Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,openRef:((String,String)->Unit)?){LazyColumn(Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){if(context!=null)item{SectionCard("Contexto do jogo",Icons.Default.SportsEsports){Column(verticalArrangement=Arrangement.spacedBy(6.dp)){Text(context.label,fontWeight=FontWeight.Bold);Text("Região: " + context.regionLabel,style=MaterialTheme.typography.bodyMedium);Text("Golpes e localizações são filtrados para este jogo.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))}}};item{SectionCard("Informações gerais",Icons.Default.Info){Column(verticalArrangement=Arrangement.spacedBy(8.dp)){Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Taxa de captura",b.species.captureRate.toString(),Modifier.weight(1f));InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f));InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))};Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Habitat",b.species.habitat?:"—",Modifier.weight(1f));InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.weight(2f))}}}};item{TypeMatchupCard(b.pokemon.types)};item{SectionCard("Habilidades",Icons.Default.Bolt){Column(verticalArrangement=Arrangement.spacedBy(7.dp)){b.pokemon.abilities.forEach{ability->Surface(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("ability",ability)}else Modifier),shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.08f)){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){Text(ability,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}}}}};item{Spacer(Modifier.height(12.dp))}}}
+@Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,source:String?,openRef:((String,String)->Unit)?){LazyColumn(Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){if(context!=null)item{SectionCard("Contexto do jogo",Icons.Default.SportsEsports){Column(verticalArrangement=Arrangement.spacedBy(6.dp)){Text(context.label,fontWeight=FontWeight.Bold);Text("Região: " + context.regionLabel,style=MaterialTheme.typography.bodyMedium);Text("Golpes e localizações são filtrados para este jogo.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))}}};item{SectionCard("Informações gerais",Icons.Default.Info){Column(verticalArrangement=Arrangement.spacedBy(8.dp)){Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Taxa de captura",b.species.captureRate.toString(),Modifier.weight(1f));InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f));InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))};Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Habitat",b.species.habitat?:"—",Modifier.weight(1f));InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.weight(2f))}}}};item{TypeMatchupCard(b.pokemon.types)};item{PokemonFormsSummaryCard(b.pokemon.id,source,accent)};item{SectionCard("Habilidades",Icons.Default.Bolt){Column(verticalArrangement=Arrangement.spacedBy(7.dp)){b.pokemon.abilities.forEach{ability->Surface(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("ability",ability)}else Modifier),shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.08f)){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){Text(ability,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}}}}};item{Spacer(Modifier.height(12.dp))}}}
+@Composable
+private fun PokemonFormsSummaryCard(
+    pokemonId:Int,
+    source:String?,
+    accent:Color
+){
+    var forms by remember(pokemonId){ mutableStateOf<List<PokemonFormVariant>?>(PokemonFormsService.cached(pokemonId)) }
+    LaunchedEffect(pokemonId){
+        if(forms==null){
+            forms=runCatching{
+                withContext(Dispatchers.IO){PokemonFormsService.collectible(pokemonId)}
+            }.getOrDefault(emptyList())
+        }
+    }
+    val available=forms.orEmpty()
+    if(available.size<=1 && source.isNullOrBlank()) return
+
+    val owned=if(source.isNullOrBlank()) emptyList() else VariantCollectionStore.variantsFor(source,pokemonId)
+    SectionCard("Formas e Shiny",Icons.Default.AutoAwesome){
+        if(available.isEmpty()){
+            Text("Carregando formas…",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))
+        }else{
+            Text(
+                available.size.toString()+" forma(s) catalogada(s) · "+owned.count{it.shiny}+" shiny registrada(s)",
+                style=MaterialTheme.typography.bodySmall,
+                color=Color(0xFF667085)
+            )
+            LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                items(available,key={it.pokemonId ?: it.name}){form->
+                    val formId=form.pokemonId ?: pokemonId
+                    val normalOwned=owned.any{it.formPokemonId==formId && !it.shiny}
+                    val shinyOwned=owned.any{it.formPokemonId==formId && it.shiny}
+                    Surface(
+                        shape=RoundedCornerShape(16.dp),
+                        color=accent.copy(alpha=.08f)
+                    ){
+                        Column(
+                            Modifier.width(118.dp).padding(10.dp),
+                            horizontalAlignment=Alignment.CenterHorizontally
+                        ){
+                            PokemonArtwork(
+                                model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
+                                contentDescription=form.name,
+                                modifier=Modifier.size(68.dp),
+                                pokemonId=formId
+                            )
+                            Text(
+                                form.name,
+                                fontSize=10.sp,
+                                fontWeight=FontWeight.Bold,
+                                maxLines=2,
+                                overflow=TextOverflow.Ellipsis
+                            )
+                            Text(
+                                listOfNotNull(
+                                    if(normalOwned)"Normal" else null,
+                                    if(shinyOwned)"★ Shiny" else null
+                                ).joinToString(" · ").ifBlank{"Não registrado"},
+                                fontSize=9.sp,
+                                color=if(normalOwned||shinyOwned)accent else Color(0xFF7A8194),
+                                maxLines=1
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable private fun SectionCard(title:String,icon:androidx.compose.ui.graphics.vector.ImageVector,content:@Composable ColumnScope.()->Unit){Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=Color.White)){Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){Row(verticalAlignment=Alignment.CenterVertically){Icon(icon,null,tint=Color(0xFF263C8C));Spacer(Modifier.width(9.dp));Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)};content()}}}
 @Composable private fun InfoMini(label:String,value:String,modifier:Modifier){Surface(modifier,shape=RoundedCornerShape(14.dp),color=Color(0xFFF4F5FA)){Column(Modifier.padding(11.dp)){Text(label,fontSize=10.sp,color=Color(0xFF6F7890));Text(value,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)}}}
 @Composable private fun V2Stats(s:PokemonStats){val rows=listOf("HP" to s.hp,"Ataque" to s.attack,"Defesa" to s.defense,"Ataque Esp." to s.specialAttack,"Defesa Esp." to s.specialDefense,"Velocidade" to s.speed);LazyColumn(Modifier.fillMaxSize().padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){items(rows){(name,v)->Column{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(name,fontWeight=FontWeight.SemiBold);Text(v.toString())};LinearProgressIndicator(progress={(v/200f).coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=4.dp))}};item{HorizontalDivider();InfoMini("Total",rows.sumOf{it.second}.toString(),Modifier.fillMaxWidth())}}}
