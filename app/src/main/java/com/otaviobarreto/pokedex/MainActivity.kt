@@ -2,6 +2,10 @@ package com.otaviobarreto.pokedex
 
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
+import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -26,6 +30,32 @@ import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import com.otaviobarreto.pokedex.ui.*
 
 class MainActivity : ComponentActivity() {
+    fun setMapFullscreen(enabled:Boolean){
+        if(Build.VERSION.SDK_INT>=30){
+            window.insetsController?.let{controller->
+                if(enabled){
+                    controller.hide(WindowInsets.Type.systemBars())
+                    controller.systemBarsBehavior=WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }else{
+                    controller.show(WindowInsets.Type.systemBars())
+                }
+            }
+        }else{
+            @Suppress("DEPRECATION")
+            run{
+                window.decorView.systemUiVisibility=if(enabled){
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                }else{
+                    View.SYSTEM_UI_FLAG_VISIBLE
+                }
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         HomeAudioManager.playBoot()
@@ -59,6 +89,12 @@ private val mainDestinations=listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun PokedexApp(){
+ val activity=androidx.compose.ui.platform.LocalContext.current as? MainActivity
+ var mapFullscreen by remember{mutableStateOf(false)}
+ DisposableEffect(mapFullscreen){
+  activity?.setMapFullscreen(mapFullscreen)
+  onDispose{if(mapFullscreen)activity?.setMapFullscreen(false)}
+ }
  val navController=rememberNavController();val backStackEntry by navController.currentBackStackEntryAsState();val currentRoute=backStackEntry?.destination?.route
  val isSecondaryScreen=currentRoute=="pokemon/{id}?source={source}"||currentRoute=="formDetail/{id}?name={name}&shiny={shiny}"||currentRoute=="location/{id}?source={source}"||currentRoute=="regionMap/{id}?source={source}"||currentRoute=="reference?kind={kind}&name={name}&source={source}"||currentRoute=="campaignGuide?game={game}&phase={phase}";val isMainDestination=currentRoute in mainDestinations.map{it.route};val useCompactOwnHeader=currentRoute=="boxes"
  fun openPokemon(id:Int,source:String?=null){RecentActivityStore.recordPokemon(id);navController.navigate(if(source.isNullOrBlank())"pokemon/"+id else "pokemon/"+id+"?source="+Uri.encode(source))}
@@ -79,7 +115,7 @@ private val mainDestinations=listOf(
  LaunchedEffect(currentRoute){
   currentRoute?.let(RecentActivityStore::recordRoute)
  }
- Scaffold(bottomBar={if(!isSecondaryScreen){
+ Scaffold(bottomBar={if(!isSecondaryScreen&&!mapFullscreen){
   Surface(tonalElevation=6.dp,shadowElevation=10.dp){
    NavigationBar(containerColor=MaterialTheme.colorScheme.surface){
     mainDestinations.forEach{d->
@@ -100,9 +136,9 @@ private val mainDestinations=listOf(
     }
    }
   }
- }},topBar={if(isMainDestination&&currentRoute!="home"&&!useCompactOwnHeader){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
+ }},topBar={if(isMainDestination&&currentRoute!="home"&&!useCompactOwnHeader&&!mapFullscreen){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
   NavHost(navController,"home",Modifier.padding(innerPadding)){
-   composable("home"){JourneyScreen(onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase->openCampaignGuide(game,phase)},onOpenBoxes=::openBoxes)}
+   composable("home"){JourneyScreen(onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase->openCampaignGuide(game,phase)},onOpenBoxes=::openBoxes,onMapFullscreenChange={mapFullscreen=it})}
    composable("campaignGuide?game={game}&phase={phase}",arguments=listOf(navArgument("game"){type=NavType.StringType;nullable=false},navArgument("phase"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val game=entry.arguments?.getString("game")?.let(Uri::decode);val phase=entry.arguments?.getString("phase")?.let(Uri::decode);CampaignTeamGuideScreen(onBackToMyTeams={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)},initialGame=game,initialPhase=phase)}
    composable("reference?kind={kind}&name={name}&source={source}",arguments=listOf(navArgument("kind"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("name"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val kind=entry.arguments?.getString("kind")?.let(Uri::decode);val name=entry.arguments?.getString("name")?.let(Uri::decode);val source=entry.arguments?.getString("source")?.let(Uri::decode);ReferenceHubScreen(onBack={navController.popBackStack()},initialKind=kind,initialName=name,source=source,onPokemonClick={id,pokemonSource->openPokemon(id,pokemonSource)})}
    composable("pokemon/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode);PokemonDetailV2Screen(id=id,source=source,onBack={navController.popBackStack()},onOpenLocation={openLocation(id,source)},onOpenReference={kind,name->openReference(kind,name,source)},onOpenPokemon={nextId->openPokemon(nextId,source)})}
