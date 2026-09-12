@@ -704,7 +704,7 @@ private fun JourneyOpponentMiniCard(
 
 private fun journeyOpponentPokemonId(
     rawName:String,
-    national:List<NationalDexEntry>
+    national:List<PokeApiService.DexIndexEntry>
 ):Int?{
     val aliases=mapOf(
         "Segin Starmobile" to 966,
