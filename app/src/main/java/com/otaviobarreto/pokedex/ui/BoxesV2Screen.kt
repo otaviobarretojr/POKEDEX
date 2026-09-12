@@ -428,7 +428,7 @@ private fun QBVariantManager(
                                                     )
                                                 },
                                                 label={Text("Normal",fontSize=10.sp)},
-                                                leadingIcon={if(normalOwned){{Icon(Icons.Default.Check,null,Modifier.size(14.dp))}}else null}
+                                                leadingIcon=if(normalOwned){{Icon(Icons.Default.Check,null,Modifier.size(14.dp))}}else null
                                             )
                                             FilterChip(
                                                 selected=shinyOwned,
@@ -438,7 +438,7 @@ private fun QBVariantManager(
                                                     )
                                                 },
                                                 label={Text("★ Shiny",fontSize=10.sp)},
-                                                leadingIcon={if(shinyOwned){{Icon(Icons.Default.AutoAwesome,null,Modifier.size(14.dp))}}else null}
+                                                leadingIcon=if(shinyOwned){{Icon(Icons.Default.AutoAwesome,null,Modifier.size(14.dp))}}else null
                                             )
                                         }
                                     }
