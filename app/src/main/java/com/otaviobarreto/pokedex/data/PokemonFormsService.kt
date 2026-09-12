@@ -12,7 +12,10 @@ data class PokemonFormVariant(
     val pokemonId: Int?,
     val isDefault: Boolean,
     val kind: PokemonFormKind = PokemonFormKind.OTHER
-)
+) {
+    val countsForLivingDex:Boolean
+        get() = kind != PokemonFormKind.BATTLE
+}
 
 object PokemonFormsService {
     private val cache = ConcurrentHashMap<Int, List<PokemonFormVariant>>()
@@ -59,6 +62,9 @@ object PokemonFormsService {
         (cached(id) ?: load(id))
             .distinctBy{it.pokemonId}
             .sortedWith(compareByDescending<PokemonFormVariant>{it.isDefault}.thenBy{it.name})
+
+    fun livingDexForms(id:Int):List<PokemonFormVariant> =
+        collectible(id).filter{it.countsForLivingDex}
 
     private fun classify(name:String,isDefault:Boolean):PokemonFormKind{
         if(isDefault) return PokemonFormKind.DEFAULT
