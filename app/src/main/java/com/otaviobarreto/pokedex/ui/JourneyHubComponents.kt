@@ -23,6 +23,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
@@ -257,7 +258,12 @@ private fun JourneyGameReferenceCard(
                             Text(
                                 text = journeyDone.toString() + "/" + routeSteps.size,
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .padding(start = 2.dp, end = 6.dp)
+                                    .widthIn(min = 38.dp),
+                                textAlign = TextAlign.End
                             )
                         }
                     }
