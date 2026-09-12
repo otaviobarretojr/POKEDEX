@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 10
+    private const val PACK_VERSION = 11
     private var context: Context? = null
 
     data class PackStatus(
@@ -189,13 +189,13 @@ object OfflineGamePackManager {
                         val pokemonJob = async { PokedexDataStore.pokemon(id) }
                         val speciesJob = async { PokedexDataStore.species(id) }
                         val encounterJob = async { PokedexDataStore.encounters(id) }
-                        val formsJob = async { runCatching { PokemonFormsService.load(id) } }
+                        val formsJob = async { runCatching { PokemonFormsService.collectible(id) } }
                         val pokemon = pokemonJob.await()
                         val species = speciesJob.await()
                         val evolutionUrl = species.evolutionChainUrl
                         evolutionUrl?.let { PokedexDataStore.evolutions(it) }
                         encounterJob.await()
-                        formsJob.await()
+                        val forms = formsJob.await().getOrDefault(emptyList())
 
                         val resourceUrls = buildSet {
                             add(PokeApiService.pokemonUrl(id))
@@ -216,6 +216,30 @@ object OfflineGamePackManager {
                             .build()
                         check(appContext.imageLoader.execute(request) is SuccessResult) {
                             "Falha ao armazenar imagem #$id"
+                        }
+
+                        forms.filter{it.countsForLivingDex}.forEach { form ->
+                            val formId=form.pokemonId ?: return@forEach
+                            val normalUrl="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
+                            val shinyUrl="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+formId+".png"
+                            runCatching {
+                                appContext.imageLoader.execute(
+                                    ImageRequest.Builder(appContext)
+                                        .data(normalUrl)
+                                        .diskCacheKey("pokemon-form-offline-$formId")
+                                        .memoryCacheKey("pokemon-form-offline-$formId")
+                                        .build()
+                                )
+                            }
+                            runCatching {
+                                appContext.imageLoader.execute(
+                                    ImageRequest.Builder(appContext)
+                                        .data(shinyUrl)
+                                        .diskCacheKey("pokemon-form-shiny-offline-$formId")
+                                        .memoryCacheKey("pokemon-form-shiny-offline-$formId")
+                                        .build()
+                                )
+                            }
                         }
                     }
                 }.isSuccess
