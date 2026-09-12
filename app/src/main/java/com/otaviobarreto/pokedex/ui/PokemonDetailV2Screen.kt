@@ -115,12 +115,12 @@ fun PokemonDetailV2Screen(
             Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=36.dp).width(185.dp)){
                 Text("#${id.toString().padStart(4,'0')}",fontSize=15.sp,color=Color(0xFF56607A),fontWeight=FontWeight.SemiBold)
                 Text(name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=Color(0xFF11152A),maxLines=2)
-                Text("Carregando detalhes…",fontSize=14.sp,color=Color(0xFF667085),modifier=Modifier.padding(top=8.dp))
+                Text("Abrindo ficha…",fontSize=14.sp,color=Color(0xFF667085),modifier=Modifier.padding(top=8.dp))
             }
             PokemonArtwork(model=image,contentDescription=name,modifier=Modifier.align(Alignment.CenterEnd).padding(end=20.dp,top=50.dp).size(width=190.dp,height=220.dp).padding(10.dp),pokemonId=id)
         }
         LinearProgressIndicator(modifier=Modifier.fillMaxWidth(),color=Color(0xFF5B55E7),trackColor=Color(0xFFEAE8FB))
-        Text("A ficha já está aberta. Os dados complementares estão sendo preparados em segundo plano.",modifier=Modifier.padding(18.dp),style=MaterialTheme.typography.bodyMedium,color=Color(0xFF667085))
+        Text("Dados complementares são carregados em segundo plano sem bloquear a navegação.",modifier=Modifier.padding(18.dp),style=MaterialTheme.typography.bodyMedium,color=Color(0xFF667085))
     }
 }
 
