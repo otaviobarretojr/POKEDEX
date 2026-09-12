@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import sys
+import base64
 
 root = Path(__file__).resolve().parents[1]
 ui = root / "app/src/main/java/com/otaviobarreto/pokedex/ui"
@@ -406,7 +407,7 @@ journey = journey_source
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 
-for required in ("OBJETIVO ATUAL", "Preparação recomendada", "Pokémon úteis agora", "Mapa da Jornada", "JourneyMapScreen"):
+for required in ("OBJETIVO ATUAL", "Preparação recomendada", "Pokémon úteis agora", "Mapa oficial · Jornada", "JourneyMapScreen"):
     if required not in journey:
         violations.append(f"Complete Journey UI missing {required}")
 for required in ("sv-01", "sv-18", "recommendedLevel", "pokemonIds", "items"):
@@ -505,10 +506,27 @@ journey_ui=journey_source
 for required in ("230112_01/img_01.jpg","230112_06/img_01.jpg","220907_03/ja/img_01.jpg","230112_07/img_01.jpg"):
     if required not in journey_visual_catalog:
         violations.append(f"Validated official Journey artwork missing {required}")
-if "story_img_01.jpg" not in journey_map or "backgroundUrl" not in journey_map:
-    violations.append("Official Paldea map background missing")
-if "contentDescription=\"Mapa de Paldea\"" not in journey_ui:
-    violations.append("Official Paldea map is not rendered in Journey")
+if "embeddedAsset" not in journey_map or "maps/paldea_journey_map" not in journey_map:
+    violations.append("Embedded Paldea map asset wiring missing")
+if "rememberEmbeddedJourneyMap" not in journey_ui or "contentDescription=\"Mapa oficial de Paldea\"" not in journey_ui:
+    violations.append("Embedded Paldea map is not rendered in Journey")
+
+paldea_map_parts = []
+for index in range(17):
+    part = root / f"app/src/main/assets/maps/paldea_journey_map_{index:02d}.b64"
+    if not part.exists():
+        violations.append(f"Embedded Paldea map chunk missing {index:02d}")
+    else:
+        paldea_map_parts.append(part.read_text(encoding="utf-8").strip())
+if len(paldea_map_parts) == 17:
+    try:
+        paldea_map_bytes = base64.b64decode("".join(paldea_map_parts), validate=True)
+        if not (paldea_map_bytes.startswith(b"RIFF") and paldea_map_bytes[8:12] == b"WEBP"):
+            violations.append("Embedded Paldea map is not a valid WebP")
+        if len(paldea_map_bytes) < 50000:
+            violations.append("Embedded Paldea map unexpectedly small")
+    except Exception as exc:
+        violations.append(f"Embedded Paldea map base64 invalid: {exc}")
 type_icons=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTypeIconCatalog.kt").read_text(encoding="utf-8")
 if "generation-ix/scarlet-violet" not in type_icons or "JourneyTypeIconCatalog" not in journey_ui:
     violations.append("Scarlet/Violet type icons are not wired into Journey")
