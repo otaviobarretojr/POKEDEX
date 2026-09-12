@@ -38,9 +38,154 @@ object PokeApiService {
         return SpeciesInfo(json.optInt("capture_rate"),json.optInt("base_happiness"),json.optJSONObject("habitat")?.optString("name")?.toDisplayName(),json.optJSONObject("growth_rate")?.optString("name")?.toDisplayName(),json.getJSONArray("egg_groups").namesFromNamedResources(),flavor,json.optJSONObject("evolution_chain")?.optString("url"),genus)
     }
 
-    fun loadEvolutionChain(url:String):List<EvolutionStage>{val root=getJson(url).getJSONObject("chain");val result=mutableListOf<EvolutionStage>();fun walk(node:JSONObject){val species=node.getJSONObject("species");val details=node.optJSONArray("evolution_details");result+=EvolutionStage(idFromUrl(species.getString("url")),species.getString("name").toDisplayName(),details?.takeIf{it.length()>0}?.getJSONObject(0)?.let(::evolutionRequirement));val evolvesTo=node.getJSONArray("evolves_to");for(i in 0 until evolvesTo.length())walk(evolvesTo.getJSONObject(i))};walk(root);return result}
+    fun loadEvolutionChain(url:String):List<EvolutionStage>{
+        val root=getJson(url).getJSONObject("chain")
+        val result=mutableListOf<EvolutionStage>()
+        fun walk(node:JSONObject){
+            val species=node.getJSONObject("species")
+            val pokemonId=idFromUrl(species.getString("url"))
+            val details=node.optJSONArray("evolution_details")
+            val apiRequirements=buildList{
+                if(details!=null){
+                    for(i in 0 until details.length()){
+                        details.optJSONObject(i)?.let(::evolutionRequirement)?.takeIf{it.isNotBlank()}?.let(::add)
+                    }
+                }
+            }.distinct()
+            val requirement=mergeEvolutionRequirements(
+                pokemonId=pokemonId,
+                apiRequirements=apiRequirements
+            )
+            result+=EvolutionStage(
+                pokemonId,
+                species.getString("name").toDisplayName(),
+                requirement
+            )
+            val evolvesTo=node.getJSONArray("evolves_to")
+            for(i in 0 until evolvesTo.length()) walk(evolvesTo.getJSONObject(i))
+        }
+        walk(root)
+        return result
+    }
     fun loadEncounters(id:Int):List<EncounterLocation>{val array=getJsonArray(encountersUrl(id));return buildList(array.length()){for(i in 0 until array.length()){val item=array.getJSONObject(i);val versionDetails=item.getJSONArray("version_details");val versionNames=mutableListOf<String>();val encounterDetails=mutableListOf<EncounterDetail>();for(j in 0 until versionDetails.length()){val versionDetail=versionDetails.getJSONObject(j);val versionName=versionDetail.getJSONObject("version").getString("name").toDisplayName();versionNames+=versionName;val encounters=versionDetail.optJSONArray("encounter_details")?:JSONArray();for(k in 0 until encounters.length()){val encounter=encounters.getJSONObject(k);val conditionsJson=encounter.optJSONArray("condition_values")?:JSONArray();val conditions=buildList(conditionsJson.length()){for(c in 0 until conditionsJson.length())add(conditionsJson.getJSONObject(c).getString("name").toDisplayName())};encounterDetails+=EncounterDetail(versionName,encounter.optJSONObject("method")?.optString("name")?.toDisplayName().orEmpty().ifBlank{"Encontro"},encounter.optInt("min_level",0),encounter.optInt("max_level",0),encounter.optInt("chance",0),conditions)}};add(EncounterLocation(item.getJSONObject("location_area").getString("name").toDisplayName(),versionNames.distinct(),encounterDetails.distinct()))}}.distinctBy{it.location}}
-    private fun evolutionRequirement(detail:JSONObject):String?{val pieces=mutableListOf<String>();detail.optInt("min_level").takeIf{it>0}?.let{pieces+="Nível $it"};detail.optJSONObject("item")?.optString("name")?.takeIf{it.isNotBlank()}?.let{pieces+=it.toDisplayName()};detail.optJSONObject("held_item")?.optString("name")?.takeIf{it.isNotBlank()}?.let{pieces+="Segurando ${it.toDisplayName()}"};detail.optInt("min_happiness").takeIf{it>0}?.let{pieces+="Amizade $it+"};detail.optString("time_of_day").takeIf{it.isNotBlank()}?.let{pieces+=it.toDisplayName()};detail.optJSONObject("trigger")?.optString("name")?.takeIf{it.isNotBlank()&&pieces.isEmpty()}?.let{pieces+=it.toDisplayName()};return pieces.takeIf{it.isNotEmpty()}?.joinToString(" • ")}
+    private fun evolutionRequirement(detail:JSONObject):String{
+        val pieces=mutableListOf<String>()
+        val trigger=detail.optJSONObject("trigger")?.optString("name").orEmpty()
+        val minLevel=detail.optInt("min_level").takeIf{it>0}
+
+        when(trigger){
+            "level-up" -> if(minLevel!=null) pieces+="Subir ao nível $minLevel" else pieces+="Subir de nível"
+            "trade" -> pieces+="Troca"
+            "use-item" -> pieces+="Usar item"
+            "shed" -> pieces+="Condição especial após evolução"
+            "spin" -> pieces+="Girar o personagem"
+            "tower-of-darkness" -> pieces+="Concluir a Tower of Darkness"
+            "tower-of-waters" -> pieces+="Concluir a Tower of Waters"
+            "three-critical-hits" -> pieces+="Acertar 3 golpes críticos na mesma batalha"
+            "take-damage" -> pieces+="Receber dano sem desmaiar"
+            "other" -> pieces+="Método especial"
+            else -> trigger.takeIf{it.isNotBlank()}?.let{pieces+=it.toDisplayName()}
+        }
+
+        if(trigger!="level-up"){
+            minLevel?.let{pieces+="Nível mínimo $it"}
+        }
+
+        detail.optJSONObject("item")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{
+                val item=it.toDisplayName()
+                pieces.remove("Usar item")
+                pieces+="Usar $item"
+            }
+        detail.optJSONObject("held_item")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{pieces+="Segurando ${it.toDisplayName()}"}
+        detail.optJSONObject("known_move")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{pieces+="Conhecendo ${it.toDisplayName()}"}
+        detail.optJSONObject("known_move_type")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{pieces+="Conhecendo um golpe do tipo ${it.toDisplayName()}"}
+        detail.optJSONObject("location")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{pieces+="Em ${it.toDisplayName()}"}
+        detail.optJSONObject("party_species")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{pieces+="Com ${it.toDisplayName()} no time"}
+        detail.optJSONObject("party_type")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{pieces+="Com um Pokémon do tipo ${it.toDisplayName()} no time"}
+        detail.optJSONObject("trade_species")?.optString("name")
+            ?.takeIf{it.isNotBlank()}?.let{pieces+="Trocar por ${it.toDisplayName()}"}
+
+        detail.optInt("min_happiness").takeIf{it>0}?.let{pieces+="Amizade ≥ $it"}
+        detail.optInt("min_affection").takeIf{it>0}?.let{pieces+="Afeição ≥ $it"}
+        detail.optInt("min_beauty").takeIf{it>0}?.let{pieces+="Beleza ≥ $it"}
+
+        detail.optString("time_of_day").takeIf{it.isNotBlank()}?.let{
+            pieces+=when(it.lowercase()){
+                "day" -> "Durante o dia"
+                "night" -> "Durante a noite"
+                "dusk" -> "Ao entardecer"
+                else -> "Período: ${it.toDisplayName()}"
+            }
+        }
+        if(detail.optBoolean("needs_overworld_rain",false)) pieces+="Com chuva no mundo"
+        if(detail.optBoolean("turn_upside_down",false)) pieces+="Com o console virado de cabeça para baixo"
+
+        detail.optInt("gender").takeIf{it>0}?.let{
+            pieces+=when(it){
+                1 -> "Somente fêmea"
+                2 -> "Somente macho"
+                else -> "Gênero específico"
+            }
+        }
+
+        if(detail.has("relative_physical_stats") && !detail.isNull("relative_physical_stats")){
+            when(detail.optInt("relative_physical_stats")){
+                1 -> pieces+="Ataque maior que Defesa"
+                0 -> pieces+="Ataque igual à Defesa"
+                -1 -> pieces+="Ataque menor que Defesa"
+            }
+        }
+
+        return pieces.distinct().joinToString(" • ").ifBlank{"Método especial"}
+    }
+
+    private fun mergeEvolutionRequirements(
+        pokemonId:Int,
+        apiRequirements:List<String>
+    ):String?{
+        if(apiRequirements.isEmpty() && pokemonId !in specialEvolutionRequirements) return null
+        val api=apiRequirements.filterNot{it=="Método especial"}
+        val special=specialEvolutionRequirements[pokemonId]
+        val alternatives=buildList{
+            if(api.isNotEmpty()) addAll(api)
+            if(!special.isNullOrBlank() && special !in api) add(special)
+        }.distinct()
+        return alternatives.takeIf{it.isNotEmpty()}?.joinToString("  OU  ")
+    }
+
+    /**
+     * Mecânicas especiais que o evolution_details genérico não descreve por completo.
+     */
+    private val specialEvolutionRequirements=mapOf(
+        266 to "Subir ao nível 7 • Resultado entre Silcoon/Cascoon depende do valor de personalidade interno",
+        268 to "Subir ao nível 7 • Resultado entre Silcoon/Cascoon depende do valor de personalidade interno",
+        292 to "Nincada sobe ao nível 20 • Ter um espaço vazio no time • Ter uma Poké Ball na bolsa",
+        687 to "Subir de nível a partir do nível 30 • Virar o console de cabeça para baixo",
+        745 to "Subir de nível a partir do nível 25 • Forma depende do horário; Dusk exige Rockruff com Own Tempo no período correto",
+        849 to "Subir ao nível 30 • Forma Amped ou Low Key depende da Nature do Toxel",
+        865 to "Acertar 3 golpes críticos na mesma batalha com Galarian Farfetch'd",
+        867 to "Galarian Yamask deve perder pelo menos 49 HP sem desmaiar • Passar sob o arco de pedra em Dusty Bowl",
+        869 to "Milcery segurando um Sweet • Girar o personagem; forma e decoração dependem do Sweet, direção, duração e horário",
+        892 to "Kubfu: interagir com o Scroll of Darkness ou Scroll of Waters após concluir a torre correspondente",
+        899 to "Usar Psyshield Bash em Agile Style 20 vezes • Depois subir de nível",
+        901 to "Usar Peat Block em Ursaring durante lua cheia",
+        902 to "Basculin (White-Striped) deve acumular pelo menos 294 de dano de recoil sem desmaiar",
+        904 to "Usar Barb Barrage em Strong Style 20 vezes • Depois subir de nível",
+        923 to "Caminhar 1.000 passos com Pawmo no modo Let's Go • Depois subir de nível",
+        947 to "Caminhar 1.000 passos com Bramblin no modo Let's Go • Depois subir de nível",
+        954 to "Caminhar 1.000 passos com Rellor no modo Let's Go • Depois subir de nível",
+        964 to "Subir Finizen ao nível 38 ou mais enquanto estiver em uma sessão multiplayer/Union Circle",
+        979 to "Usar Rage Fist 20 vezes • Depois subir de nível",
+        983 to "Bisharp segurando Leader's Crest • Derrotar 3 Bisharp líderes que também seguram Leader's Crest • Depois subir de nível",
+        1000 to "Coletar 999 Gimmighoul Coins • Depois subir Gimmighoul de nível"
+    )
     private fun getJson(url:String)=JSONObject(getText(url));private fun getJsonArray(url:String)=JSONArray(getText(url));private fun getText(url:String):String = PersistentApiCache.getOrFetch(url) { val connection=URL(url).openConnection() as HttpURLConnection;connection.connectTimeout=12_000;connection.readTimeout=12_000;connection.requestMethod="GET";connection.setRequestProperty("Accept","application/json");connection.connect();try{if(connection.responseCode !in 200..299)error("HTTP ${connection.responseCode} while loading $url");connection.inputStream.bufferedReader().use{it.readText()}}finally{connection.disconnect()}}
     private fun idFromUrl(url:String)=url.trimEnd('/').substringAfterLast('/').toInt()
 }
