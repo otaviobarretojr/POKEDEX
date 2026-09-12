@@ -1117,7 +1117,7 @@ backup_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupM
 for required in ('"recentActivity"', "RecentActivityStore::importSnapshot"):
     if required not in backup_v9:
         violations.append(f"v9 backup missing {required}")
-if "SCHEMA_VERSION = 2" not in backup_v9 and "SCHEMA_VERSION = 3" not in backup_v9:
+if all(marker not in backup_v9 for marker in ("SCHEMA_VERSION = 2","SCHEMA_VERSION = 3","SCHEMA_VERSION = 4")):
     violations.append("v9 backup schema compatibility missing")
 
 insights_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionInsightsService.kt").read_text(encoding="utf-8")
