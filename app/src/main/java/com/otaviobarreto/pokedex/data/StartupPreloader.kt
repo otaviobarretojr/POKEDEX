@@ -47,7 +47,7 @@ object StartupPreloader {
             .drop((nextJourneyIndex - 1).coerceAtLeast(0))
             .take(7)
 
-        // Materializa os catálogos que a Melhor rota usa antes da primeira composição.
+        // Materializa os catálogos que Minha Jornada usa antes da primeira composição.
         journeyWarmSteps.forEach { step ->
             JourneyObjectiveDetailsCatalog.detail(step.id)
             JourneyPreparationCatalog.forStep(step.id)
@@ -149,7 +149,7 @@ object StartupPreloader {
             activeCoverUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls
         ).distinct()
 
-        progress(.84f, "Aquecendo sua rota")
+        progress(.84f, "Aquecendo sua Jornada")
         val artworkSemaphore = Semaphore(4)
         supervisorScope {
             activeJourneyArtworkUrls.mapIndexed { index, artwork ->
@@ -165,7 +165,7 @@ object StartupPreloader {
                         }
                     }
                     val local = .84f + ((index + 1f) / activeJourneyArtworkUrls.size.coerceAtLeast(1)) * .07f
-                    progress(local, "Aquecendo sua rota")
+                    progress(local, "Aquecendo sua Jornada")
                 }
             }.awaitAll()
         }
