@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "16000" not in workflow or "16.0.0" not in workflow:
-    violations.append("CI v16.0.0 version stamping missing")
+if "16100" not in workflow or "16.1.0" not in workflow:
+    violations.append("CI v16.1.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -834,7 +834,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v16.0.0",
+        "v16.1.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -915,8 +915,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "16.0.0"' not in local_gradle or "versionCode = 16000" not in local_gradle:
-    violations.append("Local build version is not aligned with v16.0.0")
+if 'versionName = "16.1.0"' not in local_gradle or "versionCode = 16100" not in local_gradle:
+    violations.append("Local build version is not aligned with v16.1.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1476,6 +1476,37 @@ for required in (
 offline_v16 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 if "PACK_VERSION = 15" not in offline_v16:
     violations.append("v16 offline pack version missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v16.1 settings + form-aware Pokedex guards
+main_v161 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+for required in ('MainDestination("pokedex","Pokédex"', 'MainDestination("central","Config."', "PokemonFormDetailScreen", "PokedexCatalogScreen"):
+    if required not in main_v161:
+        violations.append(f"v16.1 navigation missing {required}")
+
+settings_v161 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
+for required in ("Configurações", "Downloads dos jogos", "Backup e restauração", "OfflineGamePackManager.download"):
+    if required not in settings_v161:
+        violations.append(f"v16.1 settings center missing {required}")
+for forbidden in ("O que faço agora?", "Plano de captura", "Rota recomendada", "Evoluir primeiro"):
+    if forbidden in settings_v161:
+        violations.append(f"v16.1 settings center still contains advice: {forbidden}")
+
+pokedex_v161 = (ui / "PokedexCatalogScreen.kt").read_text(encoding="utf-8")
+for required in ("Formas e variantes", "Shiny", "Ver ficha completa", "PokemonFormKind.BATTLE"):
+    if required not in pokedex_v161:
+        violations.append(f"v16.1 Pokedex forms missing {required}")
+
+form_detail_v161 = (ui / "PokemonFormDetailScreen.kt").read_text(encoding="utf-8")
+for required in ("Status base", "Habilidades", "PokedexDataStore.pokemon"):
+    if required not in form_detail_v161:
+        violations.append(f"v16.1 form detail missing {required}")
 
 if violations:
     print("Source verification failed:")
