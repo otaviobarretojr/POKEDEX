@@ -169,6 +169,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     }
     var showCompleted by rememberSaveable(game.label){mutableStateOf(false)}
     var showUpcoming by rememberSaveable(game.label){mutableStateOf(false)}
+    var confirmReset by rememberSaveable(game.label){mutableStateOf(false)}
     val hiddenCompletedCount=completedCount
     val currentIndex=remember(steps,nextStep){nextStep?.let(steps::indexOf) ?: -1}
     val upcomingSteps=remember(steps,completed,currentIndex){
@@ -211,7 +212,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                 IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
                 Column(Modifier.weight(1f)){
                     Text("Minha Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
-                    Text(game.label+" · "+JourneyCatalog.routeLabel(game.label),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(game.label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick=onTeam){
                     Icon(Icons.Default.Groups,null,Modifier.size(18.dp))
@@ -253,7 +254,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                         modifier=Modifier.fillMaxWidth().padding(top=12.dp).height(8.dp)
                     )
                     Row(
-                        Modifier.fillMaxWidth().padding(top=12.dp),
+                        Modifier.fillMaxWidth().padding(top=12.dp).horizontalScroll(rememberScrollState()),
                         horizontalArrangement=Arrangement.spacedBy(8.dp)
                     ){
                         when(game.label){
@@ -300,7 +301,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
 
         val starterOptions=JourneyStarterCatalog.forGame(game.label)
         val hasChosenStarter=AppStatePreferences.journeyStarterForGame(game.label)!=null
-        if(starterOptions.isNotEmpty() && (!hasChosenStarter || completedCount==0)){
+        if(starterOptions.isNotEmpty() && !hasChosenStarter){
             item(key="starter_guide",contentType="guide"){
                 JourneyStarterGuideCard(
                     starters=starterOptions,
@@ -310,57 +311,6 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                         AppStatePreferences.setJourneyStarterForGame(game.label,id)
                     }
                 )
-            }
-        }
-
-        item(key="automatic_phase",contentType="summary"){
-            Card(
-                shape=RoundedCornerShape(20.dp),
-                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
-                modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
-            ){
-                Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
-                    Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)){
-                        Icon(Icons.Default.AutoAwesome,null,Modifier.padding(10.dp))
-                    }
-                    Column(Modifier.weight(1f).padding(start=10.dp)){
-                        Text("FASE DA JORNADA · "+smart.phaseLabel.uppercase(),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
-                        Text(smart.recommendation,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=3.dp))
-                    }
-                    TextButton(onClick=onTeam){Text("Time recomendado")}
-                }
-            }
-        }
-
-        if(hiddenCompletedCount>0){
-            item{
-                FilledTonalButton(
-                    onClick={showCompleted=!showCompleted},
-                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
-                ){
-                    Icon(if(showCompleted)Icons.Default.VisibilityOff else Icons.Default.Visibility,null)
-                    Spacer(Modifier.width(7.dp))
-                    Text(
-                        if(showCompleted) "Ocultar objetivos concluídos"
-                        else "Objetivos concluídos ("+hiddenCompletedCount+")"
-                    )
-                }
-            }
-        }
-
-        if(upcomingSteps.isNotEmpty()){
-            item(key="upcoming_toggle",contentType="toggle"){
-                FilledTonalButton(
-                    onClick={showUpcoming=!showUpcoming},
-                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
-                ){
-                    Icon(if(showUpcoming)Icons.Default.ExpandLess else Icons.Default.ExpandMore,null)
-                    Spacer(Modifier.width(7.dp))
-                    Text(
-                        if(showUpcoming) "Ocultar próximos objetivos"
-                        else "Próximos objetivos ("+upcomingSteps.size+")"
-                    )
-                }
             }
         }
 
@@ -410,15 +360,48 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                     done=done,
                     isNext=isNext,
                     journeyRecommendation=if(isNext) smart.recommendation else null,
+                    displayTitle=journeyDisplayTitle(step),
                     onOpen={onOpenStep(step.id)},
                     onToggle={JourneyProgressStore.toggle(game.label,step.id)}
                 )
             }
         }
 
+        if(hiddenCompletedCount>0){
+            item{
+                FilledTonalButton(
+                    onClick={showCompleted=!showCompleted},
+                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
+                ){
+                    Icon(if(showCompleted)Icons.Default.VisibilityOff else Icons.Default.Visibility,null)
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        if(showCompleted) "Ocultar objetivos concluídos"
+                        else "Objetivos concluídos ("+hiddenCompletedCount+")"
+                    )
+                }
+            }
+        }
+
+        if(upcomingSteps.isNotEmpty()){
+            item(key="upcoming_toggle",contentType="toggle"){
+                FilledTonalButton(
+                    onClick={showUpcoming=!showUpcoming},
+                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
+                ){
+                    Icon(if(showUpcoming)Icons.Default.ExpandLess else Icons.Default.ExpandMore,null)
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        if(showUpcoming) "Ocultar próximos objetivos"
+                        else "Próximos objetivos ("+upcomingSteps.size+")"
+                    )
+                }
+            }
+        }
+
         item{
             TextButton(
-                onClick={JourneyProgressStore.clear(game.label)},
+                onClick={confirmReset=true},
                 modifier=Modifier.fillMaxWidth().padding(top=10.dp)
             ){
                 Icon(Icons.Default.RestartAlt,null)
@@ -427,6 +410,23 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
         item{Spacer(Modifier.height(28.dp))}
+    }
+
+    if(confirmReset){
+        AlertDialog(
+            onDismissRequest={confirmReset=false},
+            title={Text("Reiniciar Jornada?")},
+            text={Text("Todo o progresso deste jogo será apagado. Essa ação não pode ser desfeita.")},
+            confirmButton={
+                TextButton(onClick={
+                    JourneyProgressStore.clear(game.label)
+                    confirmReset=false
+                }){Text("Reiniciar")}
+            },
+            dismissButton={
+                TextButton(onClick={confirmReset=false}){Text("Cancelar")}
+            }
+        )
     }
 }
 
@@ -513,6 +513,13 @@ private fun journeyChapterHeader(step:JourneyStep):String? = when {
     else -> null
 }
 
+private fun journeyDisplayTitle(step:JourneyStep):String = when {
+    step.id.startsWith("sv-") && step.kind==JourneyChallengeKind.GYM -> step.subtitle+" · "+step.title
+    step.id.startsWith("sv-") && step.kind==JourneyChallengeKind.TITAN -> step.subtitle+" · "+step.title
+    step.id.startsWith("sv-") && step.kind==JourneyChallengeKind.STAR -> step.subtitle+" · "+step.title
+    else -> step.title
+}
+
 @Composable
 private fun JourneyStepCard(
     step:JourneyStep,
@@ -522,6 +529,7 @@ private fun JourneyStepCard(
     done:Boolean,
     isNext:Boolean,
     journeyRecommendation:String?,
+    displayTitle:String,
     onOpen:()->Unit,
     onToggle:()->Unit
 ){
@@ -619,7 +627,7 @@ private fun JourneyStepCard(
                 }
 
                 Text(
-                    step.title,
+                    displayTitle,
                     style=MaterialTheme.typography.titleMedium,
                     fontWeight=FontWeight.Black,
                     modifier=Modifier.padding(top=10.dp)
@@ -695,7 +703,7 @@ private fun JourneyStepCard(
                     Text(
                         when{
                             done->"Concluído"
-                            isNext->"Objetivo atual"
+                            isNext->"Em andamento"
                             else->"Pendente"
                         },
                         style=MaterialTheme.typography.labelMedium,
