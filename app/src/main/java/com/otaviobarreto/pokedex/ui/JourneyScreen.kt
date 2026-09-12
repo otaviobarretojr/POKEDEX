@@ -212,6 +212,16 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
 
+        val starterOptions=JourneyStarterCatalog.forGame(game.label)
+        if(starterOptions.isNotEmpty()){
+            item{
+                JourneyStarterGuideCard(
+                    starters=starterOptions,
+                    onPokemonClick={id->onOpenStep("starter:"+id)}
+                )
+            }
+        }
+
         item{
             Card(
                 shape=RoundedCornerShape(20.dp),
@@ -336,6 +346,50 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
         item{Spacer(Modifier.height(28.dp))}
+    }
+}
+
+@Composable
+private fun JourneyStarterGuideCard(starters:List<JourneyStarterRecommendation>,onPokemonClick:(Int)->Unit){
+    var expanded by rememberSaveable{mutableStateOf(false)}
+    val recommended=starters.maxByOrNull{it.rating.early*3+it.rating.mid*2+it.rating.late} ?: return
+    Card(
+        shape=RoundedCornerShape(22.dp),
+        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainerHigh),
+        modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
+    ){
+        Column(Modifier.fillMaxWidth().padding(15.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Icon(Icons.Default.CatchingPokemon,null)
+                Column(Modifier.weight(1f).padding(start=10.dp)){
+                    Text("QUAL INICIAL ESCOLHER?",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)
+                    Text(recommended.name+" · "+recommended.verdict,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                    Text("Compare o impacto no início, meio e fim da campanha.",style=MaterialTheme.typography.bodySmall)
+                }
+                IconButton(onClick={expanded=!expanded}){Icon(if(expanded)Icons.Default.ExpandLess else Icons.Default.ExpandMore,null)}
+            }
+            if(expanded){
+                starters.forEach{starter->
+                    HorizontalDivider(Modifier.padding(vertical=10.dp))
+                    Text(starter.name+" → "+starter.finalName,fontWeight=FontWeight.Black)
+                    Text(starter.types+" · "+starter.verdict,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+                    Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                        StarterStagePill("INÍCIO",starter.rating.early)
+                        StarterStagePill("MEIO",starter.rating.mid)
+                        StarterStagePill("FIM",starter.rating.late)
+                    }
+                    starter.advantages.forEach{Text("• "+it,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=5.dp))}
+                    starter.cautions.forEach{Text("Atenção: "+it,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=4.dp))}
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StarterStagePill(label:String,rating:Int){
+    Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.primaryContainer){
+        Text(label+" "+("★".repeat(rating)),Modifier.padding(horizontal=8.dp,vertical=5.dp),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
     }
 }
 
