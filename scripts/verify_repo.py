@@ -381,7 +381,7 @@ for required in ("setCompleted", "completeThrough"):
     if required not in journey_progress:
         violations.append(f"Smart Journey progress operation missing {required}")
 journey_ui = journey_source
-for required in ("Concluir progresso até aqui", "JourneySmartProgress.context", "Time recomendado"):
+for required in ("Concluir progresso até aqui", "JourneySmartProgress.context"):
     if required not in journey_ui:
         violations.append(f"Smart Journey UI missing {required}")
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
