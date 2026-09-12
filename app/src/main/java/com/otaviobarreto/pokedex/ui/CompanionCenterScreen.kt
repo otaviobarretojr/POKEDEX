@@ -39,8 +39,12 @@ fun CompanionCenterScreen(
     val insights=remember(
         CollectionStore.capturedIds,
         CollectionStore.contextualCapturedIds,
-        CollectionStore.boxes
+        CollectionStore.boxes,
+        VariantCollectionStore.ownedVariants
     ){ CollectionInsightsService.current() }
+    val livingPlan=remember(CollectionStore.capturedIds,VariantCollectionStore.ownedVariants){
+        LivingDexPlanner.current(limit=18)
+    }
 
     val normalizedQuery=query.trim()
     val pokemonResults=remember(normalizedQuery){
@@ -212,6 +216,52 @@ fun CompanionCenterScreen(
             }
         }
 
+        if(normalizedQuery.isBlank()){
+            item{
+                SectionTitle("O que falta")
+                Card(shape=RoundedCornerShape(20.dp)){
+                    Column(Modifier.fillMaxWidth().padding(16.dp)){
+                        Text(
+                            if(livingPlan.missingSpecies.isEmpty()) "Species Dex concluída!"
+                            else "Próximas espécies ausentes",
+                            fontWeight=FontWeight.Bold
+                        )
+                        if(livingPlan.missingSpecies.isEmpty()){
+                            Text(
+                                "Agora você pode focar em formas alternativas e Shiny.",
+                                style=MaterialTheme.typography.bodySmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }else{
+                            LazyRow(
+                                modifier=Modifier.padding(top=10.dp),
+                                horizontalArrangement=Arrangement.spacedBy(8.dp)
+                            ){
+                                items(livingPlan.missingSpecies,key={it}){id->
+                                    val pk=PokemonRepository.byId(id)
+                                    AssistChip(
+                                        onClick={onPokemonClick(id)},
+                                        label={
+                                            Text(
+                                                "#"+id.toString().padStart(4,'0')+
+                                                    (pk?.name?.let{" · "+it} ?: "")
+                                            )
+                                        },
+                                        leadingIcon={Icon(Icons.Default.CatchingPokemon,null,Modifier.size(16.dp))}
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                            InsightCard("Shiny espécies",livingPlan.shinySpecies.toString(),Modifier.weight(1f))
+                            InsightCard("Registros de forma",livingPlan.formRegistrations.toString(),Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+
         item{
             SectionTitle("Sua coleção")
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
@@ -307,7 +357,7 @@ fun CompanionCenterScreen(
         item{
             SectionTitle("Backup")
             Text(
-                "Salve toda a coleção, Jornada, contexto atual e atividade recente. Backups antigos da v8 e v9 continuam compatíveis; a v10 também salva seus times.",
+                "Salve toda a coleção, Jornada, contexto atual e atividade recente. Backups antigos continuam compatíveis. A v12 preserva coleção, Jornada, times, formas e Shiny.",
                 style=MaterialTheme.typography.bodyMedium,
                 color=MaterialTheme.colorScheme.onSurfaceVariant
             )
