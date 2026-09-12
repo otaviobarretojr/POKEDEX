@@ -1169,7 +1169,6 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
 }
 
 
-@Composable
 private object JourneyMapBitmapCache{
     private val cache=mutableMapOf<String,ImageBitmap>()
     fun get(key:String)=cache[key]
