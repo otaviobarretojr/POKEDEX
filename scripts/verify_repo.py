@@ -837,7 +837,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "BuildConfig.VERSION_NAME",
+        "packageManager.getPackageInfo",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -1834,7 +1834,7 @@ if 'listOf("move", "ability", "item")' in startup_v1820:
     violations.append("v18.2 startup must not block on reference catalogs")
 
 boot_v1820 = (ui / "BootExperienceScreen.kt").read_text(encoding="utf-8")
-if "BuildConfig.VERSION_NAME" not in boot_v1820:
+if "packageManager.getPackageInfo" not in boot_v1820 or "versionName" not in boot_v1820:
     violations.append("v18.2 splash version must be dynamic")
 
 application_v1820 = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
