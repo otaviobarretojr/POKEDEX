@@ -54,11 +54,7 @@ fun PokemonDetailV2Screen(
         source ?: AppStatePreferences.activeRegionForGame(AppStatePreferences.activeGame)
     }
     LaunchedEffect(id){
-        listOf(id-2,id-1,id+1,id+2)
-            .filter{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
-            .forEach{neighbor->
-                runCatching{ PokedexDataStore.prefetchCoreDetails(neighbor) }
-            }
+        runCatching { PokedexDataStore.prefetchDetailWindow(id,radius=2) }
     }
 
     LaunchedEffect(id,retry){
