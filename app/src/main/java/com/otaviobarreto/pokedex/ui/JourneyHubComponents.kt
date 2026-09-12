@@ -613,14 +613,14 @@ private fun rememberJourneyCollectionProgress(
     game:AppGame,
     capturedBySource:Map<String,Set<Int>>
 ):State<JourneyCollectionProgress>{
-    val ids by produceState<Set<Int>>(initialValue=emptySet(),key1=game.label){
-        val loaded=withContext(Dispatchers.IO){
+    var ids by remember(game.label){mutableStateOf<Set<Int>>(emptySet())}
+    LaunchedEffect(game.label){
+        ids=withContext(Dispatchers.IO){
             game.regions.flatMap{region->
                 val ctx=GameContext.fromSource(region.source)
                 if(ctx==null) emptyList() else runCatching{GameDexService.loadGameDex(ctx).map{it.nationalId}}.getOrDefault(emptyList())
             }.toSet()
         }
-        value=loaded
     }
     val registered=remember(game.label,capturedBySource){
         game.regions.flatMap{capturedBySource[it.source].orEmpty()}.toSet()
