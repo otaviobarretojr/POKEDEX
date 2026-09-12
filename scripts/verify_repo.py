@@ -1706,7 +1706,7 @@ detail_v1700 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
 for required in (
     "DetailDexNavigator",
     "Coleção · Formas e Shiny",
-    "prefetchCoreDetails(neighbor)",
+    "prefetchDetailWindow(id,radius=2)",
 ):
     if required not in detail_v1700:
         violations.append(f"v17.0.0 detail navigation/integration missing {required}")
