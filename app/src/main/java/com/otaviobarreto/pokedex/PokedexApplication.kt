@@ -1,7 +1,6 @@
 package com.otaviobarreto.pokedex
 
 import android.app.Application
-import android.net.http.HttpResponseCache
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
@@ -38,9 +37,6 @@ class PokedexApplication : Application(), ImageLoaderFactory {
                 ?.firstOrNull()
                 ?.source
         CollectionStore.migrateLegacyCapturedToSource(legacySource)
-        runCatching {
-            HttpResponseCache.install(File(cacheDir, "pokeapi-http"), 32L * 1024L * 1024L)
-        }
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
