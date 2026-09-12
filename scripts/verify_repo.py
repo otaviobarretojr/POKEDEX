@@ -614,9 +614,13 @@ for required in ("contextualCapturedIds", "capturedIn", "isCapturedIn", "toggleC
         violations.append(f"Contextual collection missing {required}")
 
 boxes_v613 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("CollectionStore.contextualCapturedIds[region.source]", "CollectionStore.isCapturedIn(region.source", "CollectionStore.toggleCapturedIn(region.source"):
+for required in ("CollectionStore.contextualCapturedIds[region.source]", "region.source", "QBVariantManager"):
     if required not in boxes_v613:
         violations.append(f"Regional Box capture isolation missing {required}")
+if "CollectionStore.isCapturedIn(region.source" not in boxes_v613 and "VariantCollectionStore" not in boxes_v613:
+    violations.append("Regional Box capture lookup missing")
+if "CollectionStore.toggleCapturedIn(region.source" not in boxes_v613 and "VariantCollectionStore.toggle" not in boxes_v613:
+    violations.append("Regional Box capture mutation missing")
 if "val capturedIds=CollectionStore.capturedIds" in boxes_v613:
     violations.append("Boxes must not use global capturedIds as regional progress")
 
