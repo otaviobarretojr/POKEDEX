@@ -48,6 +48,8 @@ jobs:
           path: artwork-audit/
       - name: Journey visual asset audit
         run: python3 scripts/audit_journey_visuals.py
+      - name: Journey boss Pokemon artwork audit
+        run: python3 scripts/audit_journey_boss_pokemon.py
       - name: Full National Dex audit
         run: python3 scripts/audit_national_dex.py
       - name: National Forms audit
