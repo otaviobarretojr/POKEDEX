@@ -18,7 +18,8 @@ object JourneySmartProgress {
         val ratio=if(steps.isEmpty())0f else count.toFloat()/steps.size
         val nextId=next?.id.orEmpty()
         val phase=when{
-            nextId.startsWith("sv-pg-") || nextId.startsWith("sv-dlc-") || nextId.startsWith("sv-epi-") -> CampaignPhase.LATE
+            nextId.startsWith("sv-pg-") || nextId.startsWith("sv-dlc-") || nextId.startsWith("sv-epi-") ||
+                nextId.startsWith("za-dlc-") || nextId in setOf("za-38","za-39","za-40","za-41","za-42") -> CampaignPhase.LATE
             ratio < .34f -> CampaignPhase.EARLY
             ratio < .72f -> CampaignPhase.MID
             else -> CampaignPhase.LATE
@@ -28,6 +29,9 @@ object JourneySmartProgress {
             nextId in listOf("sv-dlc-01","sv-dlc-02","sv-dlc-03","sv-dlc-04","sv-dlc-05","sv-dlc-06","sv-dlc-07") -> "The Teal Mask"
             nextId.startsWith("sv-dlc-") -> "The Indigo Disk"
             nextId.startsWith("sv-epi-") -> "Mochi Mayhem"
+            nextId.startsWith("za-dlc-") -> "Mega Dimension"
+            nextId in setOf("za-38","za-39","za-40","za-41","za-42") -> "Pós-game de Lumiose"
+            nextId.startsWith("za-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             phase==CampaignPhase.EARLY -> "Início da campanha"
             phase==CampaignPhase.MID -> "Meio da campanha"
             else -> "Reta final"
