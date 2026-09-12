@@ -3,10 +3,15 @@ package com.otaviobarreto.pokedex.data
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
+enum class PokemonFormKind {
+    DEFAULT, REGIONAL, GENDER, BATTLE, SPECIAL, COSMETIC, OTHER
+}
+
 data class PokemonFormVariant(
     val name: String,
     val pokemonId: Int?,
-    val isDefault: Boolean
+    val isDefault: Boolean,
+    val kind: PokemonFormKind = PokemonFormKind.OTHER
 )
 
 object PokemonFormsService {
@@ -42,10 +47,30 @@ object PokemonFormsService {
                 val display = pokemon.optString("name").split('-').joinToString(" ") { part ->
                     part.replaceFirstChar { ch -> ch.uppercase() }
                 }
-                add(PokemonFormVariant(display, pid, item.optBoolean("is_default")))
+                val isDefault=item.optBoolean("is_default")
+                add(PokemonFormVariant(display, pid, isDefault, classify(display,isDefault)))
             }
         }
         cache[id] = result
         return result
+    }
+
+    fun collectible(id:Int):List<PokemonFormVariant> =
+        (cached(id) ?: load(id))
+            .distinctBy{it.pokemonId}
+            .sortedWith(compareByDescending<PokemonFormVariant>{it.isDefault}.thenBy{it.name})
+
+    private fun classify(name:String,isDefault:Boolean):PokemonFormKind{
+        if(isDefault) return PokemonFormKind.DEFAULT
+        val n=name.lowercase()
+        return when{
+            listOf("alola","galar","hisui","paldea").any{it in n} -> PokemonFormKind.REGIONAL
+            "female" in n || "male" in n -> PokemonFormKind.GENDER
+            listOf("mega","gmax","gigantamax","primal").any{it in n} -> PokemonFormKind.BATTLE
+            listOf("totem","eternamax").any{it in n} -> PokemonFormKind.BATTLE
+            listOf("cap","cosplay","starter","battle bond").any{it in n} -> PokemonFormKind.SPECIAL
+            listOf("red striped","blue striped","white striped","dusk","midnight","school","solo","amped","low key","family of","three segment","two segment").any{it in n} -> PokemonFormKind.SPECIAL
+            else -> PokemonFormKind.OTHER
+        }
     }
 }
