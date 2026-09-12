@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -47,7 +48,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable private fun PokedexRoot(){var bootReady by remember{mutableStateOf(false)};if(!bootReady)BootExperienceScreen{HomeAudioManager.playMainTrack();bootReady=true}else PokedexApp()}
 data class MainDestination(val route:String,val label:String,val icon:ImageVector)
-private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Default.Map),MainDestination("boxes","Boxes",Icons.Default.GridView))
+private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Default.Map),MainDestination("boxes","Boxes",Icons.Default.GridView),MainDestination("central","Central",Icons.Default.Search))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun PokedexApp(){
@@ -98,6 +99,7 @@ private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Defau
    composable("location/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode);PokemonLocationScreen(id,source,{navController.popBackStack()},source?.let{{openRegionMap(id,it)}})}
    composable("regionMap/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=false})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode).orEmpty();PokemonRegionMapScreen(id,source){navController.popBackStack()}}
    composable("boxes"){BoxesV2Screen(onPokemonClick={id,source->openPokemon(id,source)})}
+   composable("central"){CompanionCenterScreen(onPokemonClick={id->openPokemon(id,null)})}
   }
  }
 }

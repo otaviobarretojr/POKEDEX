@@ -169,7 +169,7 @@ object OfflineGamePackManager {
             .filter { it in ids }
             .toMutableSet()
         val pendingIds = ids.filterNot { it in alreadyCompleted }
-        val semaphore = Semaphore(permits = 8)
+        val semaphore = Semaphore(permits = 10)
         var completed = alreadyCompleted.size
         val failedIds = mutableListOf<Int>()
         val lock = Any()
