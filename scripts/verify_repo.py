@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.23.0"' not in workflow or "versionCode = 6230" not in workflow:
+if 'versionName = "6.24.0"' not in workflow or "versionCode = 6240" not in workflow:
     violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.23.0",
+        "v6.24.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,7 +907,7 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "6.23.0"' not in local_gradle or "versionCode = 6230" not in local_gradle:
+if 'versionName = "6.24.0"' not in local_gradle or "versionCode = 6240" not in local_gradle:
     violations.append("Local build version is not aligned with v6.21.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -969,6 +969,21 @@ startup_v623 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/Startup
 for required in ("JourneyGameVisualCatalog.forGame", "startup-journey-art", "Preparando arte da Jornada"):
     if required not in startup_v623:
         violations.append(f"Journey reference art preload missing {required}")
+
+
+# v6.24.0 Journey full-bleed artwork guards
+journey_hub_v624 = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in (
+    "ContentScale.Crop",
+    ".width(120.dp)",
+    "Brush.verticalGradient",
+    "Arte oficial de $gameLabel",
+):
+    if required not in journey_hub_v624:
+        violations.append(f"Journey full-bleed artwork missing {required}")
+
+if 'color = Color(0xFF142548)' in journey_hub_v624 and 'contentDescription = "Abrir " + game.label' in journey_hub_v624:
+    violations.append("Obsolete black Journey arrow returned")
 
 if violations:
     print("Source verification failed:")
