@@ -422,7 +422,7 @@ private fun QBVariantManager(
                         modifier=Modifier.weight(1f,fill=false),
                         verticalArrangement=Arrangement.spacedBy(8.dp)
                     ){
-                        items(available,key={it.pokemonId!!}){form->
+                        items(available,key={it.formKey}){form->
                             val formId=form.pokemonId!!
                             val normalOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,form.name,false)
                             val shinyOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,form.name,true)
