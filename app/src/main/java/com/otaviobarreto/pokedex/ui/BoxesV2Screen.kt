@@ -35,6 +35,8 @@ import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
+import com.otaviobarreto.pokedex.data.PokeApiService
+import com.otaviobarreto.pokedex.data.PokemonRepository
 import com.otaviobarreto.pokedex.data.PokemonFormsService
 import com.otaviobarreto.pokedex.data.PokemonFormVariant
 import com.otaviobarreto.pokedex.data.PokemonFormPresentation
@@ -95,6 +97,16 @@ private val qbGames=AppGameCatalog.games.map{game->
  val variantsInRegion=VariantCollectionStore.ownedVariants.filter{it.source==region.source}
  val shinyCaptured=variantsInRegion.count{it.shiny}
  val formCaptured=variantsInRegion.count{it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)}
+ val gameProgress=remember(game.label,CollectionStore.contextualCapturedIds){
+  val regionalTotals=game.regions.map{r->
+   val ctx=GameContext.fromSource(r.source)
+   val regionalDex=ctx?.let{GameDexService.cached(it)}.orEmpty()
+   val owned=CollectionStore.contextualCapturedIds[r.source].orEmpty()
+   regionalDex.size to regionalDex.count{it.nationalId in owned}
+  }
+  regionalTotals.sumOf{it.second} to regionalTotals.sumOf{it.first}
+ }
+ val nationalCaptured=CollectionStore.capturedIds.count{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
@@ -152,7 +164,9 @@ private val qbGames=AppGameCatalog.games.map{game->
      color=QBink
     )
     Text(
-     "Deslize para navegar entre as Boxes · ★"+shinyCaptured+" · Formas "+formCaptured,
+     "Deslize para navegar entre as Boxes · Jogo "+gameProgress.first+"/"+gameProgress.second+
+      " · Nacional "+nationalCaptured+"/"+PokeApiService.MAX_NATIONAL_DEX_ID+
+      " · ★"+shinyCaptured+" · Formas "+formCaptured,
      fontSize=8.5.sp,
      color=QBmuted
     )
