@@ -85,7 +85,16 @@ private val qbGames=AppGameCatalog.games.map{game->
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
- val entries=dex.drop(current*30).take(30);val missingDetails=entries.filter{PokedexDataStore.cachedPokemon(it.nationalId)==null||PokedexDataStore.cachedSpecies(it.nationalId)==null};LaunchedEffect(entries){missingDetails.take(18).forEach{PokedexDataStore.prefetchDetails(it.nationalId)};delay(160);missingDetails.drop(18).forEach{PokedexDataStore.prefetchDetails(it.nationalId)}};val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty();val caught=dex.count{it.nationalId in capturedIds};val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ val entries=dex.drop(current*30).take(30)
+ LaunchedEffect(region.source,current,dex){
+  runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}
+ }
+ val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty()
+ val caught=dex.count{it.nationalId in capturedIds}
+ val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
+ val variantsInRegion=VariantCollectionStore.ownedVariants.filter{it.source==region.source}
+ val shinyCaptured=variantsInRegion.count{it.shiny}
+ val formCaptured=variantsInRegion.count{it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)}
  Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
@@ -143,7 +152,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      color=QBink
     )
     Text(
-     "Deslize para navegar entre as Boxes",
+     "Deslize para navegar · ★"+shinyCaptured+" · Formas "+formCaptured,
      fontSize=8.5.sp,
      color=QBmuted
     )
@@ -467,6 +476,7 @@ private fun QBVariantManager(
                                                 onClick={
                                                     VariantCollectionStore.toggle(
                                                         source,pk.nationalId,formId,form.name,false,
+                                                        formKey=form.formKey,
                                                         normalArtworkUrl=form.spriteUrl,
                                                         shinyArtworkUrl=form.shinySpriteUrl
                                                     )
@@ -480,6 +490,7 @@ private fun QBVariantManager(
                                                 onClick={
                                                     VariantCollectionStore.toggle(
                                                         source,pk.nationalId,formId,form.name,true,
+                                                        formKey=form.formKey,
                                                         normalArtworkUrl=form.spriteUrl,
                                                         shinyArtworkUrl=form.shinySpriteUrl
                                                     )
@@ -601,13 +612,13 @@ private fun QBSearch(
             .filter{
                 when(status){
                     "Capturados" -> it.nationalId in captured
-                    "Faltando" -> it.nationalId !in captured
+                    "Faltantes" -> it.nationalId !in captured
                     "Shiny" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && v.shiny}
-                    "Ambos" -> {
-                        val variants=VariantCollectionStore.ownedVariants.filter{v->v.source==source && v.speciesId==it.nationalId}
-                        variants.any{!it.shiny} && variants.any{it.shiny}
+                    "Normal" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && !v.shiny}
+                    "Formas" -> VariantCollectionStore.ownedVariants.any{v->
+                        v.source==source && v.speciesId==it.nationalId &&
+                            (v.formPokemonId!=it.nationalId || !v.formName.equals(pretty(it.name),true))
                     }
-                    "Com formas" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && v.formPokemonId!=it.nationalId}
                     else -> true
                 }
             }
@@ -632,7 +643,7 @@ private fun QBSearch(
             )
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                listOf("Todos","Capturados","Faltando","Shiny","Ambos","Com formas").forEach{option->
+                listOf("Todos","Capturados","Faltantes","Normal","Shiny","Formas").forEach{option->
                     FilterChip(selected=status==option,onClick={status=option},label={Text(option,fontSize=10.sp)})
                 }
             }
