@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "10000" not in workflow or "10.0.0" not in workflow:
-    violations.append("CI v10.0.0 version stamping missing")
+if "10400" not in workflow or "10.4.0" not in workflow:
+    violations.append("CI v10.4.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v10.0.0",
+        "v10.4.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,8 +907,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "10.0.0"' not in local_gradle or "versionCode = 10000" not in local_gradle:
-    violations.append("Local build version is not aligned with v10.0.0")
+if 'versionName = "10.4.0"' not in local_gradle or "versionCode = 10400" not in local_gradle:
+    violations.append("Local build version is not aligned with v10.4.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1171,6 +1171,42 @@ central_v10 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ("Living Dex", "Offline e desempenho", "PokedexDataStore.cacheStats", "OfflineGamePackManager.status"):
     if required not in central_v10:
         violations.append(f"v10 Central missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v10.1-v10.4 Forms & Shiny collection guards
+variant_store = root / "app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt"
+if not variant_store.exists():
+    violations.append("Variant collection store missing")
+else:
+    variant_source = variant_store.read_text(encoding="utf-8")
+    for required in ("OwnedPokemonVariant", "shiny:Boolean", "artworkUrl", "exportSnapshot", "importSnapshot"):
+        if required not in variant_source:
+            violations.append(f"Variant collection missing {required}")
+
+application_v104 = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
+if "VariantCollectionStore.initialize(this)" not in application_v104:
+    violations.append("Variant collection initialization missing")
+
+boxes_v104 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ("QBVariantManager", "Formas e Shiny", "★ Shiny", "PokemonFormsService", "VariantCollectionStore.preferred"):
+    if required not in boxes_v104:
+        violations.append(f"Forms/Shiny Box UI missing {required}")
+
+backup_v104 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
+for required in ("SCHEMA_VERSION = 4", '"variants"', "VariantCollectionStore::importSnapshot"):
+    if required not in backup_v104:
+        violations.append(f"Forms/Shiny backup missing {required}")
+
+central_v104 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
+for required in ('"Formas"', '"Shiny"', "insights.ownedForms", "insights.shinyVariants"):
+    if required not in central_v104:
+        violations.append(f"Forms/Shiny insights missing {required}")
 
 if violations:
     print("Source verification failed:")
