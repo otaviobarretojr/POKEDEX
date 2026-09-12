@@ -394,7 +394,6 @@ internal fun JourneyGameMenu(
     game:AppGame,
     onBack:()->Unit,
     onRoute:()->Unit,
-    onMap:()->Unit,
     onTeam:()->Unit,
     onBoxes:()->Unit,
     onRegion:(String)->Unit
@@ -480,15 +479,6 @@ internal fun JourneyGameMenu(
                 subtitle=if(route.isNotEmpty()) "Sequência recomendada por nível, com progresso salvo." else "Estrutura pronta; rota detalhada deste jogo entra na próxima curadoria.",
                 enabled=route.isNotEmpty(),
                 onClick=onRoute
-            )
-        }
-        item{
-            JourneyActionCard(
-                icon=Icons.Default.Map,
-                title="Mapa da Jornada",
-                subtitle=if(JourneyMapCatalog.points(game.label).isNotEmpty()) "Veja concluídos, objetivo atual e próximos desafios distribuídos no mapa." else "Mapa desta campanha ainda não está disponível.",
-                enabled=JourneyMapCatalog.points(game.label).isNotEmpty(),
-                onClick=onMap
             )
         }
         item{
