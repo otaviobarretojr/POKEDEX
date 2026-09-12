@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "10400" not in workflow or "10.4.0" not in workflow:
-    violations.append("CI v10.4.0 version stamping missing")
+if "10500" not in workflow or "10.5.0" not in workflow:
+    violations.append("CI v10.5.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -834,7 +834,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v10.4.0",
+        "v10.5.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -915,8 +915,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "10.4.0"' not in local_gradle or "versionCode = 10400" not in local_gradle:
-    violations.append("Local build version is not aligned with v10.4.0")
+if 'versionName = "10.5.0"' not in local_gradle or "versionCode = 10500" not in local_gradle:
+    violations.append("Local build version is not aligned with v10.5.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1217,6 +1217,50 @@ central_v104 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ('"Formas"', '"Shiny"', "insights.ownedForms", "insights.shinyVariants"):
     if required not in central_v104:
         violations.append(f"Forms/Shiny insights missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
+# v10.5 Evolution methods audit guards
+pokeapi_v105 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokeApiService.kt").read_text(encoding="utf-8")
+for required in (
+    "known_move",
+    "known_move_type",
+    "location",
+    "min_affection",
+    "min_beauty",
+    "min_happiness",
+    "needs_overworld_rain",
+    "party_species",
+    "party_type",
+    "relative_physical_stats",
+    "time_of_day",
+    "trade_species",
+    "turn_upside_down",
+    "gender",
+    "held_item",
+    "mergeEvolutionRequirements",
+    "specialEvolutionRequirements",
+    'joinToString("  OU  ")',
+):
+    if required not in pokeapi_v105:
+        violations.append(f"Evolution audit missing {required}")
+
+for special_id in (
+    "266 to", "268 to", "292 to", "687 to", "745 to", "849 to",
+    "865 to", "867 to", "869 to", "892 to", "899 to", "901 to",
+    "902 to", "904 to", "923 to", "947 to", "954 to", "964 to",
+    "979 to", "983 to", "1000 to"
+):
+    if special_id not in pokeapi_v105:
+        violations.append(f"Special evolution rule missing {special_id}")
+
+if "getJSONObject(0)?.let(::evolutionRequirement)" in pokeapi_v105:
+    violations.append("Evolution parser must not keep only the first evolution_details entry")
 
 if violations:
     print("Source verification failed:")
