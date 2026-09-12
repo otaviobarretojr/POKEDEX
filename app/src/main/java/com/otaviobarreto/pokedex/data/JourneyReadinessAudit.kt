@@ -41,7 +41,14 @@ object JourneyReadinessAudit {
         val heroes = JourneyGameVisualCatalog.forGame(gameLabel).heroPokemonIds.map { id ->
             "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
         }
-        return (covers + heroes).distinct()
+        val scarletExtras = if (gameLabel == "Scarlet / Violet") {
+            buildList {
+                addAll(JourneyVisualAssetCatalog.allUrls())
+                addAll(JourneyTypeIconCatalog.allUrls())
+                JourneyMapCatalog.backgroundUrl(gameLabel)?.let(::add)
+            }
+        } else emptyList()
+        return (covers + heroes + scarletExtras).distinct()
     }
 
     fun referenceCatalogUrls(): List<String> = listOf(
