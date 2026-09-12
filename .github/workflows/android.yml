@@ -33,7 +33,7 @@ jobs:
       - name: Validate v18.2.0 Stable release
         run: |
           grep -q 'versionCode = 18200' app/build.gradle.kts
-          grep -q 'versionName = "18.1.0"' app/build.gradle.kts
+          grep -q 'versionName = "18.2.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
