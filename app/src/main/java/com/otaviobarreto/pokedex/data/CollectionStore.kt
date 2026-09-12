@@ -56,7 +56,17 @@ object CollectionStore {
         if (updated == current) return
         contextualCapturedIds = if (updated.isEmpty()) contextualCapturedIds - source else contextualCapturedIds + (source to updated)
         persistContextualCaptured()
-        if (captured) markCaptured(id)
+        if (captured) {
+            markCaptured(id)
+        } else {
+            val stillReferenced =
+                boxes.values.any { id in it } ||
+                contextualCapturedIds.values.any { id in it }
+            if (!stillReferenced && id in capturedIds) {
+                capturedIds = capturedIds - id
+                persistCaptured()
+            }
+        }
     }
 
     fun migrateLegacyCapturedToSource(source: String?) {
