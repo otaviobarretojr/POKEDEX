@@ -14,12 +14,54 @@ data class JourneyStarterRecommendation(
 )
 
 object JourneyStarterCatalog {
-    fun forGame(game:String):List<JourneyStarterRecommendation> =
-        if(game=="Scarlet / Violet") paldea else emptyList()
+    fun forGame(game:String):List<JourneyStarterRecommendation> = when(game){
+        "Scarlet / Violet" -> paldea
+        "Pokémon Legends: Z-A" -> lumiose
+        else -> emptyList()
+    }
 
     fun bestForGame(game:String):JourneyStarterRecommendation? = forGame(game).maxByOrNull{
         it.rating.early*3 + it.rating.mid*2 + it.rating.late
     }
+
+    private val lumiose=listOf(
+        JourneyStarterRecommendation(
+            498,"Tepig","Emboar","Fogo → Fogo/Lutador",
+            "RECOMENDADO · melhor cobertura geral",
+            StarterStageRating(5,5,5),
+            listOf(
+                "Early game: ótima pressão ofensiva e cobertura simples para a progressão inicial da Z-A Royale.",
+                "Mid game: Pignite/Emboar combina Fogo e Lutador, cobrindo muitos confrontos e Rogue Megas.",
+                "Late game: Mega Emboar mantém excelente poder físico e ganha bastante resistência especial.",
+                "É a escolha mais fácil para seguir a rota principal sem depender de muitas trocas."
+            ),
+            listOf("É lento e alguns golpes fortes têm cooldown maior.","Cubra Água, Voador, Psíquico e Terra com o restante do time.")
+        ),
+        JourneyStarterRecommendation(
+            158,"Totodile","Feraligatr","Água → Água / Mega Água-Dragão",
+            "ÓTIMO · equilíbrio e Mega forte",
+            StarterStageRating(4,5,5),
+            listOf(
+                "Early game: Água é um tipo simples e seguro para a campanha.",
+                "Mid game: Feraligatr oferece bom Ataque e cobertura ampla com golpes físicos.",
+                "Late game: Mega Feraligatr ganha Dragão e possui o maior Ataque entre as Mega Evoluções dos três iniciais.",
+                "Excelente escolha para quem quer um atacante físico consistente do começo ao fim."
+            ),
+            listOf("Antes da Mega Evolução, precisa de apoio contra Planta e Elétrico.","A Mega passa a exigir atenção especial a Dragão e Fada.")
+        ),
+        JourneyStarterRecommendation(
+            152,"Chikorita","Meganium","Planta → Planta / Mega Planta-Fada",
+            "DEFENSIVO · segurança e suporte",
+            StarterStageRating(3,4,5),
+            listOf(
+                "Early game: maior foco em resistência e utilidade do que dano bruto.",
+                "Mid game: Bayleef/Meganium funciona bem como suporte durável para batalhas mais longas.",
+                "Late game: Mega Meganium ganha Fada e melhora muito o Ataque Especial sem perder o perfil defensivo.",
+                "Boa escolha para quem prefere consistência, cura e controle da luta."
+            ),
+            listOf("É o inicial com menor pressão ofensiva no começo.","Precisa mais do restante da equipe para cobrir Fogo, Gelo, Veneno, Voador e Inseto.")
+        )
+    )
 
     private val paldea=listOf(
         JourneyStarterRecommendation(
