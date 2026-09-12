@@ -12,6 +12,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
@@ -1296,6 +1297,24 @@ private fun JourneyMapScreen(
             Box(
                 Modifier.offset(x=left,y=top)
                     .size(mapW,mapH)
+                    .pointerInput(game.label,points){
+                        detectTapGestures{tap->
+                            val hitRadiusPx=with(density){28.dp.toPx()}/currentZoom.coerceAtLeast(1f)
+                            val nearest=points.minByOrNull{point->
+                                val dx=tap.x-mapWidthPx*point.x
+                                val dy=tap.y-mapHeightPx*point.y
+                                dx*dx+dy*dy
+                            }
+                            if(nearest!=null){
+                                val dx=tap.x-mapWidthPx*nearest.x
+                                val dy=tap.y-mapHeightPx*nearest.y
+                                if(dx*dx+dy*dy<=hitRadiusPx*hitRadiusPx){
+                                    if(selectedStepId==nearest.stepId)onOpenStep(nearest.stepId)
+                                    else onSelectedStepChange(nearest.stepId)
+                                }
+                            }
+                        }
+                    }
                     .pointerInput(game.label){
                         detectTransformGestures{_,panChange,zoomChange,_->
                             val newZoom=(currentZoom*zoomChange).coerceIn(1f,3.5f)
@@ -1345,8 +1364,7 @@ private fun JourneyMapScreen(
                     Box(
                         modifier=Modifier
                             .offset(x=mapW*point.x-hitSize/2,y=mapH*point.y-hitSize/2)
-                            .size(hitSize)
-                            .clickable{if(selectedStepId==step.id)onOpenStep(step.id) else onSelectedStepChange(step.id)},
+                            .size(hitSize),
                         contentAlignment=Alignment.Center
                     ){
                         if(isNext || isSelected){
