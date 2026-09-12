@@ -1,5 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
@@ -27,6 +29,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
@@ -37,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.otaviobarreto.pokedex.data.*
@@ -1151,6 +1156,29 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
 
 
 @Composable
+private fun rememberEmbeddedJourneyMap(assetPrefix:String?):ImageBitmap?{
+    val context=LocalContext.current
+    var bitmap by remember(assetPrefix){ mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(assetPrefix){
+        bitmap = if(assetPrefix==null) null else withContext(Dispatchers.IO){
+            runCatching{
+                val encoded=buildString{
+                    repeat(17){index->
+                        val suffix=index.toString().padStart(2,'0')
+                        context.assets.open(assetPrefix+"_"+suffix+".b64")
+                            .bufferedReader()
+                            .use{append(it.readText())}
+                    }
+                }
+                val bytes=Base64.decode(encoded,Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(bytes,0,bytes.size)?.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    return bitmap
+}
+
+@Composable
 private fun JourneyMapScreen(
     game:AppGame,
     selectedStepId:String?,
@@ -1179,6 +1207,7 @@ private fun JourneyMapScreen(
     val selected=steps.firstOrNull{it.id==selectedStepId}
     val currentZoom by rememberUpdatedState(zoom)
     val currentPan by rememberUpdatedState(pan)
+    val embeddedMap=rememberEmbeddedJourneyMap(JourneyMapCatalog.embeddedAsset(game.label))
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)){
         BoxWithConstraints(
@@ -1191,7 +1220,7 @@ private fun JourneyMapScreen(
                     }
                 }
         ){
-            val mapAspect=1.414f
+            val mapAspect=JourneyMapCatalog.aspectRatio(game.label)
             val viewportW=maxWidth
             val viewportH=maxHeight
             val fittedH=viewportW/mapAspect
@@ -1209,13 +1238,22 @@ private fun JourneyMapScreen(
                     }
                     .clip(RoundedCornerShape(18.dp))
             ){
-                JourneyMapCatalog.backgroundUrl(game.label)?.let{mapUrl->
-                    AsyncImage(
-                        model=mapUrl,
-                        contentDescription="Mapa de Paldea",
+                if(embeddedMap!=null){
+                    Image(
+                        bitmap=embeddedMap,
+                        contentDescription="Mapa oficial de Paldea",
                         contentScale=ContentScale.FillBounds,
                         modifier=Modifier.fillMaxSize()
                     )
+                }else{
+                    JourneyMapCatalog.backgroundUrl(game.label)?.let{mapUrl->
+                        AsyncImage(
+                            model=mapUrl,
+                            contentDescription="Mapa da Jornada",
+                            contentScale=ContentScale.FillBounds,
+                            modifier=Modifier.fillMaxSize()
+                        )
+                    }
                 }
 
                 points.forEach{point->
@@ -1223,28 +1261,41 @@ private fun JourneyMapScreen(
                     val done=step.id in completed
                     val isNext=next?.id==step.id
                     val isSelected=selectedStepId==step.id
-                    val marker=if(isNext)48.dp else if(done)32.dp else 38.dp
-                    Surface(
+                    val hitSize=56.dp
+                    Box(
                         modifier=Modifier
-                            .offset(x=mapW*point.x-marker/2,y=mapH*point.y-marker/2)
-                            .size(marker)
+                            .offset(x=mapW*point.x-hitSize/2,y=mapH*point.y-hitSize/2)
+                            .size(hitSize)
                             .clickable{onSelectedStepChange(step.id)},
-                        shape=RoundedCornerShape(50),
-                        color=when{
-                            isNext->MaterialTheme.colorScheme.tertiary
-                            done->MaterialTheme.colorScheme.primary.copy(alpha=.82f)
-                            else->MaterialTheme.colorScheme.surface.copy(alpha=.94f)
-                        },
-                        border=if(isSelected) androidx.compose.foundation.BorderStroke(3.dp,MaterialTheme.colorScheme.onSurface) else null,
-                        shadowElevation=if(isNext||isSelected)8.dp else 3.dp
+                        contentAlignment=Alignment.Center
                     ){
-                        Box(contentAlignment=Alignment.Center){
-                            when{
-                                done->Icon(Icons.Default.Check,null,Modifier.size(17.dp),tint=MaterialTheme.colorScheme.onPrimary)
-                                step.kind==JourneyChallengeKind.GYM->Icon(Icons.Default.EmojiEvents,null,Modifier.size(19.dp))
-                                step.kind==JourneyChallengeKind.TITAN->Icon(Icons.Default.Landscape,null,Modifier.size(19.dp))
-                                step.kind==JourneyChallengeKind.STAR->Icon(Icons.Default.Stars,null,Modifier.size(19.dp))
-                                else->Icon(Icons.Default.Place,null,Modifier.size(19.dp))
+                        if(isNext || isSelected){
+                            Surface(
+                                modifier=Modifier.size(if(isNext)52.dp else 48.dp),
+                                shape=RoundedCornerShape(50),
+                                color=androidx.compose.ui.graphics.Color.Transparent,
+                                border=androidx.compose.foundation.BorderStroke(
+                                    if(isNext)3.dp else 2.dp,
+                                    if(isNext)MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface
+                                ),
+                                shadowElevation=if(isNext)7.dp else 2.dp
+                            ){}
+                        }
+                        if(done){
+                            Surface(
+                                modifier=Modifier.align(Alignment.TopEnd).size(20.dp),
+                                shape=RoundedCornerShape(50),
+                                color=MaterialTheme.colorScheme.primary,
+                                shadowElevation=4.dp
+                            ){
+                                Box(contentAlignment=Alignment.Center){
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription="Concluído",
+                                        modifier=Modifier.size(13.dp),
+                                        tint=MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
                             }
                         }
                     }
@@ -1265,7 +1316,7 @@ private fun JourneyMapScreen(
                     shadowElevation=4.dp
                 ){
                     Column(Modifier.padding(horizontal=12.dp,vertical=8.dp)){
-                        Text("Mapa da Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                        Text("Mapa oficial · Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
                         Text(game.label,style=MaterialTheme.typography.labelSmall)
                     }
                 }
