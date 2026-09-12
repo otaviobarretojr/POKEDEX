@@ -53,8 +53,17 @@ fun CompanionCenterScreen(
             advisorReady=CollectionAdvisor.isWarm()
         }
     }
-    val capturePlan=remember(advisorReady,livingPlan.missingSpecies,CollectionStore.capturedIds){
-        if(advisorReady) CollectionAdvisor.capturePlan(livingPlan.missingSpecies,limit=10) else emptyList()
+    val allMissing=remember(CollectionStore.capturedIds){
+        (1..PokeApiService.MAX_NATIONAL_DEX_ID).filter{it !in CollectionStore.capturedIds}
+    }
+    val capturePlan=remember(advisorReady,allMissing,CollectionStore.capturedIds){
+        if(advisorReady) CollectionAdvisor.capturePlan(allMissing,limit=10) else emptyList()
+    }
+    val routePlan=remember(advisorReady,allMissing,CollectionStore.capturedIds){
+        if(advisorReady) CollectionAdvisor.gameRoutePlan(allMissing) else emptyList()
+    }
+    val nextAction=remember(advisorReady,allMissing,CollectionStore.capturedIds){
+        if(advisorReady) CollectionAdvisor.nextAction(allMissing) else null
     }
 
     val normalizedQuery=query.trim()
@@ -278,6 +287,103 @@ fun CompanionCenterScreen(
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                             InsightCard("Shiny espécies",livingPlan.shinySpecies.toString(),Modifier.weight(1f))
                             InsightCard("Registros de forma",livingPlan.formRegistrations.toString(),Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+
+        if(normalizedQuery.isBlank()){
+            item{
+                SectionTitle("O que faço agora?")
+                Card(shape=RoundedCornerShape(20.dp)){
+                    Column(Modifier.fillMaxWidth().padding(16.dp)){
+                        if(!advisorReady || nextAction==null){
+                            Row(verticalAlignment=Alignment.CenterVertically){
+                                CircularProgressIndicator(Modifier.size(22.dp),strokeWidth=2.dp)
+                                Text(
+                                    "Calculando a melhor próxima ação…",
+                                    Modifier.padding(start=10.dp),
+                                    style=MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }else{
+                            Text(
+                                nextAction.title,
+                                style=MaterialTheme.typography.titleLarge,
+                                fontWeight=FontWeight.Black
+                            )
+                            Text(
+                                nextAction.subtitle,
+                                style=MaterialTheme.typography.bodyMedium,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier=Modifier.padding(top=4.dp)
+                            )
+                            val preview=nextAction.targetIds.take(6)
+                            if(preview.isNotEmpty()){
+                                LazyRow(
+                                    modifier=Modifier.padding(top=10.dp),
+                                    horizontalArrangement=Arrangement.spacedBy(6.dp)
+                                ){
+                                    items(preview,key={it}){id->
+                                        AssistChip(
+                                            onClick={onPokemonClick(id)},
+                                            label={Text("#"+id.toString().padStart(4,'0'))}
+                                        )
+                                    }
+                                }
+                            }
+                            if(nextAction.game!=null && nextAction.source!=null){
+                                Button(
+                                    onClick={onOpenBoxes(nextAction.game,nextAction.source)},
+                                    modifier=Modifier.fillMaxWidth().padding(top=12.dp)
+                                ){
+                                    Icon(Icons.Default.PlayArrow,null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Abrir melhor jogo agora")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if(normalizedQuery.isBlank() && advisorReady && routePlan.isNotEmpty()){
+            item{
+                SectionTitle("Rota recomendada")
+                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    routePlan.take(6).forEachIndexed{index,step->
+                        Card(shape=RoundedCornerShape(18.dp)){
+                            Row(
+                                Modifier.fillMaxWidth().padding(14.dp),
+                                verticalAlignment=Alignment.CenterVertically
+                            ){
+                                Surface(
+                                    shape=RoundedCornerShape(50),
+                                    color=MaterialTheme.colorScheme.primaryContainer
+                                ){
+                                    Text(
+                                        (index+1).toString(),
+                                        Modifier.padding(horizontal=10.dp,vertical=6.dp),
+                                        fontWeight=FontWeight.Black
+                                    )
+                                }
+                                Column(Modifier.weight(1f).padding(start=10.dp)){
+                                    Text(step.game,fontWeight=FontWeight.Bold)
+                                    Text(
+                                        (step.region?.let{it+" · "} ?: "")+
+                                            step.count+" espécie(s) pendente(s)",
+                                        style=MaterialTheme.typography.bodySmall,
+                                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                if(step.source!=null){
+                                    TextButton(onClick={onOpenBoxes(step.game,step.source)}){
+                                        Text("Abrir")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
