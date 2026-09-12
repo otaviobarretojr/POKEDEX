@@ -31,14 +31,25 @@ object StartupPreloader {
         val activeGame = AppStatePreferences.activeGame
         val game = AppGameCatalog.games.firstOrNull { it.label == activeGame }
 
-        progress(.24f, "Preparando sua Jornada")
-        val gameDexIds = game?.regions.orEmpty().mapNotNull { region ->
-            GameContext.fromSource(region.source)
-        }.map { ctx ->
-            runCatching { GameDexService.loadGameDex(ctx) }.getOrDefault(emptyList())
-        }.flatten().map { it.nationalId }.distinct()
+        progress(.20f, "Preparando sua Jornada")
+        val allContexts = JourneyReadinessAudit.allAdventureContexts()
+        val activeContexts = game?.regions.orEmpty().mapNotNull { region -> GameContext.fromSource(region.source) }
 
-        progress(.43f, "Carregando catálogos essenciais")
+        coroutineScope {
+            allContexts.map { ctx ->
+                async { runCatching { GameDexService.loadGameDex(ctx) } }
+            }.awaitAll()
+        }
+
+        val gameDexIds = activeContexts.flatMap { ctx ->
+            GameDexService.cached(ctx).orEmpty()
+        }.map { it.nationalId }.distinct()
+
+        check(JourneyReadinessAudit.scarletViolet().valid) {
+            "Catálogo Scarlet/Violet incompleto"
+        }
+
+        progress(.40f, "Carregando catálogos essenciais")
         coroutineScope {
             listOf("move", "ability", "item").map { kind ->
                 async { runCatching { ReferenceCatalogService.load(kind) } }
@@ -51,13 +62,18 @@ object StartupPreloader {
             addAll(gameDexIds.take(18))
         }.distinct().take(32)
 
-        progress(.63f, "Aquecendo detalhes dos Pokémon")
+        progress(.60f, "Aquecendo detalhes dos Pokémon")
         coroutineScope {
-            priorityIds.chunked(4).forEachIndexed { index, chunk ->
+            priorityIds.take(8).map { id ->
+                async { runCatching { PokedexDataStore.prefetchFullDetails(id) } }
+            }.awaitAll()
+
+            priorityIds.drop(8).chunked(4).forEachIndexed { index, chunk ->
                 chunk.map { id ->
                     async { runCatching { PokedexDataStore.prefetchCoreDetails(id) } }
                 }.awaitAll()
-                val local = .63f + ((index + 1f) / ((priorityIds.size + 3) / 4).coerceAtLeast(1)) * .20f
+                val groups = ((priorityIds.drop(8).size + 3) / 4).coerceAtLeast(1)
+                val local = .66f + ((index + 1f) / groups) * .17f
                 progress(local, "Aquecendo detalhes dos Pokémon")
             }
         }

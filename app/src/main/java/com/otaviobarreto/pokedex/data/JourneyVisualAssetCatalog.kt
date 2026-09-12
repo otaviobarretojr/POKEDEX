@@ -13,6 +13,7 @@ data class JourneyVisualAsset(
 
 object JourneyVisualAssetCatalog {
     fun forStep(stepId:String):JourneyVisualAsset?=assets[stepId]
+    fun allUrls():List<String> = assets.values.map { it.imageUrl }.distinct()
 
     private const val OFFICIAL="https://www.pokemon.co.jp/ex/sv/ja/assets/img/character/"
     private const val ART="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"

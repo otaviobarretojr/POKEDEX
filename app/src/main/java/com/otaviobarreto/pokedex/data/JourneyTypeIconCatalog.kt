@@ -3,6 +3,8 @@ package com.otaviobarreto.pokedex.data
 object JourneyTypeIconCatalog {
     private const val BASE="https://pokesprite.tootaio.com/sprites/types/generation-ix/scarlet-violet/"
 
+    fun allUrls():List<String> = (1..18).map { BASE + it + ".png" }
+
     fun iconUrl(typeLabel:String):String?{
         val key=typeLabel.lowercase()
         val id=when{

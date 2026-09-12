@@ -47,7 +47,7 @@ print("Source verification passed.")
 
 # v6.0 release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 8" not in offline:
+if "PACK_VERSION = 9" not in offline:
     violations.append("Offline pack version is not v8")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if 'versionName = "6.26.0"' not in workflow or "versionCode = 6260" not in workflow:
+if 'versionName = "6.31.0"' not in workflow or "versionCode = 6310" not in workflow:
     violations.append("CI v6.21.0 version stamping missing")
 
 if violations:
@@ -698,7 +698,7 @@ if "LaunchedEffect(selectedGame){" in journey_v615:
     violations.append("Journey must not reset saved navigation state merely because selectedGame was restored")
 
 offline_v615 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-for required in ("PACK_VERSION = 8", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
+for required in ("PACK_VERSION = 9", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
     if required not in offline_v615:
         violations.append(f"Offline artwork integrity audit missing {required}")
 
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v6.26.0",
+        "v6.31.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,7 +907,7 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "6.26.0"' not in local_gradle or "versionCode = 6260" not in local_gradle:
+if 'versionName = "6.31.0"' not in local_gradle or "versionCode = 6310" not in local_gradle:
     violations.append("Local build version is not aligned with v6.21.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -1029,6 +1029,53 @@ for required in (
 ):
     if required not in startup_v626:
         violations.append(f"Journey preload hardening missing {required}")
+
+
+# v6.31.0 instant/offline/Scarlet/polish guards
+readiness = root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyReadinessAudit.kt"
+if not readiness.exists():
+    violations.append("Journey readiness audit missing")
+else:
+    readiness_source = readiness.read_text(encoding="utf-8")
+    for required in (
+        '"Paldea" to "paldea"',
+        '"Kitakami" to "kitakami"',
+        '"Blueberry" to "blueberry"',
+        "allAdventureContexts",
+        "journeyVisualUrls",
+        "referenceCatalogUrls",
+        "JourneyVisualAssetCatalog.allUrls",
+        "JourneyTypeIconCatalog.allUrls",
+        "JourneyMapCatalog.backgroundUrl",
+    ):
+        if required not in readiness_source:
+            violations.append(f"v6.31 Journey readiness missing {required}")
+
+startup_v631 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+for required in (
+    "JourneyReadinessAudit.allAdventureContexts",
+    "GameDexService.cached(ctx)",
+    "JourneyReadinessAudit.scarletViolet().valid",
+    "PokedexDataStore.prefetchFullDetails",
+):
+    if required not in startup_v631:
+        violations.append(f"v6.31 instant preload missing {required}")
+
+offline_v631 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
+for required in (
+    "PACK_VERSION = 9",
+    "cachedJourneyVisuals",
+    "expectedJourneyVisuals",
+    "JourneyReadinessAudit.referenceCatalogUrls",
+    "JourneyReadinessAudit.journeyVisualUrls",
+    "visual_urls",
+    "journeyVisualKey",
+):
+    if required not in offline_v631:
+        violations.append(f"v6.31 offline pack missing {required}")
+
+if not (root / "app/src/test/java/com/otaviobarreto/pokedex/data/JourneyReadinessAuditTest.kt").exists():
+    violations.append("v6.31 Journey readiness regression tests missing")
 
 if violations:
     print("Source verification failed:")

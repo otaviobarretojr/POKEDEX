@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 8
+    private const val PACK_VERSION = 9
     private var context: Context? = null
 
     data class PackStatus(
@@ -37,7 +37,9 @@ object OfflineGamePackManager {
         val pinnedResources: Int,
         val expectedResources: Int,
         val cachedImages: Int,
-        val expectedImages: Int
+        val expectedImages: Int,
+        val cachedJourneyVisuals: Int,
+        val expectedJourneyVisuals: Int
     ) {
         val summary: String
             get() = when {
@@ -48,6 +50,7 @@ object OfflineGamePackManager {
                 !hasRegionManifest -> "Manifesto regional incompleto"
                 pinnedResources < expectedResources -> "Recursos locais incompletos"
                 cachedImages < expectedImages -> "Imagens offline incompletas"
+                cachedJourneyVisuals < expectedJourneyVisuals -> "Visuais da Jornada incompletos"
                 else -> "Pacote precisa de reparo"
             }
     }
@@ -79,6 +82,8 @@ object OfflineGamePackManager {
         val pinned = resources.count { PersistentApiCache.has(it) && PersistentApiCache.isPinned(it) }
         val ids = manifestIds(gameLabel)
         val cachedImages = ids.count(::hasOfflineArtwork)
+        val visualUrls = prefs().getStringSet(key(gameLabel, "visual_urls"), emptySet()).orEmpty()
+        val cachedJourneyVisuals = visualUrls.count(::hasOfflineVisual)
         val valid = expected > 0 &&
             completed == expected &&
             current &&
@@ -86,8 +91,21 @@ object OfflineGamePackManager {
             resources.isNotEmpty() &&
             pinned == resources.size &&
             ids.size == expected &&
-            cachedImages == ids.size
-        return PackAudit(valid, completed, expected, current, regions, pinned, resources.size, cachedImages, ids.size)
+            cachedImages == ids.size &&
+            cachedJourneyVisuals == visualUrls.size
+        return PackAudit(
+            valid,
+            completed,
+            expected,
+            current,
+            regions,
+            pinned,
+            resources.size,
+            cachedImages,
+            ids.size,
+            cachedJourneyVisuals,
+            visualUrls.size
+        )
     }
 
     fun manifestIds(gameLabel: String): Set<Int> =
@@ -117,6 +135,7 @@ object OfflineGamePackManager {
         listOf("move", "ability", "item").forEach { kind ->
             runCatching { ReferenceCatalogService.load(kind) }
         }
+        PersistentApiCache.pinAll(JourneyReadinessAudit.referenceCatalogUrls())
 
         onProgress(Progress(0, 1, "Preparando ${game.label}"))
         val regionalDexes = contexts.mapIndexed { index, ctx ->
@@ -125,7 +144,24 @@ object OfflineGamePackManager {
         }
 
         val ids = regionalDexes.flatten().map { it.nationalId }.distinct().sorted()
-        prefs().edit().putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet()).apply()
+        val visualUrls = JourneyReadinessAudit.journeyVisualUrls(game.label)
+        prefs().edit()
+            .putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet())
+            .putStringSet(key(game.label, "visual_urls"), visualUrls.toSet())
+            .apply()
+
+        onProgress(Progress(0, visualUrls.size.coerceAtLeast(1), "Salvando visuais da Jornada"))
+        visualUrls.forEachIndexed { index, url ->
+            val request = ImageRequest.Builder(appContext)
+                .data(url)
+                .diskCacheKey(journeyVisualKey(url))
+                .memoryCacheKey(journeyVisualKey(url))
+                .build()
+            check(appContext.imageLoader.execute(request) is SuccessResult) {
+                "Falha ao armazenar visual da Jornada"
+            }
+            onProgress(Progress(index + 1, visualUrls.size.coerceAtLeast(1), "Salvando visuais da Jornada"))
+        }
         val total = ids.size.coerceAtLeast(1)
         val completedKey = key(game.label, "completed_ids")
         val alreadyCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
@@ -246,9 +282,19 @@ object OfflineGamePackManager {
         }.getOrDefault(false)
     }
 
+    private fun hasOfflineVisual(url: String): Boolean {
+        val disk = context?.imageLoader?.diskCache ?: return false
+        return runCatching {
+            disk.openSnapshot(journeyVisualKey(url))?.use { true } ?: false
+        }.getOrDefault(false)
+    }
+
+    private fun journeyVisualKey(url: String): String = "journey-offline-" + url.hashCode()
+
     fun remove(gameLabel: String) {
         val urls = resourceUrls(gameLabel)
         val ids = manifestIds(gameLabel)
+        val visualUrls = prefs().getStringSet(key(gameLabel, "visual_urls"), emptySet()).orEmpty()
         val sharedUrls = AppGameCatalog.games.asSequence()
             .map { it.label }
             .filter { it != gameLabel }
@@ -262,6 +308,7 @@ object OfflineGamePackManager {
         PersistentApiCache.unpinAll(urls - sharedUrls, deleteFiles = true)
         context?.imageLoader?.diskCache?.let { disk ->
             (ids - sharedIds).forEach { id -> runCatching { disk.remove("pokemon-offline-$id") } }
+            visualUrls.forEach { url -> runCatching { disk.remove(journeyVisualKey(url)) } }
         }
         prefs().edit()
             .remove(key(gameLabel, "ready"))
@@ -273,6 +320,7 @@ object OfflineGamePackManager {
             .remove(key(gameLabel, "completed_ids"))
             .remove(key(gameLabel, "manifest_ids"))
             .remove(key(gameLabel, "resource_urls"))
+            .remove(key(gameLabel, "visual_urls"))
             .remove(key(gameLabel, "running"))
             .remove(key(gameLabel, "runtime_done"))
             .remove(key(gameLabel, "runtime_total"))
