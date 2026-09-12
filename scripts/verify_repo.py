@@ -1739,7 +1739,7 @@ startup_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/Startu
 for required in (
     "activePageIds",
     "ownedVariantIds",
-    "take(64)",
+    "take(48)",
 ):
     if required not in startup_v1700:
         violations.append(f"v17.0.0 startup performance support missing {required}")
