@@ -49,6 +49,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import com.otaviobarreto.pokedex.data.*
 
 private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
@@ -1233,6 +1235,7 @@ private fun JourneyMapScreen(
     val currentPan by rememberUpdatedState(pan)
     val embeddedMap=rememberEmbeddedJourneyMap(JourneyMapCatalog.embeddedAsset(game.label))
     val density=LocalDensity.current
+    val mapScope=rememberCoroutineScope()
     val pulse=rememberInfiniteTransition(label="mapTargetPulse").animateFloat(
         initialValue=.92f,targetValue=1.08f,
         animationSpec=infiniteRepeatable(tween(850),RepeatMode.Reverse),
@@ -1240,16 +1243,7 @@ private fun JourneyMapScreen(
     ).value
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)){
-        BoxWithConstraints(
-            Modifier.fillMaxSize()
-                .pointerInput(game.label){
-                    detectTransformGestures{_,panChange,zoomChange,_->
-                        val newZoom=(currentZoom*zoomChange).coerceIn(1f,3.5f)
-                        onZoomChange(newZoom)
-                        onPanChange(clampPan(if(newZoom<=1.01f) Offset.Zero else currentPan+panChange,newZoom))
-                    }
-                }
-        ){
+        BoxWithConstraints(Modifier.fillMaxSize()){
             val mapAspect=JourneyMapCatalog.aspectRatio(game.label)
             val viewportW=maxWidth
             val viewportH=maxHeight
@@ -1271,18 +1265,45 @@ private fun JourneyMapScreen(
             fun focusStep(stepId:String?){
                 val point=points.firstOrNull{it.stepId==stepId} ?: return
                 val targetZoom=1.85f
-                onZoomChange(targetZoom)
-                val desired=Offset(
-                    (0.5f-point.x)*mapWidthPx*targetZoom,
-                    (0.5f-point.y)*mapHeightPx*targetZoom
+                val targetPan=clampPan(
+                    Offset(
+                        (0.5f-point.x)*mapWidthPx*targetZoom,
+                        (0.5f-point.y)*mapHeightPx*targetZoom
+                    ),targetZoom
                 )
-                onPanChange(clampPan(desired,targetZoom))
+                val startZoom=currentZoom
+                val startPan=currentPan
                 onSelectedStepChange(stepId)
+                mapScope.launch{
+                    repeat(12){index->
+                        val t=(index+1)/12f
+                        val eased=1f-(1f-t)*(1f-t)
+                        val z=startZoom+(targetZoom-startZoom)*eased
+                        val p=Offset(
+                            startPan.x+(targetPan.x-startPan.x)*eased,
+                            startPan.y+(targetPan.y-startPan.y)*eased
+                        )
+                        onZoomChange(z)
+                        onPanChange(clampPan(p,z))
+                        delay(16)
+                    }
+                }
+            }
+            LaunchedEffect(fullscreen,viewportWidthPx,viewportHeightPx,zoom){
+                val corrected=clampPan(pan,zoom)
+                if(corrected!=pan)onPanChange(corrected)
             }
 
             Box(
                 Modifier.offset(x=left,y=top)
                     .size(mapW,mapH)
+                    .pointerInput(game.label){
+                        detectTransformGestures{_,panChange,zoomChange,_->
+                            val newZoom=(currentZoom*zoomChange).coerceIn(1f,3.5f)
+                            onZoomChange(newZoom)
+                            onPanChange(clampPan(if(newZoom<=1.01f) Offset.Zero else currentPan+panChange,newZoom))
+                        }
+                    }
                     .graphicsLayer{
                         scaleX=zoom;scaleY=zoom
                         translationX=pan.x;translationY=pan.y
