@@ -139,6 +139,11 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     val progress=if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
     val nextStep=steps.firstOrNull{it.id !in completed}
     val smart=remember(game.label,revision){JourneySmartProgress.context(game.label)}
+    var showCompleted by rememberSaveable(game.label){mutableStateOf(false)}
+    val hiddenCompletedCount=completedCount
+    val visibleSteps=remember(steps,completed,showCompleted){
+        if(showCompleted) steps else steps.filterNot{it.id in completed}
+    }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -229,6 +234,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
         nextStep?.let{step->
             val prep=JourneyPreparationCatalog.forStep(step.id)
             val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
+            val walkthrough=JourneyWalkthroughCatalog.forStep(step.id)
             item{
                 Card(
                     shape=RoundedCornerShape(20.dp),
@@ -252,13 +258,48 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                             if(detail?.opponents?.isNotEmpty()==true){
                                 Text("Principal ameaça: "+detail.opponents.last().name+" · "+detail.opponents.last().level,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=5.dp))
                             }
+                            walkthrough?.tips?.firstOrNull()?.let{tip->
+                                Text("Dica: "+tip,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=5.dp))
+                            }
                         }
                     }
                 }
             }
         }
 
-        items(steps,key={it.id}){step->
+        if(hiddenCompletedCount>0){
+            item{
+                FilledTonalButton(
+                    onClick={showCompleted=!showCompleted},
+                    modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
+                ){
+                    Icon(if(showCompleted)Icons.Default.VisibilityOff else Icons.Default.Visibility,null)
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        if(showCompleted) "Ocultar concluídos"
+                        else "Mostrar concluídos ("+hiddenCompletedCount+")"
+                    )
+                }
+            }
+        }
+
+        if(visibleSteps.isEmpty() && steps.isNotEmpty()){
+            item{
+                Card(
+                    shape=RoundedCornerShape(20.dp),
+                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
+                    modifier=Modifier.fillMaxWidth().padding(vertical=8.dp)
+                ){
+                    Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
+                        Icon(Icons.Default.TaskAlt,null,Modifier.size(34.dp))
+                        Text("Rota concluída!",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge,modifier=Modifier.padding(top=8.dp))
+                        Text("Todos os objetivos estão concluídos. Use “Mostrar concluídos” para revisar a rota.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
+                    }
+                }
+            }
+        }
+
+        items(visibleSteps,key={it.id}){step->
             val done=step.id in completed
             val isNext=nextStep?.id==step.id
             Column{
@@ -527,6 +568,7 @@ private fun JourneyObjectiveDetailScreen(
     val done=remember(game.label,step.id,revision){step.id in JourneyProgressStore.completed(game.label)}
     val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
     val preparation=JourneyPreparationCatalog.forStep(step.id)
+    val walkthrough=JourneyWalkthroughCatalog.forStep(step.id)
     val national=PokedexDataStore.cachedNationalDex().orEmpty()
 
     LazyColumn(
@@ -564,6 +606,38 @@ private fun JourneyObjectiveDetailScreen(
                     JourneyTypeDetailLine(step.typeLabel)
                     JourneyDetailLine(Icons.Default.LocationOn,"Local",step.location)
                     Text(detail?.summary ?: step.note,style=MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+
+        walkthrough?.let{guide->
+            item{JourneyDetailSectionTitle(Icons.Default.MenuBook,"Detonado do objetivo")}
+            item{
+                Card(
+                    shape=RoundedCornerShape(18.dp),
+                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)
+                ){
+                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                        Text(guide.title,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                        guide.steps.forEachIndexed{index,text->
+                            Row(Modifier.fillMaxWidth().padding(top=if(index==0)10.dp else 8.dp),verticalAlignment=Alignment.Top){
+                                Surface(shape=RoundedCornerShape(50),color=MaterialTheme.colorScheme.primaryContainer){
+                                    Text((index+1).toString(),Modifier.padding(horizontal=8.dp,vertical=4.dp),fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
+                                }
+                                Text(text,Modifier.weight(1f).padding(start=9.dp,top=2.dp),style=MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                        if(guide.tips.isNotEmpty()){
+                            HorizontalDivider(Modifier.padding(vertical=12.dp))
+                            Text("DICAS RÁPIDAS",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)
+                            guide.tips.forEach{tip->
+                                Row(Modifier.fillMaxWidth().padding(top=7.dp),verticalAlignment=Alignment.Top){
+                                    Icon(Icons.Default.Lightbulb,null,Modifier.size(17.dp))
+                                    Text(tip,Modifier.weight(1f).padding(start=7.dp),style=MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
