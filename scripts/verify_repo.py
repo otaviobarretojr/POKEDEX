@@ -59,7 +59,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "8000" not in workflow or "8.0.0" not in workflow:
+if "8900" not in workflow or "8.9.0" not in workflow:
     violations.append("CI v8.9.0 version stamping missing")
 
 if violations:
