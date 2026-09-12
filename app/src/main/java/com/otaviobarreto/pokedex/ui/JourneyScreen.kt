@@ -93,7 +93,7 @@ fun JourneyScreen(
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
             JourneyView.ROUTE -> view=JourneyView.GAME_MENU
-            JourneyView.MAP -> { mapFullscreen=false; onMapFullscreenChange(false); view=JourneyView.GAME_MENU }
+            JourneyView.MAP -> { if(mapFullscreen){ mapFullscreen=false; onMapFullscreenChange(false) } else view=JourneyView.GAME_MENU }
             JourneyView.DETAIL -> {
                 selectedStepId=null
                 view=detailReturnView
