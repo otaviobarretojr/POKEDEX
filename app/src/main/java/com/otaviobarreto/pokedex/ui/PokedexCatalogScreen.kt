@@ -73,7 +73,7 @@ private fun ArtworkWithFallback(
             )
         }else{
             Icon(
-                Icons.Default.CatchingPokemon,
+                Icons.Default.MenuBook,
                 contentDescription="Arte indisponível",
                 modifier=Modifier.fillMaxSize(.42f),
                 tint=MaterialTheme.colorScheme.onSurfaceVariant
