@@ -283,6 +283,17 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                             walkthrough?.tips?.firstOrNull()?.let{tip->
                                 Text("Dica: "+tip,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=5.dp))
                             }
+                            val catches=JourneyTeamProgressCatalog.newlyRelevantCatches(step)
+                                .filterNot{it.pokemonId in CollectionStore.capturedIds}
+                            if(catches.isNotEmpty()){
+                                HorizontalDivider(Modifier.padding(vertical=9.dp))
+                                Text("CAPTURE NO CAMINHO",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
+                                catches.take(2).forEach{rec->
+                                    val name=PokedexDataStore.cachedNationalDex().orEmpty().firstOrNull{it.id==rec.pokemonId}?.name ?: "#"+rec.pokemonId
+                                    Text(name+" · "+rec.area,style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=4.dp))
+                                    Text(rec.reason,style=MaterialTheme.typography.labelSmall)
+                                }
+                            }
                         }
                     }
                 }
@@ -326,11 +337,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             val isNext=nextStep?.id==step.id
             Column{
                 val section=when(step.id){
-                    "sv-01"->"CAMPANHA PRINCIPAL · PALDEA"
-                    "sv-pg-01"->"PÓS-JOGO · PALDEA"
-                    "sv-dlc-01"->"DLC · THE TEAL MASK"
-                    "sv-dlc-08"->"DLC · THE INDIGO DISK"
-                    "sv-epi-01"->"EPÍLOGO · MOCHI MAYHEM"
+                    "sv-01","sv-pg-01","sv-pg-04","sv-pg-05","sv-dlc-01","sv-dlc-08","sv-epi-01" -> JourneyTeamProgressCatalog.chapterFor(step.id)
                     else->null
                 }
                 section?.let{
