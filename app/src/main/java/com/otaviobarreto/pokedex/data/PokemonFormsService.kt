@@ -13,7 +13,9 @@ data class PokemonFormVariant(
     val pokemonId: Int?,
     val isDefault: Boolean,
     val kind: PokemonFormKind = PokemonFormKind.OTHER,
-    val formKey: String = (pokemonId?.toString() ?: name)
+    val formKey: String = (pokemonId?.toString() ?: name),
+    val spriteUrl: String? = null,
+    val shinySpriteUrl: String? = null
 ) {
     val countsForLivingDex:Boolean
         get() = kind != PokemonFormKind.BATTLE
@@ -52,7 +54,17 @@ object PokemonFormsService {
                             pokemonId = pid,
                             isDefault = varietyDefault,
                             kind = classify(display, varietyDefault),
-                            formKey = varietyName.ifBlank { pid.toString() }
+                            formKey = varietyName.ifBlank { pid.toString() },
+                            spriteUrl = pokemonJson?.optJSONObject("sprites")
+                                ?.optJSONObject("other")
+                                ?.optJSONObject("official-artwork")
+                                ?.optString("front_default")
+                                ?.takeIf { it.isNotBlank() },
+                            shinySpriteUrl = pokemonJson?.optJSONObject("sprites")
+                                ?.optJSONObject("other")
+                                ?.optJSONObject("official-artwork")
+                                ?.optString("front_shiny")
+                                ?.takeIf { it.isNotBlank() }
                         )
                     )
                     continue
@@ -63,13 +75,25 @@ object PokemonFormsService {
                     val rawName = form.optString("name").ifBlank { varietyName }
                     val display = pretty(rawName)
                     val defaultForm = varietyDefault && j == 0
+                    val formUrl = form.optString("url")
+                    val formJson = runCatching {
+                        JSONObject(fetch(formUrl))
+                    }.getOrNull()
+                    val formSprites = formJson?.optJSONObject("sprites")
+                    val normalSprite = formSprites?.optString("front_default")?.takeIf { it.isNotBlank() }
+                    val shinySprite = formSprites?.optString("front_shiny")?.takeIf { it.isNotBlank() }
+                    val official = pokemonJson?.optJSONObject("sprites")
+                        ?.optJSONObject("other")
+                        ?.optJSONObject("official-artwork")
                     add(
                         PokemonFormVariant(
                             name = display,
                             pokemonId = pid,
                             isDefault = defaultForm,
                             kind = classify(display, defaultForm),
-                            formKey = rawName
+                            formKey = rawName,
+                            spriteUrl = normalSprite ?: official?.optString("front_default")?.takeIf { it.isNotBlank() },
+                            shinySpriteUrl = shinySprite ?: official?.optString("front_shiny")?.takeIf { it.isNotBlank() }
                         )
                     )
                 }
