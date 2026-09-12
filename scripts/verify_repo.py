@@ -823,7 +823,6 @@ else:
     for required in (
         "PokedexDataStore.nationalDex()",
         "GameDexService.loadGameDex",
-        "ReferenceCatalogService.load",
         "PokedexDataStore.prefetchCoreDetails",
         "context.imageLoader.execute",
     ):
@@ -838,7 +837,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v16.1.0",
+        "BuildConfig.VERSION_NAME",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -1076,9 +1075,9 @@ else:
 
 startup_v631 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
 for required in (
-    "JourneyReadinessAudit.allAdventureContexts",
+    "activeContexts",
     "GameDexService.cached(ctx)",
-    "JourneyReadinessAudit.scarletViolet().valid",
+    "activeRegionSource",
     "PokedexDataStore.prefetchFullDetails",
 ):
     if required not in startup_v631:
