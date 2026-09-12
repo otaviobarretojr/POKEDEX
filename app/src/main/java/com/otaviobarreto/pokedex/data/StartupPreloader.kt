@@ -65,12 +65,22 @@ object StartupPreloader {
         progress(.60f, "Aquecendo detalhes dos Pokémon")
         coroutineScope {
             priorityIds.take(12).map { id ->
-                async { runCatching { PokedexDataStore.prefetchFullDetails(id) } }
+                async {
+                    runCatching {
+                        PokedexDataStore.prefetchFullDetails(id)
+                        PokemonFormsService.collectible(id)
+                    }
+                }
             }.awaitAll()
 
             priorityIds.drop(12).chunked(6).forEachIndexed { index, chunk ->
                 chunk.map { id ->
-                    async { runCatching { PokedexDataStore.prefetchCoreDetails(id) } }
+                    async {
+                        runCatching {
+                            PokedexDataStore.prefetchCoreDetails(id)
+                            PokemonFormsService.collectible(id)
+                        }
+                    }
                 }.awaitAll()
                 val groups = ((priorityIds.drop(12).size + 5) / 6).coerceAtLeast(1)
                 val local = .66f + ((index + 1f) / groups) * .17f
