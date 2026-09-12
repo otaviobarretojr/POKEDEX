@@ -1779,3 +1779,30 @@ if violations:
     for item in violations:
         print(" -", item)
     sys.exit(1)
+
+
+# v18.1.0 audit-hardening guards
+backup_v1810 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
+for required in ("previous", "applySnapshot(incoming)", "applySnapshot(it)", "isSupported"):
+    if required not in backup_v1810:
+        violations.append(f"v18.1 backup rollback guard missing {required}")
+
+audio_v1810 = (root / "app/src/main/java/com/otaviobarreto/pokedex/audio/HomeAudioManager.kt").read_text(encoding="utf-8")
+if "prepareAsync()" not in audio_v1810:
+    violations.append("v18.1 asynchronous audio preparation missing")
+if "\n                prepare()\n" in audio_v1810:
+    violations.append("v18.1 synchronous audio preparation regression")
+
+variant_v1810 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt").read_text(encoding="utf-8")
+if "sameOwnedVariantIdentity" not in variant_v1810:
+    violations.append("v18.1 canonical variant regression helper missing")
+
+readme_v1810 = (root / "README.md").read_text(encoding="utf-8")
+if "Estado atual — v18.1.0" not in readme_v1810:
+    violations.append("README current version is not v18.1.0")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
