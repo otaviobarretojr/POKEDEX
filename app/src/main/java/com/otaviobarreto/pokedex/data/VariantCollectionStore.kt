@@ -72,7 +72,11 @@ object VariantCollectionStore {
             !owned && exists -> ownedVariants.filterNot{it.key==entry.key}
             else -> ownedVariants
         }
-        if(owned) CollectionStore.setCapturedIn(source,speciesId,true)
+        if(owned) {
+            CollectionStore.setCapturedIn(source,speciesId,true)
+        } else if(ownedVariants.none { it.source==source && it.speciesId==speciesId }) {
+            CollectionStore.setCapturedIn(source,speciesId,false)
+        }
         persist()
     }
 
