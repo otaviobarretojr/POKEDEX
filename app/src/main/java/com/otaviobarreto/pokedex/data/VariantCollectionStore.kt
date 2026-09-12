@@ -13,10 +13,11 @@ data class OwnedPokemonVariant(
     val formPokemonId:Int,
     val formName:String,
     val shiny:Boolean,
+    val formKey:String=formName.lowercase(),
     val normalArtworkUrl:String?=null,
     val shinyArtworkUrl:String?=null
 ) {
-    val key:String get() = listOf(source,speciesId,formPokemonId,formName.lowercase(),shiny).joinToString("|")
+    val key:String get() = listOf(source,speciesId,formPokemonId,formKey.lowercase(),shiny).joinToString("|")
     val artworkUrl:String
         get() = (if(shiny) shinyArtworkUrl else normalArtworkUrl)
             ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" +
