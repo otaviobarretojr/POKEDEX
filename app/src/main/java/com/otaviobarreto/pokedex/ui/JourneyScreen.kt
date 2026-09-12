@@ -210,7 +210,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             ){
                 IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
                 Column(Modifier.weight(1f)){
-                    Text("Melhor rota",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
+                    Text("Minha Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
                     Text(game.label+" · "+JourneyCatalog.routeLabel(game.label),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick=onTeam){
@@ -299,7 +299,8 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
         }
 
         val starterOptions=JourneyStarterCatalog.forGame(game.label)
-        if(starterOptions.isNotEmpty()){
+        val hasChosenStarter=AppStatePreferences.journeyStarterForGame(game.label)!=null
+        if(starterOptions.isNotEmpty() && (!hasChosenStarter || completedCount==0)){
             item(key="starter_guide",contentType="guide"){
                 JourneyStarterGuideCard(
                     starters=starterOptions,
@@ -323,57 +324,10 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                         Icon(Icons.Default.AutoAwesome,null,Modifier.padding(10.dp))
                     }
                     Column(Modifier.weight(1f).padding(start=10.dp)){
-                        Text("FASE AUTOMÁTICA · "+smart.phaseLabel.uppercase(),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
+                        Text("FASE DA JORNADA · "+smart.phaseLabel.uppercase(),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
                         Text(smart.recommendation,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=3.dp))
                     }
-                    TextButton(onClick=onTeam){Text("Time ideal")}
-                }
-            }
-        }
-
-        nextStep?.let{step->
-            val prep=JourneyPreparationCatalog.forStep(step.id)
-            val detail=JourneyObjectiveDetailsCatalog.detail(step.id)
-            val walkthrough=JourneyWalkthroughCatalog.forStep(step.id)
-            item(key="smart_next_"+step.id,contentType="next_step"){
-                Card(
-                    shape=RoundedCornerShape(20.dp),
-                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.tertiaryContainer),
-                    modifier=Modifier.fillMaxWidth().padding(bottom=14.dp).clickable{onOpenStep(step.id)}
-                ){
-                    Column(Modifier.fillMaxWidth().padding(14.dp)){
-                        Row(verticalAlignment=Alignment.CenterVertically){
-                            Icon(Icons.Default.NearMe,null)
-                            Column(Modifier.weight(1f).padding(start=10.dp)){
-                                Text("PRÓXIMO PASSO INTELIGENTE",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
-                                Text(step.title+" · "+step.levelLabel,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                                Text(step.location,style=MaterialTheme.typography.bodySmall)
-                            }
-                            Icon(Icons.Default.ChevronRight,null)
-                        }
-                        if(prep!=null){
-                            HorizontalDivider(Modifier.padding(vertical=10.dp))
-                            Text("Prepare-se com "+prep.counters.joinToString(" / "),fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.bodySmall)
-                            Text(prep.tip,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=3.dp))
-                            if(detail?.opponents?.isNotEmpty()==true){
-                                Text("Principal ameaça: "+detail.opponents.last().name+" · "+detail.opponents.last().level,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=5.dp))
-                            }
-                            walkthrough?.tips?.firstOrNull()?.let{tip->
-                                Text("Dica: "+tip,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=5.dp))
-                            }
-                            val catches=JourneyTeamProgressCatalog.newlyRelevantCatches(step)
-                                .filterNot{it.pokemonId in CollectionStore.capturedIds}
-                            if(catches.isNotEmpty()){
-                                HorizontalDivider(Modifier.padding(vertical=9.dp))
-                                Text("CAPTURE NO CAMINHO",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
-                                catches.take(2).forEach{rec->
-                                    val name=national.firstOrNull{it.id==rec.pokemonId}?.name ?: "#"+rec.pokemonId
-                                    Text(name+" · "+rec.area,style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=4.dp))
-                                    Text(rec.reason,style=MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
-                    }
+                    TextButton(onClick=onTeam){Text("Time recomendado")}
                 }
             }
         }
@@ -387,8 +341,8 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                     Icon(if(showCompleted)Icons.Default.VisibilityOff else Icons.Default.Visibility,null)
                     Spacer(Modifier.width(7.dp))
                     Text(
-                        if(showCompleted) "Ocultar concluídos"
-                        else "Mostrar concluídos ("+hiddenCompletedCount+")"
+                        if(showCompleted) "Ocultar objetivos concluídos"
+                        else "Objetivos concluídos ("+hiddenCompletedCount+")"
                     )
                 }
             }
@@ -403,8 +357,8 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                     Icon(if(showUpcoming)Icons.Default.ExpandLess else Icons.Default.ExpandMore,null)
                     Spacer(Modifier.width(7.dp))
                     Text(
-                        if(showUpcoming) "Ocultar próximas rotas"
-                        else "Próximas rotas ("+upcomingSteps.size+")"
+                        if(showUpcoming) "Ocultar próximos objetivos"
+                        else "Próximos objetivos ("+upcomingSteps.size+")"
                     )
                 }
             }
@@ -419,8 +373,8 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                 ){
                     Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
                         Icon(Icons.Default.TaskAlt,null,Modifier.size(34.dp))
-                        Text("Rota concluída!",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge,modifier=Modifier.padding(top=8.dp))
-                        Text("Todos os objetivos estão concluídos. Use “Mostrar concluídos” para revisar a rota.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
+                        Text("Jornada concluída!",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge,modifier=Modifier.padding(top=8.dp))
+                        Text("Todos os objetivos estão concluídos. Abra “Objetivos concluídos” para revisar a Jornada.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
                     }
                 }
             }
@@ -437,7 +391,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             Column{
                 if(step.id==nextStep?.id){
                     Text(
-                        "ROTA ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
+                        "OBJETIVO ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
                         fontWeight=FontWeight.Black,
                         style=MaterialTheme.typography.labelMedium,
                         color=MaterialTheme.colorScheme.primary,
@@ -455,6 +409,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                     opponentPokemonIds=ui.opponentPokemonIds,
                     done=done,
                     isNext=isNext,
+                    journeyRecommendation=if(isNext) smart.recommendation else null,
                     onOpen={onOpenStep(step.id)},
                     onToggle={JourneyProgressStore.toggle(game.label,step.id)}
                 )
@@ -468,7 +423,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             ){
                 Icon(Icons.Default.RestartAlt,null)
                 Spacer(Modifier.width(6.dp))
-                Text("Zerar progresso desta rota")
+                Text("Reiniciar Jornada")
             }
         }
         item{Spacer(Modifier.height(28.dp))}
@@ -566,6 +521,7 @@ private fun JourneyStepCard(
     opponentPokemonIds:List<Int?>,
     done:Boolean,
     isNext:Boolean,
+    journeyRecommendation:String?,
     onOpen:()->Unit,
     onToggle:()->Unit
 ){
@@ -693,6 +649,19 @@ private fun JourneyStepCard(
                     }
                 }
 
+                journeyRecommendation?.takeIf{it.isNotBlank()}?.let{recommendation->
+                    Surface(
+                        shape=RoundedCornerShape(14.dp),
+                        color=MaterialTheme.colorScheme.secondaryContainer,
+                        modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                    ){
+                        Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
+                            Icon(Icons.Default.AutoAwesome,null,Modifier.size(18.dp))
+                            Text(recommendation,style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(start=8.dp))
+                        }
+                    }
+                }
+
                 detail?.opponents?.takeIf{it.isNotEmpty()}?.let{members->
                     HorizontalDivider(Modifier.padding(top=10.dp,bottom=8.dp))
                     Text(
@@ -726,7 +695,7 @@ private fun JourneyStepCard(
                     Text(
                         when{
                             done->"Concluído"
-                            isNext->"Próximo recomendado"
+                            isNext->"Objetivo atual"
                             else->"Pendente"
                         },
                         style=MaterialTheme.typography.labelMedium,
