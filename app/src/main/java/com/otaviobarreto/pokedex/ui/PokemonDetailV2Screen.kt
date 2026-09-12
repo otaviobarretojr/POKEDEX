@@ -235,7 +235,85 @@ private fun gameFromBox(box:String):String=when{box.contains("Scarlet / Violet",
 private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->box.substringAfter("· ").trim();Regex("Box \\d+",RegexOption.IGNORE_CASE).containsMatchIn(box)->Regex("Box \\d+",RegexOption.IGNORE_CASE).find(box)?.value?:box;else->box}
 @Composable private fun DetailMetric(icon:androidx.compose.ui.graphics.vector.ImageVector,text:String){Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(vertical=4.dp)){Icon(icon,null,tint=Color(0xFF243477),modifier=Modifier.size(19.dp));Spacer(Modifier.width(9.dp));Text(text,fontWeight=FontWeight.SemiBold,color=Color(0xFF2F3650),maxLines=1,overflow=TextOverflow.Ellipsis)}}
 @Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit){val tabs=listOf("Info" to Icons.Default.Info,"Stats" to Icons.Default.BarChart,"Evolução" to Icons.Default.AccountTree,"Golpes" to Icons.Default.AutoAwesome,"Localização" to Icons.Default.LocationOn);Surface(color=Color.White,shadowElevation=4.dp){Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)){tabs.forEachIndexed{i,(label,icon)->val active=i==selected;Surface(Modifier.weight(1f).clickable{setSelected(i)},shape=RoundedCornerShape(24.dp),color=if(active)Color(0xFF5B55E7)else Color.Transparent){Column(Modifier.padding(vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(icon,null,tint=if(active)Color.White else Color(0xFF243477),modifier=Modifier.size(18.dp));Text(label,fontSize=10.sp,fontWeight=FontWeight.Bold,color=if(active)Color.White else Color(0xFF1E2A55),maxLines=1)}}}}}}
-@Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,source:String?,openRef:((String,String)->Unit)?){LazyColumn(Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){if(context!=null)item{SectionCard("Contexto do jogo",Icons.Default.SportsEsports){Column(verticalArrangement=Arrangement.spacedBy(6.dp)){Text(context.label,fontWeight=FontWeight.Bold);Text("Região: " + context.regionLabel,style=MaterialTheme.typography.bodyMedium);Text("Golpes e localizações são filtrados para este jogo.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))}}};item{SectionCard("Informações gerais",Icons.Default.Info){Column(verticalArrangement=Arrangement.spacedBy(8.dp)){Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Taxa de captura",b.species.captureRate.toString(),Modifier.weight(1f));InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f));InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))};Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){InfoMini("Habitat",b.species.habitat?:"—",Modifier.weight(1f));InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.weight(2f))}}}};item{TypeMatchupCard(b.pokemon.types)};item{PokemonFormsSummaryCard(b.pokemon.id,source,accent)};item{SectionCard("Habilidades",Icons.Default.Bolt){Column(verticalArrangement=Arrangement.spacedBy(7.dp)){b.pokemon.abilities.forEach{ability->Surface(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("ability",ability)}else Modifier),shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.08f)){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){Text(ability,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}}}}};item{Spacer(Modifier.height(12.dp))}}}
+@Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,source:String?,openRef:((String,String)->Unit)?){
+    var advisorReady by remember { mutableStateOf(CollectionAdvisor.isWarm()) }
+    LaunchedEffect(Unit){
+        if(!advisorReady){
+            runCatching{ CollectionAdvisor.warmAllGames() }
+            advisorReady=CollectionAdvisor.isWarm()
+        }
+    }
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),
+        verticalArrangement=Arrangement.spacedBy(10.dp)
+    ){
+        if(context!=null)item{
+            SectionCard("Contexto do jogo",Icons.Default.SportsEsports){
+                Column(verticalArrangement=Arrangement.spacedBy(6.dp)){
+                    Text(context.label,fontWeight=FontWeight.Bold)
+                    Text("Região: " + context.regionLabel,style=MaterialTheme.typography.bodyMedium)
+                    Text("Golpes e localizações são filtrados para este jogo.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))
+                }
+            }
+        }
+        item{
+            SectionCard("Onde conseguir",Icons.Default.Route){
+                Text(
+                    CollectionAdvisor.recommendation(b.pokemon.id),
+                    style=MaterialTheme.typography.bodyMedium
+                )
+                val options=CollectionAdvisor.cachedOptions(b.pokemon.id)
+                if(options.isNotEmpty()){
+                    options.take(4).forEach{option->
+                        Text(
+                            "• "+option.game+" · "+option.region+" #"+option.regionalNumber,
+                            style=MaterialTheme.typography.bodySmall,
+                            color=Color(0xFF667085)
+                        )
+                    }
+                }else if(!advisorReady){
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                }
+            }
+        }
+        item{
+            SectionCard("Informações gerais",Icons.Default.Info){
+                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                        InfoMini("Taxa de captura",b.species.captureRate.toString(),Modifier.weight(1f))
+                        InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f))
+                        InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                        InfoMini("Habitat",b.species.habitat?:"—",Modifier.weight(1f))
+                        InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.weight(2f))
+                    }
+                }
+            }
+        }
+        item{TypeMatchupCard(b.pokemon.types)}
+        item{PokemonFormsSummaryCard(b.pokemon.id,source,accent)}
+        item{
+            SectionCard("Habilidades",Icons.Default.Bolt){
+                Column(verticalArrangement=Arrangement.spacedBy(7.dp)){
+                    b.pokemon.abilities.forEach{ability->
+                        Surface(
+                            Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("ability",ability)}else Modifier),
+                            shape=RoundedCornerShape(14.dp),
+                            color=accent.copy(alpha=.08f)
+                        ){
+                            Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                                Text(ability,Modifier.weight(1f),fontWeight=FontWeight.SemiBold)
+                                if(openRef!=null)Icon(Icons.Default.ChevronRight,null)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item{Spacer(Modifier.height(12.dp))}
+    }
+}
 @Composable
 private fun PokemonFormsSummaryCard(
     pokemonId:Int,
