@@ -16,6 +16,9 @@ data class CollectionInsights(
     val unboxed: Int,
     val nationalDexTotal: Int,
     val livingDexRatio: Float,
+    val ownedForms: Int,
+    val shinyVariants: Int,
+    val speciesWithVariants: Int,
     val byGame: List<GameCollectionProgress>
 )
 
@@ -40,6 +43,9 @@ object CollectionInsightsService {
             unboxed = CollectionStore.unboxedCapturedIds().size,
             nationalDexTotal = PokeApiService.MAX_NATIONAL_DEX_ID,
             livingDexRatio = (CollectionStore.capturedIds.size.toFloat() / PokeApiService.MAX_NATIONAL_DEX_ID.coerceAtLeast(1)).coerceIn(0f,1f),
+            ownedForms = VariantCollectionStore.formCount(),
+            shinyVariants = VariantCollectionStore.shinyCount(),
+            speciesWithVariants = VariantCollectionStore.speciesWithVariants(),
             byGame = byGame
         )
     }
