@@ -5,6 +5,10 @@ import android.util.Base64
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -42,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.otaviobarreto.pokedex.data.*
@@ -52,7 +57,8 @@ private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL, MAP }
 fun JourneyScreen(
     onPokemonClick:(Int,String?)->Unit,
     onOpenTeamGuide:(String,String?)->Unit,
-    onOpenBoxes:(String,String?)->Unit
+    onOpenBoxes:(String,String?)->Unit,
+    onMapFullscreenChange:(Boolean)->Unit={}
 ){
     var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
     var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
@@ -65,6 +71,8 @@ fun JourneyScreen(
     var mapZoom by rememberSaveable { mutableFloatStateOf(1f) }
     var mapPanX by rememberSaveable { mutableFloatStateOf(0f) }
     var mapPanY by rememberSaveable { mutableFloatStateOf(0f) }
+    var mapFullscreen by rememberSaveable { mutableStateOf(false) }
+    DisposableEffect(Unit){onDispose{onMapFullscreenChange(false)}}
     val game=AppGameCatalog.adventureGames.firstOrNull{it.label==selectedGame}
 
     LaunchedEffect(explicitGameSelectionRevision){
@@ -75,13 +83,15 @@ fun JourneyScreen(
         mapZoom=1f
         mapPanX=0f
         mapPanY=0f
+        mapFullscreen=false
+        onMapFullscreenChange(false)
     }
 
     BackHandler(enabled=view!=JourneyView.GAMES){
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
             JourneyView.ROUTE -> view=JourneyView.GAME_MENU
-            JourneyView.MAP -> view=JourneyView.GAME_MENU
+            JourneyView.MAP -> { mapFullscreen=false; onMapFullscreenChange(false); view=JourneyView.GAME_MENU }
             JourneyView.DETAIL -> {
                 selectedStepId=null
                 view=detailReturnView
@@ -135,7 +145,9 @@ fun JourneyScreen(
             onSelectionInitialized={mapSelectionInitialized=true},
             onZoomChange={mapZoom=it},
             onPanChange={mapPanX=it.x;mapPanY=it.y},
-            onBack={view=JourneyView.GAME_MENU},
+            fullscreen=mapFullscreen,
+            onFullscreenChange={enabled->mapFullscreen=enabled;onMapFullscreenChange(enabled)},
+            onBack={mapFullscreen=false;onMapFullscreenChange(false);view=JourneyView.GAME_MENU},
             onOpenStep={stepId->detailReturnView=JourneyView.MAP;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
     }
@@ -1156,10 +1168,19 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
 
 
 @Composable
+private object JourneyMapBitmapCache{
+    private val cache=mutableMapOf<String,ImageBitmap>()
+    fun get(key:String)=cache[key]
+    fun put(key:String,value:ImageBitmap){cache[key]=value}
+}
+
+@Composable
 private fun rememberEmbeddedJourneyMap(assetPrefix:String?):ImageBitmap?{
     val context=LocalContext.current
     var bitmap by remember(assetPrefix){ mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(assetPrefix){
+        val cached=assetPrefix?.let(JourneyMapBitmapCache::get)
+        if(cached!=null){ bitmap=cached; return@LaunchedEffect }
         bitmap = if(assetPrefix==null) null else withContext(Dispatchers.IO){
             runCatching{
                 val encoded=buildString{
@@ -1174,6 +1195,7 @@ private fun rememberEmbeddedJourneyMap(assetPrefix:String?):ImageBitmap?{
                 BitmapFactory.decodeByteArray(bytes,0,bytes.size)?.asImageBitmap()
             }.getOrNull()
         }
+        if(assetPrefix!=null && bitmap!=null) JourneyMapBitmapCache.put(assetPrefix,bitmap!!)
     }
     return bitmap
 }
@@ -1189,6 +1211,8 @@ private fun JourneyMapScreen(
     onSelectionInitialized:()->Unit,
     onZoomChange:(Float)->Unit,
     onPanChange:(Offset)->Unit,
+    fullscreen:Boolean,
+    onFullscreenChange:(Boolean)->Unit,
     onBack:()->Unit,
     onOpenStep:(String)->Unit
 ){
@@ -1208,6 +1232,12 @@ private fun JourneyMapScreen(
     val currentZoom by rememberUpdatedState(zoom)
     val currentPan by rememberUpdatedState(pan)
     val embeddedMap=rememberEmbeddedJourneyMap(JourneyMapCatalog.embeddedAsset(game.label))
+    val density=LocalDensity.current
+    val pulse=rememberInfiniteTransition(label="mapTargetPulse").animateFloat(
+        initialValue=.92f,targetValue=1.08f,
+        animationSpec=infiniteRepeatable(tween(850),RepeatMode.Reverse),
+        label="mapTargetPulseScale"
+    ).value
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)){
         BoxWithConstraints(
@@ -1216,7 +1246,7 @@ private fun JourneyMapScreen(
                     detectTransformGestures{_,panChange,zoomChange,_->
                         val newZoom=(currentZoom*zoomChange).coerceIn(1f,3.5f)
                         onZoomChange(newZoom)
-                        onPanChange(if(newZoom<=1.01f) Offset.Zero else currentPan+panChange)
+                        onPanChange(clampPan(if(newZoom<=1.01f) Offset.Zero else currentPan+panChange,newZoom))
                     }
                 }
         ){
@@ -1228,6 +1258,27 @@ private fun JourneyMapScreen(
             val mapW=mapH*mapAspect
             val left=(viewportW-mapW)/2
             val top=(viewportH-mapH)/2
+            val viewportWidthPx=with(density){viewportW.toPx()}
+            val viewportHeightPx=with(density){viewportH.toPx()}
+            val mapWidthPx=with(density){mapW.toPx()}
+            val mapHeightPx=with(density){mapH.toPx()}
+            fun clampPan(candidate:Offset,targetZoom:Float):Offset{
+                if(targetZoom<=1.01f)return Offset.Zero
+                val maxX=((mapWidthPx*targetZoom-viewportWidthPx)/2f).coerceAtLeast(0f)
+                val maxY=((mapHeightPx*targetZoom-viewportHeightPx)/2f).coerceAtLeast(0f)
+                return Offset(candidate.x.coerceIn(-maxX,maxX),candidate.y.coerceIn(-maxY,maxY))
+            }
+            fun focusStep(stepId:String?){
+                val point=points.firstOrNull{it.stepId==stepId} ?: return
+                val targetZoom=1.85f
+                onZoomChange(targetZoom)
+                val desired=Offset(
+                    (0.5f-point.x)*mapWidthPx*targetZoom,
+                    (0.5f-point.y)*mapHeightPx*targetZoom
+                )
+                onPanChange(clampPan(desired,targetZoom))
+                onSelectedStepChange(stepId)
+            }
 
             Box(
                 Modifier.offset(x=left,y=top)
@@ -1246,13 +1297,22 @@ private fun JourneyMapScreen(
                         modifier=Modifier.fillMaxSize()
                     )
                 }else{
-                    JourneyMapCatalog.backgroundUrl(game.label)?.let{mapUrl->
+                    val fallbackUrl=JourneyMapCatalog.backgroundUrl(game.label)
+                    if(fallbackUrl!=null){
                         AsyncImage(
-                            model=mapUrl,
+                            model=fallbackUrl,
                             contentDescription="Mapa da Jornada",
                             contentScale=ContentScale.FillBounds,
                             modifier=Modifier.fillMaxSize()
                         )
+                    }else{
+                        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),contentAlignment=Alignment.Center){
+                            Column(horizontalAlignment=Alignment.CenterHorizontally){
+                                Icon(Icons.Default.BrokenImage,null,Modifier.size(42.dp))
+                                Text("Mapa indisponível",fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=8.dp))
+                                Text("Feche e abra o mapa novamente.",style=MaterialTheme.typography.bodySmall)
+                            }
+                        }
                     }
                 }
 
@@ -1266,12 +1326,12 @@ private fun JourneyMapScreen(
                         modifier=Modifier
                             .offset(x=mapW*point.x-hitSize/2,y=mapH*point.y-hitSize/2)
                             .size(hitSize)
-                            .clickable{onSelectedStepChange(step.id)},
+                            .clickable{if(selectedStepId==step.id)onOpenStep(step.id) else onSelectedStepChange(step.id)},
                         contentAlignment=Alignment.Center
                     ){
                         if(isNext || isSelected){
                             Surface(
-                                modifier=Modifier.size(if(isNext)52.dp else 48.dp),
+                                modifier=Modifier.size(if(isNext)52.dp else 48.dp).then(if(isNext)Modifier.scale(pulse) else Modifier),
                                 shape=RoundedCornerShape(50),
                                 color=androidx.compose.ui.graphics.Color.Transparent,
                                 border=androidx.compose.foundation.BorderStroke(
@@ -1321,6 +1381,12 @@ private fun JourneyMapScreen(
                     }
                 }
                 Spacer(Modifier.weight(1f))
+                Surface(shape=RoundedCornerShape(50),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
+                    IconButton(onClick={onFullscreenChange(!fullscreen)}){
+                        Icon(if(fullscreen)Icons.Default.FullscreenExit else Icons.Default.Fullscreen,if(fullscreen)"Sair da tela cheia" else "Tela cheia")
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
                 Surface(shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shadowElevation=4.dp){
                     Text(
                         completed.count{it in mappedSteps.map{step->step.id}}.toString()+"/"+mappedSteps.size,
@@ -1341,8 +1407,7 @@ private fun JourneyMapScreen(
                     if(newZoom<=1.01f)onPanChange(Offset.Zero)
                 }
                 JourneyMapControl(Icons.Default.MyLocation,"Próximo objetivo"){
-                    onSelectedStepChange(next?.id)
-                    onZoomChange(1f);onPanChange(Offset.Zero)
+                    focusStep(next?.id)
                 }
             }
 
