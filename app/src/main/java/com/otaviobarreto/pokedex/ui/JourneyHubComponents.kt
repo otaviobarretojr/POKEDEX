@@ -149,7 +149,6 @@ private fun JourneyGameReferenceCard(
         val coverWidth = if (compact) PokedexDesignTokens.Journey.CoverWidthCompact else PokedexDesignTokens.Journey.CoverWidth
         val heroWidth = if (compact) PokedexDesignTokens.Journey.HeroWidthCompact else PokedexDesignTokens.Journey.HeroWidth
         val fadeWidth = if (compact) PokedexDesignTokens.Journey.FadeWidthCompact else PokedexDesignTokens.Journey.FadeWidth
-        val maxRegionChips = if (compact) 2 else 3
 
         Card(
             modifier = Modifier
@@ -263,25 +262,6 @@ private fun JourneyGameReferenceCard(
                         }
                     }
 
-                    if (game.regions.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            game.regions.take(maxRegionChips).forEach { region ->
-                                Surface(
-                                    shape = RoundedCornerShape(999.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .92f)
-                                ) {
-                                    Text(
-                                        text = compactJourneyRegionLabel(region.label),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
-                    }
                 }
 
             }
