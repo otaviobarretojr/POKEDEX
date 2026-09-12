@@ -14,7 +14,7 @@ data class OwnedPokemonVariant(
     val formName:String,
     val shiny:Boolean
 ) {
-    val key:String get() = listOf(source,speciesId,formPokemonId,shiny).joinToString("|")
+    val key:String get() = listOf(source,speciesId,formPokemonId,formName.lowercase(),shiny).joinToString("|")
     val artworkUrl:String
         get() = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" +
             (if(shiny)"shiny/" else "") + formPokemonId + ".png"
@@ -39,10 +39,12 @@ object VariantCollectionStore {
     fun variantsFor(source:String,speciesId:Int):List<OwnedPokemonVariant> =
         ownedVariants.filter{it.source==source && it.speciesId==speciesId}
 
-    fun isOwned(source:String,speciesId:Int,formPokemonId:Int,shiny:Boolean):Boolean =
+    fun isOwned(source:String,speciesId:Int,formPokemonId:Int,formName:String?=null,shiny:Boolean):Boolean =
         ownedVariants.any{
             it.source==source && it.speciesId==speciesId &&
-                it.formPokemonId==formPokemonId && it.shiny==shiny
+                it.formPokemonId==formPokemonId &&
+                (formName==null || it.formName.equals(formName,true)) &&
+                it.shiny==shiny
         }
 
     fun setOwned(
@@ -73,7 +75,7 @@ object VariantCollectionStore {
         shiny:Boolean
     ) = setOwned(
         source,speciesId,formPokemonId,formName,shiny,
-        !isOwned(source,speciesId,formPokemonId,shiny)
+        !isOwned(source,speciesId,formPokemonId,formName,shiny)
     )
 
     fun preferred(source:String,speciesId:Int):OwnedPokemonVariant? =
@@ -89,7 +91,7 @@ object VariantCollectionStore {
     }
 
     fun shinyCount():Int = ownedVariants.count{it.shiny}
-    fun formCount():Int = ownedVariants.map{Triple(it.source,it.speciesId,it.formPokemonId)}.distinct().size
+    fun formCount():Int = ownedVariants.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formName.lowercase())}.distinct().size
     fun speciesWithVariants():Int = ownedVariants.map{it.speciesId}.distinct().size
 
     fun exportSnapshot():JSONArray = JSONArray().also{array->
