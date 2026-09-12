@@ -341,7 +341,7 @@ if violations:
 
 # Compatibility guard — Journey route visual
 journey_visual = journey_source
-for required in ("Progresso da campanha", "PRÓXIMO PASSO INTELIGENTE", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Próximo recomendado"):
+for required in ("Minha Jornada", "Progresso da campanha", "OBJETIVO ATUAL", "JourneyStepCard", "JourneyCountPill", "JourneyInfoChip", "background(", "Objetivo atual", "Próximos objetivos", "Objetivos concluídos"):
     if required not in journey_visual:
         violations.append(f"Journey route visual missing {required}")
 
