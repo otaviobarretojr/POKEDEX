@@ -1171,9 +1171,11 @@ for required in ("nextMissing", "Próximo alvo"):
         violations.append(f"v10 intelligent Journey missing {required}")
 
 backup_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
-for required in ("SCHEMA_VERSION = 3", '"teams"', "TeamStore::importSnapshot"):
+for required in ('"teams"', "TeamStore::importSnapshot"):
     if required not in backup_v10:
         violations.append(f"v10 backup missing {required}")
+if "SCHEMA_VERSION = 3" not in backup_v10 and "SCHEMA_VERSION = 4" not in backup_v10:
+    violations.append("v10 backup schema compatibility missing")
 
 central_v10 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ("Living Dex", "Offline e desempenho", "PokedexDataStore.cacheStats", "OfflineGamePackManager.status"):
