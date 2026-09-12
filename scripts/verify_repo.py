@@ -180,7 +180,7 @@ if "promoteLocal(PokeApiService.pokemonUrl" not in store or "promoteLocal(PokeAp
     violations.append("Core detail local-first hydration missing")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-if "missingDetails.take(18)" not in boxes or "missingDetails.drop(18)" not in boxes:
+if "prefetchBoxWindow(dex,current)" not in boxes or "prefetchBoxWindow" not in store:
     violations.append("Box smart preload priority missing")
 
 if violations:
