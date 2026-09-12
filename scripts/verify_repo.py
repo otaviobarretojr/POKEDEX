@@ -1128,9 +1128,10 @@ if violations:
 
 # Compatibility guard — stable product
 backup_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
-for required in ('"recentActivity"', "RecentActivityStore::importSnapshot"):
-    if required not in backup_v9:
-        violations.append(f"v9 backup missing {required}")
+if '"recentActivity"' not in backup_v9:
+    violations.append('v9 backup missing "recentActivity"')
+if "RecentActivityStore::importSnapshot" not in backup_v9 and "RecentActivityStore.importSnapshot" not in backup_v9:
+    violations.append("v9 backup recent-activity restore missing")
 if all(marker not in backup_v9 for marker in ("SCHEMA_VERSION = 2","SCHEMA_VERSION = 3","SCHEMA_VERSION = 4")):
     violations.append("v9 backup schema compatibility missing")
 
