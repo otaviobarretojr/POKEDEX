@@ -89,11 +89,13 @@ object VariantCollectionStore {
         formPokemonId:Int,
         formName:String,
         shiny:Boolean,
+        formKey:String=formName.lowercase(),
         normalArtworkUrl:String?=null,
         shinyArtworkUrl:String?=null
     ) = setOwned(
         source,speciesId,formPokemonId,formName,shiny,
         !isOwned(source,speciesId,formPokemonId,formName,shiny),
+        formKey=formKey,
         normalArtworkUrl=normalArtworkUrl,
         shinyArtworkUrl=shinyArtworkUrl
     )
