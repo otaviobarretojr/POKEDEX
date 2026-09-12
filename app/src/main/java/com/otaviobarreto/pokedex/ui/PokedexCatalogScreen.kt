@@ -192,6 +192,7 @@ private fun PokedexFormsDialog(
     val base=PokemonRepository.byId(pokemonId)
     var forms by remember(pokemonId){mutableStateOf<List<PokemonFormVariant>?>(PokemonFormsService.cached(pokemonId))}
     var selectedPreview by remember{mutableStateOf<FormPreview?>(null)}
+    var selectedKind by remember(pokemonId){mutableStateOf<PokemonFormKind?>(null)}
     LaunchedEffect(pokemonId){
         if(forms==null){
             forms=withContext(Dispatchers.IO){
@@ -216,6 +217,10 @@ private fun PokedexFormsDialog(
         }
     }
 
+    val visiblePreviews=remember(previews,selectedKind){
+        selectedKind?.let{k->previews.filter{it.kind==k}} ?: previews
+    }
+
     Dialog(onDismissRequest=onDismiss,properties=DialogProperties(usePlatformDefaultWidth=false)){
         Surface(
             Modifier.fillMaxWidth(.94f).heightIn(max=720.dp),
@@ -230,6 +235,41 @@ private fun PokedexFormsDialog(
                     IconButton(onDismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
                 TextButton(onClick=onOpenBase){Text("Abrir ficha principal")}
+                if(forms!=null){
+                    val kinds=previews.map{it.kind}.distinct()
+                    if(kinds.size>1){
+                        LazyRow(
+                            modifier=Modifier.fillMaxWidth(),
+                            horizontalArrangement=Arrangement.spacedBy(6.dp),
+                            contentPadding=PaddingValues(vertical=4.dp)
+                        ){
+                            item{
+                                FilterChip(
+                                    selected=selectedKind==null,
+                                    onClick={selectedKind=null},
+                                    label={Text("Todas")}
+                                )
+                            }
+                            items(kinds,key={it.name}){kind->
+                                FilterChip(
+                                    selected=selectedKind==kind,
+                                    onClick={selectedKind=kind},
+                                    label={Text(
+                                        when(kind){
+                                            PokemonFormKind.DEFAULT -> "Padrão"
+                                            PokemonFormKind.REGIONAL -> "Regionais"
+                                            PokemonFormKind.GENDER -> "Gênero"
+                                            PokemonFormKind.BATTLE -> "Batalha"
+                                            PokemonFormKind.SPECIAL -> "Especiais"
+                                            PokemonFormKind.COSMETIC -> "Cosméticas"
+                                            PokemonFormKind.OTHER -> "Outras"
+                                        }
+                                    )}
+                                )
+                            }
+                        }
+                    }
+                }
                 if(forms==null){
                     Box(Modifier.fillMaxWidth().height(160.dp),contentAlignment=Alignment.Center){
                         CircularProgressIndicator()
@@ -241,7 +281,7 @@ private fun PokedexFormsDialog(
                         horizontalArrangement=Arrangement.spacedBy(8.dp),
                         verticalArrangement=Arrangement.spacedBy(8.dp)
                     ){
-                        items(previews,key={it.label+"-"+it.formId+"-"+it.shiny}){preview->
+                        items(visiblePreviews,key={it.label+"-"+it.formId+"-"+it.shiny}){preview->
                             Card(
                                 onClick={selectedPreview=preview},
                                 shape=RoundedCornerShape(18.dp)
