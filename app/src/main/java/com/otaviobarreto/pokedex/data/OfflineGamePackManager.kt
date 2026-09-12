@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 16
+    private const val PACK_VERSION = 17
     private var context: Context? = null
 
     data class PackStatus(
@@ -39,7 +39,9 @@ object OfflineGamePackManager {
         val cachedImages: Int,
         val expectedImages: Int,
         val cachedJourneyVisuals: Int,
-        val expectedJourneyVisuals: Int
+        val expectedJourneyVisuals: Int,
+        val cachedFormArtworks: Int,
+        val expectedFormArtworks: Int
     ) {
         val summary: String
             get() = when {
@@ -51,6 +53,7 @@ object OfflineGamePackManager {
                 pinnedResources < expectedResources -> "Recursos locais incompletos"
                 cachedImages < expectedImages -> "Imagens offline incompletas"
                 cachedJourneyVisuals < expectedJourneyVisuals -> "Visuais da Jornada incompletos"
+                cachedFormArtworks < expectedFormArtworks -> "Artes de formas/Shiny incompletas"
                 else -> "Pacote precisa de reparo"
             }
     }
@@ -84,6 +87,8 @@ object OfflineGamePackManager {
         val cachedImages = ids.count(::hasOfflineArtwork)
         val visualUrls = prefs().getStringSet(key(gameLabel, "visual_urls"), emptySet()).orEmpty()
         val cachedJourneyVisuals = visualUrls.count(::hasOfflineVisual)
+        val formArtworkKeys = p.getStringSet(key(gameLabel, "form_artwork_keys"), emptySet()).orEmpty()
+        val cachedFormArtworks = formArtworkKeys.count(::hasOfflineCacheKey)
         val valid = expected > 0 &&
             completed == expected &&
             current &&
@@ -92,7 +97,8 @@ object OfflineGamePackManager {
             pinned == resources.size &&
             ids.size == expected &&
             cachedImages == ids.size &&
-            cachedJourneyVisuals == visualUrls.size
+            cachedJourneyVisuals == visualUrls.size &&
+            cachedFormArtworks == formArtworkKeys.size
         return PackAudit(
             valid,
             completed,
@@ -104,7 +110,9 @@ object OfflineGamePackManager {
             cachedImages,
             ids.size,
             cachedJourneyVisuals,
-            visualUrls.size
+            visualUrls.size,
+            cachedFormArtworks,
+            formArtworkKeys.size
         )
     }
 
@@ -114,6 +122,22 @@ object OfflineGamePackManager {
 
     fun resourceUrls(gameLabel: String): Set<String> =
         prefs().getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
+
+    fun formArtworkKeys(gameLabel: String): Set<String> =
+        prefs().getStringSet(key(gameLabel, "form_artwork_keys"), emptySet()).orEmpty()
+
+    private fun formArtworkKey(
+        speciesId: Int,
+        formPokemonId: Int,
+        formKey: String,
+        shiny: Boolean
+    ): String {
+        val safeFormKey = formKey.lowercase()
+            .replace(Regex("[^a-z0-9]+"), "-")
+            .trim('-')
+        return "pokemon-form-offline-$speciesId-$formPokemonId-$safeFormKey-" +
+            if (shiny) "shiny" else "normal"
+    }
 
     fun status(gameLabel: String): PackStatus {
         val prefs = prefs()
@@ -172,6 +196,7 @@ object OfflineGamePackManager {
         val semaphore = Semaphore(permits = 10)
         var completed = alreadyCompleted.size
         val failedIds = mutableListOf<Int>()
+        val formArtworkKeys = prefs().getStringSet(key(game.label, "form_artwork_keys"), emptySet()).orEmpty().toMutableSet()
         val lock = Any()
 
         onProgress(
@@ -219,29 +244,41 @@ object OfflineGamePackManager {
                             "Falha ao armazenar imagem #$id"
                         }
 
-                        forms.filter{it.countsForLivingDex}.forEach { form ->
-                            val formId=form.pokemonId ?: return@forEach
-                            val normalUrl=form.spriteUrl
-                                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
-                            val shinyUrl=form.shinySpriteUrl
-                                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+formId+".png"
-                            runCatching {
+                        forms.filter { it.countsForLivingDex }.forEach { form ->
+                            val formId = form.pokemonId ?: return@forEach
+                            val normalUrl = form.spriteUrl
+                                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + formId + ".png"
+                            val shinyUrl = form.shinySpriteUrl
+                                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/" + formId + ".png"
+                            val normalKey = formArtworkKey(id, formId, form.formKey, false)
+                            val shinyKey = formArtworkKey(id, formId, form.formKey, true)
+
+                            check(
                                 appContext.imageLoader.execute(
                                     ImageRequest.Builder(appContext)
                                         .data(normalUrl)
-                                        .diskCacheKey("pokemon-form-offline-$formId")
-                                        .memoryCacheKey("pokemon-form-offline-$formId")
+                                        .diskCacheKey(normalKey)
+                                        .memoryCacheKey(normalKey)
                                         .build()
-                                )
-                            }
-                            runCatching {
+                                ) is SuccessResult
+                            ) { "Falha ao armazenar arte de forma #$id" }
+
+                            check(
                                 appContext.imageLoader.execute(
                                     ImageRequest.Builder(appContext)
                                         .data(shinyUrl)
-                                        .diskCacheKey("pokemon-form-shiny-offline-$formId")
-                                        .memoryCacheKey("pokemon-form-shiny-offline-$formId")
+                                        .diskCacheKey(shinyKey)
+                                        .memoryCacheKey(shinyKey)
                                         .build()
-                                )
+                                ) is SuccessResult
+                            ) { "Falha ao armazenar arte Shiny de forma #$id" }
+
+                            synchronized(lock) {
+                                formArtworkKeys += normalKey
+                                formArtworkKeys += shinyKey
+                                prefs().edit()
+                                    .putStringSet(key(game.label, "form_artwork_keys"), formArtworkKeys.toSet())
+                                    .apply()
                             }
                         }
                     }
@@ -309,10 +346,13 @@ object OfflineGamePackManager {
         }.getOrDefault(false)
     }
 
-    private fun hasOfflineVisual(url: String): Boolean {
+    private fun hasOfflineVisual(url: String): Boolean =
+        hasOfflineCacheKey(journeyVisualKey(url))
+
+    private fun hasOfflineCacheKey(cacheKey: String): Boolean {
         val disk = context?.imageLoader?.diskCache ?: return false
         return runCatching {
-            disk.openSnapshot(journeyVisualKey(url))?.use { true } ?: false
+            disk.openSnapshot(cacheKey)?.use { true } ?: false
         }.getOrDefault(false)
     }
 
@@ -322,6 +362,7 @@ object OfflineGamePackManager {
         val urls = resourceUrls(gameLabel)
         val ids = manifestIds(gameLabel)
         val visualUrls = prefs().getStringSet(key(gameLabel, "visual_urls"), emptySet()).orEmpty()
+        val artworkKeys = formArtworkKeys(gameLabel)
         val sharedUrls = AppGameCatalog.games.asSequence()
             .map { it.label }
             .filter { it != gameLabel }
@@ -332,10 +373,23 @@ object OfflineGamePackManager {
             .filter { it != gameLabel }
             .flatMap { manifestIds(it).asSequence() }
             .toSet()
+        val sharedVisualUrls = AppGameCatalog.games.asSequence()
+            .map { it.label }
+            .filter { it != gameLabel }
+            .flatMap { label ->
+                prefs().getStringSet(key(label, "visual_urls"), emptySet()).orEmpty().asSequence()
+            }
+            .toSet()
+        val sharedArtworkKeys = AppGameCatalog.games.asSequence()
+            .map { it.label }
+            .filter { it != gameLabel }
+            .flatMap { formArtworkKeys(it).asSequence() }
+            .toSet()
         PersistentApiCache.unpinAll(urls - sharedUrls, deleteFiles = true)
         context?.imageLoader?.diskCache?.let { disk ->
             (ids - sharedIds).forEach { id -> runCatching { disk.remove("pokemon-offline-$id") } }
-            visualUrls.forEach { url -> runCatching { disk.remove(journeyVisualKey(url)) } }
+            (visualUrls - sharedVisualUrls).forEach { url -> runCatching { disk.remove(journeyVisualKey(url)) } }
+            (artworkKeys - sharedArtworkKeys).forEach { cacheKey -> runCatching { disk.remove(cacheKey) } }
         }
         prefs().edit()
             .remove(key(gameLabel, "ready"))
@@ -348,6 +402,7 @@ object OfflineGamePackManager {
             .remove(key(gameLabel, "manifest_ids"))
             .remove(key(gameLabel, "resource_urls"))
             .remove(key(gameLabel, "visual_urls"))
+            .remove(key(gameLabel, "form_artwork_keys"))
             .remove(key(gameLabel, "running"))
             .remove(key(gameLabel, "runtime_done"))
             .remove(key(gameLabel, "runtime_total"))
