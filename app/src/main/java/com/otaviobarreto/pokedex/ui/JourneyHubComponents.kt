@@ -32,14 +32,85 @@ import kotlinx.coroutines.withContext
 internal fun JourneyGamePicker(onSelect:(String)->Unit){
     val captured=CollectionStore.contextualCapturedIds
     val dexIdsByGame by rememberJourneyDexIdsByGame()
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = .18f),
+                        MaterialTheme.colorScheme.background
+                    )
+                )
+            )
+    ) {
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding=PaddingValues(16.dp),
+        contentPadding=PaddingValues(horizontal=16.dp, vertical=18.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)
     ){
         item{
-            Text("JORNADA",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-            Text("Escolha um jogo para abrir sua central de rota, time e guias.",style=MaterialTheme.typography.bodyMedium)
+            Column(Modifier.fillMaxWidth().padding(bottom=4.dp)){
+                Surface(
+                    shape=RoundedCornerShape(999.dp),
+                    color=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.72f)
+                ){
+                    Row(
+                        Modifier.padding(horizontal=10.dp,vertical=6.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        Icon(Icons.Default.Explore,null,Modifier.size(15.dp),tint=MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(5.dp))
+                        Text("MINHA AVENTURA",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text("Jornada",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+                Text(
+                    "Continue sua aventura e acompanhe o progresso de cada jogo.",
+                    style=MaterialTheme.typography.bodyMedium,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier=Modifier.padding(top=3.dp)
+                )
+            }
+        }
+        item{
+            val totalCaptured=captured.values.flatten().toSet().size
+            Surface(
+                modifier=Modifier.fillMaxWidth(),
+                shape=RoundedCornerShape(20.dp),
+                color=MaterialTheme.colorScheme.surface.copy(alpha=.90f),
+                tonalElevation=PokedexDesignTokens.Elevation.Low
+            ){
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=11.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                        Icon(Icons.Default.CatchingPokemon,null,Modifier.padding(9.dp).size(20.dp),tint=MaterialTheme.colorScheme.primary)
+                    }
+                    Column(Modifier.weight(1f).padding(start=10.dp)){
+                        Text("Sua coleção",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("$totalCaptured Pokémon registrados",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold)
+                    }
+                    Text(
+                        AppGameCatalog.adventureGames.size.toString()+" jogos",
+                        style=MaterialTheme.typography.labelMedium,
+                        fontWeight=FontWeight.SemiBold,
+                        color=MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+        item{
+            Text(
+                "ESCOLHA UM JOGO",
+                style=MaterialTheme.typography.labelMedium,
+                fontWeight=FontWeight.Black,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier=Modifier.padding(top=4.dp,bottom=1.dp)
+            )
         }
         items(AppGameCatalog.adventureGames,key={it.label}){game->
             val progress = rememberJourneyCollectionProgress(
@@ -54,6 +125,7 @@ internal fun JourneyGamePicker(onSelect:(String)->Unit){
             )
         }
         item{Spacer(Modifier.height(20.dp))}
+    }
     }
 }
 
