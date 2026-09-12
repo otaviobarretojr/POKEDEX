@@ -152,7 +152,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      color=QBink
     )
     Text(
-     "Deslize para navegar · ★"+shinyCaptured+" · Formas "+formCaptured,
+     "Deslize para navegar entre as Boxes · ★"+shinyCaptured+" · Formas "+formCaptured,
      fontSize=8.5.sp,
      color=QBmuted
     )
