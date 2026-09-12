@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "17000" not in workflow or "17.0.0" not in workflow:
-    violations.append("CI v17.0.0 version stamping missing")
+if "18000" not in workflow or "18.0.0" not in workflow:
+    violations.append("CI v18.0.0 version validation missing")
 
 if violations:
     print("Source verification failed:")
@@ -927,8 +927,9 @@ local_v1614 = 'versionName = "16.1.4"' in local_gradle and "versionCode = 16140"
 local_v1615 = 'versionName = "16.1.5"' in local_gradle and "versionCode = 16150" in local_gradle
 local_v1620 = 'versionName = "16.2.0"' in local_gradle and "versionCode = 16200" in local_gradle
 local_v1700 = 'versionName = "17.0.0"' in local_gradle and "versionCode = 17000" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700):
-    violations.append("Local build version is not aligned with supported v16/v17 releases")
+local_v1800 = 'versionName = "18.0.0"' in local_gradle and "versionCode = 18000" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800):
+    violations.append("Local build version is not aligned with supported v16/v17/v18 releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1324,7 +1325,7 @@ for required in ("countsForLivingDex", "livingDexForms", "PokemonFormKind.BATTLE
         violations.append(f"v12 form target policy missing {required}")
 
 boxes_v12 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ('"Shiny"', '"Com formas"', "VariantCollectionStore.ownedVariants", "temporária"):
+for required in ('"Shiny"', '"Formas"', "VariantCollectionStore.ownedVariants", "temporária"):
     if required not in boxes_v12:
         violations.append(f"v12 Box forms/shiny filter missing {required}")
 
@@ -1661,7 +1662,7 @@ for required in (
     "Coleção · Formas e Shiny",
     "VariantCollectionStore.toggle(",
     "VariantCollectionStore.removeAll(",
-    "prefetchCoreDetails(neighbor)",
+    "prefetchDetailWindow(id,radius=2)",
 ):
     if required not in detail_v1620:
         violations.append(f"v16.2.0 detail/collection integration missing {required}")
@@ -1746,6 +1747,32 @@ presentation_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/P
 for required in ("categoryLabel", "behaviorLabel", "Forma de Alola", "Gigantamax"):
     if required not in presentation_v1700:
         violations.append(f"v17.0.0 Portuguese form presentation missing {required}")
+
+# v18.0.0 definitive forms/collection/performance/settings guards
+forms_v1800 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokemonFormsService.kt").read_text(encoding="utf-8")
+for required in ("hasBattleDataChanges", "battleSignature", "defaultBattleSignature"):
+    if required not in forms_v1800:
+        violations.append(f"v18 form battle-data detection missing {required}")
+
+variant_v1800 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt").read_text(encoding="utf-8")
+for required in ("formKey", 'put("formKey"', "ownedVariants.none { it.source==source && it.speciesId==speciesId }"):
+    if required not in variant_v1800:
+        violations.append(f"v18 canonical collection identity/sync missing {required}")
+
+data_v1800 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokedexDataStore.kt").read_text(encoding="utf-8")
+for required in ("prefetchDetailWindow", "prefetchBoxWindow", "page-1,page,page+1"):
+    if required not in data_v1800:
+        violations.append(f"v18 bounded preload missing {required}")
+
+boxes_v1800 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for required in ('"Faltantes"', '"Normal"', '"Shiny"', '"Formas"', "formKey=form.formKey", "prefetchBoxWindow"):
+    if required not in boxes_v1800:
+        violations.append(f"v18 Box definitive behavior missing {required}")
+
+settings_v1800 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
+for required in ('SettingsSectionTitle("Áudio")', "HomeAudioManager.setEnabled", 'SettingsSectionTitle("Informações da versão")'):
+    if required not in settings_v1800:
+        violations.append(f"v18 settings consolidation missing {required}")
 
 if violations:
     print("Source verification failed:")
