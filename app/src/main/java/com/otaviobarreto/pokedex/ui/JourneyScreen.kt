@@ -1163,7 +1163,7 @@ private fun rememberEmbeddedJourneyMap(assetPrefix:String?):ImageBitmap?{
         bitmap = if(assetPrefix==null) null else withContext(Dispatchers.IO){
             runCatching{
                 val encoded=buildString{
-                    repeat(6){index->
+                    repeat(17){index->
                         val suffix=index.toString().padStart(2,'0')
                         context.assets.open(assetPrefix+"_"+suffix+".b64")
                             .bufferedReader()
