@@ -59,8 +59,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "8900" not in workflow or "8.9.0" not in workflow:
-    violations.append("CI v8.9.0 version stamping missing")
+if "9000" not in workflow or "9.0.0" not in workflow:
+    violations.append("CI v9.0.0 version stamping missing")
 
 if violations:
     print("Source verification failed:")
@@ -826,7 +826,7 @@ else:
         "StartupPreloader.warm",
         "progress.fraction",
         "progress.label",
-        "v8.9.0",
+        "v9.0.0",
     ):
         if required not in boot_screen:
             violations.append(f"Real loading UI missing {required}")
@@ -907,8 +907,8 @@ for forbidden in ("CollectionStore.initialize(this)", "TeamStore.initialize(this
         violations.append(f"Duplicate Activity initialization remains: {forbidden}")
 
 local_gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
-if 'versionName = "8.9.0"' not in local_gradle or "versionCode = 8900" not in local_gradle:
-    violations.append("Local build version is not aligned with v8.9.0")
+if 'versionName = "9.0.0"' not in local_gradle or "versionCode = 9000" not in local_gradle:
+    violations.append("Local build version is not aligned with v9.0.0")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
     violations.append("Obsolete feature-branch audio import workflow still present")
@@ -1101,4 +1101,39 @@ if 'MainDestination("central","Central"' not in main_v89 or 'composable("central
 if violations:
     print("Source verification failed:")
     for item in violations: print(" -", item)
+    sys.exit(1)
+
+
+# v9.0 stable product guards
+backup_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
+for required in ("SCHEMA_VERSION = 2", '"recentActivity"', "RecentActivityStore::importSnapshot"):
+    if required not in backup_v9:
+        violations.append(f"v9 backup missing {required}")
+
+insights_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionInsightsService.kt").read_text(encoding="utf-8")
+for required in ("GameCollectionProgress", "byGame", "regionsWithProgress"):
+    if required not in insights_v9:
+        violations.append(f"v9 collection insights missing {required}")
+
+central_v9 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
+for required in (
+    "ActivityResultContracts.CreateDocument",
+    "ActivityResultContracts.OpenDocument",
+    "Pokémon, número, tipo, jogo ou Box",
+    "Progresso por jogo",
+    "Vistos recentemente",
+    "AppBackupManager.exportJson",
+    "AppBackupManager.importJson",
+):
+    if required not in central_v9:
+        violations.append(f"v9 Central missing {required}")
+
+main_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+if "onOpenBoxes=::openBoxes" not in main_v9:
+    violations.append("v9 Central navigation wiring missing")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
     sys.exit(1)

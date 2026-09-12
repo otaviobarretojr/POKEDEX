@@ -30,10 +30,10 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Validate v8.9.0 complete feature cycle
+      - name: Validate v9.0.0 stable release
         run: |
-          sed -i 's/versionCode = [0-9]\+/versionCode = 8900/' app/build.gradle.kts
-          sed -i 's/versionName = "[^"]*"/versionName = "8.9.0"/' app/build.gradle.kts
+          sed -i 's/versionCode = [0-9]\+/versionCode = 9000/' app/build.gradle.kts
+          sed -i 's/versionName = "[^"]*"/versionName = "9.0.0"/' app/build.gradle.kts
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
       - name: Install artwork audit dependency

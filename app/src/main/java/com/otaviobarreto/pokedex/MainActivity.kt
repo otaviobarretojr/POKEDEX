@@ -99,7 +99,7 @@ private val mainDestinations=listOf(MainDestination("home","Jornada",Icons.Defau
    composable("location/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode);PokemonLocationScreen(id,source,{navController.popBackStack()},source?.let{{openRegionMap(id,it)}})}
    composable("regionMap/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=false})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode).orEmpty();PokemonRegionMapScreen(id,source){navController.popBackStack()}}
    composable("boxes"){BoxesV2Screen(onPokemonClick={id,source->openPokemon(id,source)})}
-   composable("central"){CompanionCenterScreen(onPokemonClick={id->openPokemon(id,null)})}
+   composable("central"){CompanionCenterScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes)}
   }
  }
 }
