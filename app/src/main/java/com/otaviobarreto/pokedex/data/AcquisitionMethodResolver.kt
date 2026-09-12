@@ -79,8 +79,12 @@ object AcquisitionMethodResolver {
         advice
     }
 
-    suspend fun resolveBatch(ids:List<Int>,limit:Int=48):List<AcquisitionAdvice> =
-        ids.asSequence().distinct().take(limit).map{resolve(it)}.toList()
+    suspend fun resolveBatch(ids:List<Int>,limit:Int=48):List<AcquisitionAdvice> {
+        val unique=ids.distinct().take(limit)
+        return buildList {
+            for(id in unique) add(resolve(id))
+        }
+    }
 
     fun invalidate(id:Int?=null){
         if(id==null) cache.clear() else cache.remove(id)
