@@ -255,8 +255,16 @@ object CollectionStore {
             names += name
             restored[name] = ids
         }
+        val previousBoxNames = boxNames
         boxNames = if (names.isEmpty()) defaultBoxes else names
         boxes = if (restored.isEmpty()) boxNames.associateWith { emptySet() } else boxNames.associateWith { restored[it].orEmpty() }
+        val staleBoxNames = previousBoxNames.filterNot { old -> boxNames.any { it == old } }
+        if (staleBoxNames.isNotEmpty()) {
+            context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.apply {
+                staleBoxNames.forEach { remove(KEY_BOX_PREFIX + it) }
+                apply()
+            }
+        }
         contextualCapturedIds = restoredContextual
         capturedIds = newCaptured + boxes.values.flatten() + contextualCapturedIds.values.flatten()
         persistBoxOrder()
