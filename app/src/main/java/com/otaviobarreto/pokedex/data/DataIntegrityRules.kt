@@ -14,6 +14,20 @@ object DataIntegrityRules {
         hasContextualReference: Boolean
     ): Boolean = alreadyOwned || hasBoxReference || hasContextualReference
 
+    fun missingGlobalOwnership(
+        global: Set<Int>,
+        boxIds: Collection<Int>,
+        contextualIds: Collection<Int>,
+        variantIds: Collection<Int>
+    ): Set<Int> = (boxIds + contextualIds + variantIds).filterNot { it in global }.toSet()
+
+    fun missingContextualVariantOwnership(
+        contextual: Map<String, Set<Int>>,
+        variantPairs: Collection<Pair<String, Int>>
+    ): List<Pair<String, Int>> = variantPairs.distinct().filterNot { (source, id) ->
+        id in contextual[source].orEmpty()
+    }
+
     fun completedCount(validStepIds: Collection<String>, completed: Set<String>): Int =
         validStepIds.count { it in completed }
 }
