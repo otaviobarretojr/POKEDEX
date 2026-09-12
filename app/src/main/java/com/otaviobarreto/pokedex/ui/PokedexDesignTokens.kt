@@ -74,6 +74,16 @@ object PokedexDesignTokens {
         val ArtworkRadius = 16.dp
         val CardHorizontalPadding = 12.dp
         val CardVerticalPadding = 11.dp
+
+        // v7 visual foundation: screen chrome around the approved game cards.
+        val ScreenTopPadding = 22.dp
+        val ScreenHorizontalPadding = 16.dp
+        val HeaderBottomPadding = 18.dp
+        val CardGap = 13.dp
+        val HeroSurface = Color(0xFFF0F5FF)
+        val HeroAccent = Color(0xFF5B55E7)
+        val HeroAccentSoft = Color(0xFFDCD9FF)
+        val HeroRadius = 28.dp
     }
 
     val Shapes = Shapes(
