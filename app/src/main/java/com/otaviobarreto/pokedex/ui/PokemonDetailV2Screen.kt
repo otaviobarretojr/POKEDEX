@@ -298,18 +298,34 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         }
         item{
             SectionCard("Onde conseguir",Icons.Default.Route){
+                val allOptions=CollectionAdvisor.cachedOptions(b.pokemon.id)
+                val options=if(source.isNullOrBlank()) allOptions else allOptions.filter{it.source==source}
+                val contextual=source?.let{GameContext.fromSource(it)}
                 Text(
-                    CollectionAdvisor.acquisitionLabel(b.pokemon.id),
+                    when{
+                        !source.isNullOrBlank() && options.isNotEmpty() -> "Disponível nesta Pokédex regional"
+                        !source.isNullOrBlank() -> "Sem registro de captura nesta Pokédex regional"
+                        else -> CollectionAdvisor.acquisitionLabel(b.pokemon.id)
+                    },
                     style=MaterialTheme.typography.labelLarge,
                     color=accent,
                     fontWeight=FontWeight.Bold
                 )
                 Text(
-                    CollectionAdvisor.recommendation(b.pokemon.id),
+                    when{
+                        !source.isNullOrBlank() && options.isNotEmpty() -> {
+                            val option=options.first()
+                            option.game+" · "+option.region+" #"+option.regionalNumber
+                        }
+                        !source.isNullOrBlank() -> {
+                            "No contexto "+(contextual?.label ?: "atual")+
+                                ", verifique evolução, troca, HOME, evento ou outro método compatível."
+                        }
+                        else -> CollectionAdvisor.recommendation(b.pokemon.id)
+                    },
                     style=MaterialTheme.typography.bodyMedium,
                     modifier=Modifier.padding(top=4.dp)
                 )
-                val options=CollectionAdvisor.cachedOptions(b.pokemon.id)
                 if(options.isNotEmpty()){
                     options.take(4).forEach{option->
                         Text(
