@@ -16,7 +16,7 @@ webp.write_bytes(raw)
 img=Image.open(webp).convert("RGBA")
 w,h=img.size
 src=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
-pat=re.compile(r'JourneyMapPoint\(\s*"(sv-\\d+)"\s*,\s*([0-9.]+)f\s*,\s*([0-9.]+)f\s*\)')
+pat=re.compile(r'JourneyMapPoint\(\s*"(sv-\d+)"\s*,\s*([0-9.]+)f\s*,\s*([0-9.]+)f\s*\)')
 points=[(m.group(1),float(m.group(2)),float(m.group(3))) for m in pat.finditer(src)]
 if len(points)!=18:
     raise SystemExit(f"expected 18 Paldea map points, found {len(points)}")
