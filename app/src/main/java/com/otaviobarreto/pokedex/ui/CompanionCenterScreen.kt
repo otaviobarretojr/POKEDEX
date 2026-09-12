@@ -202,6 +202,12 @@ fun CompanionCenterScreen(
                         modifier=Modifier.fillMaxWidth().padding(top=10.dp).height(8.dp),
                         strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
                     )
+                    Spacer(Modifier.height(12.dp))
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                        InsightCard("Formas",insights.ownedForms.toString(),Modifier.weight(1f))
+                        InsightCard("Shiny",insights.shinyVariants.toString(),Modifier.weight(1f))
+                        InsightCard("Espécies c/ variantes",insights.speciesWithVariants.toString(),Modifier.weight(1f))
+                    }
                 }
             }
         }
