@@ -106,6 +106,34 @@ object PokedexDataStore {
      */
     suspend fun prefetchDetails(id: Int) = prefetchCoreDetails(id)
 
+    suspend fun prefetchDetailWindow(centerId:Int, radius:Int=1) {
+        val ids=(centerId-radius..centerId+radius)
+            .filter { it in 1..PokeApiService.MAX_NATIONAL_DEX_ID }
+        coroutineScope {
+            ids.map { id -> async { prefetchCoreDetails(id) } }.awaitAll()
+        }
+    }
+
+    suspend fun prefetchBoxWindow(
+        dex:List<GameDexService.GameDexEntry>,
+        page:Int,
+        pageSize:Int=30
+    ) {
+        if(dex.isEmpty()) return
+        val pageCount=((dex.size+pageSize-1)/pageSize).coerceAtLeast(1)
+        val targetPages=listOf(page-1,page,page+1)
+            .filter { it in 0 until pageCount }
+            .distinct()
+        val ids=targetPages.flatMap { target ->
+            dex.drop(target*pageSize).take(pageSize).map { it.nationalId }
+        }.distinct()
+        ids.chunked(8).forEach { chunk ->
+            coroutineScope {
+                chunk.map { id -> async { prefetchCoreDetails(id) } }.awaitAll()
+            }
+        }
+    }
+
     suspend fun hydratePinned(ids: Collection<Int>) {
         ids.distinct().take(24).forEach { id ->
             val pokemonPinned = PersistentApiCache.isPinned(PokeApiService.pokemonUrl(id))
