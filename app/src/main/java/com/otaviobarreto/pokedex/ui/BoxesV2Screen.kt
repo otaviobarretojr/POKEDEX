@@ -35,6 +35,9 @@ import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.PokedexDataStore
+import com.otaviobarreto.pokedex.data.PokemonFormsService
+import com.otaviobarreto.pokedex.data.PokemonFormVariant
+import com.otaviobarreto.pokedex.data.VariantCollectionStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -200,7 +203,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
-    else->QBGrid(entries,capturedIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+    else->QBGrid(entries,capturedIds,region.source,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
    }
   }
   Row(
@@ -237,17 +240,10 @@ private val qbGames=AppGameCatalog.games.map{game->
   select={targetPage->page=targetPage;allBoxes=false}
  )
  captureTarget?.let{pk->
-  val already=CollectionStore.isCapturedIn(region.source,pk.nationalId)
-  AlertDialog(
-   onDismissRequest={captureTarget=null},
-   title={Text(if(already)"Remover captura?" else "Capturar Pokémon?")},
-   text={Text(pretty(pk.name)+(if(already)" será marcado como não capturado." else " será marcado como capturado."))},
-   confirmButton={
-    Button(onClick={CollectionStore.toggleCapturedIn(region.source,pk.nationalId);captureTarget=null}){
-     Text(if(already)"Remover" else "Capturar")
-    }
-   },
-   dismissButton={TextButton({captureTarget=null}){Text("Cancelar")}}
+  QBVariantManager(
+   pk=pk,
+   source=region.source,
+   dismiss={captureTarget=null}
   )
  }
 }
@@ -256,6 +252,7 @@ private val qbGames=AppGameCatalog.games.map{game->
 private fun QBGrid(
     entries:List<GameDexService.GameDexEntry>,
     captured:Set<Int>,
+    source:String,
     open:(GameDexService.GameDexEntry)->Unit,
     hold:(GameDexService.GameDexEntry)->Unit
 ){
@@ -270,6 +267,7 @@ private fun QBGrid(
                         QBSlot(
                             pk=pk,
                             captured=pk.nationalId in captured,
+                            source=source,
                             open={open(pk)},
                             hold={hold(pk)},
                             modifier=Modifier.weight(1f).fillMaxHeight()
@@ -286,10 +284,17 @@ private fun QBGrid(
 private fun QBSlot(
     pk:GameDexService.GameDexEntry,
     captured:Boolean,
+    source:String,
     open:()->Unit,
     hold:()->Unit,
     modifier:Modifier=Modifier
 ){
+    val ownedVariants=VariantCollectionStore.ownedVariants
+    val variant=remember(source,pk.nationalId,ownedVariants){
+        VariantCollectionStore.preferred(source,pk.nationalId)
+    }
+    val imageModel=variant?.artworkUrl ?: pk.spriteUrl
+    val isShiny=variant?.shiny==true
     Surface(
         modifier.combinedClickable(onClick=open,onLongClick=hold),
         shape=RoundedCornerShape(9.dp),
@@ -297,7 +302,7 @@ private fun QBSlot(
     ){
         Box(Modifier.fillMaxSize()){
             AsyncImage(
-                model=pk.spriteUrl,
+                model=imageModel,
                 contentDescription=pk.name,
                 modifier=Modifier
                     .fillMaxWidth()
@@ -324,12 +329,134 @@ private fun QBSlot(
                         overflow=TextOverflow.Ellipsis,
                         color=if(captured)QBink else QBmuted
                     )
-                    Text(
-                        "#"+pk.gameNumber.toString().padStart(3,'0'),
-                        fontSize=7.sp,
-                        lineHeight=7.sp,
-                        color=QBmuted
-                    )
+                    Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(2.dp)){
+                        Text(
+                            "#"+pk.gameNumber.toString().padStart(3,'0'),
+                            fontSize=7.sp,
+                            lineHeight=7.sp,
+                            color=QBmuted
+                        )
+                        if(isShiny){
+                            Text("★",fontSize=7.sp,lineHeight=7.sp,color=Color(0xFFB78900),fontWeight=FontWeight.Black)
+                        }
+                        if(variant!=null && variant.formPokemonId!=pk.nationalId){
+                            Text("F",fontSize=6.sp,lineHeight=7.sp,color=Color(0xFF5B55E7),fontWeight=FontWeight.Black)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QBVariantManager(
+    pk:GameDexService.GameDexEntry,
+    source:String,
+    dismiss:()->Unit
+){
+    val variantsState=VariantCollectionStore.ownedVariants
+    var forms by remember(pk.nationalId){mutableStateOf<List<PokemonFormVariant>?>(PokemonFormsService.cached(pk.nationalId))}
+    var loading by remember(pk.nationalId){mutableStateOf(forms==null)}
+    LaunchedEffect(pk.nationalId){
+        if(forms==null){
+            loading=true
+            forms=runCatching{
+                withContext(Dispatchers.IO){PokemonFormsService.load(pk.nationalId)}
+            }.getOrElse{
+                listOf(PokemonFormVariant(pretty(pk.name),pk.nationalId,true))
+            }
+            loading=false
+        }
+    }
+    val available=(forms.orEmpty().ifEmpty{
+        listOf(PokemonFormVariant(pretty(pk.name),pk.nationalId,true))
+    }).filter{it.pokemonId!=null}
+
+    Dialog(onDismissRequest=dismiss,properties=DialogProperties(usePlatformDefaultWidth=false)){
+        Surface(
+            Modifier.fillMaxWidth(.94f).fillMaxHeight(.86f),
+            shape=RoundedCornerShape(24.dp),
+            color=QBbg
+        ){
+            Column(Modifier.fillMaxSize().padding(16.dp)){
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                    Column(Modifier.weight(1f)){
+                        Text(pretty(pk.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+                        Text("Formas e Shiny",fontSize=11.sp,color=QBmuted)
+                    }
+                    IconButton(dismiss){Icon(Icons.Default.Close,"Fechar")}
+                }
+                Text(
+                    "Você pode registrar mais de uma forma e manter Normal + Shiny ao mesmo tempo.",
+                    style=MaterialTheme.typography.bodySmall,
+                    color=QBmuted,
+                    modifier=Modifier.padding(bottom=10.dp)
+                )
+                if(loading){
+                    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
+                }else{
+                    LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                        items(available,key={it.pokemonId!!}){form->
+                            val formId=form.pokemonId!!
+                            val normalOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,false)
+                            val shinyOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,true)
+                            Card(shape=RoundedCornerShape(18.dp)){
+                                Row(
+                                    Modifier.fillMaxWidth().padding(10.dp),
+                                    verticalAlignment=Alignment.CenterVertically
+                                ){
+                                    AsyncImage(
+                                        model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
+                                        contentDescription=form.name,
+                                        modifier=Modifier.size(58.dp),
+                                        contentScale=ContentScale.Fit
+                                    )
+                                    Column(Modifier.weight(1f).padding(start=8.dp)){
+                                        Text(
+                                            if(form.isDefault) form.name+" · padrão" else form.name,
+                                            fontWeight=FontWeight.Bold,
+                                            maxLines=1,
+                                            overflow=TextOverflow.Ellipsis
+                                        )
+                                        Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                                            FilterChip(
+                                                selected=normalOwned,
+                                                onClick={
+                                                    VariantCollectionStore.toggle(
+                                                        source,pk.nationalId,formId,form.name,false
+                                                    )
+                                                },
+                                                label={Text("Normal",fontSize=10.sp)},
+                                                leadingIcon={if(normalOwned){{Icon(Icons.Default.Check,null,Modifier.size(14.dp))}}else null}
+                                            )
+                                            FilterChip(
+                                                selected=shinyOwned,
+                                                onClick={
+                                                    VariantCollectionStore.toggle(
+                                                        source,pk.nationalId,formId,form.name,true
+                                                    )
+                                                },
+                                                label={Text("★ Shiny",fontSize=10.sp)},
+                                                leadingIcon={if(shinyOwned){{Icon(Icons.Default.AutoAwesome,null,Modifier.size(14.dp))}}else null}
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        item{
+                            val any=variantsState.any{it.source==source && it.speciesId==pk.nationalId}
+                            if(!any && CollectionStore.isCapturedIn(source,pk.nationalId)){
+                                Text(
+                                    "Este Pokémon já estava marcado como capturado em uma versão antiga. Selecione Normal ou Shiny para migrá-lo ao novo sistema de variantes.",
+                                    style=MaterialTheme.typography.bodySmall,
+                                    color=QBmuted,
+                                    modifier=Modifier.padding(8.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
