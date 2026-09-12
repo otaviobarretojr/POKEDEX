@@ -53,6 +53,9 @@ fun CompanionCenterScreen(
             advisorReady=CollectionAdvisor.isWarm()
         }
     }
+    val capturePlan=remember(advisorReady,livingPlan.missingSpecies,CollectionStore.capturedIds){
+        if(advisorReady) CollectionAdvisor.capturePlan(livingPlan.missingSpecies,limit=10) else emptyList()
+    }
 
     val normalizedQuery=query.trim()
     val pokemonResults=remember(normalizedQuery){
@@ -275,6 +278,77 @@ fun CompanionCenterScreen(
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                             InsightCard("Shiny espécies",livingPlan.shinySpecies.toString(),Modifier.weight(1f))
                             InsightCard("Registros de forma",livingPlan.formRegistrations.toString(),Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+
+        if(normalizedQuery.isBlank()){
+            item{
+                SectionTitle("Plano de captura")
+                if(!advisorReady){
+                    Card(shape=RoundedCornerShape(18.dp)){
+                        Row(
+                            Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment=Alignment.CenterVertically
+                        ){
+                            CircularProgressIndicator(Modifier.size(22.dp),strokeWidth=2.dp)
+                            Text(
+                                "Cruzando as Pokédex regionais dos seus jogos…",
+                                Modifier.padding(start=10.dp),
+                                style=MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }else if(capturePlan.isEmpty()){
+                    Text(
+                        "Nenhum alvo pendente com rota regional disponível.",
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }else{
+                    Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                        capturePlan.forEach{target->
+                            val pk=PokemonRepository.byId(target.pokemonId)
+                            Card(
+                                onClick={onPokemonClick(target.pokemonId)},
+                                shape=RoundedCornerShape(18.dp)
+                            ){
+                                Column(Modifier.fillMaxWidth().padding(14.dp)){
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment=Alignment.CenterVertically
+                                    ){
+                                        Icon(Icons.Default.Route,null,tint=MaterialTheme.colorScheme.primary)
+                                        Column(Modifier.weight(1f).padding(start=10.dp)){
+                                            Text(
+                                                "#"+target.pokemonId.toString().padStart(4,'0')+
+                                                    (pk?.name?.let{" · "+it} ?: ""),
+                                                fontWeight=FontWeight.Bold
+                                            )
+                                            Text(
+                                                CollectionAdvisor.recommendation(target.pokemonId),
+                                                style=MaterialTheme.typography.bodySmall,
+                                                color=MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    target.preferred?.let{option->
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(top=8.dp),
+                                            horizontalArrangement=Arrangement.End
+                                        ){
+                                            TextButton(
+                                                onClick={onOpenBoxes(option.game,option.source)}
+                                            ){
+                                                Icon(Icons.Default.GridView,null,Modifier.size(16.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text("Abrir "+option.region)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
