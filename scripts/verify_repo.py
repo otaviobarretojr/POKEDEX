@@ -1091,7 +1091,7 @@ insights = root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionIn
 if not central.exists(): violations.append("v8.6-v8.8 Central screen missing")
 else:
     central_source = central.read_text(encoding="utf-8")
-    for required in ("CompanionCenterScreen", "AppBackupManager.exportJson", "AppBackupManager.importJson", "CollectionInsightsService.current", "Buscar Pokémon"):
+    for required in ("CompanionCenterScreen", "AppBackupManager.exportJson", "AppBackupManager.importJson", "CollectionInsightsService.current", "Pokémon, número, tipo, jogo ou Box"):
         if required not in central_source: violations.append(f"Central feature missing {required}")
 if not backup.exists(): violations.append("Backup manager missing")
 if not insights.exists(): violations.append("Collection insights missing")
