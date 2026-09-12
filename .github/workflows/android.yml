@@ -30,9 +30,9 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Validate v18.3.0 Foundation Lock
+      - name: Validate v18.4.0 Journey Map
         run: |
-          grep -q 'versionCode = 18300' app/build.gradle.kts
+          grep -q 'versionCode = 18400' app/build.gradle.kts
           grep -q 'versionName = "18.3.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
       - name: Verify source architecture
