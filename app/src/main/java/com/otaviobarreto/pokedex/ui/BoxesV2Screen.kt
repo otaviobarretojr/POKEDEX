@@ -362,7 +362,7 @@ private fun QBVariantManager(
         if(forms==null){
             loading=true
             forms=runCatching{
-                withContext(Dispatchers.IO){PokemonFormsService.load(pk.nationalId)}
+                withContext(Dispatchers.IO){PokemonFormsService.collectible(pk.nationalId)}
             }.getOrElse{
                 listOf(PokemonFormVariant(pretty(pk.name),pk.nationalId,true))
             }
