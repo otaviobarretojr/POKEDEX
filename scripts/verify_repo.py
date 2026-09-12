@@ -928,7 +928,8 @@ local_v1615 = 'versionName = "16.1.5"' in local_gradle and "versionCode = 16150"
 local_v1620 = 'versionName = "16.2.0"' in local_gradle and "versionCode = 16200" in local_gradle
 local_v1700 = 'versionName = "17.0.0"' in local_gradle and "versionCode = 17000" in local_gradle
 local_v1800 = 'versionName = "18.0.0"' in local_gradle and "versionCode = 18000" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800):
+local_v1810 = 'versionName = "18.1.0"' in local_gradle and "versionCode = 18100" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810):
     violations.append("Local build version is not aligned with supported v16/v17/v18 releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
