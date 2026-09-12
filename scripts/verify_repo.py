@@ -1186,9 +1186,10 @@ for required in ("nextMissing", "Próximo alvo"):
         violations.append(f"v10 intelligent Journey missing {required}")
 
 backup_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
-for required in ('"teams"', "TeamStore::importSnapshot"):
-    if required not in backup_v10:
-        violations.append(f"v10 backup missing {required}")
+if '"teams"' not in backup_v10:
+    violations.append('v10 backup missing "teams"')
+if "TeamStore::importSnapshot" not in backup_v10 and "TeamStore.importSnapshot" not in backup_v10:
+    violations.append("v10 backup team restore missing")
 if "SCHEMA_VERSION = 3" not in backup_v10 and "SCHEMA_VERSION = 4" not in backup_v10:
     violations.append("v10 backup schema compatibility missing")
 
@@ -1224,9 +1225,11 @@ for required in ("QBVariantManager", "Formas e Shiny", "★ Shiny", "PokemonForm
         violations.append(f"Forms/Shiny Box UI missing {required}")
 
 backup_v104 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
-for required in ("SCHEMA_VERSION = 4", '"variants"', "VariantCollectionStore::importSnapshot"):
+for required in ("SCHEMA_VERSION = 4", '"variants"'):
     if required not in backup_v104:
         violations.append(f"Forms/Shiny backup missing {required}")
+if "VariantCollectionStore::importSnapshot" not in backup_v104 and "VariantCollectionStore.importSnapshot" not in backup_v104:
+    violations.append("Forms/Shiny backup variant restore missing")
 
 central_v104 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
 for required in ('"Formas"', '"Shiny"', "insights.ownedForms", "insights.shinyVariants"):
