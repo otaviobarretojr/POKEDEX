@@ -81,6 +81,13 @@ object VariantCollectionStore {
             .sortedWith(compareBy<OwnedPokemonVariant>{it.shiny}.thenBy{it.formPokemonId!=speciesId})
             .firstOrNull()
 
+    fun removeAll(source:String,speciesId:Int){
+        val before=ownedVariants.size
+        ownedVariants=ownedVariants.filterNot{it.source==source && it.speciesId==speciesId}
+        if(ownedVariants.size!=before) persist()
+        CollectionStore.setCapturedIn(source,speciesId,false)
+    }
+
     fun shinyCount():Int = ownedVariants.count{it.shiny}
     fun formCount():Int = ownedVariants.map{Triple(it.source,it.speciesId,it.formPokemonId)}.distinct().size
     fun speciesWithVariants():Int = ownedVariants.map{it.speciesId}.distinct().size
