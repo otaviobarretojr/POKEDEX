@@ -46,7 +46,8 @@ internal fun JourneyGamePicker(
     val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
     val activeOwned=remember(captured,activeSources){activeSources.flatMap{captured[it].orEmpty()}.toSet()}
     val activeDexIds=activeGame?.let{dexIdsByGame[it.label].orEmpty()}.orEmpty()
-    val nextMissing=remember(activeDexIds,activeOwned){activeDexIds.sorted().firstOrNull{it !in activeOwned}}
+    val missingIds=remember(activeDexIds,activeOwned){activeDexIds.sorted().filter{it !in activeOwned}}
+    val nextMissing=missingIds.firstOrNull()
     val journeyRevision=JourneyProgressStore.revision
     val activeSteps=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyCatalog.steps(it.label)}.orEmpty()}
     val activeCompleted=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyProgressStore.completed(it.label)}.orEmpty()}
@@ -139,6 +140,60 @@ internal fun JourneyGamePicker(
                                     Spacer(Modifier.width(7.dp))
                                     Text("Próximo faltante · #"+id)
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(activeGame!=null && activeDexIds.isNotEmpty()){
+                item(key="living_dex_planner"){
+                    val source=activeGame.regions.firstOrNull()?.source
+                    Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
+                        Column(Modifier.fillMaxWidth().padding(14.dp)){
+                            Row(verticalAlignment=Alignment.CenterVertically){
+                                Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.secondaryContainer){
+                                    Icon(Icons.Default.Checklist,null,Modifier.padding(8.dp).size(19.dp),tint=MaterialTheme.colorScheme.secondary)
+                                }
+                                Column(Modifier.weight(1f).padding(start=10.dp)){
+                                    Text("Living Dex Planner",fontWeight=FontWeight.Black)
+                                    Text(
+                                        if(missingIds.isEmpty()) "Coleção regional completa." else "Faltam "+missingIds.size+" Pokémon neste jogo.",
+                                        style=MaterialTheme.typography.bodySmall,
+                                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,
+                                    fontWeight=FontWeight.Black,
+                                    color=MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            if(missingIds.isNotEmpty()){
+                                Text("PRÓXIMOS ALVOS",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=12.dp,bottom=7.dp))
+                                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                                    missingIds.take(5).forEach{id->
+                                        Surface(
+                                            modifier=Modifier.weight(1f).clickable{onPokemonClick(id,source)},
+                                            shape=RoundedCornerShape(14.dp),
+                                            color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.58f)
+                                        ){
+                                            Column(Modifier.padding(vertical=8.dp),horizontalAlignment=Alignment.CenterHorizontally){
+                                                AsyncImage(
+                                                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+id+".png",
+                                                    contentDescription=null,
+                                                    modifier=Modifier.size(36.dp),
+                                                    contentScale=ContentScale.Fit
+                                                )
+                                                Text("#"+id,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelSmall)
+                                            }
+                                        }
+                                    }
+                                }
+                                LinearProgressIndicator(
+                                    progress={collectionRatio.coerceIn(0f,1f)},
+                                    modifier=Modifier.fillMaxWidth().padding(top=12.dp).height(7.dp)
+                                )
                             }
                         }
                     }
