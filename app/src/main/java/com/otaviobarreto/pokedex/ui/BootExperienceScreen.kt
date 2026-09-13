@@ -52,13 +52,14 @@ fun BootExperienceScreen(onReady: () -> Unit) {
         onReady()
     }
 
-    val mint = Color(0xFFEAFBF3)
-    val teal = Color(0xFF159D9B)
-    val green = Color(0xFF4ACB8A)
+    val scheme = MaterialTheme.colorScheme
+    val mint = scheme.background
+    val teal = scheme.tertiary
+    val green = scheme.primary
     Box(Modifier.fillMaxSize().background(mint)) {
         Canvas(Modifier.fillMaxSize()) {
             val center = Offset(size.width * .5f, size.height * .43f)
-            drawCircle(Color.White.copy(alpha=.58f), size.minDimension*.46f, center)
+            drawCircle(scheme.surface.copy(alpha=.58f), size.minDimension*.46f, center)
             drawCircle(teal.copy(alpha=.08f), size.minDimension*.34f, center)
             val radii = listOf(.31f,.43f,.57f)
             radii.forEachIndexed { index, r ->
@@ -83,7 +84,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
         Column(Modifier.fillMaxSize().padding(horizontal=30.dp), horizontalAlignment=Alignment.CenterHorizontally) {
             Spacer(Modifier.weight(.22f))
             Box(Modifier.size(224.dp), contentAlignment=Alignment.Center) {
-                Surface(Modifier.size(148.dp).scale(pulse), shape=CircleShape, color=Color.White.copy(alpha=.92f), shadowElevation=10.dp) {
+                Surface(Modifier.size(148.dp).scale(pulse), shape=CircleShape, color=scheme.surface.copy(alpha=.96f), shadowElevation=10.dp) {
                     Box(contentAlignment=Alignment.Center) { Icon(Icons.Default.CatchingPokemon, null, Modifier.size(94.dp), tint=teal) }
                 }
                 Surface(Modifier.align(Alignment.BottomCenter).offset(y=10.dp), shape=RoundedCornerShape(20.dp), color=teal.copy(alpha=.94f)) {
@@ -93,15 +94,15 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             Spacer(Modifier.height(42.dp))
             Text("SUA JORNADA, ORGANIZADA.", fontWeight=FontWeight.Bold, color=teal, letterSpacing=1.4.sp, fontSize=13.sp)
             Spacer(Modifier.weight(.28f))
-            Text(state.label, style=MaterialTheme.typography.titleMedium, fontWeight=FontWeight.SemiBold, color=Color(0xFF356B68), textAlign=TextAlign.Center)
+            Text(state.label, style=MaterialTheme.typography.titleMedium, fontWeight=FontWeight.SemiBold, color=scheme.onBackground, textAlign=TextAlign.Center)
             Spacer(Modifier.height(13.dp))
             LinearProgressIndicator(progress={animatedProgress}, Modifier.fillMaxWidth().height(6.dp), color=teal, trackColor=teal.copy(alpha=.12f), strokeCap=StrokeCap.Round)
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
             Spacer(Modifier.height(38.dp))
-            Text("POKEDEX  ·  v"+versionName, style=MaterialTheme.typography.labelSmall, color=Color(0xFF4B7D78).copy(alpha=.62f), letterSpacing=1.sp)
+            Text("POKEDEX  ·  v"+versionName, style=MaterialTheme.typography.labelSmall, color=scheme.onSurfaceVariant.copy(alpha=.72f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
         }
-        if(finished) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha=glow*.15f)))
+        if(finished) Box(Modifier.fillMaxSize().background(scheme.surface.copy(alpha=glow*.15f)))
     }
 }
