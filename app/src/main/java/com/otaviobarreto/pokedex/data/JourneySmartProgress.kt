@@ -19,7 +19,8 @@ object JourneySmartProgress {
         val nextId=next?.id.orEmpty()
         val phase=when{
             nextId.startsWith("sv-pg-") || nextId.startsWith("sv-dlc-") || nextId.startsWith("sv-epi-") ||
-                nextId.startsWith("za-dlc-") || nextId in setOf("za-38","za-39","za-40","za-41","za-42") -> CampaignPhase.LATE
+                nextId.startsWith("za-dlc-") || nextId in setOf("za-38","za-39","za-40","za-41","za-42") ||
+                nextId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27","la-daybreak") -> CampaignPhase.LATE
             ratio < .34f -> CampaignPhase.EARLY
             ratio < .72f -> CampaignPhase.MID
             else -> CampaignPhase.LATE
@@ -32,6 +33,7 @@ object JourneySmartProgress {
             nextId.startsWith("za-dlc-") -> "Mega Dimension"
             nextId in setOf("za-38","za-39","za-40","za-41","za-42") -> "Pós-game de Lumiose"
             nextId.startsWith("za-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
+            nextId.startsWith("la-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             phase==CampaignPhase.EARLY -> "Início da campanha"
             phase==CampaignPhase.MID -> "Meio da campanha"
             else -> "Reta final"
