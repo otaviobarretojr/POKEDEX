@@ -44,10 +44,10 @@ object JourneyCatalog {
         JourneyStep("lgpe-g2",5,"Cerulean Gym","Misty · Cascade Badge","Nv. 17–19",JourneyChallengeKind.GYM,"Ginásio · Água","Cerulean Gym"),
         JourneyStep("lgpe-06",6,"Nugget Bridge & Bill","Rival, treinadores e Sea Cottage","Nv. 14–20",JourneyChallengeKind.STORY,"Exploração","Routes 24–25"),
         JourneyStep("lgpe-g3",7,"Vermilion Gym","Lt. Surge · Thunder Badge","Nv. 21–25",JourneyChallengeKind.GYM,"Ginásio · Elétrico","Vermilion Gym"),
-        JourneyStep("lgpe-08",8,"Rock Tunnel → Lavender","Atravesse Rock Tunnel e avance em Lavender","Nv. 22–28",JourneyChallengeKind.STORY,"Exploração","Rock Tunnel / Lavender Town"),
-        JourneyStep("lgpe-09",9,"Pokémon Tower","Cubone, Marowak e Team Rocket","Nv. 27–32",JourneyChallengeKind.STORY,"Team Rocket","Pokémon Tower"),
-        JourneyStep("lgpe-g4",10,"Celadon Gym","Erika · Rainbow Badge","Nv. 28–34",JourneyChallengeKind.GYM,"Ginásio · Planta","Celadon Gym"),
-        JourneyStep("lgpe-11",11,"Rocket Game Corner","Invada o esconderijo da Team Rocket","Nv. 30–35",JourneyChallengeKind.STORY,"Team Rocket","Celadon City"),
+        JourneyStep("lgpe-08",8,"Rock Tunnel → Lavender","Atravesse Rock Tunnel e conheça o mistério da Pokémon Tower","Nv. 22–28",JourneyChallengeKind.STORY,"Exploração","Rock Tunnel / Lavender Town"),
+        JourneyStep("lgpe-g4",9,"Celadon Gym","Erika · Rainbow Badge","Nv. 28–34",JourneyChallengeKind.GYM,"Ginásio · Planta","Celadon Gym"),
+        JourneyStep("lgpe-10",10,"Rocket Game Corner","Invada o esconderijo da Team Rocket e obtenha o Silph Scope","Nv. 30–35",JourneyChallengeKind.STORY,"Team Rocket","Celadon City"),
+        JourneyStep("lgpe-11",11,"Pokémon Tower","Marowak, Cubone e resgate de Mr. Fuji","Nv. 27–32",JourneyChallengeKind.STORY,"Team Rocket","Pokémon Tower","O Silph Scope do Rocket Hideout permite identificar o espírito de Marowak."),
         JourneyStep("lgpe-12",12,"Silph Co.","Giovanni, Archer e Team Rocket","Nv. 35–42",JourneyChallengeKind.STORY,"Team Rocket","Saffron City"),
         JourneyStep("lgpe-g5",13,"Fuchsia Gym","Koga · Soul Badge","Nv. 43–44",JourneyChallengeKind.GYM,"Ginásio · Veneno","Fuchsia Gym"),
         JourneyStep("lgpe-g6",14,"Saffron Gym","Sabrina · Marsh Badge","Nv. 43–44",JourneyChallengeKind.GYM,"Ginásio · Psíquico","Saffron Gym"),
@@ -60,11 +60,12 @@ object JourneyCatalog {
         JourneyStep("lgpe-e4-4",21,"Elite Four · Lance","Dragão","Nv. 54–55",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
         JourneyStep("lgpe-22",22,"Champion Trace","Conquiste o título de Kanto","Nv. 56–57",JourneyChallengeKind.STORY,"Campeão","Indigo Plateau"),
         JourneyStep("lgpe-pg-01",23,"Cerulean Cave","Capture Mewtwo","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário","Cerulean Cave","Acesso liberado após vencer a Liga."),
-        JourneyStep("lgpe-pg-02",24,"Master Trainers","Desafie especialistas de cada espécie","Pós-jogo",JourneyChallengeKind.POSTGAME,"Master Trainers","Kanto","Master Trainers aparecem pelo mapa após a Liga e normalmente exigem duelo 1×1 da mesma espécie."),
-        JourneyStep("lgpe-pg-03",25,"Red","Derrote Red após cumprir o requisito dos Master Trainers","Nv. 85",JourneyChallengeKind.POSTGAME,"Superboss","Indigo Plateau"),
-        JourneyStep("lgpe-pg-04",26,"Gym Leader Rematches","Revanche dos 8 líderes","Nv. 56–68",JourneyChallengeKind.POSTGAME,"Rematches","Kanto"),
-        JourneyStep("lgpe-pg-05",27,"Elite Four Rematch","Liga fortalecida","Nv. 61–67",JourneyChallengeKind.EPILOGUE,"Liga · Rematch","Indigo Plateau"),
-        JourneyStep("lgpe-pg-06",28,"Green & Blue","Batalhas especiais de pós-game","Nv. 66–70",JourneyChallengeKind.EPILOGUE,"Superboss","Cerulean / Viridian","Conteúdo adicional de alto nível após a campanha.")
+        JourneyStep("lgpe-pg-02",24,"Green","Enfrente Green após a captura de Mewtwo","Nv. 66–68",JourneyChallengeKind.POSTGAME,"Superboss","Cerulean Cave / Cerulean City","Green procura Mewtwo e pode ser reencontrada depois."),
+        JourneyStep("lgpe-pg-03",25,"Master Trainers","Desafie especialistas de cada espécie","Pós-jogo",JourneyChallengeKind.POSTGAME,"Master Trainers","Kanto","Os Master Trainers aparecem pelo mapa após a Liga; muitos duelos exigem a mesma espécie e proíbem itens."),
+        JourneyStep("lgpe-pg-04",26,"Red","Derrote 6 Master Trainers e desafie Red","Nv. 85",JourneyChallengeKind.POSTGAME,"Superboss","Indigo Plateau","Red aparece fora da Liga após pelo menos 6 Master Trainers derrotados e exige uma equipe completa de 6 Pokémon."),
+        JourneyStep("lgpe-pg-05",27,"Blue · Viridian Gym","Enfrente Blue como novo líder de Viridian","Nv. 66–68",JourneyChallengeKind.POSTGAME,"Rematch especial","Viridian Gym","Blue assume o ginásio após Giovanni deixar a função."),
+        JourneyStep("lgpe-pg-06",28,"Gym Leader Rematches","Revanche dos 8 líderes","Nv. 56–68",JourneyChallengeKind.POSTGAME,"Rematches","Kanto"),
+        JourneyStep("lgpe-pg-07",29,"Elite Four & Trace Rematch","Liga fortalecida e revanche do Champion","Nv. 61–67",JourneyChallengeKind.EPILOGUE,"Liga · Rematch","Indigo Plateau","Trace tenta recuperar o título após a campanha.")
     )
 
     private val brilliantDiamondShiningPearl = listOf(
