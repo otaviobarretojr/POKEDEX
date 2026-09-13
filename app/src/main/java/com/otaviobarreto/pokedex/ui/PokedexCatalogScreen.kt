@@ -225,6 +225,7 @@ private fun PokedexFormsDialog(
     onOpenBase:()->Unit,
     onOpenFormDetail:(Int,String,Boolean)->Unit
 ){
+    val haptic=LocalHapticFeedback.current
     val base=PokemonRepository.byId(pokemonId)
     var forms by remember(pokemonId){mutableStateOf<List<PokemonFormVariant>?>(PokemonFormsService.cached(pokemonId))}
     var selectedPreview by remember{mutableStateOf<FormPreview?>(null)}
