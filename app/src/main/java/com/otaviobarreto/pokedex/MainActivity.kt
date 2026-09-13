@@ -4,6 +4,11 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
@@ -86,7 +91,15 @@ private val mainDestinations=listOf(
   }
  }},
  topBar={if(isMainDestination&&currentRoute!="home"&&!useCompactOwnHeader ){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
-  NavHost(navController,"home",Modifier.padding(innerPadding)){
+  NavHost(
+   navController,
+   "home",
+   Modifier.padding(innerPadding),
+   enterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Standard))+slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){it/14}},
+   exitTransition={fadeOut(tween(PokedexDesignTokens.Motion.Fast))+slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){-(it/18)}},
+   popEnterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Standard))+slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){-(it/14)}},
+   popExitTransition={fadeOut(tween(PokedexDesignTokens.Motion.Fast))+slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){it/18}}
+  ){
    composable("home"){JourneyScreen(onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase->openCampaignGuide(game,phase)},onOpenBoxes=::openBoxes)}
    composable("campaignGuide?game={game}&phase={phase}",arguments=listOf(navArgument("game"){type=NavType.StringType;nullable=false},navArgument("phase"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val game=entry.arguments?.getString("game")?.let(Uri::decode);val phase=entry.arguments?.getString("phase")?.let(Uri::decode);CampaignTeamGuideScreen(onBackToMyTeams={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)},initialGame=game,initialPhase=phase)}
    composable("reference?kind={kind}&name={name}&source={source}",arguments=listOf(navArgument("kind"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("name"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val kind=entry.arguments?.getString("kind")?.let(Uri::decode);val name=entry.arguments?.getString("name")?.let(Uri::decode);val source=entry.arguments?.getString("source")?.let(Uri::decode);ReferenceHubScreen(onBack={navController.popBackStack()},initialKind=kind,initialName=name,source=source,onPokemonClick={id,pokemonSource->openPokemon(id,pokemonSource)})}
