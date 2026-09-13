@@ -72,6 +72,11 @@ object AppStatePreferences {
             ?.putInt(KEY_STARTER_PREFIX + key(gameLabel), pokemonId)?.apply()
     }
 
+    fun clearJourneyStarterForGame(gameLabel: String) {
+        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()
+            ?.remove(KEY_STARTER_PREFIX + key(gameLabel))?.apply()
+    }
+
     fun exportSnapshot(): JSONObject {
         val regions = JSONObject()
         val pages = JSONObject()
