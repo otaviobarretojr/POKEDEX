@@ -83,7 +83,7 @@ fun CompanionCenterScreen(
         item{
             DexGlassSurface(Modifier.fillMaxWidth()){
                 Row(verticalAlignment=Alignment.CenterVertically){
-                    Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                    Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
                         Icon(Icons.Default.Settings,null,Modifier.padding(11.dp).size(28.dp),tint=MaterialTheme.colorScheme.primary)
                     }
                     Column(Modifier.padding(start=12.dp)){
@@ -112,7 +112,7 @@ fun CompanionCenterScreen(
             item(key=game.label){
                 val pack=OfflineGamePackManager.status(game.label)
                 val audit=OfflineGamePackManager.audit(game.label)
-                Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
+                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         Row(verticalAlignment=Alignment.CenterVertically){
                             Icon(
@@ -193,7 +193,7 @@ fun CompanionCenterScreen(
             val downloadedPacks=remember(storageRevision){
                 AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
             }
-            Card(shape=RoundedCornerShape(20.dp)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Text("Cache da sessão",fontWeight=FontWeight.Bold)
                     Text(
@@ -256,7 +256,7 @@ fun CompanionCenterScreen(
 
         item{
             SettingsSectionTitle("Áudio")
-            Card(shape=RoundedCornerShape(20.dp)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Icon(Icons.Default.VolumeUp,null)
@@ -294,7 +294,7 @@ fun CompanionCenterScreen(
                     context.packageManager.getPackageInfo(context.packageName,0).versionName ?: "—"
                 }.getOrDefault("—")
             }
-            Card(shape=RoundedCornerShape(20.dp)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Text("POKEDEX v"+versionName,fontWeight=FontWeight.Bold)
                     Text(
@@ -362,7 +362,7 @@ fun CompanionCenterScreen(
 
         statusText?.let{message->
             item{
-                Card(shape=RoundedCornerShape(16.dp)){
+                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)){
                     Text(
                         message,
                         Modifier.fillMaxWidth().padding(12.dp),
