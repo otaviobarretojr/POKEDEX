@@ -75,16 +75,19 @@ fun ReferenceHubScreen(
  val filtered=remember(entries,query){val q=query.trim();if(q.isBlank())entries else entries.filter{pretty(it.name).contains(q,true)||it.name.contains(q,true)}}
  Scaffold(containerColor=MaterialTheme.colorScheme.background,topBar={TopAppBar(title={Text("Dados Pokémon")},navigationIcon={IconButton(onBack){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}})}){inner->
   Column(Modifier.fillMaxSize().padding(inner)){
-   Text("Biblioteca de referência",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(horizontal=16.dp,vertical=8.dp))
-   Text("Consulte golpes, habilidades e itens sem sair da Pokédex.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(horizontal=16.dp))
+   DexGlassSurface(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=10.dp)){
+    DexSectionEyebrow("Biblioteca")
+    Text("Dados Pokémon",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+    Text("Consulte golpes, habilidades e itens sem sair da Pokédex.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+   }
    TabRow(selectedTabIndex=selected,modifier=Modifier.padding(top=8.dp)){referenceTabs.forEachIndexed{i,t->Tab(selected=i==selected,onClick={selected=i;query="";chosen=null;deepLinkConsumed=true},text={Text(t.label)})}}
    OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(12.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Buscar em ${tab.label.lowercase()}")})
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
     error!=null->Box(Modifier.fillMaxSize().padding(24.dp),contentAlignment=Alignment.Center){Text(error!!)}
     else->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=12.dp,vertical=4.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
-     item{Text("${filtered.size} resultados",style=MaterialTheme.typography.labelMedium)}
-     items(filtered,key={it.url}){entry->Card(Modifier.fillMaxWidth().clickable{chosen=entry},shape=RoundedCornerShape(14.dp)){Row(Modifier.fillMaxWidth().padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(pretty(entry.name),fontWeight=FontWeight.SemiBold);Text(entry.name,style=MaterialTheme.typography.labelSmall)};Icon(Icons.Default.ChevronRight,null)}}}
+     item{Text("${filtered.size} resultados",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+     items(filtered,key={it.url}){entry->Card(Modifier.fillMaxWidth().clickable{chosen=entry},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)){Row(Modifier.fillMaxWidth().padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(pretty(entry.name),fontWeight=FontWeight.SemiBold);Text(entry.name,style=MaterialTheme.typography.labelSmall)};Icon(Icons.Default.ChevronRight,null)}}}
      item{Spacer(Modifier.height(16.dp))}
     }
    }
@@ -110,8 +113,8 @@ fun ReferenceHubScreen(
 private fun ReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemonClick:((Int,String?)->Unit)?){
  LazyColumn(Modifier.fillMaxWidth().heightIn(max=650.dp),contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
   item{Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){detail.spriteUrl?.let{AsyncImage(it,detail.name,Modifier.size(72.dp).padding(end=12.dp))};Column(Modifier.weight(1f)){Text(detail.name,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text(when(detail.kind){"move"->"Golpe";"ability"->"Habilidade";else->"Item"},style=MaterialTheme.typography.labelLarge)}}}
-  if(detail.kind=="move")item{Card(Modifier.fillMaxWidth()){Column(Modifier.padding(14.dp)){Text("Dados do golpe",fontWeight=FontWeight.Bold);Spacer(Modifier.height(6.dp));ReferenceLine("Tipo",detail.type?:"—");ReferenceLine("Classe",detail.category?:"—");ReferenceLine("Poder",detail.power?.toString()?:"—");ReferenceLine("Precisão",detail.accuracy?.let{"$it%"}?:"—");ReferenceLine("PP",detail.pp?.toString()?:"—");ReferenceLine("Prioridade",detail.priority?.toString()?:"0")}}}
-  if(detail.kind=="item"&&detail.category!=null)item{Card(Modifier.fillMaxWidth()){ReferenceLine("Categoria",detail.category,Modifier.padding(14.dp))}}
+  if(detail.kind=="move")item{Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){Column(Modifier.padding(14.dp)){Text("Dados do golpe",fontWeight=FontWeight.Bold);Spacer(Modifier.height(6.dp));ReferenceLine("Tipo",detail.type?:"—");ReferenceLine("Classe",detail.category?:"—");ReferenceLine("Poder",detail.power?.toString()?:"—");ReferenceLine("Precisão",detail.accuracy?.let{"$it%"}?:"—");ReferenceLine("PP",detail.pp?.toString()?:"—");ReferenceLine("Prioridade",detail.priority?.toString()?:"0")}}}
+  if(detail.kind=="item"&&detail.category!=null)item{Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){ReferenceLine("Categoria",detail.category,Modifier.padding(14.dp))}}
   detail.description?.takeIf{it.isNotBlank()}?.let{description->item{Text("Efeito",fontWeight=FontWeight.Bold);Text(description,style=MaterialTheme.typography.bodyMedium)}}
   if(detail.pokemonIds.isNotEmpty()){
    item{Text(if(detail.kind=="move")"Pokémon que podem aprender" else "Pokémon com esta habilidade",fontWeight=FontWeight.Bold);Text("${detail.pokemonIds.size}${if(detail.pokemonIds.size>=80)"+" else ""} listados",style=MaterialTheme.typography.labelSmall)}
