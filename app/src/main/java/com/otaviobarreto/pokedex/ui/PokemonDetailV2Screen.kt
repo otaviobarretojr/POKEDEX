@@ -121,7 +121,7 @@ fun PokemonDetailV2Screen(
     val scheme=MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize().background(scheme.background)){
         Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(scheme.primaryContainer,scheme.surfaceVariant,scheme.surface)))){
-            IconButton(onBack,Modifier.padding(16.dp).size(46.dp).background(scheme.surface.copy(alpha=.86f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
+            IconButton(onBack,Modifier.padding(PokedexDesignTokens.Spacing.Lg).size(46.dp).background(scheme.surface.copy(alpha=.86f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
             Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=36.dp).width(185.dp)){
                 Text("#${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
                 Text(name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=scheme.onSurface,maxLines=2)
@@ -130,7 +130,7 @@ fun PokemonDetailV2Screen(
             PokemonArtwork(model=image,contentDescription=name,modifier=Modifier.align(Alignment.CenterEnd).padding(end=20.dp,top=50.dp).size(width=190.dp,height=220.dp).padding(10.dp),pokemonId=id)
         }
         LinearProgressIndicator(modifier=Modifier.fillMaxWidth(),color=scheme.primary,trackColor=scheme.primaryContainer)
-        Text("Dados complementares são carregados em segundo plano sem bloquear a navegação.",modifier=Modifier.padding(18.dp),style=MaterialTheme.typography.bodyMedium,color=scheme.onSurfaceVariant)
+        Text("Dados complementares são carregados em segundo plano sem bloquear a navegação.",modifier=Modifier.padding(PokedexDesignTokens.Spacing.Lg),style=MaterialTheme.typography.bodyMedium,color=scheme.onSurfaceVariant)
     }
 }
 
@@ -238,7 +238,7 @@ private fun resolveSaveLocation(
             }
         }
         Surface(
-            shape=RoundedCornerShape(18.dp),
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
             color=scheme.surface.copy(alpha=.88f),
             modifier=Modifier.align(Alignment.TopEnd).padding(top=14.dp,end=16.dp).size(56.dp),
             shadowElevation=3.dp
@@ -258,7 +258,7 @@ private fun resolveSaveLocation(
         }
         Surface(
             modifier=Modifier.align(Alignment.CenterEnd).padding(end=8.dp,top=58.dp).size(width=180.dp,height=226.dp),
-            shape=RoundedCornerShape(32.dp),
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Xl),
             color=Color.White.copy(alpha=.18f)
         ){
             Box(contentAlignment=Alignment.Center){
@@ -267,7 +267,7 @@ private fun resolveSaveLocation(
         }
     }
 }
-@Composable private fun TypeBadge(type:String){Surface(shape=RoundedCornerShape(11.dp),color=PokedexDesignTokens.Colors.type(type),modifier=Modifier.wrapContentWidth()){Row(Modifier.padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Eco,null,tint=Color.White,modifier=Modifier.size(15.dp));Spacer(Modifier.width(5.dp));Text(type.uppercase(),color=Color.White,fontWeight=FontWeight.Bold,fontSize=12.sp,maxLines=1)}}}
+@Composable private fun TypeBadge(type:String){Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=PokedexDesignTokens.Colors.type(type),modifier=Modifier.wrapContentWidth()){Row(Modifier.padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Eco,null,tint=Color.White,modifier=Modifier.size(15.dp));Spacer(Modifier.width(5.dp));Text(type.uppercase(),color=Color.White,fontWeight=FontWeight.Bold,fontSize=12.sp,maxLines=1)}}}
 private fun gameFromBox(box:String):String=when{box.contains("Scarlet / Violet",true)->"Scarlet / Violet";box.contains("Sword / Shield",true)->"Sword / Shield";box.contains("Let's Go",true)->"Let's Go Pikachu / Eevee";box.contains("Arceus",true)->"Legends Arceus";box.contains("HOME",true)->"Pokémon HOME";else->box.substringBefore(" · Box").substringBefore(" Box ").trim()}
 private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->box.substringAfter("· ").trim();Regex("Box \\d+",RegexOption.IGNORE_CASE).containsMatchIn(box)->Regex("Box \\d+",RegexOption.IGNORE_CASE).find(box)?.value?:box;else->box}
 @Composable private fun DetailMetric(icon:androidx.compose.ui.graphics.vector.ImageVector,text:String){
@@ -282,7 +282,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
     val previous=(currentId-1).takeIf{it>=1}
     val next=(currentId+1).takeIf{it<=PokeApiService.MAX_NATIONAL_DEX_ID}
     Row(
-        Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=6.dp),
+        Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
         horizontalArrangement=Arrangement.spacedBy(8.dp)
     ){
         OutlinedButton(
@@ -308,13 +308,13 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
 
 @Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit){
     val tabs=listOf("Info" to Icons.Default.Info,"Stats" to Icons.Default.BarChart,"Evolução" to Icons.Default.AccountTree,"Golpes" to Icons.Default.AutoAwesome,"Localização" to Icons.Default.LocationOn)
-    Surface(color=MaterialTheme.colorScheme.surface.copy(alpha=.98f),shadowElevation=4.dp){
+    Surface(color=MaterialTheme.colorScheme.surface.copy(alpha=.98f),shadowElevation=PokedexDesignTokens.Elevation.Low){
         Row(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)){
             tabs.forEachIndexed{i,(label,icon)->
                 val active=i==selected
                 Surface(
                     Modifier.weight(1f).clickable{setSelected(i)},
-                    shape=RoundedCornerShape(20.dp),
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                     color=if(active)MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                 ){
                     Column(Modifier.padding(vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally){
@@ -335,7 +335,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         }
     }
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),
+        Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
         verticalArrangement=Arrangement.spacedBy(10.dp)
     ){
         item{
@@ -358,7 +358,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
                     b.pokemon.abilities.forEach{ability->
                         Surface(
                             Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("ability",ability)}else Modifier),
-                            shape=RoundedCornerShape(14.dp),
+                            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                             color=accent.copy(alpha=.08f)
                         ){
                             Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
@@ -502,14 +502,14 @@ private fun PokemonFormsSummaryCard(
         content()
     }
 }
-@Composable private fun InfoMini(label:String,value:String,modifier:Modifier){Surface(modifier,shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.72f)){Column(Modifier.padding(11.dp)){Text(label,fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(value,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)}}}
+@Composable private fun InfoMini(label:String,value:String,modifier:Modifier){Surface(modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.72f)){Column(Modifier.padding(11.dp)){Text(label,fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(value,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)}}}
 @Composable private fun V2Stats(s:PokemonStats){
     val rows=listOf("HP" to s.hp,"Ataque" to s.attack,"Defesa" to s.defense,"Ataque Esp." to s.specialAttack,"Defesa Esp." to s.specialDefense,"Velocidade" to s.speed)
-    LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+    LazyColumn(Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Md)){
         item{DexSectionEyebrow("Atributos de batalha")}
         items(rows){(name,v)->
             val animated by animateFloatAsState((v/200f).coerceIn(0f,1f),tween(PokedexDesignTokens.Motion.Emphasis),label="stat")
-            Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface){
+            Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=MaterialTheme.colorScheme.surface){
                 Column(Modifier.padding(14.dp)){
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
                         Text(name,style=MaterialTheme.typography.bodyMedium)
