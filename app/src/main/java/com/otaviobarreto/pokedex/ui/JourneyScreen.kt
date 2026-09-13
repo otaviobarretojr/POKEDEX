@@ -185,7 +185,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     LazyColumn(
         Modifier.fillMaxSize(),
         state=listState,
-        contentPadding=PaddingValues(horizontal=16.dp,vertical=12.dp),
+        contentPadding=PaddingValues(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md),
         verticalArrangement=Arrangement.spacedBy(0.dp)
     ){
         item(key="route_header",contentType="header"){
@@ -208,7 +208,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
 
         item(key="route_progress",contentType="summary"){
             Card(
-                shape=RoundedCornerShape(24.dp),
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer),
                 modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
             ){
@@ -223,7 +223,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                             )
                         }
                         Surface(
-                            shape=RoundedCornerShape(18.dp),
+                            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                             color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)
                         ){
                             Text(
@@ -330,7 +330,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                     }
                 }else if(steps.isNotEmpty()){
                     Card(
-                        shape=RoundedCornerShape(20.dp),
+                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
                         modifier=Modifier.fillMaxWidth().padding(vertical=8.dp)
                     ){
@@ -448,7 +448,7 @@ private fun JourneyStarterGuideCard(
     var expanded by rememberSaveable{mutableStateOf(false)}
     val recommended=starters.maxByOrNull{it.rating.early*3+it.rating.mid*2+it.rating.late} ?: return
     Card(
-        shape=RoundedCornerShape(22.dp),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainerHigh),
         modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
     ){
@@ -492,7 +492,7 @@ private fun JourneyStarterGuideCard(
 
 @Composable
 private fun StarterStagePill(label:String,rating:Int){
-    Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.primaryContainer){
+    Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
         Text(label+" "+("★".repeat(rating)),Modifier.padding(horizontal=8.dp,vertical=5.dp),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
     }
 }
@@ -500,7 +500,7 @@ private fun StarterStagePill(label:String,rating:Int){
 @Composable
 private fun JourneyCountPill(icon:ImageVector,label:String){
     Surface(
-        shape=RoundedCornerShape(14.dp),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
         color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)
     ){
         Row(
