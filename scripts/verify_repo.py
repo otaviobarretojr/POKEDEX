@@ -1172,7 +1172,7 @@ if '"recentActivity"' not in backup_v9:
     violations.append('v9 backup missing "recentActivity"')
 if "RecentActivityStore::importSnapshot" not in backup_v9 and "RecentActivityStore.importSnapshot" not in backup_v9:
     violations.append("v9 backup recent-activity restore missing")
-if all(marker not in backup_v9 for marker in ("SCHEMA_VERSION = 2","SCHEMA_VERSION = 3","SCHEMA_VERSION = 4","SCHEMA_VERSION = 5")):
+if all(marker not in backup_v9 for marker in ("SCHEMA_VERSION = 2","SCHEMA_VERSION = 3","SCHEMA_VERSION = 4","SCHEMA_VERSION = 5","SCHEMA_VERSION = 6")):
     violations.append("v9 backup schema compatibility missing")
 
 insights_v9 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/CollectionInsightsService.kt").read_text(encoding="utf-8")
