@@ -47,6 +47,7 @@ internal fun JourneyGamePicker(
     val national=remember { PokedexDataStore.cachedNationalDex().orEmpty() }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showCollectionProfile by rememberSaveable { mutableStateOf(false) }
+    var showAllMissingDex by rememberSaveable { mutableStateOf(false) }
     val activeGame=activeGamePreview
     val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
     val activeRegionSource=activeGame?.let{game->
@@ -154,7 +155,7 @@ internal fun JourneyGamePicker(
                             Crossfade(targetState=game.label,label="activeGameHero"){heroGameLabel->
                                 val denseCover=heroGameLabel=="Scarlet / Violet" || GameCoverCatalog.coversFor(heroGameLabel).size>=2
                                 Box(
-                                    Modifier.fillMaxWidth().height(190.dp)
+                                    Modifier.fillMaxWidth().height(170.dp)
                                         .clip(RoundedCornerShape(20.dp))
                                 ){
                                     JourneyGameCover(
@@ -192,78 +193,39 @@ internal fun JourneyGamePicker(
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(14.dp))
-                            Row(verticalAlignment=Alignment.CenterVertically){
-                                Surface(shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.14f)){
-                                    Icon(Icons.Default.PlayArrow,null,Modifier.padding(10.dp).size(24.dp),tint=accent)
-                                }
-                                Column(Modifier.weight(1f).padding(start=12.dp)){
-                                    Text("CONTINUAR",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=accent)
-                                    Text(game.label,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,maxLines=2,overflow=TextOverflow.Ellipsis)
-                                    Text(nextStep?.let{"Próximo objetivo · "+it.title}?:"Jornada principal concluída",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2,overflow=TextOverflow.Ellipsis)
-                                }
-                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                game.label,
+                                style=MaterialTheme.typography.titleLarge,
+                                fontWeight=FontWeight.Black,
+                                maxLines=1,
+                                overflow=TextOverflow.Ellipsis
+                            )
                             nextStep?.let{step->
                                 JourneyObjectivePreviewCard(
                                     step=step,
                                     accent=accent,
-                                    modifier=Modifier.fillMaxWidth().padding(top=12.dp)
+                                    modifier=Modifier.fillMaxWidth().padding(top=8.dp)
                                 )
-                            }
-                            Spacer(Modifier.height(14.dp))
-                            CompanionMetricGroup(
-                                journeyValue=(animatedJourneyRatio*100).toInt().toString()+"%",
-                                journeySubtitle=journeyDone.toString()+"/"+activeSteps.size,
-                                dexValue=officialPokedexTotal?.toString() ?: "—",
-                                dexSubtitle="Pokédex do jogo"
+                            } ?: Text(
+                                "Jornada principal concluída",
+                                style=MaterialTheme.typography.bodyMedium,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier=Modifier.padding(top=6.dp)
+                            )
+                            JourneyCompactStatus(
+                                journeyRatio=animatedJourneyRatio,
+                                journeyDone=journeyDone,
+                                journeyTotal=activeSteps.size,
+                                pokedexTotal=officialPokedexTotal,
+                                modifier=Modifier.fillMaxWidth().padding(top=12.dp)
                             )
                             Row(Modifier.fillMaxWidth().padding(top=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                                Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1f)){
+                                Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1.55f)){
                                     Icon(Icons.Default.Explore,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Continuar")
                                 }
                                 FilledTonalButton(onClick={onOpenBoxes(game.label,activeRegionSource)},modifier=Modifier.weight(1f)){
                                     Icon(Icons.Default.GridView,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Box")
-                                }
-                            }
-                            Crossfade(targetState=nextMissing,label="nextPending"){pendingId->
-                                pendingId?.let{id->
-                                    val pendingSource=activeRegionSource?.takeIf{
-                                        id in dexIdsBySource[it].orEmpty() && id !in captured[it].orEmpty()
-                                    } ?: activeSources.firstOrNull{source->
-                                        id in dexIdsBySource[source].orEmpty() && id !in captured[source].orEmpty()
-                                    } ?: nextMissingSource
-                                    val entry=national.firstOrNull{it.id==id}
-                                    val fallback=PokemonRepository.byId(id)
-                                    val displayName=(entry?.name ?: fallback?.name ?: "#"+id)
-                                        .replaceFirstChar{it.uppercase()}
-                                    val regionLabel=activeGame.regions.firstOrNull{it.source==pendingSource}?.label
-                                        ?: "Região ativa"
-                                    Card(
-                                        modifier=Modifier.fillMaxWidth().padding(top=8.dp)
-                                            .animateContentSize()
-                                            .clickable{onPokemonClick(id,pendingSource)},
-                                        shape=RoundedCornerShape(16.dp),
-                                        colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.10f))
-                                    ){
-                                        Row(
-                                            Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=9.dp),
-                                            verticalAlignment=Alignment.CenterVertically
-                                        ){
-                                            AsyncImage(
-                                                model=entry?.spriteUrl
-                                                    ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+id+".png",
-                                                contentDescription=displayName,
-                                                modifier=Modifier.size(46.dp),
-                                                contentScale=ContentScale.Fit
-                                            )
-                                            Column(Modifier.weight(1f).padding(start=10.dp)){
-                                                Text("PRÓXIMA PENDÊNCIA",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=accent)
-                                                Text(displayName,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleSmall)
-                                                Text("#"+id.toString().padStart(4,'0')+" · "+regionLabel,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                                            }
-                                            Icon(Icons.Default.ChevronRight,null)
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -275,7 +237,10 @@ internal fun JourneyGamePicker(
                 item(key="living_dex_planner"){
                     val livingDexCaptured=activeOwned.count{it in activeDexIds}
                     val livingDexMissing=activeDexIds.size-livingDexCaptured
-                    Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
+                    Card(
+                        shape=RoundedCornerShape(20.dp),
+                        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)
+                    ){
                         Column(Modifier.fillMaxWidth().padding(14.dp)){
                             Row(verticalAlignment=Alignment.CenterVertically){
                                 Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.secondaryContainer){
@@ -284,46 +249,66 @@ internal fun JourneyGamePicker(
                                 Column(Modifier.weight(1f).padding(start=10.dp)){
                                     Text("Living Dex Planner",fontWeight=FontWeight.Black)
                                     Text(
-                                        when{
-                                            activeDexIds.isEmpty() -> "Progresso da sua Living Dex."
-                                            livingDexMissing<=0 -> "Living Dex completa para este jogo."
-                                            else -> "Faltam "+livingDexMissing+" de "+activeDexIds.size+" Pokémon."
-                                        },
+                                        if(livingDexMissing<=0) "Living Dex completa para este jogo."
+                                        else "Faltam "+livingDexMissing+" de "+activeDexIds.size+" Pokémon.",
                                         style=MaterialTheme.typography.bodySmall,
                                         color=MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                TextButton(
+                                    onClick={showAllMissingDex=true},
+                                    enabled=missingIds.isNotEmpty()
+                                ){ Text(if(missingIds.isEmpty())"Completa" else "Ver todos") }
                             }
-                            if(activeDexIds.isNotEmpty()){
-                                Row(
-                                    Modifier.fillMaxWidth().padding(top=12.dp),
-                                    horizontalArrangement=Arrangement.spacedBy(8.dp)
-                                ){
-                                    CompanionProgressMini(
-                                        label="Living Dex total",
-                                        value=livingDexCaptured.toString()+"/"+activeDexIds.size,
-                                        progress=animatedCollectionRatio,
-                                        modifier=Modifier.weight(1f)
-                                    )
-                                }
+                            Row(
+                                Modifier.fillMaxWidth().padding(top=10.dp),
+                                verticalAlignment=Alignment.CenterVertically
+                            ){
+                                Text(
+                                    livingDexCaptured.toString()+"/"+activeDexIds.size,
+                                    style=MaterialTheme.typography.titleSmall,
+                                    fontWeight=FontWeight.Black,
+                                    modifier=Modifier.widthIn(min=58.dp)
+                                )
+                                LinearProgressIndicator(
+                                    progress={animatedCollectionRatio.coerceIn(0f,1f)},
+                                    modifier=Modifier.weight(1f).height(7.dp),
+                                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                                )
                             }
-                            if(plannerTargets.isNotEmpty()){
-                                Text("PRÓXIMOS ALVOS",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=12.dp,bottom=7.dp))
+                            if(missingIds.isNotEmpty()){
+                                Text(
+                                    "PRÓXIMOS FALTANTES",
+                                    style=MaterialTheme.typography.labelSmall,
+                                    fontWeight=FontWeight.Black,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier=Modifier.padding(top=11.dp,bottom=6.dp)
+                                )
                                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                                    plannerTargets.forEach{(id,targetSource)->
+                                    missingIds.take(3).forEach{id->
+                                        val targetSource=activeRegionSource?.takeIf{id in dexIdsBySource[it].orEmpty()}
+                                            ?: activeSources.firstOrNull{s->id in dexIdsBySource[s].orEmpty()}
                                         Surface(
                                             modifier=Modifier.weight(1f).clickable{onPokemonClick(id,targetSource)},
                                             shape=RoundedCornerShape(14.dp),
                                             color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.58f)
                                         ){
-                                            Column(Modifier.padding(vertical=8.dp),horizontalAlignment=Alignment.CenterHorizontally){
+                                            Row(
+                                                Modifier.padding(horizontal=8.dp,vertical=7.dp),
+                                                verticalAlignment=Alignment.CenterVertically
+                                            ){
                                                 AsyncImage(
                                                     model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+id+".png",
                                                     contentDescription=PokemonRepository.byId(id)?.name,
-                                                    modifier=Modifier.size(36.dp),
+                                                    modifier=Modifier.size(34.dp),
                                                     contentScale=ContentScale.Fit
                                                 )
-                                                Text("#"+id,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelSmall)
+                                                Text(
+                                                    "#"+id.toString().padStart(4,'0'),
+                                                    fontWeight=FontWeight.Bold,
+                                                    style=MaterialTheme.typography.labelSmall,
+                                                    modifier=Modifier.padding(start=4.dp)
+                                                )
                                             }
                                         }
                                     }
@@ -428,6 +413,115 @@ internal fun JourneyGamePicker(
                 }
             }
             item{Spacer(Modifier.height(20.dp))}
+        }
+
+        if(showAllMissingDex && activeGame!=null){
+            ModalBottomSheet(onDismissRequest={showAllMissingDex=false}){
+                Column(Modifier.fillMaxWidth().padding(horizontal=16.dp)){
+                    Text(
+                        "Faltando na Living Dex",
+                        style=MaterialTheme.typography.headlineSmall,
+                        fontWeight=FontWeight.Black
+                    )
+                    Text(
+                        missingIds.size.toString()+" Pokémon ainda não registrados em "+activeGame.label,
+                        style=MaterialTheme.typography.bodyMedium,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier=Modifier.padding(top=2.dp,bottom=10.dp)
+                    )
+                    LazyColumn(
+                        modifier=Modifier.fillMaxWidth().heightIn(max=560.dp),
+                        verticalArrangement=Arrangement.spacedBy(6.dp),
+                        contentPadding=PaddingValues(bottom=24.dp)
+                    ){
+                        items(missingIds,key={it}){id->
+                            val targetSource=activeRegionSource?.takeIf{id in dexIdsBySource[it].orEmpty()}
+                                ?: activeSources.firstOrNull{s->id in dexIdsBySource[s].orEmpty()}
+                            val pokemon=PokemonRepository.byId(id)
+                            Surface(
+                                modifier=Modifier.fillMaxWidth().clickable{
+                                    showAllMissingDex=false
+                                    onPokemonClick(id,targetSource)
+                                },
+                                shape=RoundedCornerShape(14.dp),
+                                color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.45f)
+                            ){
+                                Row(
+                                    Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=8.dp),
+                                    verticalAlignment=Alignment.CenterVertically
+                                ){
+                                    AsyncImage(
+                                        model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+id+".png",
+                                        contentDescription=pokemon?.name,
+                                        modifier=Modifier.size(44.dp),
+                                        contentScale=ContentScale.Fit
+                                    )
+                                    Column(Modifier.weight(1f).padding(start=10.dp)){
+                                        Text(
+                                            pokemon?.name?.replaceFirstChar{it.uppercase()} ?: "Pokémon #"+id,
+                                            fontWeight=FontWeight.Bold
+                                        )
+                                        Text(
+                                            "#"+id.toString().padStart(4,'0'),
+                                            style=MaterialTheme.typography.labelSmall,
+                                            color=MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Icon(Icons.Default.ChevronRight,null)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun JourneyCompactStatus(
+    journeyRatio:Float,
+    journeyDone:Int,
+    journeyTotal:Int,
+    pokedexTotal:Int?,
+    modifier:Modifier=Modifier
+){
+    Surface(
+        modifier=modifier,
+        shape=RoundedCornerShape(16.dp),
+        color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.45f)
+    ){
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
+            verticalAlignment=Alignment.CenterVertically
+        ){
+            Column(Modifier.weight(1f)){
+                Row(verticalAlignment=Alignment.CenterVertically){
+                    Text("Jornada",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        (journeyRatio*100).toInt().toString()+"% · "+journeyDone+"/"+journeyTotal,
+                        style=MaterialTheme.typography.labelMedium,
+                        fontWeight=FontWeight.Black
+                    )
+                }
+                LinearProgressIndicator(
+                    progress={journeyRatio.coerceIn(0f,1f)},
+                    modifier=Modifier.fillMaxWidth().padding(top=6.dp).height(6.dp),
+                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            HorizontalDivider(Modifier.height(34.dp).width(1.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(horizontalAlignment=Alignment.CenterHorizontally){
+                Text("Pokédex",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    pokedexTotal?.toString() ?: "—",
+                    style=MaterialTheme.typography.titleMedium,
+                    fontWeight=FontWeight.Black
+                )
+            }
         }
     }
 }
