@@ -25,6 +25,9 @@ object JourneyTeamProgressCatalog {
         152->listOf(152,153,154)
         498->listOf(498,499,500)
         158->listOf(158,159,160)
+        722->listOf(722,723,724)
+        155->listOf(155,156,157)
+        501->listOf(501,502,503)
         else->listOf(starterId)
     }
 
@@ -55,6 +58,7 @@ object JourneyTeamProgressCatalog {
     private fun catchPlanFor(stepId:String):List<JourneyCatchRecommendation> = when {
         stepId.startsWith("za-") -> lumioseCatchPlan
         stepId.startsWith("sv-") -> paldeaCatchPlan
+        stepId.startsWith("la-") -> hisuiCatchPlan
         else -> emptyList()
     }
 
@@ -76,8 +80,28 @@ object JourneyTeamProgressCatalog {
         stepId in setOf("za-36","za-37") -> "RANK A · FINAL DE LUMIOSE"
         stepId.startsWith("za-") && !stepId.startsWith("za-dlc-") -> "PÓS-GAME · LUMIOSE"
         stepId.startsWith("za-dlc-") -> "DLC · MEGA DIMENSION"
+        stepId in setOf("la-01","la-02","la-03","la-04","la-05","la-06") -> "HISUI · SURVEY CORPS"
+        stepId in setOf("la-07","la-08") -> "NOBRES · FIELDLANDS / MIRELANDS"
+        stepId in setOf("la-09","la-10") -> "COBALT COASTLANDS"
+        stepId in setOf("la-11","la-12") -> "CORONET / ALABASTER"
+        stepId in setOf("la-13","la-13b","la-14","la-15","la-16","la-17","la-18") -> "CRISE DO ESPAÇO-TEMPO"
+        stepId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27") -> "PÓS-GAME · PLATES E ARCEUS"
+        stepId=="la-daybreak" -> "DAYBREAK · MASSIVE MASS OUTBREAKS"
         else -> "JORNADA"
     }
+
+    private val hisuiCatchPlan=listOf(
+        JourneyCatchRecommendation(403,2,"Obsidian Fieldlands","Shinx é capturado no teste de entrada e evolui para Luxray, excelente cobertura Elétrica para toda a campanha."),
+        JourneyCatchRecommendation(396,2,"Obsidian Fieldlands","Starly aparece cedo e sua linha entrega velocidade, Voador e cobertura física muito útil."),
+        JourneyCatchRecommendation(418,3,"Obsidian Fieldlands","Buizel é uma opção Água acessível cedo e ajuda bastante se o inicial não cobre Fogo/Pedra."),
+        JourneyCatchRecommendation(74,5,"Obsidian Fieldlands","Geodude oferece Pedra/Terra cedo para estabilizar encontros contra Fogo, Voador e Elétrico."),
+        JourneyCatchRecommendation(123,7,"Obsidian Fieldlands","Scyther pode evoluir para Kleavor e virar um atacante físico fortíssimo no mid game."),
+        JourneyCatchRecommendation(280,8,"Crimson Mirelands","Ralts dá acesso a Gardevoir/Gallade e traz ótima cobertura Psíquica/Fada."),
+        JourneyCatchRecommendation(133,10,"Horseshoe Plains / Space-time Distortions","Eevee é flexível e permite preencher a principal lacuna elemental do seu time."),
+        JourneyCatchRecommendation(215,11,"Coronet Highlands / Alabaster Icelands","Hisuian Sneasel evolui para Sneasler e adiciona alta velocidade e cobertura Lutador/Veneno."),
+        JourneyCatchRecommendation(443,12,"Coronet Highlands","Gible evolui para Garchomp e é um dos melhores upgrades de reta final para dano físico e cobertura Terra/Dragão."),
+        JourneyCatchRecommendation(447,17,"Alabaster Icelands","Riolu evolui para Lucario e oferece excelente cobertura na crise final e no pós-game.")
+    )
 
     private val lumioseCatchPlan=listOf(
         JourneyCatchRecommendation(214,3,"Side Mission cedo / Lumiose","Heracross é um atacante físico excelente e continua relevante após liberar Mega Evolução."),
