@@ -1,0 +1,2 @@
+Temporary CI validation trigger for v20.4.0 Journey Living Dex Total.
+Application sources match main.
