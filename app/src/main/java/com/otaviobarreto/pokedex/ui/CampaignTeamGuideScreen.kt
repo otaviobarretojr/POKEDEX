@@ -57,13 +57,13 @@ fun CampaignTeamGuideScreen(
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                 Column(Modifier.weight(1f)){
                     Text("MEU TIME",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                    Text("GUIA DE CAMPANHA · SWITCH",style=MaterialTheme.typography.labelSmall)
+                    Text("GUIA DE CAMPANHA · SWITCH",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                 }
                 TextButton(onClick=onBackToMyTeams){Icon(Icons.Default.Groups,null);Spacer(Modifier.width(4.dp));Text("Meus times")}
             }
         }
         item{
-            Card(shape=RoundedCornerShape(22.dp)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
                     ExposedDropdownMenuBox(expanded=gameMenu,onExpandedChange={gameMenu=!gameMenu}){
                         OutlinedTextField(
@@ -118,7 +118,7 @@ fun CampaignTeamGuideScreen(
         preset?.let{team->
             dynamic?.takeIf{phase==it.preset?.phase}?.let{smart->
                 item{
-                    Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.tertiaryContainer)){
+                    Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.tertiaryContainer)){
                         Column(Modifier.fillMaxWidth().padding(14.dp)){
                             Row(verticalAlignment=Alignment.CenterVertically){
                                 Icon(Icons.Default.AutoAwesome,null)
@@ -149,7 +149,7 @@ fun CampaignTeamGuideScreen(
                 }
             }
             item{
-                Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)){
+                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         Text(team.starter+" · "+team.phase.label,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
                         Text(team.rationale,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
@@ -160,7 +160,7 @@ fun CampaignTeamGuideScreen(
             itemsIndexed(displaySlots,key={index,slot->index.toString()+"-"+slot.pokemonId}){index,slot->
                 val entry=national.firstOrNull{it.id==slot.pokemonId}
                 val build=TeamCampaignCatalog.buildFor(slot.pokemonId,game)
-                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(slot.pokemonId,source)},shape=RoundedCornerShape(20.dp)){
+                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(slot.pokemonId,source)},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                     Column(Modifier.fillMaxWidth().padding(12.dp)){
                         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                             AsyncImage(
@@ -204,7 +204,7 @@ fun CampaignTeamGuideScreen(
             }
         }
         item{
-            Card(shape=RoundedCornerShape(18.dp)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                 Column(Modifier.fillMaxWidth().padding(12.dp)){
                     Text("Como usar",fontWeight=FontWeight.Bold)
                     Text("Os presets são para zerar a história com pouco grind. No early/mid, os golpes mostrados são alvos de build: use o equivalente disponível até desbloquear o golpe indicado. Trocas e exclusividades têm alternativas quando relevante.",style=MaterialTheme.typography.bodySmall)
