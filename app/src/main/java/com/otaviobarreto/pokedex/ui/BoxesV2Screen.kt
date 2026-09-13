@@ -130,7 +130,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      readOnly=true,singleLine=true,label={Text("Jogo",fontSize=9.sp)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},
-     shape=RoundedCornerShape(12.dp)
+     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     )
     ExposedDropdownMenu(gameMenu,{gameMenu=false}){
      qbGames.forEach{g->
@@ -148,7 +148,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      label={Text(if(game.regions.size>1)"Região / DLC" else "Região",fontSize=9.sp)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},
-     shape=RoundedCornerShape(12.dp)
+     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     )
     ExposedDropdownMenu(regionMenu,{regionMenu=false}){
      game.regions.forEach{r->
@@ -453,7 +453,7 @@ private fun QBVariantManager(
             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
             color=MaterialTheme.colorScheme.background
         ){
-            Column(Modifier.fillMaxWidth().padding(16.dp)){
+            Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text(pretty(pk.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
@@ -492,7 +492,7 @@ private fun QBVariantManager(
                 }else{
                     LazyColumn(
                         modifier=Modifier.weight(1f,fill=false),
-                        verticalArrangement=Arrangement.spacedBy(8.dp)
+                        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
                         items(available,key={it.formKey}){form->
                             val formId=form.pokemonId!!
@@ -505,7 +505,7 @@ private fun QBVariantManager(
                                 ){
                                     Surface(
                                         modifier=Modifier.size(64.dp),
-                                        shape=RoundedCornerShape(14.dp),
+                                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                                         color=MaterialTheme.colorScheme.surface
                                     ){
                                         Box(
@@ -575,7 +575,7 @@ private fun QBVariantManager(
                                     "Este Pokémon já estava marcado como capturado em uma versão antiga. Selecione Normal ou Shiny para migrá-lo ao novo sistema de variantes.",
                                     style=MaterialTheme.typography.bodySmall,
                                     color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier=Modifier.padding(8.dp)
+                                    modifier=Modifier.padding(PokedexDesignTokens.Spacing.Sm)
                                 )
                             }
                         }
@@ -599,10 +599,10 @@ private fun QBAllBoxes(
     Dialog(onDismissRequest=dismiss,properties=DialogProperties(usePlatformDefaultWidth=false)){
         Surface(
             Modifier.fillMaxWidth(.96f).fillMaxHeight(.90f),
-            shape=RoundedCornerShape(24.dp),
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
             color=MaterialTheme.colorScheme.background
         ){
-            Column(Modifier.fillMaxSize().padding(16.dp)){
+            Column(Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text("Todas as Boxes",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurface)
@@ -611,7 +611,7 @@ private fun QBAllBoxes(
                     IconButton(dismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
                 Spacer(Modifier.height(8.dp))
-                LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                LazyColumn(verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
                     items((0 until pages).toList(),key={it}){index->
                         val entries=dex.drop(index*30).take(30)
                         val total=entries.size.coerceAtLeast(1)
@@ -619,7 +619,7 @@ private fun QBAllBoxes(
                         val pct=owned.toFloat()/total
                         Card(
                             Modifier.fillMaxWidth().clickable{select(index)},
-                            shape=RoundedCornerShape(18.dp),
+                            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                             colors=CardDefaults.cardColors(
                                 containerColor=if(index==current)accent.copy(alpha=.14f) else MaterialTheme.colorScheme.surface
                             )
