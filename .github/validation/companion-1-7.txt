@@ -1,0 +1,2 @@
+Temporary CI validation trigger for Companion improvements 1-7.
+Application sources unchanged from main.
