@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -319,8 +320,12 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         Row(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)){
             tabs.forEachIndexed{i,(label,icon)->
                 val active=i==selected
+                val interaction=remember(i){MutableInteractionSource()}
                 Surface(
-                    Modifier.weight(1f).clickable{setSelected(i)},
+                    Modifier
+                        .weight(1f)
+                        .dexInteractiveSurface(interactionSource=interaction,pressedScale=.96f)
+                        .clickable(interactionSource=interaction,indication=null){setSelected(i)},
                     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                     color=if(active)MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                 ){
