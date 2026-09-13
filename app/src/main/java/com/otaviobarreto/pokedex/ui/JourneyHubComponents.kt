@@ -203,14 +203,19 @@ internal fun JourneyGamePicker(
                                     Text(nextStep?.let{"Próximo objetivo · "+it.title}?:"Jornada principal concluída",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2,overflow=TextOverflow.Ellipsis)
                                 }
                             }
+                            nextStep?.let{step->
+                                JourneyObjectivePreviewCard(
+                                    step=step,
+                                    accent=accent,
+                                    modifier=Modifier.fillMaxWidth().padding(top=12.dp)
+                                )
+                            }
                             Spacer(Modifier.height(14.dp))
                             CompanionMetricGroup(
                                 journeyValue=(animatedJourneyRatio*100).toInt().toString()+"%",
                                 journeySubtitle=journeyDone.toString()+"/"+activeSteps.size,
                                 dexValue=officialPokedexTotal?.toString() ?: "—",
-                                dexSubtitle="Pokédex do jogo",
-                                pendingValue=nextMissing?.let{"#"+it} ?: "OK",
-                                pendingSubtitle=if(nextMissing==null)"Completa" else "Próximo alvo"
+                                dexSubtitle="Pokédex do jogo"
                             )
                             Row(Modifier.fillMaxWidth().padding(top=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                                 Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1f)){
@@ -428,6 +433,84 @@ internal fun JourneyGamePicker(
 }
 
 @Composable
+private fun JourneyObjectivePreviewCard(
+    step:JourneyStep,
+    accent:Color,
+    modifier:Modifier=Modifier
+){
+    val preview=JourneyObjectivePreviewCatalog.forStep(step) ?: return
+    Surface(
+        modifier=modifier,
+        shape=RoundedCornerShape(18.dp),
+        color=accent.copy(alpha=.08f)
+    ){
+        Column(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Surface(shape=RoundedCornerShape(12.dp),color=accent.copy(alpha=.14f)){
+                    Icon(
+                        imageVector=when(step.kind){
+                            JourneyChallengeKind.GYM->Icons.Default.EmojiEvents
+                            JourneyChallengeKind.TITAN->Icons.Default.Landscape
+                            JourneyChallengeKind.STAR->Icons.Default.Groups
+                            else->Icons.Default.Flag
+                        },
+                        contentDescription=null,
+                        modifier=Modifier.padding(8.dp).size(18.dp),
+                        tint=accent
+                    )
+                }
+                Column(Modifier.weight(1f).padding(start=10.dp)){
+                    Text(
+                        preview.label,
+                        style=MaterialTheme.typography.titleSmall,
+                        fontWeight=FontWeight.Black
+                    )
+                    Text(
+                        preview.subtitle,
+                        style=MaterialTheme.typography.labelSmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines=1,
+                        overflow=TextOverflow.Ellipsis
+                    )
+                }
+            }
+            if(preview.members.isNotEmpty()){
+                Row(
+                    Modifier.fillMaxWidth().padding(top=9.dp),
+                    horizontalArrangement=Arrangement.spacedBy(7.dp)
+                ){
+                    preview.members.take(5).forEach{member->
+                        Surface(
+                            modifier=Modifier.weight(1f),
+                            shape=RoundedCornerShape(12.dp),
+                            color=MaterialTheme.colorScheme.surface.copy(alpha=.86f)
+                        ){
+                            Column(
+                                Modifier.padding(vertical=6.dp),
+                                horizontalAlignment=Alignment.CenterHorizontally
+                            ){
+                                AsyncImage(
+                                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+member.pokemonId+".png",
+                                    contentDescription=PokemonRepository.byId(member.pokemonId)?.name,
+                                    modifier=Modifier.size(38.dp),
+                                    contentScale=ContentScale.Fit
+                                )
+                                Text(
+                                    member.level,
+                                    style=MaterialTheme.typography.labelSmall,
+                                    fontWeight=FontWeight.Bold,
+                                    textAlign=TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun CompanionProgressMini(
     label:String,
     value:String,
@@ -469,26 +552,14 @@ private fun CompanionMetricGroup(
     journeyValue:String,
     journeySubtitle:String,
     dexValue:String,
-    dexSubtitle:String,
-    pendingValue:String,
-    pendingSubtitle:String
+    dexSubtitle:String
 ){
-    BoxWithConstraints(Modifier.fillMaxWidth()){
-        if(maxWidth<360.dp){
-            Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                    CompanionMetric("Jornada",journeyValue,journeySubtitle,Modifier.weight(1f))
-                    CompanionMetric("Pokédex",dexValue,dexSubtitle,Modifier.weight(1f))
-                }
-                CompanionMetric("Pendência",pendingValue,pendingSubtitle,Modifier.fillMaxWidth())
-            }
-        }else{
-            Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
-                CompanionMetric("Jornada",journeyValue,journeySubtitle,Modifier.weight(1f))
-                CompanionMetric("Pokédex",dexValue,dexSubtitle,Modifier.weight(1f))
-                CompanionMetric("Pendência",pendingValue,pendingSubtitle,Modifier.weight(1f))
-            }
-        }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement=Arrangement.spacedBy(10.dp)
+    ){
+        CompanionMetric("Jornada",journeyValue,journeySubtitle,Modifier.weight(1f))
+        CompanionMetric("Pokédex",dexValue,dexSubtitle,Modifier.weight(1f))
     }
 }
 
