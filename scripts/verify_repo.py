@@ -106,8 +106,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "20900" not in workflow or "20.9.0" not in workflow:
-    violations.append("CI v20.9.0 version validation missing")
+if "21000" not in workflow or "20.10.0" not in workflow:
+    violations.append("CI v20.10.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
@@ -611,6 +611,25 @@ for required in ('"frlg-g1"', '"frlg-g8"', '"frlg-pg-05"', '"frlg-pg-07"', '"frl
 for required in ('"FireRed / LeafGreen" -> kantoFrlg', '"Bulbasaur"', '"Charmander"', '"Squirtle"'):
     if required not in starter_catalog:
         violations.append(f"FRLG starter context missing {required}")
+
+# Compatibility guard — Journey team intelligence v20.10.0
+team_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTeamProgressCatalog.kt").read_text(encoding="utf-8")
+dynamic_team = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyDynamicTeamCatalog.kt").read_text(encoding="utf-8")
+smart_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneySmartProgress.kt").read_text(encoding="utf-8")
+team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
+
+for required in ("knownFamilies", "familyKey", "sameEvolutionFamily", "hasFamilyDuplicate"):
+    if required not in team_progress:
+        violations.append(f"Journey team evolution-family guard missing {required}")
+for required in ("sameEvolutionFamily", "seenFamilies", "catchRecommendationsBefore"):
+    if required not in dynamic_team:
+        violations.append(f"Journey dynamic team dedupe missing {required}")
+for required in ("mainStory", "mainCompleted", "mainRatio"):
+    if required not in smart_progress:
+        violations.append(f"Journey smart phase normalization missing {required}")
+for required in ("Antes de ", "evolução", "troca", "captura"):
+    if required not in team_guide:
+        violations.append(f"Journey team context UI missing {required}")
 
 if violations:
     print("Source verification failed:")
