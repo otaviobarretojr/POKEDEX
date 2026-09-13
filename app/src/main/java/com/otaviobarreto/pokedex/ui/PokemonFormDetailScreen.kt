@@ -64,7 +64,7 @@ fun PokemonFormDetailScreen(
                     verticalArrangement=Arrangement.spacedBy(12.dp)
                 ){
                     item{
-                        Card(shape=RoundedCornerShape(24.dp)){
+                        Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                             Column(
                                 Modifier.fillMaxWidth().padding(16.dp),
                                 horizontalAlignment=Alignment.CenterHorizontally
@@ -89,7 +89,7 @@ fun PokemonFormDetailScreen(
                         }
                     }
                     item{
-                        Card(shape=RoundedCornerShape(20.dp)){
+                        Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                             Column(Modifier.fillMaxWidth().padding(16.dp)){
                                 Text("Status base",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
                                 StatRow("HP",p.stats.hp)
@@ -110,7 +110,7 @@ fun PokemonFormDetailScreen(
                         }
                     }
                     item{
-                        Card(shape=RoundedCornerShape(20.dp)){
+                        Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                             Column(Modifier.fillMaxWidth().padding(16.dp)){
                                 Text("Habilidades",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
                                 p.abilities.forEach{
