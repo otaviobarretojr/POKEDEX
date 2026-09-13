@@ -106,13 +106,13 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "20800" not in workflow or "20.8.0" not in workflow:
-    violations.append("CI v20.8.0 version validation missing")
+if "20900" not in workflow or "20.9.0" not in workflow:
+    violations.append("CI v20.9.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
     violations.append("Living Dex Planner must not return to Journey Home")
-for required in ("COMPANION", "officialPokedexTotal", "JourneyObjectivePreviewCard", "JourneyCompactStatus", "Começar Jornada", "Escolha seu inicial", "Time sugerido", "Time e progressão"):
+for required in ("COMPANION", "officialPokedexTotal", "JourneyObjectivePreviewCard", "JourneyCompactStatus", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
     if required not in companion:
         violations.append(f"Companion 20 experience missing {required}")
 
@@ -374,15 +374,23 @@ journey = journey_source
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 journey_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
 main = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-for required in ("Jornada", "Melhor rota", "Time e progressão", "Boxes do jogo"):
+for required in ("Jornada", "Continuar Jornada", "Retomar Jornada", "Boxes do jogo", "Regiões e conteúdos"):
     if required not in journey:
         violations.append(f"Journey hub missing {required}")
 for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
     if required not in journey_catalog:
         violations.append(f"Scarlet/Violet Journey route missing {required}")
-for required in ("completed", "toggle", "clear"):
+for required in ("completed", "toggle", "clear", "beginConfiguration", "confirmStart", "isConfiguring"):
     if required not in journey_progress:
         violations.append(f"Journey progress persistence missing {required}")
+if "Perfil da coleção" in companion:
+    violations.append("Journey Home must stay campaign-focused without collection profile")
+team_guide_source = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
+if "AppStatePreferences.activeGame=g" in team_guide_source:
+    violations.append("Team guide must not switch the active Journey game")
+for required in ("PLANO DA JORNADA", "Automático", "Editar inicial"):
+    if required not in team_guide_source:
+        violations.append(f"Journey team guide context missing {required}")
 journey_primary = (
     'DexNavItem("home","Jornada"' in main or
     'DexNavItem(PokedexRoutes.HOME,"Jornada"' in main
@@ -982,7 +990,8 @@ local_v2060 = 'versionName = "20.6.0"' in local_gradle and "versionCode = 20600"
 local_v2070 = 'versionName = "20.7.0"' in local_gradle and "versionCode = 20700" in local_gradle
 local_v2071 = 'versionName = "20.7.1"' in local_gradle and "versionCode = 20701" in local_gradle
 local_v2080 = 'versionName = "20.8.0"' in local_gradle and "versionCode = 20800" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080):
+local_v2090 = 'versionName = "20.9.0"' in local_gradle and "versionCode = 20900" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
