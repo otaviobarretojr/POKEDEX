@@ -30,106 +30,202 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-internal fun JourneyGamePicker(onSelect:(String)->Unit){
+internal fun JourneyGamePicker(
+    onSelect:(String)->Unit,
+    onPokemonClick:(Int,String?)->Unit,
+    onOpenBoxes:(String?,String?)->Unit
+){
     val captured=CollectionStore.contextualCapturedIds
     val dexIdsByGame by rememberJourneyDexIdsByGame()
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = .18f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
-    ) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding=PaddingValues(horizontal=16.dp, vertical=18.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)
-    ){
-        item{
-            Column(Modifier.fillMaxWidth().padding(bottom=4.dp)){
-                Surface(
-                    shape=RoundedCornerShape(999.dp),
-                    color=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.72f)
-                ){
-                    Row(
-                        Modifier.padding(horizontal=10.dp,vertical=6.dp),
-                        verticalAlignment=Alignment.CenterVertically
-                    ){
-                        Icon(Icons.Default.Explore,null,Modifier.size(15.dp),tint=MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(5.dp))
-                        Text("MINHA AVENTURA",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Text("Jornada",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
-                Text(
-                    "Continue sua aventura e acompanhe o progresso de cada jogo.",
-                    style=MaterialTheme.typography.bodyMedium,
-                    color=MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier=Modifier.padding(top=3.dp)
-                )
-            }
-        }
-        item{
-            val totalCaptured=captured.values.flatten().toSet().size
-            Surface(
-                modifier=Modifier.fillMaxWidth(),
-                shape=RoundedCornerShape(20.dp),
-                color=MaterialTheme.colorScheme.surface.copy(alpha=.90f),
-                tonalElevation=PokedexDesignTokens.Elevation.Low
-            ){
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=11.dp),
-                    verticalAlignment=Alignment.CenterVertically
-                ){
-                    Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer){
-                        Icon(Icons.Default.CatchingPokemon,null,Modifier.padding(9.dp).size(20.dp),tint=MaterialTheme.colorScheme.primary)
-                    }
-                    Column(Modifier.weight(1f).padding(start=10.dp)){
-                        Text("Sua coleção",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("$totalCaptured Pokémon registrados",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold)
-                    }
-                    Text(
-                        AppGameCatalog.adventureGames.size.toString()+" jogos",
-                        style=MaterialTheme.typography.labelMedium,
-                        fontWeight=FontWeight.SemiBold,
-                        color=MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-        item{
-            Text(
-                "ESCOLHA UM JOGO",
-                style=MaterialTheme.typography.labelMedium,
-                fontWeight=FontWeight.Black,
-                color=MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier=Modifier.padding(top=4.dp,bottom=1.dp)
-            )
-        }
-        items(AppGameCatalog.adventureGames,key={it.label}){game->
-            val progress = rememberJourneyCollectionProgress(
-                game = game,
-                capturedBySource = captured,
-                ids = dexIdsByGame[game.label].orEmpty()
-            )
-            JourneyGameReferenceCard(
-                game = game,
-                progress = progress,
-                onClick = { onSelect(game.label) }
-            )
-        }
-        item{Spacer(Modifier.height(20.dp))}
+    val national=remember { PokedexDataStore.cachedNationalDex().orEmpty() }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val activeGame=remember(AppStatePreferences.activeGame){
+        AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame}
+            ?: AppGameCatalog.adventureGames.firstOrNull()
     }
+    val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
+    val activeOwned=remember(captured,activeSources){activeSources.flatMap{captured[it].orEmpty()}.toSet()}
+    val activeDexIds=activeGame?.let{dexIdsByGame[it.label].orEmpty()}.orEmpty()
+    val nextMissing=remember(activeDexIds,activeOwned){activeDexIds.sorted().firstOrNull{it !in activeOwned}}
+    val journeyRevision=JourneyProgressStore.revision
+    val activeSteps=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyCatalog.steps(it.label)}.orEmpty()}
+    val activeCompleted=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyProgressStore.completed(it.label)}.orEmpty()}
+    val nextStep=remember(activeSteps,activeCompleted){activeSteps.firstOrNull{it.id !in activeCompleted}}
+    val journeyDone=remember(activeSteps,activeCompleted){DataIntegrityRules.completedCount(activeSteps.map{it.id},activeCompleted)}
+    val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
+    val collectionRatio=if(activeDexIds.isEmpty())0f else activeOwned.count{it in activeDexIds}.toFloat()/activeDexIds.size
+    val searchResults=remember(searchQuery,national){
+        val q=searchQuery.trim().lowercase()
+        if(q.length<2) emptyList() else national.filter{
+            it.name.lowercase().contains(q) || it.id.toString()==q.removePrefix("#")
+        }.take(8)
+    }
+    val shinyTotal=VariantCollectionStore.ownedVariants.count{it.shiny}
+    val formTotal=VariantCollectionStore.ownedVariants.count{
+        it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)
+    }
+
+    Box(
+        Modifier.fillMaxSize().background(
+            Brush.verticalGradient(
+                listOf(
+                    MaterialTheme.colorScheme.background,
+                    (activeGame?.let{PokedexDesignTokens.Colors.game(it.label)} ?: MaterialTheme.colorScheme.primary).copy(alpha=.10f),
+                    MaterialTheme.colorScheme.background
+                )
+            )
+        )
+    ){
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding=PaddingValues(horizontal=16.dp,vertical=18.dp),
+            verticalArrangement=Arrangement.spacedBy(12.dp)
+        ){
+            item{
+                Column(Modifier.fillMaxWidth()){
+                    Surface(shape=RoundedCornerShape(999.dp),color=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.72f)){
+                        Row(Modifier.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
+                            Icon(Icons.Default.AutoAwesome,null,Modifier.size(15.dp),tint=MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(5.dp))
+                            Text("COMPANION",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text("Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+                    Text("Continue exatamente de onde parou e encontre o que falta sem procurar em vários menus.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            activeGame?.let{game->
+                item(key="active_companion"){
+                    val accent=PokedexDesignTokens.Colors.game(game.label)
+                    Card(
+                        modifier=Modifier.fillMaxWidth(),
+                        shape=RoundedCornerShape(24.dp),
+                        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
+                        elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
+                    ){
+                        Column(Modifier.fillMaxWidth().padding(16.dp)){
+                            Row(verticalAlignment=Alignment.CenterVertically){
+                                Surface(shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.14f)){
+                                    Icon(Icons.Default.PlayArrow,null,Modifier.padding(10.dp).size(24.dp),tint=accent)
+                                }
+                                Column(Modifier.weight(1f).padding(start=12.dp)){
+                                    Text("CONTINUAR",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=accent)
+                                    Text(game.label,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,maxLines=2,overflow=TextOverflow.Ellipsis)
+                                    Text(nextStep?.let{"Próximo objetivo · "+it.title}?:"Jornada principal concluída",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2,overflow=TextOverflow.Ellipsis)
+                                }
+                            }
+                            Spacer(Modifier.height(14.dp))
+                            Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
+                                CompanionMetric("Jornada",(journeyRatio*100).toInt().toString()+"%",journeyDone.toString()+"/"+activeSteps.size,Modifier.weight(1f))
+                                CompanionMetric("Coleção",(collectionRatio*100).toInt().toString()+"%",activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,Modifier.weight(1f))
+                                CompanionMetric("Shiny",shinyTotal.toString(),"Formas "+formTotal,Modifier.weight(1f))
+                            }
+                            Row(Modifier.fillMaxWidth().padding(top=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                                Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1f)){
+                                    Icon(Icons.Default.Explore,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Continuar")
+                                }
+                                FilledTonalButton(onClick={onOpenBoxes(game.label,game.regions.firstOrNull()?.source)},modifier=Modifier.weight(1f)){
+                                    Icon(Icons.Default.GridView,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Box")
+                                }
+                            }
+                            nextMissing?.let{id->
+                                FilledTonalButton(
+                                    onClick={onPokemonClick(id,game.regions.firstOrNull()?.source)},
+                                    modifier=Modifier.fillMaxWidth().padding(top=8.dp)
+                                ){
+                                    Icon(Icons.Default.TrackChanges,null,Modifier.size(18.dp))
+                                    Spacer(Modifier.width(7.dp))
+                                    Text("Próximo faltante · #"+id)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item(key="universal_search"){
+                OutlinedTextField(
+                    value=searchQuery,
+                    onValueChange={searchQuery=it},
+                    modifier=Modifier.fillMaxWidth(),
+                    singleLine=true,
+                    leadingIcon={Icon(Icons.Default.Search,null)},
+                    trailingIcon={if(searchQuery.isNotBlank()){{IconButton(onClick={searchQuery=""}){Icon(Icons.Default.Close,"Limpar busca")}}}else null},
+                    label={Text("Busca rápida")},
+                    placeholder={Text("Nome ou número do Pokémon")},
+                    shape=RoundedCornerShape(18.dp)
+                )
+            }
+            if(searchResults.isNotEmpty()){
+                item(key="search_results"){
+                    Card(shape=RoundedCornerShape(18.dp)){
+                        Column(Modifier.fillMaxWidth()){
+                            searchResults.forEachIndexed{index,pokemon->
+                                Row(
+                                    Modifier.fillMaxWidth().clickable{
+                                        searchQuery=""
+                                        onPokemonClick(pokemon.id,null)
+                                    }.padding(horizontal=14.dp,vertical=11.dp),
+                                    verticalAlignment=Alignment.CenterVertically
+                                ){
+                                    AsyncImage(
+                                        model=pokemon.spriteUrl,
+                                        contentDescription=null,
+                                        modifier=Modifier.size(42.dp),
+                                        contentScale=ContentScale.Fit
+                                    )
+                                    Column(Modifier.weight(1f).padding(start=10.dp)){
+                                        Text(pokemon.name.replaceFirstChar{it.uppercase()},fontWeight=FontWeight.Bold)
+                                        Text("#"+pokemon.id.toString().padStart(4,'0'),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Icon(Icons.Default.ChevronRight,null)
+                                }
+                                if(index<searchResults.lastIndex) HorizontalDivider(Modifier.padding(horizontal=14.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            item{
+                val totalCaptured=captured.values.flatten().toSet().size
+                Surface(modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.90f),tonalElevation=PokedexDesignTokens.Elevation.Low){
+                    Row(Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=11.dp),verticalAlignment=Alignment.CenterVertically){
+                        Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                            Icon(Icons.Default.CatchingPokemon,null,Modifier.padding(9.dp).size(20.dp),tint=MaterialTheme.colorScheme.primary)
+                        }
+                        Column(Modifier.weight(1f).padding(start=10.dp)){
+                            Text("Perfil da coleção",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("$totalCaptured Pokémon registrados",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold)
+                        }
+                        Text("★ $shinyTotal",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.SemiBold,color=MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+            item{
+                Text("TODOS OS JOGOS",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp,bottom=1.dp))
+            }
+            items(AppGameCatalog.adventureGames,key={it.label}){game->
+                val progress=rememberJourneyCollectionProgress(game=game,capturedBySource=captured,ids=dexIdsByGame[game.label].orEmpty())
+                JourneyGameReferenceCard(game=game,progress=progress,onClick={onSelect(game.label)})
+            }
+            item{Spacer(Modifier.height(20.dp))}
+        }
     }
 }
 
+@Composable
+private fun CompanionMetric(label:String,value:String,subtitle:String,modifier:Modifier=Modifier){
+    Surface(modifier=modifier,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.52f)){
+        Column(Modifier.padding(horizontal=10.dp,vertical=10.dp)){
+            Text(label,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1)
+            Text(value,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+            Text(subtitle,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+        }
+    }
+}
 
 @Composable
 private fun JourneyGameReferenceCard(
