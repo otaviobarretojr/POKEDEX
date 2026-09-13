@@ -85,9 +85,9 @@ fun CompanionCenterScreen(
             DexGlassSurface(Modifier.fillMaxWidth()){
                 Row(verticalAlignment=Alignment.CenterVertically){
                     Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
-                        Icon(Icons.Default.Settings,null,Modifier.padding(11.dp).size(28.dp),tint=MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.Settings,null,Modifier.padding(PokedexDesignTokens.Spacing.Md).size(28.dp),tint=MaterialTheme.colorScheme.primary)
                     }
-                    Column(Modifier.padding(start=12.dp)){
+                    Column(Modifier.padding(start=PokedexDesignTokens.Spacing.Md)){
                         DexSectionEyebrow("Sistema")
                         Text("Configurações",style=MaterialTheme.typography.headlineMedium)
                         Text(
@@ -114,14 +114,14 @@ fun CompanionCenterScreen(
                 val pack=OfflineGamePackManager.status(game.label)
                 val audit=OfflineGamePackManager.audit(game.label)
                 Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
-                    Column(Modifier.fillMaxWidth().padding(14.dp)){
+                    Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                         Row(verticalAlignment=Alignment.CenterVertically){
                             Icon(
                                 if(audit.valid) Icons.Default.CloudDone else Icons.Default.CloudDownload,
                                 null,
                                 tint=if(audit.valid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Column(Modifier.weight(1f).padding(start=10.dp)){
+                            Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){
                                 Text(game.label,fontWeight=FontWeight.Bold)
                                 Text(
                                     when{
@@ -139,13 +139,13 @@ fun CompanionCenterScreen(
                         if(activeDownload==game.label){
                             LinearProgressIndicator(
                                 progress={progress?.fraction ?: 0f},
-                                modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                                modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
                             )
                         }
 
                         Row(
                             Modifier.fillMaxWidth().padding(top=10.dp),
-                            horizontalArrangement=Arrangement.spacedBy(8.dp)
+                            horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                         ){
                             Button(
                                 enabled=activeDownload==null,
@@ -195,7 +195,7 @@ fun CompanionCenterScreen(
                 AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
             }
             Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
-                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                     Text("Cache da sessão",fontWeight=FontWeight.Bold)
                     Text(
                         cache.total.toString()+" entradas · Pokémon "+cache.pokemon+
@@ -245,7 +245,7 @@ fun CompanionCenterScreen(
                                 else -> "Integridade verificada: coleção e pacotes offline estão consistentes."
                             }
                         },
-                        modifier=Modifier.fillMaxWidth().padding(top=8.dp)
+                        modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Sm)
                     ){
                         Icon(Icons.Default.VerifiedUser,null)
                         Spacer(Modifier.width(6.dp))
@@ -261,7 +261,7 @@ fun CompanionCenterScreen(
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Icon(Icons.Default.VolumeUp,null)
-                        Text("Música e sons",Modifier.weight(1f).padding(start=10.dp),fontWeight=FontWeight.Bold)
+                        Text("Música e sons",Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md),fontWeight=FontWeight.Bold)
                         Switch(
                             checked=audioEnabled,
                             onCheckedChange={
@@ -386,7 +386,7 @@ fun CompanionCenterScreen(
                     OutlinedTextField(
                         value=restoreText,
                         onValueChange={restoreText=it},
-                        modifier=Modifier.fillMaxWidth().heightIn(min=140.dp).padding(top=8.dp),
+                        modifier=Modifier.fillMaxWidth().heightIn(min=140.dp).padding(top=PokedexDesignTokens.Spacing.Sm),
                         label={Text("Backup JSON")}
                     )
                 }
@@ -419,6 +419,6 @@ private fun SettingsSectionTitle(text:String){
         text,
         style=MaterialTheme.typography.titleLarge,
         fontWeight=FontWeight.Bold,
-        modifier=Modifier.padding(top=4.dp)
+        modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs)
     )
 }
