@@ -19,12 +19,34 @@ object JourneyStarterCatalog {
         "Pokémon Legends: Z-A" -> lumiose
         "Legends Arceus" -> hisui
         "Sword / Shield" -> galar
+        "Brilliant Diamond / Shining Pearl" -> sinnoh
         else -> emptyList()
     }
 
     fun bestForGame(game:String):JourneyStarterRecommendation? = forGame(game).maxByOrNull{
         it.rating.early*3 + it.rating.mid*2 + it.rating.late
     }
+
+    private val sinnoh=listOf(
+        JourneyStarterRecommendation(
+            390,"Chimchar","Infernape","Fogo / Lutador","RECOMENDADO · melhor cobertura geral da campanha",
+            StarterStageRating(5,5,5),
+            listOf("Early game: evoluir para Monferno dá Lutador para Roark e Fogo para Gardenia.","Mid game: excelente cobertura contra Aço, Gelo e vários membros da Team Galactic.","Late game: Infernape continua rápido e flexível contra Elite Four e pós-game.","Sinnoh tem poucas opções de Fogo durante boa parte da campanha, aumentando seu valor."),
+            listOf("Água, Terra, Psíquico e Voador exigem parceiros adequados.","Não deve ser sua única resposta para Cynthia.")
+        ),
+        JourneyStarterRecommendation(
+            393,"Piplup","Empoleon","Água / Aço","ÓTIMO · defensivo e consistente",
+            StarterStageRating(4,5,5),
+            listOf("Early game: Água facilita Roark e dá estabilidade imediata.","Mid game: Prinplup é consistente contra rotas e Team Galactic.","Late game: Empoleon ganha Aço, muitas resistências e excelente utilidade na Liga.","Combina bem com parceiros de Terra, Elétrico e Fogo."),
+            listOf("Gardenia é um obstáculo cedo.","Fraquezas a Elétrico, Lutador e Terra precisam de cobertura.")
+        ),
+        JourneyStarterRecommendation(
+            387,"Turtwig","Torterra","Planta / Terra","FORTE · resistência e cobertura natural",
+            StarterStageRating(5,4,5),
+            listOf("Early game: Planta domina Roark e ajuda muito contra Crasher Wake.","Mid game: Grotle oferece boa resistência enquanto o time amadurece.","Late game: Torterra combina Planta/Terra para Água, Pedra e Elétrico.","É uma escolha segura para quem prefere um atacante físico mais resistente."),
+            listOf("Gelo é uma fraqueza crítica após virar Torterra.","Gardenia e Candice exigem parceiros melhores.")
+        )
+    )
 
     private val galar=listOf(
         JourneyStarterRecommendation(
