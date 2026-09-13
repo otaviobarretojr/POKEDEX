@@ -1665,7 +1665,7 @@ for required in (
 pokedex_v1615 = (ui / "PokedexCatalogScreen.kt").read_text(encoding="utf-8")
 for required in (
     "surfaceContainerLow",
-    "RoundedCornerShape(16.dp)",
+    "RoundedCornerShape(PokedexDesignTokens.Radius.Sm)",
     "Modifier.fillMaxSize().padding(6.dp)",
 ):
     if required not in pokedex_v1615:
