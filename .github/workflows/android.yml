@@ -30,11 +30,13 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Validate v19.1.0 Visual Polish
+      - name: Validate v19.2.0 Visual Harmony
         run: |
-          grep -q 'versionCode = 19100' app/build.gradle.kts
-          grep -q 'versionName = "19.1.0"' app/build.gradle.kts
+          grep -q 'versionCode = 19200' app/build.gradle.kts
+          grep -q 'versionName = "19.2.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
+          grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
+          grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
       - name: Install artwork audit dependency
