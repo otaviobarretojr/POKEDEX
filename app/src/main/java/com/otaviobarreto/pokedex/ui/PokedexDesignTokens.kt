@@ -51,21 +51,38 @@ object PokedexDesignTokens {
         val Dark = Color(0xFF56505D)
         val Fairy = Color(0xFFE88FC6)
         val Normal = Color(0xFF98969B)
+        val Fighting = Color(0xFFC65443)
+        val Poison = Color(0xFF9B5BC6)
+        val Ground = Color(0xFFC9A45D)
+        val Rock = Color(0xFFAA9554)
+        val Bug = Color(0xFF8AAE2D)
+        val Ghost = Color(0xFF665F9A)
+        val Steel = Color(0xFF7F9AA7)
+        val Flying = Color(0xFF7E9AD8)
 
-        fun game(label:String):Color=when{
-            label.contains("Scarlet",true) || label.contains("Violet",true) -> Color(0xFFB54C5D)
-            label.contains("Sword",true) || label.contains("Shield",true) -> Color(0xFF35A9C7)
-            label.contains("Arceus",true) -> Color(0xFF527F7C)
-            label.contains("Brilliant",true) || label.contains("Diamond",true) -> Color(0xFF5968C7)
-            label.contains("Let's Go",true) -> Color(0xFFE0A929)
-            label.contains("Z-A",true) -> Color(0xFF2D7F8E)
+        val ShinyGold = Color(0xFFB78900)
+        val SpecialGold = Color(0xFF7A5A00)
+        val FireRedLeafGreen = Color(0xFFCC5B43)
+        val Champions = Color(0xFF7857D8)
+
+        fun game(label:String?):Color=when{
+            label?.contains("Scarlet",true)==true || label?.contains("Violet",true)==true -> Color(0xFFB54C5D)
+            label?.contains("Sword",true)==true || label?.contains("Shield",true)==true -> Color(0xFF35A9C7)
+            label?.contains("Arceus",true)==true -> Color(0xFF527F7C)
+            label?.contains("Brilliant",true)==true || label?.contains("Diamond",true)==true || label?.contains("Shining",true)==true -> Color(0xFF5968C7)
+            label?.contains("Let's Go",true)==true -> Color(0xFFE0A929)
+            label?.contains("Z-A",true)==true -> Color(0xFF2D7F8E)
+            label?.contains("FireRed",true)==true || label?.contains("LeafGreen",true)==true -> FireRedLeafGreen
+            label?.contains("Champions",true)==true -> Champions
             else -> Primary
         }
 
         fun type(type:String?):Color=when(type?.lowercase()){
             "fire"->Fire; "water"->Water; "grass"->Grass; "electric"->Electric
             "psychic"->Psychic; "ice"->Ice; "dragon"->Dragon; "dark"->Dark
-            "fairy"->Fairy; else->Primary
+            "fairy"->Fairy; "normal"->Normal; "fighting"->Fighting; "poison"->Poison
+            "ground"->Ground; "rock"->Rock; "bug"->Bug; "ghost"->Ghost
+            "steel"->Steel; "flying"->Flying; else->Primary
         }
     }
 
