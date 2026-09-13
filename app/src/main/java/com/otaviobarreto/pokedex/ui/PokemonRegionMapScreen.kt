@@ -3,6 +3,7 @@ package com.otaviobarreto.pokedex.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -342,12 +343,14 @@ private fun SpatialRegionMap(
                             tween(PokedexDesignTokens.Motion.Standard),
                             label="mapMarkerColor"
                         )
+                        val interaction=remember(zone.id){MutableInteractionSource()}
                         Card(
                             modifier = Modifier
                                 .offset(x = x, y = y)
                                 .width(markerWidth)
                                 .height(markerHeight)
-                                .clickable { onSelect(zone) },
+                                .dexInteractiveSurface(interactionSource=interaction,pressedScale=.96f)
+                                .clickable(interactionSource=interaction,indication=null) { onSelect(zone) },
                             shape = RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                             colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.Transparent)
                         ) {
