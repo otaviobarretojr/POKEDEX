@@ -234,7 +234,7 @@ private fun resolveSaveLocation(
                 IconButton(back,Modifier.size(46.dp)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
             }
             Surface(shape=RoundedCornerShape(999.dp),color=scheme.surface.copy(alpha=.78f),modifier=Modifier.padding(start=8.dp)){
-                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
+                Text("#${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
             }
         }
         Surface(
@@ -292,14 +292,14 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         ){
             Icon(Icons.AutoMirrored.Filled.ArrowBack,null,Modifier.size(17.dp))
             Spacer(Modifier.width(5.dp))
-                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
+            Text(previous?.let{"#"+it.toString().padStart(4,'0')} ?: "Início")
         }
         OutlinedButton(
             onClick={next?.let(openPokemon)},
             enabled=next!=null,
             modifier=Modifier.weight(1f)
         ){
-                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
+            Text(next?.let{"#"+it.toString().padStart(4,'0')} ?: "Fim")
             Spacer(Modifier.width(5.dp))
             Icon(Icons.Default.ArrowForward,null,Modifier.size(17.dp))
         }
