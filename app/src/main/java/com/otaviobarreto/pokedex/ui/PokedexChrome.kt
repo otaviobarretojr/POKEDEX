@@ -14,14 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Dp
 
 data class DexNavItem(val route:String,val label:String,val icon:ImageVector)
 
@@ -160,27 +158,3 @@ fun DexStatusPane(
 }
 
 
-@Composable
-fun Modifier.dexPressFeedback(
-    enabled:Boolean=true,
-    pressedScale:Float=.975f,
-    pressedElevation:Dp=PokedexDesignTokens.Elevation.Low
-):Modifier{
-    val interaction=remember{MutableInteractionSource()}
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        if(enabled&&pressed)pressedScale else 1f,
-        tween(PokedexDesignTokens.Motion.Fast),
-        label="dexPressScale"
-    )
-    val lift by animateFloatAsState(
-        if(enabled&&pressed)pressedElevation.value else 0f,
-        tween(PokedexDesignTokens.Motion.Fast),
-        label="dexPressLift"
-    )
-    return this.graphicsLayer{
-        scaleX=scale
-        scaleY=scale
-        shadowElevation=lift
-    }
-}
