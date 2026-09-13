@@ -1,0 +1,2 @@
+Temporary CI validation trigger for v20.5.0 Journey Pokedex Separation.
+Application sources match main.
