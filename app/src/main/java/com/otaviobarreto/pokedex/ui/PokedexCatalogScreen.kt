@@ -118,9 +118,9 @@ fun PokedexCatalogScreen(
         ){
             Row(Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
                 Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
-                    Icon(Icons.Default.MenuBook,null,Modifier.padding(11.dp).size(26.dp),tint=MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.MenuBook,null,Modifier.padding(PokedexDesignTokens.Spacing.Md).size(26.dp),tint=MaterialTheme.colorScheme.primary)
                 }
-                Column(Modifier.padding(start=12.dp)){
+                Column(Modifier.padding(start=PokedexDesignTokens.Spacing.Md)){
                     DexSectionEyebrow("National Dex")
                     Text("Pokédex",style=MaterialTheme.typography.headlineMedium)
                     Text("#0001–#1025 · formas e Shiny",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -170,7 +170,7 @@ fun PokedexCatalogScreen(
                             ){
                                 Text(
                                     "#"+pk.id.toString().padStart(4,'0'),
-                                    Modifier.padding(horizontal=7.dp,vertical=3.dp),
+                                    Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Sm,vertical=PokedexDesignTokens.Spacing.Xs),
                                     style=MaterialTheme.typography.labelSmall,
                                     color=accent
                                 )
