@@ -73,6 +73,9 @@ private val qbGames=AppGameCatalog.games.map{game->
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
  var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var specialEvolutionFilter by rememberSaveable{mutableStateOf(false)}
+ var specialEvolutionIds by remember(region.source){mutableStateOf<Set<Int>>(emptySet())}
+ var specialEvolutionLoading by remember(region.source){mutableStateOf(false)}
  LaunchedEffect(region.source,game.label){
   loading=true
   AppStatePreferences.activeGame=game.label
@@ -88,6 +91,24 @@ private val qbGames=AppGameCatalog.games.map{game->
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
  val entries=dex.drop(current*30).take(30)
+ LaunchedEffect(specialEvolutionFilter,current,region.source,entries){
+  if(!specialEvolutionFilter){specialEvolutionIds=emptySet();specialEvolutionLoading=false}
+  else{
+   specialEvolutionLoading=true
+   specialEvolutionIds=withContext(Dispatchers.IO){
+    entries.mapNotNull{entry->
+     runCatching{
+      val species=PokedexDataStore.species(entry.nationalId)
+      val chain=species.evolutionChainUrl?.let{PokedexDataStore.evolutions(it)}.orEmpty()
+      val currentIndex=chain.indexOfFirst{it.pokemonId==entry.nationalId}
+      val candidates=if(currentIndex>=0)chain.drop(currentIndex+1)else chain
+      entry.nationalId.takeIf{candidates.any{PokeApiService.isSpecialEvolutionRequirement(it.requirement)}}
+     }.getOrNull()
+    }.toSet()
+   }
+   specialEvolutionLoading=false
+  }
+ }
  LaunchedEffect(region.source,current,dex){
   runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}
  }
@@ -171,6 +192,16 @@ private val qbGames=AppGameCatalog.games.map{game->
      color=QBmuted
     )
    }
+   IconButton(
+    onClick={specialEvolutionFilter=!specialEvolutionFilter},
+    modifier=Modifier.size(40.dp)
+   ){
+    Icon(
+     Icons.Default.AutoAwesome,
+     contentDescription="Evolução especial",
+     tint=if(specialEvolutionFilter)game.accent else QBmuted
+    )
+   }
    Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
     CircularProgressIndicator(
      progress={progress.coerceIn(0f,1f)},
@@ -227,7 +258,10 @@ private val qbGames=AppGameCatalog.games.map{game->
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
-    else->QBGrid(entries,capturedIds,region.source,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+    else->QBGrid(entries,capturedIds,region.source,specialEvolutionFilter,specialEvolutionIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+   }
+   if(specialEvolutionFilter&&specialEvolutionLoading){
+    LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter),color=game.accent)
    }
   }
   Row(
@@ -277,6 +311,8 @@ private fun QBGrid(
     entries:List<GameDexService.GameDexEntry>,
     captured:Set<Int>,
     source:String,
+    specialFilter:Boolean,
+    specialIds:Set<Int>,
     open:(GameDexService.GameDexEntry)->Unit,
     hold:(GameDexService.GameDexEntry)->Unit
 ){
@@ -292,6 +328,8 @@ private fun QBGrid(
                             pk=pk,
                             captured=pk.nationalId in captured,
                             source=source,
+                            specialEvolution=pk.nationalId in specialIds,
+                            specialFilter=specialFilter,
                             open={open(pk)},
                             hold={hold(pk)},
                             modifier=Modifier.weight(1f).fillMaxHeight()
@@ -309,6 +347,8 @@ private fun QBSlot(
     pk:GameDexService.GameDexEntry,
     captured:Boolean,
     source:String,
+    specialEvolution:Boolean,
+    specialFilter:Boolean,
     open:()->Unit,
     hold:()->Unit,
     modifier:Modifier=Modifier
@@ -320,7 +360,7 @@ private fun QBSlot(
     val imageModel=variant?.artworkUrl ?: pk.spriteUrl
     val isShiny=variant?.shiny==true
     Surface(
-        modifier.combinedClickable(onClick=open,onLongClick=hold),
+        modifier.alpha(if(specialFilter&&!specialEvolution).18f else 1f).combinedClickable(onClick=open,onLongClick=hold),
         shape=RoundedCornerShape(9.dp),
         color=if(captured)Color(0xFFEAE6FA)else QBsurface
     ){
@@ -337,6 +377,13 @@ private fun QBSlot(
                 contentScale=ContentScale.Fit,
                 colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)})
             )
+            if(specialEvolution){
+                Surface(
+                    Modifier.align(Alignment.TopEnd).padding(3.dp),
+                    shape=RoundedCornerShape(8.dp),
+                    color=Color.White.copy(alpha=.92f)
+                ){Text("✦",Modifier.padding(horizontal=4.dp,vertical=1.dp),fontSize=9.sp,fontWeight=FontWeight.Black,color=Color(0xFF7A5A00))}
+            }
             Surface(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                 color=Color.White.copy(alpha=.90f)
