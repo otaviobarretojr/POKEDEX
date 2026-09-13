@@ -79,6 +79,9 @@ for required in ("PokedexDesignTokens.Colors.type", "DexAppBackground"):
     if required not in visual_files["pokedex"]:
         violations.append(f"Visual v19 Pokedex missing {required}")
 
+if "replacePokemonDetail" not in main or "onOpenPokemon={nextId->replacePokemonDetail(nextId,source)}" not in main:
+    violations.append("Pokemon detail browsing must replace the current detail route")
+
 if violations:
     print("Source verification failed:")
     for item in violations:
@@ -102,8 +105,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "20700" not in workflow or "20.7.0" not in workflow:
-    violations.append("CI v20.7.0 version validation missing")
+if "20701" not in workflow or "20.7.1" not in workflow:
+    violations.append("CI v20.7.1 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "officialPokedexTotal", "JourneyObjectivePreviewCard", "JourneyCompactStatus", "Ver todos", "Faltando na Living Dex"):
@@ -974,7 +977,8 @@ local_v2040 = 'versionName = "20.4.0"' in local_gradle and "versionCode = 20400"
 local_v2050 = 'versionName = "20.5.0"' in local_gradle and "versionCode = 20500" in local_gradle
 local_v2060 = 'versionName = "20.6.0"' in local_gradle and "versionCode = 20600" in local_gradle
 local_v2070 = 'versionName = "20.7.0"' in local_gradle and "versionCode = 20700" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070):
+local_v2071 = 'versionName = "20.7.1"' in local_gradle and "versionCode = 20701" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
