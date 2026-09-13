@@ -75,10 +75,11 @@ fun CompanionCenterScreen(
         }
     }
 
+    DexAppBackground {
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal=16.dp),
-        contentPadding=PaddingValues(top=18.dp,bottom=28.dp),
-        verticalArrangement=Arrangement.spacedBy(14.dp)
+        Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+        contentPadding=PaddingValues(top=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xxl),
+        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Lg)
     ){
         item{
             DexGlassSurface(Modifier.fillMaxWidth()){
@@ -193,7 +194,7 @@ fun CompanionCenterScreen(
             val downloadedPacks=remember(storageRevision){
                 AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
             }
-            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Text("Cache da sessão",fontWeight=FontWeight.Bold)
                     Text(
@@ -256,7 +257,7 @@ fun CompanionCenterScreen(
 
         item{
             SettingsSectionTitle("Áudio")
-            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Icon(Icons.Default.VolumeUp,null)
@@ -294,7 +295,7 @@ fun CompanionCenterScreen(
                     context.packageManager.getPackageInfo(context.packageName,0).versionName ?: "—"
                 }.getOrDefault("—")
             }
-            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Text("POKEDEX v"+versionName,fontWeight=FontWeight.Bold)
                     Text(
@@ -362,16 +363,17 @@ fun CompanionCenterScreen(
 
         statusText?.let{message->
             item{
-                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)){
+                DexGlassSurface(Modifier.fillMaxWidth()){
                     Text(
                         message,
-                        Modifier.fillMaxWidth().padding(12.dp),
+                        Modifier.fillMaxWidth(),
                         color=MaterialTheme.colorScheme.primary,
                         fontWeight=FontWeight.SemiBold
                     )
                 }
             }
         }
+    }
     }
 
     if(restoreOpen){
