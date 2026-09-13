@@ -123,7 +123,7 @@ fun PokemonDetailV2Screen(
         Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(scheme.primaryContainer,scheme.surfaceVariant,scheme.surface)))){
             IconButton(onBack,Modifier.padding(16.dp).size(46.dp).background(scheme.surface.copy(alpha=.86f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
             Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=36.dp).width(185.dp)){
-                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
+                Text("#${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
                 Text(name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=scheme.onSurface,maxLines=2)
                 Text("Abrindo ficha…",fontSize=14.sp,color=scheme.onSurfaceVariant,modifier=Modifier.padding(top=8.dp))
             }
