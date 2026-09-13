@@ -16,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -434,6 +436,7 @@ private fun QBVariantManager(
     source:String,
     dismiss:()->Unit
 ){
+    val haptic=LocalHapticFeedback.current
     val variantsState=VariantCollectionStore.ownedVariants
     var forms by remember(pk.nationalId){mutableStateOf<List<PokemonFormVariant>?>(PokemonFormsService.cached(pk.nationalId))}
     var loading by remember(pk.nationalId){mutableStateOf(forms==null)}
@@ -480,6 +483,7 @@ private fun QBVariantManager(
                     OutlinedButton(
                         onClick={
                             VariantCollectionStore.removeAll(source,pk.nationalId)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             dismiss()
                         },
                         modifier=Modifier.fillMaxWidth(),
@@ -549,6 +553,7 @@ private fun QBVariantManager(
                                                         normalArtworkUrl=form.spriteUrl,
                                                         shinyArtworkUrl=form.shinySpriteUrl
                                                     )
+                                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                     dismiss()
                                                 },
                                                 label={Text("Normal",fontSize=10.sp)},
@@ -563,6 +568,7 @@ private fun QBVariantManager(
                                                         normalArtworkUrl=form.spriteUrl,
                                                         shinyArtworkUrl=form.shinySpriteUrl
                                                     )
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                     dismiss()
                                                 },
                                                 label={Text("★ Shiny",fontSize=10.sp)},
