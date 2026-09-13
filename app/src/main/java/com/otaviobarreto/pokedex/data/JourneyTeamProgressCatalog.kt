@@ -54,6 +54,32 @@ object JourneyTeamProgressCatalog {
     fun isStarterLinePokemon(starterId:Int,pokemonId:Int):Boolean =
         pokemonId in starterLine(starterId)
 
+    private val knownFamilies=listOf(
+        listOf(906,907,908),listOf(909,910,911),listOf(912,913,914),
+        listOf(821,822,823),listOf(940,941),listOf(194,980),listOf(928,929,930),
+        listOf(935,936,937),listOf(129,130),listOf(296,297),listOf(280,281,282,475),
+        listOf(328,329,330),listOf(56,57,979),
+        listOf(810,811,812),listOf(813,814,815),listOf(816,817,818),
+        listOf(835,836),listOf(850,851),listOf(829,830),listOf(859,860,861),
+        listOf(848,849),listOf(529,530),listOf(679,680,681),listOf(885,886,887),
+        listOf(722,723,724),listOf(155,156,157),listOf(501,502,503),
+        listOf(403,404,405),listOf(396,397,398),listOf(418,419),listOf(390,391,392),
+        listOf(216,217,901),listOf(215,903),listOf(443,444,445),listOf(447,448),
+        listOf(387,388,389),listOf(393,394,395),listOf(406,315,407),listOf(459,460),
+        listOf(152,153,154),listOf(498,499,500),listOf(158,159,160),
+        listOf(214),listOf(659,660),listOf(661,662,663),listOf(25,26),listOf(92,93,94),
+        listOf(1,2,3),listOf(4,5,6),listOf(7,8,9),listOf(16,17,18),listOf(29,30,31),
+        listOf(32,33,34),listOf(43,44,45),listOf(63,64,65),listOf(131),listOf(143)
+    )
+
+    fun familyKey(pokemonId:Int):Int =
+        knownFamilies.firstOrNull{pokemonId in it}?.first() ?: pokemonId
+
+    fun sameEvolutionFamily(a:Int,b:Int):Boolean = familyKey(a)==familyKey(b)
+
+    fun hasFamilyDuplicate(ids:List<Int>):Boolean =
+        ids.map(::familyKey).let{keys->keys.size!=keys.distinct().size}
+
     fun catchRecommendationsBefore(step:JourneyStep?):List<JourneyCatchRecommendation> {
         val order=step?.order ?: return emptyList()
         val plan=catchPlanFor(step.id)
