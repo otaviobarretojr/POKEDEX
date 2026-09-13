@@ -34,6 +34,8 @@ object JourneyTeamProgressCatalog {
         387->listOf(387,388,389)
         390->listOf(390,391,392)
         393->listOf(393,394,395)
+        25->listOf(25)
+        133->listOf(133)
         else->listOf(starterId)
     }
 
@@ -67,6 +69,7 @@ object JourneyTeamProgressCatalog {
         stepId.startsWith("la-") -> hisuiCatchPlan
         stepId.startsWith("swsh-") -> galarCatchPlan
         stepId.startsWith("bdsp-") -> sinnohCatchPlan
+        stepId.startsWith("lgpe-") -> letsGoCatchPlan
         else -> emptyList()
     }
 
@@ -107,8 +110,25 @@ object JourneyTeamProgressCatalog {
         stepId in setOf("bdsp-13","bdsp-14","bdsp-g7","bdsp-16","bdsp-17","bdsp-g8") -> "TEAM GALACTIC · SPEAR PILLAR"
         stepId=="bdsp-19" || stepId.startsWith("bdsp-e4-") || stepId=="bdsp-24" -> "LIGA POKÉMON · CYNTHIA"
         stepId.startsWith("bdsp-pg-") -> "SINNOH · PÓS-GAME"
+        stepId in setOf("lgpe-01","lgpe-02","lgpe-g1","lgpe-04","lgpe-g2","lgpe-06","lgpe-g3") -> "KANTO · PRIMEIRAS BADGES"
+        stepId in setOf("lgpe-08","lgpe-09","lgpe-g4","lgpe-11","lgpe-12","lgpe-g5","lgpe-g6") -> "KANTO · TEAM ROCKET"
+        stepId in setOf("lgpe-g7","lgpe-g8","lgpe-17") || stepId.startsWith("lgpe-e4-") || stepId=="lgpe-22" -> "INDIGO PLATEAU · RETA FINAL"
+        stepId.startsWith("lgpe-pg-") -> "KANTO · PÓS-GAME"
         else -> "JORNADA"
     }
+
+    private val letsGoCatchPlan=listOf(
+        JourneyCatchRecommendation(1,2,"Viridian Forest","Bulbasaur ajuda muito contra Brock e Misty e pode ser recebido gratuitamente em Cerulean após cumprir requisito de capturas."),
+        JourneyCatchRecommendation(16,2,"Routes 1–2","Pidgey/Pidgeotto fornece Voador cedo e cobertura útil contra Erika."),
+        JourneyCatchRecommendation(29,3,"Route 22 / Route 3","Nidoran oferece linha versátil com boa cobertura por TMs."),
+        JourneyCatchRecommendation(32,3,"Route 22 / Route 3","Nidoran macho é uma alternativa física forte para evoluir até Nidoking."),
+        JourneyCatchRecommendation(56,4,"Route 3","Mankey é especialmente útil contra Brock e ameaças Normais/Pedra."),
+        JourneyCatchRecommendation(37,6,"Routes 5–6","Vulpix em Eevee ou Growlithe em Pikachu dão opção de Fogo confiável para Erika."),
+        JourneyCatchRecommendation(58,6,"Routes 5–6","Growlithe em Pikachu ou Vulpix em Eevee cobrem Planta/Gelo e ajudam no mid game."),
+        JourneyCatchRecommendation(63,8,"Routes 5–6 / Saffron","Abra evolui para Kadabra/Alakazam e entrega enorme pressão especial contra Koga e Bruno."),
+        JourneyCatchRecommendation(92,9,"Pokémon Tower","Gastly oferece Fantasma/Veneno para Sabrina e Agatha."),
+        JourneyCatchRecommendation(131,15,"Silph Co. gift / pós-Saffron","Lapras dá Água/Gelo excelente para Blaine, Giovanni e principalmente Lance.")
+    )
 
     private val sinnohCatchPlan=listOf(
         JourneyCatchRecommendation(396,2,"Route 201 / Route 202","Starly evolui para Staraptor e entrega Voador/Lutador com excelente valor por toda a campanha."),
