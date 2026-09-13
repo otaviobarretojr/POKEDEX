@@ -147,7 +147,7 @@ fun PokemonDetailV2Screen(
     openPokemon:((Int)->Unit)?
 ){
     val primaryType=b.pokemon.types.firstOrNull().orEmpty()
-    val accent=typeColor(primaryType)
+    val accent=PokedexDesignTokens.Colors.type(primaryType)
     val legacyBoxes=CollectionStore.boxesForPokemon(b.pokemon.id)
     val saveLocation=remember(b.pokemon.id,context,source,CollectionStore.capturedIds,CollectionStore.contextualCapturedIds,legacyBoxes){
         resolveSaveLocation(b.pokemon.id,context,source,legacyBoxes)
@@ -400,10 +400,10 @@ private fun PokemonFormsSummaryCard(
             else
                 contextLabel+" · "+owned.size+" variante(s) registrada(s)",
             style=MaterialTheme.typography.bodySmall,
-            color=Color(0xFF667085)
+            color=MaterialTheme.colorScheme.onSurfaceVariant
         )
         if(available.isEmpty()){
-            Text("Carregando formas…",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))
+            Text("Carregando formas…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }else{
             LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)){
                 items(available,key={it.formKey}){form->
@@ -467,7 +467,7 @@ private fun PokemonFormsSummaryCard(
                                         if(shinyOwned)"★ Shiny" else null
                                     ).joinToString(" · ").ifBlank{"Não registrado"},
                                     fontSize=9.sp,
-                                    color=if(normalOwned||shinyOwned)accent else Color(0xFF7A8194),
+                                    color=if(normalOwned||shinyOwned)accent else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines=1
                                 )
                             }
@@ -502,7 +502,7 @@ private fun PokemonFormsSummaryCard(
         content()
     }
 }
-@Composable private fun InfoMini(label:String,value:String,modifier:Modifier){Surface(modifier,shape=RoundedCornerShape(14.dp),color=Color(0xFFF4F5FA)){Column(Modifier.padding(11.dp)){Text(label,fontSize=10.sp,color=Color(0xFF6F7890));Text(value,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)}}}
+@Composable private fun InfoMini(label:String,value:String,modifier:Modifier){Surface(modifier,shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.72f)){Column(Modifier.padding(11.dp)){Text(label,fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(value,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)}}}
 @Composable private fun V2Stats(s:PokemonStats){
     val rows=listOf("HP" to s.hp,"Ataque" to s.attack,"Defesa" to s.defense,"Ataque Esp." to s.specialAttack,"Defesa Esp." to s.specialDefense,"Velocidade" to s.speed)
     LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
@@ -574,7 +574,7 @@ private fun methodLabel(method:String):String=when(method.lowercase()){"level up
     LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
         item{
             Text("Localização",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
-            if(context!=null)Text(context.label+" · "+context.regionLabel,style=MaterialTheme.typography.labelMedium,color=Color(0xFF667085))
+            if(context!=null)Text(context.label+" · "+context.regionLabel,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
             species.habitat?.takeIf{it.isNotBlank()}?.let{
                 Text("Habitat: "+it,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
             }
@@ -597,5 +597,4 @@ private fun methodLabel(method:String):String=when(method.lowercase()){"level up
     }
 }
 
-private fun typeColor(type:String)=when(type.lowercase()){ "grass"->Color(0xFF38B84A);"fire"->Color(0xFFE85C43);"water"->Color(0xFF4E8FEA);"electric"->Color(0xFFE3B62F);"psychic"->Color(0xFFE8679A);"ice"->Color(0xFF6CC7D8);"dragon"->Color(0xFF6553C7);"dark"->Color(0xFF5B5363);"fairy"->Color(0xFFE484C4);"fighting"->Color(0xFFC65443);"poison"->Color(0xFF9B5BC6);"ground"->Color(0xFFC9A45D);"rock"->Color(0xFFAA9554);"bug"->Color(0xFF8AAE2D);"ghost"->Color(0xFF665F9A);"steel"->Color(0xFF7F9AA7);"flying"->Color(0xFF7E9AD8);else->Color(0xFF6D7180)}
-private fun gameColor(label:String?)=when{label?.contains("Scarlet",true)==true->Color(0xFF7655E8);label?.contains("Sword",true)==true->Color(0xFF35A9C7);label?.contains("Let's Go",true)==true->Color(0xFFE0A929);label?.contains("Arceus",true)==true->Color(0xFF527F7C);label?.contains("HOME",true)==true->Color(0xFF5B55E7);else->Color(0xFF6C63E8)}
+private fun PokedexDesignTokens.Colors.game(label:String?)=when{label?.contains("Scarlet",true)==true->Color(0xFF7655E8);label?.contains("Sword",true)==true->Color(0xFF35A9C7);label?.contains("Let's Go",true)==true->Color(0xFFE0A929);label?.contains("Arceus",true)==true->Color(0xFF527F7C);label?.contains("HOME",true)==true->Color(0xFF5B55E7);else->Color(0xFF6C63E8)}
