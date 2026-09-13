@@ -46,6 +46,10 @@ fun CampaignTeamGuideScreen(
     var phase by remember(game,automaticPhase) { mutableStateOf(automaticPhase) }
     var gameMenu by remember { mutableStateOf(false) }
     var editStarter by remember { mutableStateOf(false) }
+    var starterUpdateMessage by remember { mutableStateOf<String?>(null) }
+    var showJourneyAdjustments by remember { mutableStateOf(false) }
+    var expandedBuilds by remember { mutableStateOf(emptySet<Int>()) }
+    var showHelp by remember { mutableStateOf(false) }
     var createdMessage by remember { mutableStateOf<String?>(null) }
     val preset=remember(game,starterId,phase){TeamCampaignCatalog.preset(game,starterId,phase)}
     val dynamic=remember(game,starterId,JourneyProgressStore.revision){
@@ -105,11 +109,19 @@ fun CampaignTeamGuideScreen(
                                         onClick={
                                             starterId=id
                                             AppStatePreferences.setJourneyStarterForGame(game,id)
+                                            starterUpdateMessage="Inicial atualizado. As sugestões do time foram recalculadas para a sua Jornada."
                                         },
                                         label={Text(name)},
                                         leadingIcon=if(starterId==id){{Icon(Icons.Default.Check,null)}}else null
                                     )
                                 }
+                            }
+                            starterUpdateMessage?.let{
+                                Text(
+                                    it,
+                                    style=MaterialTheme.typography.labelSmall,
+                                    color=MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
                     }else{
@@ -164,15 +176,20 @@ fun CampaignTeamGuideScreen(
                         Column(Modifier.fillMaxWidth().padding(14.dp)){
                             Row(verticalAlignment=Alignment.CenterVertically){
                                 Icon(Icons.Default.AutoAwesome,null)
-                                Text("TIME DINÂMICO DA JORNADA",Modifier.padding(start=8.dp),fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium)
+                                Text("SUGESTÃO PARA SUA JORNADA",Modifier.weight(1f).padding(start=8.dp),fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium)
+                                if(smart.actions.isNotEmpty()){
+                                    TextButton(onClick={showJourneyAdjustments=!showJourneyAdjustments}){
+                                        Text(if(showJourneyAdjustments)"Ocultar" else "Ver ajustes")
+                                    }
+                                }
                             }
                             Text(smart.reason,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
                             smart.focusStep?.let{step->
-                                Text("Foco atual: "+step.title+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=6.dp))
+                                Text("Próximo foco: "+step.title+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=6.dp))
                             }
-                            if(smart.actions.isNotEmpty()){
+                            if(showJourneyAdjustments && smart.actions.isNotEmpty()){
                                 HorizontalDivider(Modifier.padding(vertical=10.dp))
-                                Text("AJUSTES RECOMENDADOS",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
+                                Text("RECOMENDAÇÕES",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
                                 smart.actions.forEach{action->
                                     val outName=action.fromPokemonId?.let{id->national.firstOrNull{it.id==id}?.name ?: "#"+id}
                                     val inName=national.firstOrNull{it.id==action.toPokemonId}?.name ?: "#"+action.toPokemonId
@@ -195,7 +212,7 @@ fun CampaignTeamGuideScreen(
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         Text(team.starter+" · "+team.phase.label,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
                         Text(team.rationale,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
-                        Text("Base de pesquisa: "+team.sourceLabel,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=6.dp))
+                        Text("Referência: "+team.sourceLabel,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=6.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -218,14 +235,20 @@ fun CampaignTeamGuideScreen(
                                     Text("Alternativas: "+names.joinToString(" / "),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                                 }
                             }
-                            Icon(Icons.Default.ChevronRight,null)
+                            IconButton(onClick={
+                                expandedBuilds=if(slot.pokemonId in expandedBuilds) expandedBuilds-slot.pokemonId else expandedBuilds+slot.pokemonId
+                            }){
+                                Icon(if(slot.pokemonId in expandedBuilds)Icons.Default.ExpandLess else Icons.Default.ExpandMore,"Detalhes do Pokémon")
+                            }
                         }
-                        HorizontalDivider(Modifier.padding(vertical=8.dp))
-                        Text("Build de campanha",fontWeight=FontWeight.SemiBold)
-                        Text("Moves: "+build.moves.joinToString(" · "),style=MaterialTheme.typography.bodySmall)
-                        Text("Nature: "+build.nature,style=MaterialTheme.typography.bodySmall)
-                        Text("Item: "+build.item,style=MaterialTheme.typography.bodySmall)
-                        Text(build.notes,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=4.dp))
+                        if(slot.pokemonId in expandedBuilds){
+                            HorizontalDivider(Modifier.padding(vertical=8.dp))
+                            Text("Detalhes para a Jornada",fontWeight=FontWeight.SemiBold)
+                            Text("Golpes: "+build.moves.joinToString(" · "),style=MaterialTheme.typography.bodySmall)
+                            Text("Nature: "+build.nature,style=MaterialTheme.typography.bodySmall)
+                            Text("Item: "+build.item,style=MaterialTheme.typography.bodySmall)
+                            Text(build.notes,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=4.dp))
+                        }
                     }
                 }
             }
@@ -246,10 +269,22 @@ fun CampaignTeamGuideScreen(
             }
         }
         item{
-            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+            Card(
+                modifier=Modifier.fillMaxWidth().clickable{showHelp=!showHelp},
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
+            ){
                 Column(Modifier.fillMaxWidth().padding(12.dp)){
-                    Text("Como usar",fontWeight=FontWeight.Bold)
-                    Text("Os presets são para zerar a história com pouco grind. No early/mid, os golpes mostrados são alvos de build: use o equivalente disponível até desbloquear o golpe indicado. Trocas e exclusividades têm alternativas quando relevante.",style=MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        Text("Dicas da Jornada",fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
+                        Icon(if(showHelp)Icons.Default.ExpandLess else Icons.Default.ExpandMore,null)
+                    }
+                    if(showHelp){
+                        Text(
+                            "As sugestões priorizam terminar a história com pouco grind. Use golpes equivalentes enquanto os indicados ainda não estiverem disponíveis; trocas e exclusivos recebem alternativas quando necessário.",
+                            style=MaterialTheme.typography.bodySmall,
+                            modifier=Modifier.padding(top=6.dp)
+                        )
+                    }
                 }
             }
         }
