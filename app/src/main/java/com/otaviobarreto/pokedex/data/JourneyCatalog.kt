@@ -48,10 +48,10 @@ object JourneyCatalog {
         JourneyStep("bdsp-g5",11,"Hearthome Gym","Fantina · Relic Badge","Nv. 32–36",JourneyChallengeKind.GYM,"Ginásio · Fantasma","Hearthome Gym"),
         JourneyStep("bdsp-g6",12,"Canalave Gym","Byron · Mine Badge","Nv. 36–39",JourneyChallengeKind.GYM,"Ginásio · Aço","Canalave Gym"),
         JourneyStep("bdsp-13",13,"Lake Valor / Lake Verity","Responda ao ataque da Team Galactic","Nv. 38–42",JourneyChallengeKind.STORY,"Team Galactic","Lakes of Sinnoh"),
-        JourneyStep("bdsp-14",14,"Lake Acuity","Encontre Barry após Snowpoint","Nv. 40–44",JourneyChallengeKind.STORY,"Team Galactic","Lake Acuity"),
-        JourneyStep("bdsp-g7",15,"Snowpoint Gym","Candice · Icicle Badge","Nv. 38–42",JourneyChallengeKind.GYM,"Ginásio · Gelo","Snowpoint Gym"),
-        JourneyStep("bdsp-16",16,"Galactic HQ","Invada o QG e liberte os Lake Guardians","Nv. 42–46",JourneyChallengeKind.STORY,"Team Galactic","Veilstone Galactic HQ"),
-        JourneyStep("bdsp-17",17,"Spear Pillar","Cyrus + Dialga/Palkia","Nv. 45–47",JourneyChallengeKind.STORY,"Clímax · Lendário","Mt. Coronet / Spear Pillar","Dialga em Brilliant Diamond; Palkia em Shining Pearl."),
+        JourneyStep("bdsp-g7",14,"Snowpoint Gym","Candice · Icicle Badge","Nv. 38–42",JourneyChallengeKind.GYM,"Ginásio · Gelo","Snowpoint Gym"),
+        JourneyStep("bdsp-14",15,"Lake Acuity","Encontre Barry e Jupiter após obter a Icicle Badge","Nv. 40–44",JourneyChallengeKind.STORY,"Team Galactic","Lake Acuity"),
+        JourneyStep("bdsp-16",16,"Galactic HQ","Derrote Cyrus e Saturn e liberte os Lake Guardians","Nv. 42–46",JourneyChallengeKind.STORY,"Team Galactic","Veilstone Galactic HQ"),
+        JourneyStep("bdsp-17",17,"Spear Pillar","Mars + Jupiter, Cyrus e Dialga/Palkia","Nv. 45–47",JourneyChallengeKind.STORY,"Clímax · Lendário","Mt. Coronet / Spear Pillar","Barry ajuda contra Mars e Jupiter; depois você enfrenta Cyrus e o lendário da versão: Dialga em Brilliant Diamond, Palkia em Shining Pearl."),
         JourneyStep("bdsp-g8",18,"Sunyshore Gym","Volkner · Beacon Badge","Nv. 46–49",JourneyChallengeKind.GYM,"Ginásio · Elétrico","Sunyshore Gym"),
         JourneyStep("bdsp-19",19,"Victory Road","Prepare-se para a Liga Pokémon","Nv. 50–58",JourneyChallengeKind.STORY,"Liga","Victory Road"),
         JourneyStep("bdsp-e4-1",20,"Elite Four · Aaron","Especialista em Inseto","Nv. 53–57",JourneyChallengeKind.STORY,"Elite Four","Pokémon League"),
@@ -59,12 +59,16 @@ object JourneyCatalog {
         JourneyStep("bdsp-e4-3",22,"Elite Four · Flint","Especialista em Fogo","Nv. 58–61",JourneyChallengeKind.STORY,"Elite Four","Pokémon League"),
         JourneyStep("bdsp-e4-4",23,"Elite Four · Lucian","Especialista em Psíquico","Nv. 59–63",JourneyChallengeKind.STORY,"Elite Four","Pokémon League"),
         JourneyStep("bdsp-24",24,"Champion Cynthia","Conquiste o título de Sinnoh","Nv. 60–66",JourneyChallengeKind.STORY,"Campeã","Pokémon League","Garchomp Nv. 66 fecha uma das batalhas mais exigentes da campanha."),
-        JourneyStep("bdsp-pg-01",25,"National Dex","Veja os 150 Pokémon da Sinnoh Dex","Pós-jogo",JourneyChallengeKind.POSTGAME,"Pós-jogo","Sandgem Town","Desbloqueia National Dex e amplia o conteúdo do Grand Underground."),
-        JourneyStep("bdsp-pg-02",26,"Battle Zone","Fight Area, Battle Tower e novas rotas","Nv. 60+",JourneyChallengeKind.POSTGAME,"Battle Zone","Fight Area"),
-        JourneyStep("bdsp-pg-03",27,"Stark Mountain","Buck, Team Galactic e Heatran","Nv. 65–70",JourneyChallengeKind.POSTGAME,"Lendário","Stark Mountain"),
-        JourneyStep("bdsp-pg-04",28,"Ramanas Park","Slates e lendários","Nv. 70+",JourneyChallengeKind.POSTGAME,"Lendários","Ramanas Park","Substitui o Pal Park e concentra encontros lendários do pós-game."),
-        JourneyStep("bdsp-pg-05",29,"Grand Underground · Endgame","Hideaways e espécies do National Dex","Pós-jogo",JourneyChallengeKind.EPILOGUE,"Exploração","Grand Underground"),
-        JourneyStep("bdsp-pg-06",30,"Liga · Rematches","Elite Four e Cynthia fortalecidos","Nv. 65–88",JourneyChallengeKind.EPILOGUE,"Desafio final","Pokémon League","Os rematches escalam fortemente e representam o endgame de batalha.")
+        JourneyStep("bdsp-pg-01",25,"National Dex","Veja os 150 Pokémon da Sinnoh Dex","Pós-jogo",JourneyChallengeKind.POSTGAME,"Pós-jogo","Sandgem Town","É necessário ver, não capturar, as 150 espécies da Sinnoh Dex. O National Dex abre grande parte do pós-game."),
+        JourneyStep("bdsp-pg-02",26,"Lake Guardians","Uxie, Azelf e Mesprit","Nv. 50",JourneyChallengeKind.POSTGAME,"Lendários","Lakes of Sinnoh","Feche os encontros dos três guardiões dos lagos; Mesprit inicia como roaming Pokémon."),
+        JourneyStep("bdsp-pg-03",27,"Ramanas Park","Slates e lendários","Nv. 70+",JourneyChallengeKind.POSTGAME,"Lendários","Ramanas Park","Use Mystery Shards do Grand Underground para obter Slates e acessar salas de lendários."),
+        JourneyStep("bdsp-pg-04",28,"Cresselia & Fullmoon Island","Inicie a perseguição de Cresselia","Nv. 50",JourneyChallengeKind.POSTGAME,"Lendário","Fullmoon Island","Cresselia torna-se roaming após o evento de Fullmoon Island."),
+        JourneyStep("bdsp-pg-05",29,"Giratina · Turnback Cave","Explore Sendoff Spring e capture Giratina","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário","Turnback Cave"),
+        JourneyStep("bdsp-pg-06",30,"Snowpoint Temple","Encontre Regigigas","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário","Snowpoint Temple","Requer Regirock, Regice e Registeel no grupo para despertar Regigigas."),
+        JourneyStep("bdsp-pg-07",31,"Battle Zone","Fight Area, Battle Tower e novas rotas","Nv. 60+",JourneyChallengeKind.POSTGAME,"Battle Zone","Fight Area"),
+        JourneyStep("bdsp-pg-08",32,"Stark Mountain","Buck e Heatran","Nv. 65–70",JourneyChallengeKind.POSTGAME,"Lendário","Stark Mountain","Conclua o evento de Buck e retorne para encontrar Heatran."),
+        JourneyStep("bdsp-pg-09",33,"Grand Underground · Endgame","Hideaways, Mystery Shards e National Dex","Pós-jogo",JourneyChallengeKind.EPILOGUE,"Exploração","Grand Underground"),
+        JourneyStep("bdsp-pg-10",34,"Liga · Rematches","Elite Four e Cynthia fortalecidos","Nv. 65–88",JourneyChallengeKind.EPILOGUE,"Desafio final","Pokémon League","O primeiro upgrade vem com o National Dex; a formação final da Liga é liberada após o evento de Heatran.")
     )
 
     private val swordShield = listOf(
