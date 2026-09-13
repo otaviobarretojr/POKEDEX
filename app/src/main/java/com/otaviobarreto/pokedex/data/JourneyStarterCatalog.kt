@@ -21,12 +21,34 @@ object JourneyStarterCatalog {
         "Sword / Shield" -> galar
         "Brilliant Diamond / Shining Pearl" -> sinnoh
         "Let's Go Pikachu / Eevee" -> kantoLetsGo
+        "FireRed / LeafGreen" -> kantoFrlg
         else -> emptyList()
     }
 
     fun bestForGame(game:String):JourneyStarterRecommendation? = forGame(game).maxByOrNull{
         it.rating.early*3 + it.rating.mid*2 + it.rating.late
     }
+
+    private val kantoFrlg=listOf(
+        JourneyStarterRecommendation(
+            1,"Bulbasaur","Venusaur","Planta / Veneno","MAIS SEGURO · início muito fácil",
+            StarterStageRating(5,5,4),
+            listOf("Early game: vantagem direta contra Brock e Misty.","Mid game: Venusaur oferece sono, sustain e cobertura consistente contra Água/Terra.","Late game: segue útil contra Giovanni e boa parte do pós-game.","A escolha de Bulbasaur também determina Entei como lendário roaming no pós-game."),
+            listOf("Sabrina, Blaine e Lorelei exigem parceiros melhores.","Menor explosão ofensiva que Charizard.")
+        ),
+        JourneyStarterRecommendation(
+            4,"Charmander","Charizard","Fogo / Voador","DESAFIADOR NO INÍCIO · FORTE NO FIM",
+            StarterStageRating(2,4,5),
+            listOf("Early game: Brock e Misty tornam o começo mais difícil.","Mid game: Charmeleon melhora muito contra Erika e Team Rocket.","Late game: Charizard oferece ótima cobertura para Liga e rematch.","A escolha de Charmander determina Suicune como lendário roaming no pós-game."),
+            listOf("Precisa de apoio cedo contra Pedra e Água.","Fraqueza 4× a Pedra após virar Charizard.")
+        ),
+        JourneyStarterRecommendation(
+            7,"Squirtle","Blastoise","Água","EQUILIBRADO · campanha estável",
+            StarterStageRating(5,4,5),
+            listOf("Early game: domina Brock e ajuda muito contra Mt. Moon.","Mid game: Wartortle mantém boa consistência defensiva.","Late game: Blastoise cobre Blaine, Giovanni e parte da Liga.","A escolha de Squirtle determina Raikou como lendário roaming no pós-game."),
+            listOf("Misty vira confronto neutro, sem vantagem clara.","Elétrico e Planta precisam de cobertura.")
+        )
+    )
 
     private val kantoLetsGo=listOf(
         JourneyStarterRecommendation(
