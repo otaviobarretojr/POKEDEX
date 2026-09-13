@@ -40,6 +40,7 @@ object JourneySmartProgress {
             nextId.startsWith("za-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             nextId.startsWith("la-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             nextId.startsWith("swsh-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
+            nextId.startsWith("bdsp-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             nextId.startsWith("lgpe-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             nextId.startsWith("frlg-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             phase==CampaignPhase.EARLY -> "Início da campanha"
