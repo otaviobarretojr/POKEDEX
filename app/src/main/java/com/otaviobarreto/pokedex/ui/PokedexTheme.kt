@@ -53,7 +53,7 @@ private object ColorTokens {
 }
 
 @Composable
-fun PokedexTheme(content:@Composable()->Unit){
+fun PokedexTheme(content: @Composable () -> Unit){
     MaterialTheme(
         colorScheme=if(isSystemInDarkTheme()) PokedexDarkColors else PokedexLightColors,
         typography=PokedexDesignTokens.AppTypography,
