@@ -4,60 +4,65 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-/**
- * Central visual tokens for the redesign phase.
- *
- * Values intentionally mirror the current UI so v6.21.0 is structural only.
- * The next visual phase can evolve the app from this single source of truth.
- */
 object PokedexDesignTokens {
     object Colors {
-        val Primary = Color(0xFF5B55E7)
+        val Primary = Color(0xFF5C50E6)
         val OnPrimary = Color.White
-        val PrimaryContainer = Color(0xFFEAE8FB)
-        val OnPrimaryContainer = Color(0xFF241F66)
-        val Secondary = Color(0xFF263C8C)
+        val PrimaryContainer = Color(0xFFEAE8FF)
+        val OnPrimaryContainer = Color(0xFF211A66)
+        val Secondary = Color(0xFF2E4B92)
         val OnSecondary = Color.White
-        val SecondaryContainer = Color(0xFFE6EAFA)
-        val OnSecondaryContainer = Color(0xFF18224F)
-        val Tertiary = Color(0xFF159D9B)
+        val SecondaryContainer = Color(0xFFE5ECFF)
+        val OnSecondaryContainer = Color(0xFF162651)
+        val Tertiary = Color(0xFF0B9A92)
         val OnTertiary = Color.White
-        val Background = Color(0xFFF8F8FC)
-        val OnBackground = Color(0xFF151426)
-        val Surface = Color.White
-        val OnSurface = Color(0xFF151426)
-        val SurfaceVariant = Color(0xFFF1F0F8)
-        val OnSurfaceVariant = Color(0xFF50566A)
-        val Outline = Color(0xFF797A8D)
-        val OutlineVariant = Color(0xFFD8D7E2)
+        val Background = Color(0xFFF6F7FB)
+        val OnBackground = Color(0xFF141522)
+        val Surface = Color(0xFFFFFFFF)
+        val OnSurface = Color(0xFF141522)
+        val SurfaceVariant = Color(0xFFEEF0F6)
+        val OnSurfaceVariant = Color(0xFF555C70)
+        val Outline = Color(0xFF7C8294)
+        val OutlineVariant = Color(0xFFD7DBE5)
         val Error = Color(0xFFB3261E)
+
+        val DarkPrimary = Color(0xFFC6C0FF)
+        val DarkPrimaryContainer = Color(0xFF373079)
+        val DarkBackground = Color(0xFF0E1119)
+        val DarkSurface = Color(0xFF171B25)
+        val DarkSurfaceVariant = Color(0xFF222735)
+        val DarkOnSurface = Color(0xFFF2F4FA)
+        val DarkOnSurfaceVariant = Color(0xFFB9C0D2)
+        val DarkOutline = Color(0xFF8990A4)
+        val DarkOutlineVariant = Color(0xFF343A49)
+
+        val Fire = Color(0xFFEA694D)
+        val Water = Color(0xFF4B86E8)
+        val Grass = Color(0xFF57AD65)
+        val Electric = Color(0xFFF2C94C)
+        val Psychic = Color(0xFFE45D9F)
+        val Ice = Color(0xFF65C7D9)
+        val Dragon = Color(0xFF725CE7)
+        val Dark = Color(0xFF56505D)
+        val Fairy = Color(0xFFE88FC6)
+        val Normal = Color(0xFF98969B)
+
+        fun type(type:String?):Color=when(type?.lowercase()){
+            "fire"->Fire; "water"->Water; "grass"->Grass; "electric"->Electric
+            "psychic"->Psychic; "ice"->Ice; "dragon"->Dragon; "dark"->Dark
+            "fairy"->Fairy; else->Primary
+        }
     }
 
-    object Spacing {
-        val Xs = 4.dp
-        val Sm = 8.dp
-        val Md = 12.dp
-        val Lg = 16.dp
-        val Xl = 24.dp
-        val Xxl = 32.dp
-    }
-
-    object Radius {
-        val Xs = 10.dp
-        val Sm = 14.dp
-        val Md = 18.dp
-        val Lg = 24.dp
-        val Xl = 30.dp
-    }
-
-    object Elevation {
-        val Flat = 0.dp
-        val Low = 2.dp
-        val Medium = 6.dp
-        val High = 10.dp
-    }
+    object Spacing { val Xs=4.dp; val Sm=8.dp; val Md=12.dp; val Lg=16.dp; val Xl=24.dp; val Xxl=32.dp }
+    object Radius { val Xs=10.dp; val Sm=14.dp; val Md=18.dp; val Lg=24.dp; val Xl=30.dp; val Pill=999.dp }
+    object Elevation { val Flat=0.dp; val Low=2.dp; val Medium=6.dp; val High=12.dp }
+    object Motion { const val Fast=140; const val Standard=220; const val Emphasis=320 }
 
     object Journey {
         val CardSurface = Color(0xFFFDFDFE)
@@ -84,5 +89,18 @@ object PokedexDesignTokens {
         extraLarge = RoundedCornerShape(Radius.Xl)
     )
 
-    val AppTypography = Typography()
+    val AppTypography = Typography(
+        headlineLarge = TextStyle(fontWeight=FontWeight.Black,fontSize=32.sp,lineHeight=36.sp,letterSpacing=(-.6).sp),
+        headlineMedium = TextStyle(fontWeight=FontWeight.Black,fontSize=27.sp,lineHeight=31.sp,letterSpacing=(-.35).sp),
+        headlineSmall = TextStyle(fontWeight=FontWeight.ExtraBold,fontSize=23.sp,lineHeight=27.sp),
+        titleLarge = TextStyle(fontWeight=FontWeight.ExtraBold,fontSize=21.sp,lineHeight=25.sp),
+        titleMedium = TextStyle(fontWeight=FontWeight.Bold,fontSize=17.sp,lineHeight=21.sp),
+        titleSmall = TextStyle(fontWeight=FontWeight.Bold,fontSize=14.sp,lineHeight=18.sp),
+        bodyLarge = TextStyle(fontWeight=FontWeight.Medium,fontSize=16.sp,lineHeight=22.sp),
+        bodyMedium = TextStyle(fontWeight=FontWeight.Medium,fontSize=14.sp,lineHeight=20.sp),
+        bodySmall = TextStyle(fontWeight=FontWeight.Medium,fontSize=12.sp,lineHeight=17.sp),
+        labelLarge = TextStyle(fontWeight=FontWeight.Bold,fontSize=14.sp,lineHeight=18.sp),
+        labelMedium = TextStyle(fontWeight=FontWeight.Bold,fontSize=12.sp,lineHeight=16.sp),
+        labelSmall = TextStyle(fontWeight=FontWeight.Bold,fontSize=10.sp,lineHeight=14.sp,letterSpacing=.35.sp)
+    )
 }
