@@ -580,7 +580,7 @@ for required in ('"Brilliant Diamond / Shining Pearl" -> sinnoh', '"Turtwig"', '
     if required not in starter_catalog:
         violations.append(f"BDSP starter context missing {required}")
 
-for required in ('"Let\'s Go Pikachu / Eevee" -> letsGoPikachuEevee', '"lgpe-g1"', '"lgpe-g8"', '"lgpe-e4-4"', '"lgpe-22"', '"lgpe-pg-03"'):
+for required in ('"Let\'s Go Pikachu / Eevee" -> letsGoPikachuEevee', '"lgpe-g1"', '"lgpe-g8"', '"lgpe-e4-4"', '"lgpe-22"', '"lgpe-pg-01"', '"lgpe-pg-04"', '"lgpe-pg-05"'):
     if required not in journey_catalog:
         violations.append(f"Let's Go Journey route missing {required}")
 
@@ -588,7 +588,7 @@ for required in ("stepId.startsWith(\"lgpe-\")", "letsGoCatchPlan", "KANTO · TE
     if required not in journey_team_progress:
         violations.append(f"Let's Go dynamic progression missing {required}")
 
-for required in ('"lgpe-g1"', '"lgpe-g8"', '"lgpe-e4-4"', '"lgpe-22"', '"lgpe-pg-01"', '"lgpe-pg-03"'):
+for required in ('"lgpe-g1"', '"lgpe-g8"', '"lgpe-e4-4"', '"lgpe-22"', '"lgpe-pg-01"', '"lgpe-pg-02"', '"lgpe-pg-04"', '"lgpe-pg-05"'):
     if required not in journey_preparation:
         violations.append(f"Let's Go preparation coverage missing {required}")
 
@@ -618,7 +618,7 @@ for required in ("Milo","Nessa","Kabu","Bea / Allister","Opal","Gordie / Melony"
 for required in ("Roark","Gardenia","Maylene","Crasher Wake","Fantina","Byron","Candice","Volkner","Aaron","Bertha","Flint","Lucian","Cynthia","Lake Guardians","Ramanas Park","Cresselia","Giratina","Regigigas","Heatran"):
     if required not in visual_catalog:
         violations.append(f"BDSP visual asset missing {required}")
-for required in ("Brock","Misty","Lt. Surge","Erika","Koga","Sabrina","Blaine","Giovanni","Lorelei","Bruno","Agatha","Lance","Trace","Mewtwo","Red"):
+for required in ("Brock","Misty","Lt. Surge","Erika","Koga","Sabrina","Blaine","Giovanni","Lorelei","Bruno","Agatha","Lance","Trace","Mewtwo","Green","Red","Blue"):
     if required not in visual_catalog:
         violations.append(f"Let's Go visual asset missing {required}")
 for required in ("JourneyVisualThumb","JourneyVisualHero","JourneyVisualAssetCatalog.forStep"):
