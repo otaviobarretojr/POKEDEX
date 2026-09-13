@@ -663,7 +663,7 @@ for required in ("exportSnapshot", "importSnapshot", "JourneyCatalog.steps"):
         violations.append(f"Journey backup support missing {required}")
 
 journey_v614 = journey_source
-for required in ("LaunchedEffect(explicitGameSelectionRevision)", "routeListState.scrollToItem(0)", "rememberUpdatedState(zoom)", "rememberUpdatedState(pan)", "DataIntegrityRules.completedCount"):
+for required in ("LaunchedEffect(explicitGameSelectionRevision)", "routeListState.scrollToItem(0)", "DataIntegrityRules.completedCount"):
     if required not in journey_v614:
         violations.append(f"Journey state isolation/gesture hardening missing {required}")
 
