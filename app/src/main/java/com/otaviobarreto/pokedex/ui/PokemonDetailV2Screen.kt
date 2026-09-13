@@ -283,7 +283,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
     val next=(currentId+1).takeIf{it<=PokeApiService.MAX_NATIONAL_DEX_ID}
     Row(
         Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
-        horizontalArrangement=Arrangement.spacedBy(8.dp)
+        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
     ){
         OutlinedButton(
             onClick={previous?.let(openPokemon)},
@@ -340,8 +340,8 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
     ){
         item{
             SectionCard("Informações gerais",Icons.Default.Info){
-                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                Column(verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
+                    Row(horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
                         InfoMini("Taxa de captura",b.species.captureRate.toString(),Modifier.weight(1f))
                         InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f))
                         InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))
@@ -361,7 +361,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
                             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                             color=accent.copy(alpha=.08f)
                         ){
-                            Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                            Row(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
                                 Text(ability,Modifier.weight(1f),fontWeight=FontWeight.SemiBold)
                                 if(openRef!=null)Icon(Icons.Default.ChevronRight,null)
                             }
@@ -405,7 +405,7 @@ private fun PokemonFormsSummaryCard(
         if(available.isEmpty()){
             Text("Carregando formas…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }else{
-            LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            LazyRow(horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
                 items(available,key={it.formKey}){form->
                     val formId=form.pokemonId ?: pokemonId
                     val normalOwned=owned.any{
@@ -415,7 +415,7 @@ private fun PokemonFormsSummaryCard(
                         it.formPokemonId==formId && it.formName.equals(form.name,true) && it.shiny
                     }
                     Surface(
-                        shape=RoundedCornerShape(16.dp),
+                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                         color=accent.copy(alpha=.08f)
                     ){
                         Column(
@@ -492,8 +492,8 @@ private fun PokemonFormsSummaryCard(
 @Composable private fun SectionCard(title:String,icon:androidx.compose.ui.graphics.vector.ImageVector,content:@Composable ColumnScope.()->Unit){
     DexGlassSurface(Modifier.fillMaxWidth()){
         Row(verticalAlignment=Alignment.CenterVertically){
-            Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.primaryContainer){
-                Icon(icon,null,tint=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(8.dp).size(18.dp))
+            Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
+                Icon(icon,null,tint=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(PokedexDesignTokens.Spacing.Sm).size(18.dp))
             }
             Spacer(Modifier.width(9.dp))
             Text(title,style=MaterialTheme.typography.titleMedium)
@@ -523,14 +523,14 @@ private fun PokemonFormsSummaryCard(
     }
 }
 @Composable private fun V2Evolution(e:List<PokeApiService.EvolutionStage>,currentId:Int,openPokemon:((Int)->Unit)?){
-    LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+    LazyColumn(Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
         item{DexSectionEyebrow("Família evolutiva")}
         if(e.isEmpty()) item{Text("Nenhuma evolução encontrada.")}
         else items(e,key={it.pokemonId}){stage->
             val active=stage.pokemonId==currentId
             Card(
                 Modifier.fillMaxWidth().then(if(openPokemon!=null&&!active)Modifier.clickable{openPokemon(stage.pokemonId)}else Modifier),
-                shape=RoundedCornerShape(20.dp),
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                 colors=CardDefaults.cardColors(containerColor=if(active)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.55f) else MaterialTheme.colorScheme.surface)
             ){
                 Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
@@ -571,7 +571,7 @@ private fun methodLabel(method:String):String=when(method.lowercase()){"level up
         val details=e.details.filter{context.matchesVersion(it.version)}
         if(versions.isEmpty()&&details.isEmpty())null else e.copy(versions=versions,details=details)
     }
-    LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+    LazyColumn(Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
         item{
             Text("Localização",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             if(context!=null)Text(context.label+" · "+context.regionLabel,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
