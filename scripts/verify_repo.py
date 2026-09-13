@@ -497,6 +497,48 @@ if violations:
     sys.exit(1)
 
 
+# Compatibility guard — Universal Journey context (Scarlet/Violet matrix + per-game content)
+team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
+journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
+journey_team_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTeamProgressCatalog.kt").read_text(encoding="utf-8")
+journey_preparation = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyPreparationCatalog.kt").read_text(encoding="utf-8")
+starter_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyStarterCatalog.kt").read_text(encoding="utf-8")
+
+for required in (
+    "journeySmartContext",
+    "JourneyCatalog.steps(game).isNotEmpty()",
+    "JourneyDynamicTeamCatalog.suggestion(game,starterId)",
+    "journeySmartContext?.phaseLabel"
+):
+    if required not in team_guide:
+        violations.append(f"Universal Journey team context missing {required}")
+
+if 'if(game=="Scarlet / Violet")JourneyDynamicTeamCatalog.suggestion' in team_guide:
+    violations.append("Dynamic Journey team must not be hard-coded to Scarlet/Violet")
+
+for required in ('"Pokémon Legends: Z-A" -> legendsZa', '"za-01"', '"za-37"', '"za-dlc-14"'):
+    if required not in journey_catalog:
+        violations.append(f"Legends Z-A Journey route missing {required}")
+
+for required in ("stepId.startsWith(\"za-\")", "lumioseCatchPlan", "Z-A ROYALE", "MEGA DIMENSION"):
+    if required not in journey_team_progress:
+        violations.append(f"Legends Z-A dynamic progression missing {required}")
+
+for required in ('"za-01"', '"za-10"', '"za-35"', '"za-dlc-14"'):
+    if required not in journey_preparation:
+        violations.append(f"Legends Z-A preparation coverage missing {required}")
+
+for required in ('"Pokémon Legends: Z-A" -> lumiose', '"Tepig"', '"Totodile"', '"Chikorita"'):
+    if required not in starter_catalog:
+        violations.append(f"Legends Z-A starter context missing {required}")
+
+if violations:
+    print("Source verification failed:")
+    for item in violations:
+        print(" -", item)
+    sys.exit(1)
+
+
 # Compatibility guard — Journey visual assets
 visual_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
 journey_ui = journey_source
