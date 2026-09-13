@@ -36,6 +36,9 @@ object JourneyTeamProgressCatalog {
         393->listOf(393,394,395)
         25->listOf(25)
         133->listOf(133)
+        1->listOf(1,2,3)
+        4->listOf(4,5,6)
+        7->listOf(7,8,9)
         else->listOf(starterId)
     }
 
@@ -70,6 +73,7 @@ object JourneyTeamProgressCatalog {
         stepId.startsWith("swsh-") -> galarCatchPlan
         stepId.startsWith("bdsp-") -> sinnohCatchPlan
         stepId.startsWith("lgpe-") -> letsGoCatchPlan
+        stepId.startsWith("frlg-") -> frlgCatchPlan
         else -> emptyList()
     }
 
@@ -114,8 +118,25 @@ object JourneyTeamProgressCatalog {
         stepId in setOf("lgpe-08","lgpe-09","lgpe-g4","lgpe-11","lgpe-12","lgpe-g5","lgpe-g6") -> "KANTO · TEAM ROCKET"
         stepId in setOf("lgpe-g7","lgpe-g8","lgpe-17") || stepId.startsWith("lgpe-e4-") || stepId=="lgpe-22" -> "INDIGO PLATEAU · RETA FINAL"
         stepId.startsWith("lgpe-pg-") -> "KANTO · PÓS-GAME"
+        stepId in setOf("frlg-01","frlg-02","frlg-g1","frlg-04","frlg-g2","frlg-06","frlg-g3") -> "KANTO · PRIMEIRAS BADGES"
+        stepId in setOf("frlg-08","frlg-g4","frlg-10","frlg-11","frlg-12","frlg-g5","frlg-g6") -> "KANTO · TEAM ROCKET"
+        stepId in setOf("frlg-g7","frlg-sevii-1","frlg-g8","frlg-18") || stepId.startsWith("frlg-e4-") || stepId=="frlg-23" -> "INDIGO PLATEAU · RETA FINAL"
+        stepId.startsWith("frlg-pg-") -> "SEVII ISLANDS · PÓS-GAME"
         else -> "JORNADA"
     }
+
+    private val frlgCatchPlan=listOf(
+        JourneyCatchRecommendation(16,2,"Route 1 / Viridian Forest","Pidgey evolui para Pidgeot e oferece cobertura Voador útil contra Erika e Bruno."),
+        JourneyCatchRecommendation(25,2,"Viridian Forest","Pikachu ajuda muito contra Misty, Lorelei e vários Pokémon de Água/Voador."),
+        JourneyCatchRecommendation(56,4,"Route 3","Mankey é excelente contra Brock se você escolheu Charmander e continua útil contra Normal/Pedra."),
+        JourneyCatchRecommendation(29,4,"Route 3","Nidoran♀ evolui para Nidoqueen e oferece cobertura ampla por TMs."),
+        JourneyCatchRecommendation(32,4,"Route 3","Nidoran♂ evolui para Nidoking e é um dos melhores coringas ofensivos da campanha."),
+        JourneyCatchRecommendation(63,6,"Route 24 / 25","Abra evolui para Kadabra/Alakazam e domina muitos confrontos de Team Rocket e Koga."),
+        JourneyCatchRecommendation(129,7,"Old Rod / águas de Kanto","Magikarp evolui para Gyarados e vira um dos melhores atacantes físicos da campanha."),
+        JourneyCatchRecommendation(92,11,"Pokémon Tower","Gastly oferece Fantasma/Veneno para Sabrina e Agatha."),
+        JourneyCatchRecommendation(131,12,"Silph Co. gift","Lapras dá Água/Gelo excelente para Blaine, Giovanni, Lance e a Liga."),
+        JourneyCatchRecommendation(143,13,"Routes 12 / 16","Snorlax oferece enorme bulk e cobertura por TMs para a reta final.")
+    )
 
     private val letsGoCatchPlan=listOf(
         JourneyCatchRecommendation(1,2,"Viridian Forest","Bulbasaur ajuda muito contra Brock e Misty e pode ser recebido gratuitamente em Cerulean após cumprir requisito de capturas."),
