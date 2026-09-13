@@ -22,6 +22,7 @@ object JourneyCatalog {
         "Legends Arceus" -> "Survey Corps + Nobres + espaço-tempo + pós-jogo + Daybreak"
         "Sword / Shield" -> "Gym Challenge + Champion Cup + pós-jogo + Isle of Armor + Crown Tundra"
         "Brilliant Diamond / Shining Pearl" -> "Sinnoh + 8 ginásios + Team Galactic + Liga + pós-jogo"
+        "Let's Go Pikachu / Eevee" -> "Kanto + 8 ginásios + Team Rocket + Liga + Master Trainers"
         else -> "Rota de campanha"
     }
 
@@ -31,8 +32,40 @@ object JourneyCatalog {
         "Legends Arceus" -> legendsArceus
         "Sword / Shield" -> swordShield
         "Brilliant Diamond / Shining Pearl" -> brilliantDiamondShiningPearl
+        "Let's Go Pikachu / Eevee" -> letsGoPikachuEevee
         else -> emptyList()
     }
+
+    private val letsGoPikachuEevee = listOf(
+        JourneyStep("lgpe-01",1,"Pallet Town → Viridian","Receba Partner Pikachu ou Partner Eevee","Nv. 5–7",JourneyChallengeKind.STORY,"Início","Pallet Town / Route 1","O parceiro é definido pela versão e não evolui."),
+        JourneyStep("lgpe-02",2,"Viridian Forest","Captura, combo e primeiro time","Nv. 5–10",JourneyChallengeKind.STORY,"Captura","Viridian Forest","O sistema de captura substitui batalhas contra a maioria dos Pokémon selvagens."),
+        JourneyStep("lgpe-g1",3,"Pewter Gym","Brock · Boulder Badge","Nv. 10–12",JourneyChallengeKind.GYM,"Ginásio · Pedra","Pewter Gym"),
+        JourneyStep("lgpe-04",4,"Mt. Moon","Team Rocket e fósseis","Nv. 10–14",JourneyChallengeKind.STORY,"Team Rocket","Mt. Moon"),
+        JourneyStep("lgpe-g2",5,"Cerulean Gym","Misty · Cascade Badge","Nv. 17–19",JourneyChallengeKind.GYM,"Ginásio · Água","Cerulean Gym"),
+        JourneyStep("lgpe-06",6,"Nugget Bridge & Bill","Rival, treinadores e Sea Cottage","Nv. 14–20",JourneyChallengeKind.STORY,"Exploração","Routes 24–25"),
+        JourneyStep("lgpe-g3",7,"Vermilion Gym","Lt. Surge · Thunder Badge","Nv. 21–25",JourneyChallengeKind.GYM,"Ginásio · Elétrico","Vermilion Gym"),
+        JourneyStep("lgpe-08",8,"Rock Tunnel → Lavender","Atravesse Rock Tunnel e avance em Lavender","Nv. 22–28",JourneyChallengeKind.STORY,"Exploração","Rock Tunnel / Lavender Town"),
+        JourneyStep("lgpe-09",9,"Pokémon Tower","Cubone, Marowak e Team Rocket","Nv. 27–32",JourneyChallengeKind.STORY,"Team Rocket","Pokémon Tower"),
+        JourneyStep("lgpe-g4",10,"Celadon Gym","Erika · Rainbow Badge","Nv. 28–34",JourneyChallengeKind.GYM,"Ginásio · Planta","Celadon Gym"),
+        JourneyStep("lgpe-11",11,"Rocket Game Corner","Invada o esconderijo da Team Rocket","Nv. 30–35",JourneyChallengeKind.STORY,"Team Rocket","Celadon City"),
+        JourneyStep("lgpe-12",12,"Silph Co.","Giovanni, Archer e Team Rocket","Nv. 35–42",JourneyChallengeKind.STORY,"Team Rocket","Saffron City"),
+        JourneyStep("lgpe-g5",13,"Fuchsia Gym","Koga · Soul Badge","Nv. 43–44",JourneyChallengeKind.GYM,"Ginásio · Veneno","Fuchsia Gym"),
+        JourneyStep("lgpe-g6",14,"Saffron Gym","Sabrina · Marsh Badge","Nv. 43–44",JourneyChallengeKind.GYM,"Ginásio · Psíquico","Saffron Gym"),
+        JourneyStep("lgpe-g7",15,"Cinnabar Gym","Blaine · Volcano Badge","Nv. 47–48",JourneyChallengeKind.GYM,"Ginásio · Fogo","Cinnabar Gym"),
+        JourneyStep("lgpe-g8",16,"Viridian Gym","Giovanni · Earth Badge","Nv. 49–50",JourneyChallengeKind.GYM,"Ginásio · Terra","Viridian Gym","Fecha o arco principal da Team Rocket."),
+        JourneyStep("lgpe-17",17,"Victory Road","Prepare-se para a Liga de Kanto","Nv. 50–55",JourneyChallengeKind.STORY,"Liga","Victory Road"),
+        JourneyStep("lgpe-e4-1",18,"Elite Four · Lorelei","Especialista em Gelo/Água","Nv. 51–52",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("lgpe-e4-2",19,"Elite Four · Bruno","Lutador/Pedra","Nv. 52–53",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("lgpe-e4-3",20,"Elite Four · Agatha","Fantasma/Veneno","Nv. 53–54",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("lgpe-e4-4",21,"Elite Four · Lance","Dragão","Nv. 54–55",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("lgpe-22",22,"Champion Trace","Conquiste o título de Kanto","Nv. 56–57",JourneyChallengeKind.STORY,"Campeão","Indigo Plateau"),
+        JourneyStep("lgpe-pg-01",23,"Cerulean Cave","Capture Mewtwo","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário","Cerulean Cave","Acesso liberado após vencer a Liga."),
+        JourneyStep("lgpe-pg-02",24,"Master Trainers","Desafie especialistas de cada espécie","Pós-jogo",JourneyChallengeKind.POSTGAME,"Master Trainers","Kanto","Master Trainers aparecem pelo mapa após a Liga e normalmente exigem duelo 1×1 da mesma espécie."),
+        JourneyStep("lgpe-pg-03",25,"Red","Derrote Red após cumprir o requisito dos Master Trainers","Nv. 85",JourneyChallengeKind.POSTGAME,"Superboss","Indigo Plateau"),
+        JourneyStep("lgpe-pg-04",26,"Gym Leader Rematches","Revanche dos 8 líderes","Nv. 56–68",JourneyChallengeKind.POSTGAME,"Rematches","Kanto"),
+        JourneyStep("lgpe-pg-05",27,"Elite Four Rematch","Liga fortalecida","Nv. 61–67",JourneyChallengeKind.EPILOGUE,"Liga · Rematch","Indigo Plateau"),
+        JourneyStep("lgpe-pg-06",28,"Green & Blue","Batalhas especiais de pós-game","Nv. 66–70",JourneyChallengeKind.EPILOGUE,"Superboss","Cerulean / Viridian","Conteúdo adicional de alto nível após a campanha.")
+    )
 
     private val brilliantDiamondShiningPearl = listOf(
         JourneyStep("bdsp-01",1,"Twinleaf Town → Lake Verity","Escolha o inicial e comece a Jornada","Nv. 5–7",JourneyChallengeKind.STORY,"Início","Twinleaf Town / Lake Verity","Turtwig, Chimchar ou Piplup iniciam a aventura em Sinnoh."),
