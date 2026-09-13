@@ -67,6 +67,30 @@ object PokeApiService {
         walk(root)
         return result
     }
+    fun loadSpecialEvolutionSourceIds(url:String):Set<Int>{
+        val root=getJson(url).getJSONObject("chain")
+        val result=mutableSetOf<Int>()
+        fun walk(node:JSONObject){
+            val parentId=idFromUrl(node.getJSONObject("species").getString("url"))
+            val children=node.getJSONArray("evolves_to")
+            for(i in 0 until children.length()){
+                val child=children.getJSONObject(i)
+                val childId=idFromUrl(child.getJSONObject("species").getString("url"))
+                val details=child.optJSONArray("evolution_details")
+                val requirements=buildList{
+                    if(details!=null) for(j in 0 until details.length()){
+                        details.optJSONObject(j)?.let(::evolutionRequirement)?.takeIf{it.isNotBlank()}?.let(::add)
+                    }
+                }.distinct()
+                val merged=mergeEvolutionRequirements(childId,requirements)
+                if(isSpecialEvolutionRequirement(merged)) result+=parentId
+                walk(child)
+            }
+        }
+        walk(root)
+        return result
+    }
+
     fun loadEncounters(id:Int):List<EncounterLocation>{val array=getJsonArray(encountersUrl(id));return buildList(array.length()){for(i in 0 until array.length()){val item=array.getJSONObject(i);val versionDetails=item.getJSONArray("version_details");val versionNames=mutableListOf<String>();val encounterDetails=mutableListOf<EncounterDetail>();for(j in 0 until versionDetails.length()){val versionDetail=versionDetails.getJSONObject(j);val versionName=versionDetail.getJSONObject("version").getString("name").toDisplayName();versionNames+=versionName;val encounters=versionDetail.optJSONArray("encounter_details")?:JSONArray();for(k in 0 until encounters.length()){val encounter=encounters.getJSONObject(k);val conditionsJson=encounter.optJSONArray("condition_values")?:JSONArray();val conditions=buildList(conditionsJson.length()){for(c in 0 until conditionsJson.length())add(conditionsJson.getJSONObject(c).getString("name").toDisplayName())};encounterDetails+=EncounterDetail(versionName,encounter.optJSONObject("method")?.optString("name")?.toDisplayName().orEmpty().ifBlank{"Encontro"},encounter.optInt("min_level",0),encounter.optInt("max_level",0),encounter.optInt("chance",0),conditions)}};add(EncounterLocation(item.getJSONObject("location_area").getString("name").toDisplayName(),versionNames.distinct(),encounterDetails.distinct()))}}.distinctBy{it.location}}
     private fun evolutionRequirement(detail:JSONObject):String{
         val pieces=mutableListOf<String>()
