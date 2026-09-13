@@ -140,10 +140,10 @@ fun PokemonLocationScreen(
                             AsyncImage(
                                 model = pokemon?.spriteUrl,
                                 contentDescription = pokemon?.name,
-                                modifier = Modifier.size(96.dp).padding(4.dp),
+                                modifier = Modifier.size(96.dp).padding(PokedexDesignTokens.Spacing.Xs),
                                 contentScale = ContentScale.Fit
                             )
-                            Column(Modifier.padding(start = 12.dp)) {
+                            Column(Modifier.padding(start = PokedexDesignTokens.Spacing.Md)) {
                                 Text(
                                     pokemon?.name ?: "Pokémon #$pokemonId",
                                     fontSize = 27.sp,
@@ -175,7 +175,7 @@ fun PokemonLocationScreen(
                             Text(
                                 "Use o ícone de mapa no topo para visualizar os encontros por zona · " + mapCapabilities.engineLabel,
                                 style = MaterialTheme.typography.labelMedium,
-                                modifier = Modifier.padding(top = 6.dp)
+                                modifier = Modifier.padding(top = PokedexDesignTokens.Spacing.Sm)
                             )
                         }
                     }
@@ -183,21 +183,21 @@ fun PokemonLocationScreen(
 
                 items(filtered, key = { it.location }) { location ->
                     Card(modifier = Modifier.fillMaxWidth().padding(horizontal = PokedexDesignTokens.Spacing.Lg), shape = RoundedCornerShape(PokedexDesignTokens.Radius.Md)) {
-                        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.LocationOn, contentDescription = null)
                                 Text(
                                     location.location,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 8.dp)
+                                    modifier = Modifier.padding(start = PokedexDesignTokens.Spacing.Sm)
                                 )
                             }
                             if (location.versions.isNotEmpty()) {
                                 Text(
                                     location.versions.joinToString(" • "),
                                     style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(top = 4.dp)
+                                    modifier = Modifier.padding(top = PokedexDesignTokens.Spacing.Xs)
                                 )
                             }
 
@@ -205,7 +205,7 @@ fun PokemonLocationScreen(
                                 Text(
                                     "Método detalhado não informado.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.padding(top = 8.dp)
+                                    modifier = Modifier.padding(top = PokedexDesignTokens.Spacing.Sm)
                                 )
                             } else {
                                 location.details.forEach { detail ->
