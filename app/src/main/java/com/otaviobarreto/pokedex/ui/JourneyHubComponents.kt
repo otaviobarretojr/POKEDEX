@@ -38,17 +38,33 @@ internal fun JourneyGamePicker(
 ){
     val captured=CollectionStore.contextualCapturedIds
     val dexIdsByGame by rememberJourneyDexIdsByGame()
+    val activeGamePreview=AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame}
+        ?: AppGameCatalog.adventureGames.firstOrNull()
+    val dexIdsBySource by rememberJourneyDexIdsBySource(activeGamePreview)
     val national=remember { PokedexDataStore.cachedNationalDex().orEmpty() }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val activeGame=remember(AppStatePreferences.activeGame){
-        AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame}
-            ?: AppGameCatalog.adventureGames.firstOrNull()
-    }
+    val activeGame=activeGamePreview
     val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
+    val activeRegionSource=activeGame?.let{game->
+        AppStatePreferences.activeRegionForGame(game.label)
+            ?.takeIf{it in activeSources}
+            ?: game.regions.firstOrNull()?.source
+    }
     val activeOwned=remember(captured,activeSources){activeSources.flatMap{captured[it].orEmpty()}.toSet()}
     val activeDexIds=activeGame?.let{dexIdsByGame[it.label].orEmpty()}.orEmpty()
     val missingIds=remember(activeDexIds,activeOwned){activeDexIds.sorted().filter{it !in activeOwned}}
-    val nextMissing=missingIds.firstOrNull()
+    val nextMissing=remember(missingIds,activeRegionSource,dexIdsBySource,captured){
+        val regional=dexIdsBySource[activeRegionSource].orEmpty()
+        missingIds.firstOrNull{it in regional && it !in captured[activeRegionSource].orEmpty()}
+            ?: missingIds.firstOrNull()
+    }
+    val nextMissingSource=remember(nextMissing,activeRegionSource,dexIdsBySource,activeSources,captured){
+        nextMissing?.let{id->
+            activeRegionSource?.takeIf{id in dexIdsBySource[it].orEmpty() && id !in captured[it].orEmpty()}
+                ?: activeSources.firstOrNull{source->id in dexIdsBySource[source].orEmpty() && id !in captured[source].orEmpty()}
+                ?: activeRegionSource
+        }
+    }
     val journeyRevision=JourneyProgressStore.revision
     val activeSteps=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyCatalog.steps(it.label)}.orEmpty()}
     val activeCompleted=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyProgressStore.completed(it.label)}.orEmpty()}
@@ -128,13 +144,13 @@ internal fun JourneyGamePicker(
                                 Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1f)){
                                     Icon(Icons.Default.Explore,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Continuar")
                                 }
-                                FilledTonalButton(onClick={onOpenBoxes(game.label,game.regions.firstOrNull()?.source)},modifier=Modifier.weight(1f)){
+                                FilledTonalButton(onClick={onOpenBoxes(game.label,activeRegionSource)},modifier=Modifier.weight(1f)){
                                     Icon(Icons.Default.GridView,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Box")
                                 }
                             }
                             nextMissing?.let{id->
                                 FilledTonalButton(
-                                    onClick={onPokemonClick(id,game.regions.firstOrNull()?.source)},
+                                    onClick={onPokemonClick(id,nextMissingSource)},
                                     modifier=Modifier.fillMaxWidth().padding(top=8.dp)
                                 ){
                                     Icon(Icons.Default.TrackChanges,null,Modifier.size(18.dp))
@@ -149,7 +165,7 @@ internal fun JourneyGamePicker(
 
             if(activeGame!=null && activeDexIds.isNotEmpty()){
                 item(key="living_dex_planner"){
-                    val source=activeGame.regions.firstOrNull()?.source
+                    val source=activeRegionSource
                     Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
                         Column(Modifier.fillMaxWidth().padding(14.dp)){
                             Row(verticalAlignment=Alignment.CenterVertically){
@@ -705,6 +721,19 @@ private data class JourneyCollectionProgress(
 ){
     val ratio:Float get()=if(total<=0)0f else captured.toFloat()/total
 }
+
+@Composable
+private fun rememberJourneyDexIdsBySource(game: AppGame?): State<Map<String, Set<Int>>> =
+    produceState(initialValue = emptyMap(), key1 = game?.label) {
+        value = withContext(Dispatchers.IO) {
+            game?.regions.orEmpty().associate { region ->
+                val ctx = GameContext.fromSource(region.source)
+                region.source to if (ctx == null) emptySet() else runCatching {
+                    GameDexService.loadGameDex(ctx).map { it.nationalId }.toSet()
+                }.getOrDefault(emptySet())
+            }
+        }
+    }
 
 @Composable
 private fun rememberJourneyDexIdsByGame(): State<Map<String, Set<Int>>> =
