@@ -77,7 +77,8 @@ if 'android:allowBackup="true"' not in manifest:
 
 supported_version = (
     ('versionCode = 19200' in gradle and 'versionName = "19.2.0"' in gradle) or
-    ('versionCode = 20000' in gradle and 'versionName = "20.0.0"' in gradle)
+    ('versionCode = 20000' in gradle and 'versionName = "20.0.0"' in gradle) or
+    ('versionCode = 20300' in gradle and 'versionName = "20.3.0"' in gradle)
 )
 if not supported_version:
     errors.append("supported version contract changed unexpectedly")
