@@ -14,17 +14,28 @@ object JourneyDynamicTeamCatalog {
         val smart=JourneySmartProgress.context(game)
         val preset=TeamCampaignCatalog.preset(game,starterId,smart.phase)
         val prep=smart.nextStep?.let{JourneyPreparationCatalog.forStep(it.id)}
+        val normalizedBase=preset?.slots.orEmpty().map{slot->
+            slot.copy(
+                pokemonId=JourneyTeamProgressCatalog.progressMemberFor(slot.pokemonId,smart.nextStep),
+                alternatives=slot.alternatives.map{JourneyTeamProgressCatalog.progressMemberFor(it,smart.nextStep)}.distinct()
+            )
+        }
         val availableCatchIds=JourneyTeamProgressCatalog
             .catchRecommendationsBefore(smart.nextStep)
             .map{it.pokemonId}
             .toSet()
         val rawRecommended=prep?.pokemonIds.orEmpty()
         val recommended=rawRecommended
-            .filter { it in CollectionStore.capturedIds || it in availableCatchIds }
-            .sortedByDescending{it in CollectionStore.capturedIds}
+            .map{JourneyTeamProgressCatalog.progressMemberFor(it,smart.nextStep)}
+            .distinctBy{JourneyTeamProgressCatalog.familyKey(it)}
+            .filter { candidate->
+                CollectionStore.capturedIds.any{JourneyTeamProgressCatalog.sameEvolutionFamily(it,candidate)} ||
+                availableCatchIds.any{JourneyTeamProgressCatalog.sameEvolutionFamily(it,candidate)}
+            }
+            .sortedByDescending{candidate->CollectionStore.capturedIds.any{JourneyTeamProgressCatalog.sameEvolutionFamily(it,candidate)}}
         val result=adjustSlots(
             game=game,
-            base=preset?.slots.orEmpty(),
+            base=normalizedBase,
             recommended=recommended,
             starterId=starterId,
             counters=prep?.counters.orEmpty(),
@@ -60,10 +71,7 @@ object JourneyDynamicTeamCatalog {
         val starterIndex=out.indexOfFirst{it.pokemonId in starterLine}
             .takeIf{it>=0} ?: 0
 
-        val expectedStarter=JourneyTeamProgressCatalog.starterMemberForPhase(
-            starterId,
-            JourneySmartProgress.context(game).phase
-        )
+        val expectedStarter=JourneyTeamProgressCatalog.starterMemberForProgress(starterId,focus)
         val currentStarter=out[starterIndex].pokemonId
         if(currentStarter!=expectedStarter && expectedStarter in starterLine){
             actions += JourneyTeamAction(
@@ -85,7 +93,7 @@ object JourneyDynamicTeamCatalog {
             } ?: return@forEach
 
             val outgoing=out[replaceIndex].pokemonId
-            val alreadyOwned=candidate in CollectionStore.capturedIds
+            val alreadyOwned=CollectionStore.capturedIds.any{JourneyTeamProgressCatalog.sameEvolutionFamily(it,candidate)}
             val actionType=if(alreadyOwned)JourneyTeamActionType.SWAP else JourneyTeamActionType.CATCH
             val title=if(alreadyOwned)"Troque um slot do time" else "Capture antes de seguir"
             out[replaceIndex]=CampaignSlot(candidate)
@@ -121,10 +129,18 @@ object JourneyDynamicTeamCatalog {
         out.indices.forEach{index->
             val key=JourneyTeamProgressCatalog.familyKey(out[index].pokemonId)
             if(!seenFamilies.add(key)){
-                val replacement=(recommended + JourneyTeamProgressCatalog.catchRecommendationsBefore(focus).map{it.pokemonId} + base.map{it.pokemonId})
+                val otherFamilies=out.indices
+                    .filter{it!=index}
+                    .map{JourneyTeamProgressCatalog.familyKey(out[it].pokemonId)}
+                    .toSet()
+                val replacement=(recommended +
+                    JourneyTeamProgressCatalog.catchRecommendationsBefore(focus).map{
+                        JourneyTeamProgressCatalog.progressMemberFor(it.pokemonId,focus)
+                    } +
+                    base.map{it.pokemonId})
+                    .distinctBy{JourneyTeamProgressCatalog.familyKey(it)}
                     .firstOrNull{candidate->
-                        JourneyTeamProgressCatalog.familyKey(candidate) !in seenFamilies &&
-                        out.none{JourneyTeamProgressCatalog.sameEvolutionFamily(it.pokemonId,candidate)}
+                        JourneyTeamProgressCatalog.familyKey(candidate) !in otherFamilies
                     }
                 if(replacement!=null){
                     out[index]=CampaignSlot(replacement)
