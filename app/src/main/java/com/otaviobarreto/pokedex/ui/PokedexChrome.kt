@@ -1,6 +1,11 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -14,12 +19,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 
 data class DexNavItem(val route:String,val label:String,val icon:ImageVector)
 
@@ -158,3 +165,67 @@ fun DexStatusPane(
 }
 
 
+
+
+@Composable
+fun Modifier.dexInteractiveSurface(
+    enabled:Boolean=true,
+    interactionSource:MutableInteractionSource=remember{MutableInteractionSource()},
+    pressedScale:Float=.975f,
+    pressedLift:Dp=PokedexDesignTokens.Elevation.Low
+):Modifier{
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        if(enabled&&pressed) pressedScale else 1f,
+        tween(PokedexDesignTokens.Motion.Fast),
+        label="dexSurfaceScale"
+    )
+    val lift by animateFloatAsState(
+        if(enabled&&pressed) pressedLift.value else 0f,
+        tween(PokedexDesignTokens.Motion.Fast),
+        label="dexSurfaceLift"
+    )
+    return this.graphicsLayer{
+        scaleX=scale
+        scaleY=scale
+        shadowElevation=lift
+    }
+}
+
+@Composable
+fun DexLoadingPane(
+    title:String="Carregando",
+    message:String="Preparando os dados para você.",
+    modifier:Modifier=Modifier
+){
+    DexGlassSurface(modifier){
+        Column(
+            Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Md),
+            horizontalAlignment=Alignment.CenterHorizontally
+        ){
+            LinearProgressIndicator(Modifier.fillMaxWidth(.62f))
+            Spacer(Modifier.height(PokedexDesignTokens.Spacing.Md))
+            Text(title,style=MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(PokedexDesignTokens.Spacing.Xs))
+            Text(message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+fun DexAnimatedContentVisibility(
+    visible:Boolean,
+    content:@Composable ()->Unit
+){
+    AnimatedVisibility(
+        visible=visible,
+        enter=fadeIn(tween(PokedexDesignTokens.Motion.Standard))+scaleIn(
+            initialScale=.985f,
+            animationSpec=tween(PokedexDesignTokens.Motion.Standard)
+        ),
+        exit=fadeOut(tween(PokedexDesignTokens.Motion.Fast))+scaleOut(
+            targetScale=.99f,
+            animationSpec=tween(PokedexDesignTokens.Motion.Fast)
+        )
+    ){ content() }
+}
