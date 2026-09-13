@@ -18,12 +18,52 @@ object JourneyStarterCatalog {
         "Scarlet / Violet" -> paldea
         "Pokémon Legends: Z-A" -> lumiose
         "Legends Arceus" -> hisui
+        "Sword / Shield" -> galar
         else -> emptyList()
     }
 
     fun bestForGame(game:String):JourneyStarterRecommendation? = forGame(game).maxByOrNull{
         it.rating.early*3 + it.rating.mid*2 + it.rating.late
     }
+
+    private val galar=listOf(
+        JourneyStarterRecommendation(
+            813,"Scorbunny","Cinderace","Fogo",
+            "RECOMENDADO · campanha rápida e ofensiva",
+            StarterStageRating(5,5,5),
+            listOf(
+                "Early game: excelente contra Milo e vários encontros iniciais de Galar.",
+                "Mid game: Raboot mantém velocidade e pressão física enquanto o time ganha cobertura.",
+                "Late game: Cinderace continua rápido e confiável no Champion Cup e nas DLCs.",
+                "É a escolha mais direta para uma Jornada com pouco grind."
+            ),
+            listOf("Nessa exige resposta de Planta/Elétrico.","Pedra, Terra e Água devem ser cobertos pelo restante da equipe.")
+        ),
+        JourneyStarterRecommendation(
+            810,"Grookey","Rillaboom","Planta",
+            "ÓTIMO · força física e segurança",
+            StarterStageRating(4,5,5),
+            listOf(
+                "Early game: vantagem imediata contra Nessa e boa estabilidade na Wild Area.",
+                "Mid game: Thwackey/Rillaboom entregam dano físico consistente.",
+                "Late game: Rillaboom permanece excelente contra Água, Terra e Pedra nas rotas e DLCs.",
+                "Boa opção para quem prefere resistência e dano físico."
+            ),
+            listOf("Kabu e outros usuários de Fogo exigem troca.","Voador, Gelo, Veneno e Inseto pedem cobertura.")
+        ),
+        JourneyStarterRecommendation(
+            816,"Sobble","Inteleon","Água",
+            "TÁTICO · velocidade e dano especial",
+            StarterStageRating(4,4,5),
+            listOf(
+                "Early game: Sobble facilita Kabu e encontros de Pedra/Terra.",
+                "Mid game: Drizzile evolui para um atacante especial veloz.",
+                "Late game: Inteleon oferece dano especial preciso contra Champion Cup e exploração.",
+                "Funciona melhor em times que já possuem resposta sólida para Planta e Elétrico."
+            ),
+            listOf("Milo é um matchup ruim no começo.","A fragilidade defensiva recompensa trocas e posicionamento mais cuidadosos.")
+        )
+    )
 
     private val hisui=listOf(
         JourneyStarterRecommendation(
