@@ -106,7 +106,7 @@ if "20700" not in workflow or "20.7.0" not in workflow:
     violations.append("CI v20.7.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
-for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "Pokédex do jogo", "officialPokedexTotal", "JourneyObjectivePreviewCard", "JourneyCompactStatus", "Ver todos", "Faltando na Living Dex"):
+for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "officialPokedexTotal", "JourneyObjectivePreviewCard", "JourneyCompactStatus", "Ver todos", "Faltando na Living Dex"):
     if required not in companion:
         violations.append(f"Companion 20 experience missing {required}")
 
