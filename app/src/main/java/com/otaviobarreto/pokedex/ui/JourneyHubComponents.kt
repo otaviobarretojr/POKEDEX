@@ -83,9 +83,7 @@ internal fun JourneyGamePicker(
         }.take(8)
     }
     val shinyTotal=VariantCollectionStore.ownedVariants.count{it.shiny}
-    val formTotal=VariantCollectionStore.ownedVariants.count{
-        it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)
-    }
+    val formTotal=VariantCollectionStore.formCount()
 
     Box(
         Modifier.fillMaxSize().background(
@@ -177,11 +175,14 @@ internal fun JourneyGamePicker(
                                 }
                             }
                             Spacer(Modifier.height(14.dp))
-                            Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
-                                CompanionMetric("Jornada",(animatedJourneyRatio*100).toInt().toString()+"%",journeyDone.toString()+"/"+activeSteps.size,Modifier.weight(1f))
-                                CompanionMetric("Pokédex",(animatedCollectionRatio*100).toInt().toString()+"%",activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,Modifier.weight(1f))
-                                CompanionMetric("Pendência",nextMissing?.let{"#"+it} ?: "OK",if(nextMissing==null)"Completa" else "Próximo alvo",Modifier.weight(1f))
-                            }
+                            CompanionMetricGroup(
+                                journeyValue=(animatedJourneyRatio*100).toInt().toString()+"%",
+                                journeySubtitle=journeyDone.toString()+"/"+activeSteps.size,
+                                dexValue=(animatedCollectionRatio*100).toInt().toString()+"%",
+                                dexSubtitle=activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,
+                                pendingValue=nextMissing?.let{"#"+it} ?: "OK",
+                                pendingSubtitle=if(nextMissing==null)"Completa" else "Próximo alvo"
+                            )
                             Row(Modifier.fillMaxWidth().padding(top=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                                 Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1f)){
                                     Icon(Icons.Default.Explore,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Continuar")
@@ -354,6 +355,34 @@ internal fun JourneyGamePicker(
                 JourneyGameReferenceCard(game=game,progress=progress,onClick={onSelect(game.label)})
             }
             item{Spacer(Modifier.height(20.dp))}
+        }
+    }
+}
+
+@Composable
+private fun CompanionMetricGroup(
+    journeyValue:String,
+    journeySubtitle:String,
+    dexValue:String,
+    dexSubtitle:String,
+    pendingValue:String,
+    pendingSubtitle:String
+){
+    BoxWithConstraints(Modifier.fillMaxWidth()){
+        if(maxWidth<360.dp){
+            Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                    CompanionMetric("Jornada",journeyValue,journeySubtitle,Modifier.weight(1f))
+                    CompanionMetric("Pokédex",dexValue,dexSubtitle,Modifier.weight(1f))
+                }
+                CompanionMetric("Pendência",pendingValue,pendingSubtitle,Modifier.fillMaxWidth())
+            }
+        }else{
+            Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
+                CompanionMetric("Jornada",journeyValue,journeySubtitle,Modifier.weight(1f))
+                CompanionMetric("Pokédex",dexValue,dexSubtitle,Modifier.weight(1f))
+                CompanionMetric("Pendência",pendingValue,pendingSubtitle,Modifier.weight(1f))
+            }
         }
     }
 }
