@@ -119,7 +119,7 @@ private val qbGames=AppGameCatalog.games.map{game->
   regionalTotals.sumOf{it.second} to regionalTotals.sumOf{it.first}
  }
  val nationalCaptured=CollectionStore.capturedIds.count{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
- Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
+ Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=6.dp)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
@@ -264,7 +264,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    }
   }
   Row(
-   Modifier.fillMaxWidth().height(42.dp).padding(bottom=PokedexDesignTokens.Spacing.Xs),
+   Modifier.fillMaxWidth().height(40.dp).padding(bottom=1.dp),
    horizontalArrangement=Arrangement.spacedBy(4.dp)
   ){
    FilledTonalButton(
