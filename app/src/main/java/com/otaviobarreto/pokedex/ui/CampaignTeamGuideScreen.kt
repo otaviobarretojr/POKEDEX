@@ -227,7 +227,7 @@ fun CampaignTeamGuideScreen(
             item{
                 Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
-                        val expectedStarterId=JourneyTeamProgressCatalog.starterMemberForPhase(starterId,phase)
+                        val expectedStarterId=JourneyTeamProgressCatalog.starterMemberForProgress(starterId,dynamic?.focusStep)
                         val expectedStarterName=national.firstOrNull{it.id==expectedStarterId}?.name ?: team.starter
                         val contextualPhase=dynamic?.focusStep?.let{"Antes de "+it.title} ?: team.phase.label
                         Text(expectedStarterName+" · "+contextualPhase,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
