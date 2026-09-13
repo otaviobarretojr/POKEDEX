@@ -31,6 +31,9 @@ object JourneyTeamProgressCatalog {
         810->listOf(810,811,812)
         813->listOf(813,814,815)
         816->listOf(816,817,818)
+        387->listOf(387,388,389)
+        390->listOf(390,391,392)
+        393->listOf(393,394,395)
         else->listOf(starterId)
     }
 
@@ -63,6 +66,7 @@ object JourneyTeamProgressCatalog {
         stepId.startsWith("sv-") -> paldeaCatchPlan
         stepId.startsWith("la-") -> hisuiCatchPlan
         stepId.startsWith("swsh-") -> galarCatchPlan
+        stepId.startsWith("bdsp-") -> sinnohCatchPlan
         else -> emptyList()
     }
 
@@ -98,8 +102,26 @@ object JourneyTeamProgressCatalog {
         stepId.startsWith("swsh-pg-") -> "PÓS-GAME · HEROES OF GALAR"
         stepId.startsWith("swsh-ioa-") -> "DLC · ISLE OF ARMOR"
         stepId.startsWith("swsh-ct-") -> "DLC · CROWN TUNDRA"
+        stepId in setOf("bdsp-01","bdsp-02","bdsp-g1","bdsp-04","bdsp-g2","bdsp-06") -> "SINNOH · PRIMEIRAS BADGES"
+        stepId in setOf("bdsp-g3","bdsp-08","bdsp-g4","bdsp-10","bdsp-g5","bdsp-g6") -> "SINNOH · MEIO DA CAMPANHA"
+        stepId in setOf("bdsp-13","bdsp-14","bdsp-g7","bdsp-16","bdsp-17","bdsp-g8") -> "TEAM GALACTIC · SPEAR PILLAR"
+        stepId=="bdsp-19" || stepId.startsWith("bdsp-e4-") || stepId=="bdsp-24" -> "LIGA POKÉMON · CYNTHIA"
+        stepId.startsWith("bdsp-pg-") -> "SINNOH · PÓS-GAME"
         else -> "JORNADA"
     }
+
+    private val sinnohCatchPlan=listOf(
+        JourneyCatchRecommendation(396,2,"Route 201 / Route 202","Starly evolui para Staraptor e entrega Voador/Lutador com excelente valor por toda a campanha."),
+        JourneyCatchRecommendation(403,2,"Route 202","Shinx evolui para Luxray e fornece cobertura Elétrica essencial contra Água e Voador."),
+        JourneyCatchRecommendation(406,3,"Route 204 / Eterna Forest","Budew evolui para Roserade, ótimo atacante especial de Planta/Veneno."),
+        JourneyCatchRecommendation(74,3,"Oreburgh Mine","Geodude oferece Pedra/Terra cedo e ajuda a estabilizar o início."),
+        JourneyCatchRecommendation(418,5,"Route 205 / Valley Windworks","Buizel evolui para Floatzel, Água rápido para quem não escolheu Piplup."),
+        JourneyCatchRecommendation(434,7,"Route 206","Stunky/Skuntank em Brilliant Diamond dá Sombrio/Veneno útil contra Fantasma e Psíquico."),
+        JourneyCatchRecommendation(200,7,"Eterna Forest / Lost Tower","Misdreavus em Shining Pearl oferece alternativa Fantasma exclusiva da versão."),
+        JourneyCatchRecommendation(443,10,"Wayward Cave","Gible evolui para Garchomp e é um dos maiores upgrades possíveis para a Liga."),
+        JourneyCatchRecommendation(447,12,"Iron Island","Riolu/Lucario oferece Lutador/Aço e excelente cobertura para o fim da campanha."),
+        JourneyCatchRecommendation(459,14,"Route 216 / 217","Snover/Abomasnow fornece Gelo para Dragões, incluindo Garchomp de Cynthia.")
+    )
 
     private val galarCatchPlan=listOf(
         JourneyCatchRecommendation(821,2,"Route 1 / Route 2","Rookidee evolui para Corviknight e oferece excelente utilidade defensiva e cobertura Voador/Aço."),
