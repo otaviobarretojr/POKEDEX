@@ -70,7 +70,10 @@ object JourneyCatalog {
         JourneyStep("frlg-pg-06",29,"Network Machine","Entregue o Sapphire a Celio e conclua a conexão","Pós-jogo",JourneyChallengeKind.POSTGAME,"Sevii Islands","One Island","Com Ruby e Sapphire instalados, a Network Machine é concluída; isso libera Cerulean Cave, a Liga fortalecida e o lendário roaming."),
         JourneyStep("frlg-pg-07",30,"Cerulean Cave","Capture Mewtwo","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário","Cerulean Cave"),
         JourneyStep("frlg-pg-08",31,"Roaming Beast","Entei / Suicune / Raikou","Nv. 50",JourneyChallengeKind.POSTGAME,"Lendário","Kanto","Bulbasaur → Entei; Charmander → Suicune; Squirtle → Raikou."),
-        JourneyStep("frlg-pg-09",32,"Elite Four Rematch","Liga fortalecida com Pokémon de Johto","Nv. 63–75",JourneyChallengeKind.EPILOGUE,"Liga · Rematch","Indigo Plateau","A Liga ganha equipes atualizadas após concluir a quest das Sevii Islands.")
+        JourneyStep("frlg-pg-09",32,"Elite Four Rematch","Liga fortalecida com Pokémon de Johto","Nv. 63–75",JourneyChallengeKind.EPILOGUE,"Liga · Rematch","Indigo Plateau","A Liga ganha equipes atualizadas após concluir a quest Ruby/Sapphire."),
+        JourneyStep("frlg-pg-10",33,"Trainer Tower","Desafios de tempo e formatos especiais","Pós-jogo",JourneyChallengeKind.EPILOGUE,"Desafio opcional","Seven Island","Conteúdo opcional de batalha com Single, Double, Knockout e Mixed modes."),
+        JourneyStep("frlg-pg-11",34,"Tanoby Ruins","Explore as câmaras de Unown","Pós-jogo",JourneyChallengeKind.EPILOGUE,"Exploração","Seven Island","Conclua Tanoby Key em Sevault Canyon para liberar os Unown nas Tanoby Chambers."),
+        JourneyStep("frlg-pg-12",35,"Lendários de Kanto","Articuno, Zapdos e Moltres","Nv. 50",JourneyChallengeKind.EPILOGUE,"Lendários opcionais","Kanto / Sevii","Articuno fica em Seafoam Islands, Zapdos na Power Plant e Moltres em Mt. Ember. Podem ser capturados antes do pós-game quando as áreas ficam acessíveis.")
     )
 
     private val letsGoPikachuEevee = listOf(
