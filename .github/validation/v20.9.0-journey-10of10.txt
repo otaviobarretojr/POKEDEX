@@ -1,0 +1,2 @@
+Temporary CI validation trigger for v20.9.0 Journey 10of10.
+Application sources match main.
