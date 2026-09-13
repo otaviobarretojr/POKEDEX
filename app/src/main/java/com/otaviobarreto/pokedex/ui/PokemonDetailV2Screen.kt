@@ -160,7 +160,7 @@ fun PokemonDetailV2Screen(
             1->V2Stats(b.pokemon.stats)
             2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
             3->V2Moves(b.pokemon.moves,context,openRef)
-            else->V2Locations(b.encounters,context,openLocation)
+            else->V2Locations(b.encounters,b.species,context,source,openLocation)
         }
     }
 }
