@@ -542,7 +542,7 @@ if "KEY_ACTIVE_REGION" not in prefs_v611:
 
 # Compatibility guard — Android back navigation
 journey_back=journey_source
-for required in ("BackHandler(enabled=view!=JourneyView.GAMES)","detailReturnView","JourneyView.MAP","JourneyView.ROUTE","selectedGame=null"):
+for required in ("BackHandler(enabled=view!=JourneyView.GAMES)","detailReturnView","JourneyView.ROUTE","selectedGame=null"):
     if required not in journey_back:
         violations.append(f"Android back hierarchy missing {required}")
 if "onBack={selectedStepId=null;view=detailReturnView}" not in journey_back:
