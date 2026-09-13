@@ -20,6 +20,23 @@ object JourneyVisualAssetCatalog {
     private const val DLC_OFFICIAL="https://www.pokemon.co.jp/ex/sv_dlc/assets/img/character/"
 
     private val assets=mapOf(
+        "swsh-g1" to JourneyVisualAsset("swsh-g1",JourneyVisualRole.GYM,"Milo",ART+"830.png","Turffield Gym · Planta","Pokémon Sword / Shield"),
+        "swsh-g2" to JourneyVisualAsset("swsh-g2",JourneyVisualRole.GYM,"Nessa",ART+"834.png","Hulbury Gym · Água","Pokémon Sword / Shield"),
+        "swsh-g3" to JourneyVisualAsset("swsh-g3",JourneyVisualRole.GYM,"Kabu",ART+"851.png","Motostoke Gym · Fogo","Pokémon Sword / Shield"),
+        "swsh-g4" to JourneyVisualAsset("swsh-g4",JourneyVisualRole.GYM,"Bea / Allister",ART+"865.png","Stow-on-Side · versão","Pokémon Sword / Shield"),
+        "swsh-g5" to JourneyVisualAsset("swsh-g5",JourneyVisualRole.GYM,"Opal",ART+"869.png","Ballonlea Gym · Fada","Pokémon Sword / Shield"),
+        "swsh-g6" to JourneyVisualAsset("swsh-g6",JourneyVisualRole.GYM,"Gordie / Melony",ART+"874.png","Circhester · versão","Pokémon Sword / Shield"),
+        "swsh-g7" to JourneyVisualAsset("swsh-g7",JourneyVisualRole.GYM,"Piers",ART+"862.png","Spikemuth · Sombrio","Pokémon Sword / Shield"),
+        "swsh-g8" to JourneyVisualAsset("swsh-g8",JourneyVisualRole.GYM,"Raihan",ART+"884.png","Hammerlocke · Dragão","Pokémon Sword / Shield"),
+        "swsh-13" to JourneyVisualAsset("swsh-13",JourneyVisualRole.LEGENDARY,"Eternatus",ART+"890.png","Darkest Day","Pokémon Sword / Shield"),
+        "swsh-15" to JourneyVisualAsset("swsh-15",JourneyVisualRole.CHAMPION,"Leon",ART+"6.png","Champion of Galar","Pokémon Sword / Shield"),
+        "swsh-pg-02" to JourneyVisualAsset("swsh-pg-02",JourneyVisualRole.LEGENDARY,"Zacian / Zamazenta",ART+"888.png","Heroes of Galar","Pokémon Sword / Shield"),
+        "swsh-ioa-03" to JourneyVisualAsset("swsh-ioa-03",JourneyVisualRole.STORY,"Kubfu",ART+"891.png","Isle of Armor","Pokémon Sword / Shield"),
+        "swsh-ioa-04" to JourneyVisualAsset("swsh-ioa-04",JourneyVisualRole.STORY,"Urshifu",ART+"892.png","Tower of Two Fists","Pokémon Sword / Shield"),
+        "swsh-ct-02" to JourneyVisualAsset("swsh-ct-02",JourneyVisualRole.LEGENDARY,"Calyrex",ART+"898.png","Sovereign and Steed","Pokémon Sword / Shield"),
+        "swsh-ct-03" to JourneyVisualAsset("swsh-ct-03",JourneyVisualRole.LEGENDARY,"Legendary Giants",ART+"894.png","Crown Tundra","Pokémon Sword / Shield"),
+        "swsh-ct-04" to JourneyVisualAsset("swsh-ct-04",JourneyVisualRole.LEGENDARY,"Galarian Legendary Birds",ART+"144.png","Crown Tundra","Pokémon Sword / Shield"),
+        "swsh-ct-05" to JourneyVisualAsset("swsh-ct-05",JourneyVisualRole.LEGENDARY,"Dynamax Adventures",ART+"150.png","Max Lair","Pokémon Sword / Shield"),
         "la-07" to JourneyVisualAsset("la-07",JourneyVisualRole.STORY,"Kleavor",ART+"900.png","Nobre · Lord of the Woods","Pokémon Legends: Arceus"),
         "la-08" to JourneyVisualAsset("la-08",JourneyVisualRole.STORY,"Hisuian Lilligant",ART+"10237.png","Nobre · Lady of the Ridge","Pokémon Legends: Arceus"),
         "la-10" to JourneyVisualAsset("la-10",JourneyVisualRole.STORY,"Hisuian Arcanine",ART+"10230.png","Nobre · Lord of the Isles","Pokémon Legends: Arceus"),
