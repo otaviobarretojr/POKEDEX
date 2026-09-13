@@ -33,6 +33,7 @@ import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun JourneyGamePicker(
     onSelect:(String)->Unit,
@@ -512,7 +513,7 @@ private fun JourneyCompactStatus(
                 )
             }
             Spacer(Modifier.width(12.dp))
-            HorizontalDivider(Modifier.height(34.dp).width(1.dp))
+            VerticalDivider(Modifier.height(34.dp))
             Spacer(Modifier.width(12.dp))
             Column(horizontalAlignment=Alignment.CenterHorizontally){
                 Text("Pokédex",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
