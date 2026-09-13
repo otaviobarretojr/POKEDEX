@@ -139,8 +139,8 @@ fun PokedexCatalogScreen(
             columns=GridCells.Adaptive(112.dp),
             modifier=Modifier.fillMaxSize().padding(top=PokedexDesignTokens.Spacing.Sm),
             contentPadding=PaddingValues(start=PokedexDesignTokens.Spacing.Lg,end=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xl),
-            horizontalArrangement=Arrangement.spacedBy(8.dp),
-            verticalArrangement=Arrangement.spacedBy(8.dp)
+            horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm),
+            verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
         ){
             items(filtered,key={it.id}){pk->
                 val accent=PokedexDesignTokens.Colors.type(pk.types.firstOrNull())
@@ -160,11 +160,11 @@ fun PokedexCatalogScreen(
                                 )
                         )
                         Column(
-                            Modifier.fillMaxWidth().padding(8.dp),
+                            Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Sm),
                             horizontalAlignment=Alignment.CenterHorizontally
                         ){
                             Surface(
-                                shape=RoundedCornerShape(12.dp),
+                                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                                 color=accent.copy(alpha=.12f),
                                 modifier=Modifier.align(Alignment.Start)
                             ){
@@ -261,7 +261,7 @@ private fun PokedexFormsDialog(
             Modifier.fillMaxWidth(.94f).heightIn(max=720.dp),
             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Xl)
         ){
-            Column(Modifier.fillMaxWidth().padding(16.dp)){
+            Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text(base?.name ?: "Pokémon",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
@@ -313,8 +313,8 @@ private fun PokedexFormsDialog(
                     LazyVerticalGrid(
                         columns=GridCells.Fixed(2),
                         modifier=Modifier.weight(1f,fill=false).heightIn(max=520.dp),
-                        horizontalArrangement=Arrangement.spacedBy(8.dp),
-                        verticalArrangement=Arrangement.spacedBy(8.dp)
+                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm),
+                        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
                         items(visiblePreviews,key={it.label+"-"+it.formId+"-"+it.shiny}){preview->
                             Card(
