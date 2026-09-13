@@ -596,5 +596,3 @@ private fun methodLabel(method:String):String=when(method.lowercase()){"level up
         }
     }
 }
-
-private fun PokedexDesignTokens.Colors.game(label:String?)=when{label?.contains("Scarlet",true)==true->Color(0xFF7655E8);label?.contains("Sword",true)==true->Color(0xFF35A9C7);label?.contains("Let's Go",true)==true->Color(0xFFE0A929);label?.contains("Arceus",true)==true->Color(0xFF527F7C);label?.contains("HOME",true)==true->Color(0xFF5B55E7);else->Color(0xFF6C63E8)}
