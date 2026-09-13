@@ -56,6 +56,9 @@ internal fun JourneyGamePicker(
     }
     val activeOwned=remember(captured,activeSources){activeSources.flatMap{captured[it].orEmpty()}.toSet()}
     val activeDexIds=activeGame?.let{dexIdsByGame[it.label].orEmpty()}.orEmpty()
+    val officialPokedexTotal=activeGame?.let{game->
+        game.pokedexTotal ?: dexIdsBySource[game.regions.firstOrNull()?.source].orEmpty().size.takeIf{it>0}
+    }
     val missingIds=remember(activeDexIds,activeOwned){activeDexIds.sorted().filter{it !in activeOwned}}
     val nextMissing=remember(missingIds,activeRegionSource,dexIdsBySource,captured){
         val regional=dexIdsBySource[activeRegionSource].orEmpty()
@@ -204,8 +207,8 @@ internal fun JourneyGamePicker(
                             CompanionMetricGroup(
                                 journeyValue=(animatedJourneyRatio*100).toInt().toString()+"%",
                                 journeySubtitle=journeyDone.toString()+"/"+activeSteps.size,
-                                dexValue=activeDexIds.size.toString(),
-                                dexSubtitle="Pokémon totais no jogo",
+                                dexValue=officialPokedexTotal?.toString() ?: "—",
+                                dexSubtitle="Pokédex do jogo",
                                 pendingValue=nextMissing?.let{"#"+it} ?: "OK",
                                 pendingSubtitle=if(nextMissing==null)"Completa" else "Próximo alvo"
                             )
@@ -432,11 +435,26 @@ private fun CompanionProgressMini(
     modifier:Modifier=Modifier
 ){
     Surface(modifier=modifier,shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.52f)){
-        Column(Modifier.padding(horizontal=10.dp,vertical=9.dp)){
-            Row(verticalAlignment=Alignment.CenterVertically){
-                Text(label,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.weight(1f),maxLines=1,overflow=TextOverflow.Ellipsis)
-                Text(value,style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black)
-            }
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
+            horizontalAlignment=Alignment.CenterHorizontally
+        ){
+            Text(
+                label,
+                style=MaterialTheme.typography.labelSmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines=1,
+                overflow=TextOverflow.Ellipsis,
+                textAlign=TextAlign.Center,
+                modifier=Modifier.fillMaxWidth()
+            )
+            Text(
+                value,
+                style=MaterialTheme.typography.titleSmall,
+                fontWeight=FontWeight.Black,
+                textAlign=TextAlign.Center,
+                modifier=Modifier.fillMaxWidth().padding(top=2.dp)
+            )
             LinearProgressIndicator(
                 progress={progress.coerceIn(0f,1f)},
                 modifier=Modifier.fillMaxWidth().padding(top=7.dp).height(6.dp),
@@ -476,11 +494,40 @@ private fun CompanionMetricGroup(
 
 @Composable
 private fun CompanionMetric(label:String,value:String,subtitle:String,modifier:Modifier=Modifier){
-    Surface(modifier=modifier,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.52f)){
-        Column(Modifier.padding(horizontal=10.dp,vertical=10.dp)){
-            Text(label,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1)
-            Text(value,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
-            Text(subtitle,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+    Surface(
+        modifier=modifier.heightIn(min=86.dp),
+        shape=RoundedCornerShape(16.dp),
+        color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.52f)
+    ){
+        Column(
+            Modifier.fillMaxSize().padding(horizontal=8.dp,vertical=10.dp),
+            horizontalAlignment=Alignment.CenterHorizontally,
+            verticalArrangement=Arrangement.Center
+        ){
+            Text(
+                label,
+                style=MaterialTheme.typography.labelSmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines=1,
+                textAlign=TextAlign.Center,
+                modifier=Modifier.fillMaxWidth()
+            )
+            Text(
+                value,
+                style=MaterialTheme.typography.titleMedium,
+                fontWeight=FontWeight.Black,
+                textAlign=TextAlign.Center,
+                modifier=Modifier.fillMaxWidth().padding(vertical=2.dp)
+            )
+            Text(
+                subtitle,
+                style=MaterialTheme.typography.labelSmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines=2,
+                overflow=TextOverflow.Ellipsis,
+                textAlign=TextAlign.Center,
+                modifier=Modifier.fillMaxWidth()
+            )
         }
     }
 }
