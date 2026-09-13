@@ -374,7 +374,7 @@ journey = journey_source
 journey_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyCatalog.kt").read_text(encoding="utf-8")
 journey_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
 main = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-for required in ("Jornada", "Melhor rota", "Time ideal", "Boxes do jogo"):
+for required in ("Jornada", "Melhor rota", "Time e progressão", "Boxes do jogo"):
     if required not in journey:
         violations.append(f"Journey hub missing {required}")
 for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
