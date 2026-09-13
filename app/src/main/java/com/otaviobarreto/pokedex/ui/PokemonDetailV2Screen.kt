@@ -521,6 +521,41 @@ private fun PokemonFormsSummaryCard(
         item{InfoMini("Total",rows.sumOf{it.second}.toString(),Modifier.fillMaxWidth())}
     }
 }
+@Composable private fun V2Evolution(e:List<PokeApiService.EvolutionStage>,currentId:Int,openPokemon:((Int)->Unit)?){
+    LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+        item{DexSectionEyebrow("Família evolutiva")}
+        if(e.isEmpty()) item{Text("Nenhuma evolução encontrada.")}
+        else items(e,key={it.pokemonId}){stage->
+            val active=stage.pokemonId==currentId
+            Card(
+                Modifier.fillMaxWidth().then(if(openPokemon!=null&&!active)Modifier.clickable{openPokemon(stage.pokemonId)}else Modifier),
+                shape=RoundedCornerShape(20.dp),
+                colors=CardDefaults.cardColors(containerColor=if(active)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.55f) else MaterialTheme.colorScheme.surface)
+            ){
+                Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
+                    PokemonArtwork(
+                        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+stage.pokemonId+".png",
+                        stage.name,
+                        Modifier.size(70.dp).padding(4.dp),
+                        pokemonId=stage.pokemonId
+                    )
+                    Column(Modifier.weight(1f).padding(start=10.dp)){
+                        Text(stage.name,style=MaterialTheme.typography.titleSmall)
+                        val special=PokeApiService.isSpecialEvolutionRequirement(stage.requirement)
+                        Text(
+                            stage.requirement?:"Forma inicial",
+                            style=MaterialTheme.typography.bodySmall,
+                            fontWeight=if(special)FontWeight.Bold else FontWeight.Normal,
+                            color=if(special)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if(active)Text("Pokémon atual",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+                    }
+                    if(openPokemon!=null&&!active)Icon(Icons.Default.ChevronRight,null)
+                }
+            }
+        }
+    }
+}
 @Composable private fun V2Moves(moves:List<PokeApiService.RemoteMove>,context:GameContext?,openRef:((String,String)->Unit)?){var query by remember(moves,context){mutableStateOf("")};var methodFilter by remember(moves,context){mutableStateOf("Todos")};val base=remember(moves,context){if(context==null)moves.map{MoveView(it,it.learnDetails)}else moves.mapNotNull{move->move.learnDetails.filter{context.matchesVersionGroup(it.versionGroup)}.takeIf{it.isNotEmpty()}?.let{MoveView(move,it)}}};val methods=remember(base){base.flatMap{it.details}.map{methodLabel(it.method)}.distinct().sorted()};val visible=remember(base,query,methodFilter){base.filter{v->(query.isBlank()||v.move.name.contains(query,true))&&(methodFilter=="Todos"||v.details.any{methodLabel(it.method)==methodFilter})}.sortedBy{it.move.name}};LazyColumn(Modifier.fillMaxSize().padding(horizontal=16.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){item{Text("Golpes",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=14.dp));OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(top=8.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Buscar golpe")});LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){item{FilterChip(methodFilter=="Todos",{methodFilter="Todos"},{Text("Todos")})};items(methods,key={it}){label->FilterChip(methodFilter==label,{methodFilter=label},{Text(label)})}}};items(visible,key={it.move.name}){view->Card(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",view.move.name)}else Modifier)){Row(Modifier.fillMaxWidth().padding(11.dp),verticalAlignment=Alignment.CenterVertically){Text(view.move.name,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}};item{Spacer(Modifier.height(16.dp))}}}
 private fun methodLabel(method:String):String=when(method.lowercase()){"level up"->"Nível";"machine"->"TM";"egg"->"Ovo";"tutor"->"Tutor";else->method}
 @Composable private fun V2Locations(
