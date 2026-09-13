@@ -4,7 +4,6 @@ from pathlib import Path
 
 root=Path(__file__).resolve().parents[1]
 visual=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt").read_text(encoding="utf-8")
-map_text=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyMapCatalog.kt").read_text(encoding="utf-8")
 type_text=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTypeIconCatalog.kt").read_text(encoding="utf-8")
 
 constants=dict(re.findall(r'private const val\s+(\w+)="([^"]+)"',visual))
