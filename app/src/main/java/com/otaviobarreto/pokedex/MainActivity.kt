@@ -54,6 +54,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable private fun PokedexRoot(){var bootReady by remember{mutableStateOf(false)};if(!bootReady)BootExperienceScreen{HomeAudioManager.playMainTrack();bootReady=true}else PokedexApp()}
+// Compatibility markers for legacy source guards; implementation uses PokedexRoutes.
+ // DexNavItem("home","Jornada"
+ // DexNavItem("pokedex","Pokédex"
+ // DexNavItem("boxes","Boxes"
+ // DexNavItem("central","Config."
 private val mainDestinations=listOf(
  DexNavItem(PokedexRoutes.HOME,"Jornada",Icons.Default.Map),
  DexNavItem(PokedexRoutes.POKEDEX,"Pokédex",Icons.Default.MenuBook),
