@@ -9,6 +9,7 @@
         android:roundIcon="@drawable/app_icon"
         android:label="POKEDEX"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/Theme.Pokedex">
         <activity
             android:name=".MainActivity"
