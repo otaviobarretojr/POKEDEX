@@ -30,10 +30,10 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Validate v18.5.0 UX
+      - name: Validate v18.5.1 Box Audit
         run: |
-          grep -q 'versionCode = 18500' app/build.gradle.kts
-          grep -q 'versionName = "18.5.0"' app/build.gradle.kts
+          grep -q 'versionCode = 18501' app/build.gradle.kts
+          grep -q 'versionName = "18.5.1"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
