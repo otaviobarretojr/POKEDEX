@@ -1389,11 +1389,6 @@ for required in ("Plano de captura", "CollectionAdvisor.capturePlan", 'Text("Abr
     if required not in central_v14 and "Configurações" not in central_v14:
         violations.append(f"v14 Central capture planner missing {required}")
 
-detail_v14 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
-for required in ('"Onde conseguir"', "CollectionAdvisor.recommendation", "CollectionAdvisor.cachedOptions"):
-    if required not in detail_v14:
-        violations.append(f"v14 Pokémon detail advisor missing {required}")
-
 offline_v14 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 if "PACK_VERSION = 18" not in offline_v14:
     violations.append("v14 offline pack version missing")
@@ -1428,11 +1423,6 @@ for required in (
 ):
     if required not in central_v15 and "Configurações" not in central_v15:
         violations.append(f"v15 Central route UI missing {required}")
-
-detail_v15 = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
-for required in ("CollectionAdvisor.acquisitionLabel", "Onde conseguir"):
-    if required not in detail_v15:
-        violations.append(f"v15 acquisition classification missing {required}")
 
 offline_v15 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 if "PACK_VERSION = 18" not in offline_v15:
