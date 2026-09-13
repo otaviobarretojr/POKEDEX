@@ -46,16 +46,27 @@ fun DexBottomBar(
     currentRoute:String?,
     onSelect:(DexNavItem)->Unit
 ){
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(
+                start=PokedexDesignTokens.Spacing.Sm,
+                end=PokedexDesignTokens.Spacing.Sm,
+                top=PokedexDesignTokens.Spacing.Xs,
+                bottom=PokedexDesignTokens.Spacing.Sm
+            )
+    ){
     Surface(
-        modifier=Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),
-        shape=RoundedCornerShape(26.dp),
+        modifier=Modifier.fillMaxWidth(),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
         color=MaterialTheme.colorScheme.surface.copy(alpha=.97f),
         shadowElevation=PokedexDesignTokens.Elevation.High,
         tonalElevation=PokedexDesignTokens.Elevation.Low
     ){
         Row(
-            Modifier.fillMaxWidth().padding(horizontal=5.dp,vertical=5.dp),
-            horizontalArrangement=Arrangement.spacedBy(3.dp)
+            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Xs,vertical=PokedexDesignTokens.Spacing.Xs),
+            horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Xs)
         ){
             items.forEach{item->
                 val selected=currentRoute==item.route
@@ -75,12 +86,12 @@ fun DexBottomBar(
                 val haptic=LocalHapticFeedback.current
                 Column(
                     Modifier.weight(1f).scale(scale)
-                        .background(background,RoundedCornerShape(20.dp))
+                        .background(background,RoundedCornerShape(PokedexDesignTokens.Radius.Md))
                         .clickable(interactionSource=interaction,indication=null){
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onSelect(item)
                         }
-                        .padding(vertical=7.dp),
+                        .padding(vertical=PokedexDesignTokens.Spacing.Sm),
                     horizontalAlignment=Alignment.CenterHorizontally
                 ){
                     Icon(item.icon,item.label,Modifier.size(22.dp),tint=tint)
@@ -89,6 +100,7 @@ fun DexBottomBar(
                 }
             }
         }
+    }
     }
 }
 
