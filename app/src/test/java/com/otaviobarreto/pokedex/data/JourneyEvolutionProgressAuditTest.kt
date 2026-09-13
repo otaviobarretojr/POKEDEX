@@ -64,6 +64,45 @@ class JourneyEvolutionProgressAuditTest {
     }
 
     @Test
+    fun everyMainStoryStepKeepsOneStarterFamilyAndNoDuplicateFamilies(){
+        TeamCampaignCatalog.switchGames.forEach{game->
+            val main=JourneyCatalog.steps(game).takeWhile{
+                it.kind !in setOf(JourneyChallengeKind.POSTGAME,JourneyChallengeKind.DLC,JourneyChallengeKind.EPILOGUE)
+            }
+            TeamCampaignCatalog.starters(game).forEach{(_,starterId)->
+                main.forEachIndexed{index,focus->
+                    val ratio=if(main.size<=1)1f else index.toFloat()/(main.size-1)
+                    val phase=when{
+                        ratio < .34f -> CampaignPhase.EARLY
+                        ratio < .72f -> CampaignPhase.MID
+                        else -> CampaignPhase.LATE
+                    }
+                    val preset=TeamCampaignCatalog.preset(game,starterId,phase)!!
+                    val team=preset.slots.map{JourneyTeamProgressCatalog.progressMemberFor(it.pokemonId,focus)}
+                    assertFalse(game+" "+focus.id+" duplicate family: "+team,JourneyTeamProgressCatalog.hasFamilyDuplicate(team))
+                    val expectedStarter=JourneyTeamProgressCatalog.starterMemberForProgress(starterId,focus)
+                    assertEquals(
+                        game+" "+focus.id+" starter family must appear exactly once",
+                        1,
+                        team.count{JourneyTeamProgressCatalog.sameEvolutionFamily(it,expectedStarter)}
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun deterministicNonStarterFamiliesAlsoTrackObjectiveLevel(){
+        assertEquals(822,JourneyTeamProgressCatalog.progressMemberFor(821,step("Scarlet / Violet","sv-06")))
+        assertEquals(823,JourneyTeamProgressCatalog.progressMemberFor(821,step("Scarlet / Violet","sv-15")))
+        assertEquals(130,JourneyTeamProgressCatalog.progressMemberFor(129,step("Brilliant Diamond / Shining Pearl","bdsp-g4")))
+        assertEquals(398,JourneyTeamProgressCatalog.progressMemberFor(396,step("Brilliant Diamond / Shining Pearl","bdsp-g8")))
+        assertEquals(836,JourneyTeamProgressCatalog.progressMemberFor(835,step("Sword / Shield","swsh-g3")))
+        assertEquals(405,JourneyTeamProgressCatalog.progressMemberFor(403,step("Legends Arceus","la-10")))
+        assertEquals(20,JourneyTeamProgressCatalog.progressMemberFor(19,step("FireRed / LeafGreen","frlg-g4")))
+    }
+
+    @Test
     fun representativeTeamsHaveNoEvolutionFamilyDuplicates(){
         val samples=listOf(
             arrayOf("Scarlet / Violet",909,CampaignPhase.LATE,"sv-15"),
