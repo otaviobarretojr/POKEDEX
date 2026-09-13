@@ -23,6 +23,7 @@ object JourneyCatalog {
         "Sword / Shield" -> "Gym Challenge + Champion Cup + pós-jogo + Isle of Armor + Crown Tundra"
         "Brilliant Diamond / Shining Pearl" -> "Sinnoh + 8 ginásios + Team Galactic + Liga + pós-jogo"
         "Let's Go Pikachu / Eevee" -> "Kanto + 8 ginásios + Team Rocket + Liga + Master Trainers"
+        "FireRed / LeafGreen" -> "Kanto + 8 ginásios + Team Rocket + Sevii Islands + Liga + pós-jogo"
         else -> "Rota de campanha"
     }
 
@@ -33,8 +34,44 @@ object JourneyCatalog {
         "Sword / Shield" -> swordShield
         "Brilliant Diamond / Shining Pearl" -> brilliantDiamondShiningPearl
         "Let's Go Pikachu / Eevee" -> letsGoPikachuEevee
+        "FireRed / LeafGreen" -> fireRedLeafGreen
         else -> emptyList()
     }
+
+    private val fireRedLeafGreen = listOf(
+        JourneyStep("frlg-01",1,"Pallet Town → Viridian","Escolha Bulbasaur, Charmander ou Squirtle","Nv. 5–7",JourneyChallengeKind.STORY,"Início","Pallet Town / Viridian City"),
+        JourneyStep("frlg-02",2,"Viridian Forest","Atravesse a floresta rumo a Pewter","Nv. 5–10",JourneyChallengeKind.STORY,"Exploração","Viridian Forest"),
+        JourneyStep("frlg-g1",3,"Pewter Gym","Brock · Boulder Badge","Nv. 12–14",JourneyChallengeKind.GYM,"Ginásio · Pedra","Pewter Gym"),
+        JourneyStep("frlg-04",4,"Mt. Moon","Team Rocket e escolha do fóssil","Nv. 10–15",JourneyChallengeKind.STORY,"Team Rocket","Mt. Moon"),
+        JourneyStep("frlg-g2",5,"Cerulean Gym","Misty · Cascade Badge","Nv. 18–21",JourneyChallengeKind.GYM,"Ginásio · Água","Cerulean Gym"),
+        JourneyStep("frlg-06",6,"Nugget Bridge & Bill","Rival, Team Rocket e Sea Cottage","Nv. 17–24",JourneyChallengeKind.STORY,"Exploração","Routes 24–25"),
+        JourneyStep("frlg-g3",7,"Vermilion Gym","Lt. Surge · Thunder Badge","Nv. 21–24",JourneyChallengeKind.GYM,"Ginásio · Elétrico","Vermilion Gym"),
+        JourneyStep("frlg-08",8,"Rock Tunnel → Lavender","Atravesse Rock Tunnel e avance em Lavender","Nv. 22–30",JourneyChallengeKind.STORY,"Exploração","Rock Tunnel / Lavender Town"),
+        JourneyStep("frlg-g4",9,"Celadon Gym","Erika · Rainbow Badge","Nv. 24–29",JourneyChallengeKind.GYM,"Ginásio · Planta","Celadon Gym"),
+        JourneyStep("frlg-10",10,"Rocket Hideout","Giovanni e Silph Scope","Nv. 25–30",JourneyChallengeKind.STORY,"Team Rocket","Celadon Game Corner"),
+        JourneyStep("frlg-11",11,"Pokémon Tower","Marowak, Mr. Fuji e Poké Flute","Nv. 25–32",JourneyChallengeKind.STORY,"Team Rocket","Lavender Town"),
+        JourneyStep("frlg-12",12,"Silph Co.","Giovanni e resgate de Saffron","Nv. 35–41",JourneyChallengeKind.STORY,"Team Rocket","Saffron City"),
+        JourneyStep("frlg-g5",13,"Fuchsia Gym","Koga · Soul Badge","Nv. 37–43",JourneyChallengeKind.GYM,"Ginásio · Veneno","Fuchsia Gym"),
+        JourneyStep("frlg-g6",14,"Saffron Gym","Sabrina · Marsh Badge","Nv. 37–43",JourneyChallengeKind.GYM,"Ginásio · Psíquico","Saffron Gym"),
+        JourneyStep("frlg-g7",15,"Cinnabar Gym","Blaine · Volcano Badge","Nv. 40–47",JourneyChallengeKind.GYM,"Ginásio · Fogo","Cinnabar Gym"),
+        JourneyStep("frlg-sevii-1",16,"Sevii Islands · One to Three","Bill, Celio e Lostelle","Nv. 35–45",JourneyChallengeKind.STORY,"Sevii Islands","One / Two / Three Island","Esta visita acontece após Blaine e antes de Giovanni; conclua o arco de Lostelle para retornar a Kanto."),
+        JourneyStep("frlg-g8",17,"Viridian Gym","Giovanni · Earth Badge","Nv. 42–50",JourneyChallengeKind.GYM,"Ginásio · Terra","Viridian Gym"),
+        JourneyStep("frlg-18",18,"Victory Road","Caminho para Indigo Plateau","Nv. 45–55",JourneyChallengeKind.STORY,"Liga","Victory Road"),
+        JourneyStep("frlg-e4-1",19,"Elite Four · Lorelei","Gelo / Água","Nv. 51–54",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("frlg-e4-2",20,"Elite Four · Bruno","Lutador / Pedra","Nv. 51–56",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("frlg-e4-3",21,"Elite Four · Agatha","Fantasma / Veneno","Nv. 53–58",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("frlg-e4-4",22,"Elite Four · Lance","Dragão","Nv. 54–60",JourneyChallengeKind.STORY,"Elite Four","Indigo Plateau"),
+        JourneyStep("frlg-23",23,"Champion Rival","Conquiste o título de Kanto","Nv. 57–63",JourneyChallengeKind.STORY,"Campeão","Indigo Plateau","A equipe final varia conforme o inicial escolhido."),
+        JourneyStep("frlg-pg-01",24,"National Pokédex","Registre pelo menos 60 espécies","Pós-jogo",JourneyChallengeKind.POSTGAME,"National Dex","Pallet Town","Professor Oak atualiza a Pokédex para National Mode."),
+        JourneyStep("frlg-pg-02",25,"Ruby · Mt. Ember","Ajude Celio e recupere o Ruby","Nv. 50+",JourneyChallengeKind.POSTGAME,"Sevii Islands","One Island / Mt. Ember"),
+        JourneyStep("frlg-pg-03",26,"Four Island & Icefall Cave","Ajude Lorelei contra Team Rocket","Nv. 50+",JourneyChallengeKind.POSTGAME,"Sevii Islands","Four Island"),
+        JourneyStep("frlg-pg-04",27,"Sapphire · Six Island","Encontre o Sapphire em Dotted Hole","Nv. 50+",JourneyChallengeKind.POSTGAME,"Sevii Islands","Six Island / Dotted Hole","Gideon rouba o Sapphire e leva o item ao Rocket Warehouse."),
+        JourneyStep("frlg-pg-05",28,"Rocket Warehouse","Derrote os últimos membros da Team Rocket","Nv. 50–55",JourneyChallengeKind.POSTGAME,"Team Rocket","Five Island","Recupere o Sapphire e encerre o arco da Team Rocket nas Sevii Islands."),
+        JourneyStep("frlg-pg-06",29,"Network Machine","Entregue Ruby + Sapphire a Celio","Pós-jogo",JourneyChallengeKind.POSTGAME,"Sevii Islands","One Island","Libera integração completa da Network Machine e os principais conteúdos finais."),
+        JourneyStep("frlg-pg-07",30,"Cerulean Cave","Capture Mewtwo","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário","Cerulean Cave"),
+        JourneyStep("frlg-pg-08",31,"Roaming Beast","Entei / Suicune / Raikou","Nv. 50",JourneyChallengeKind.POSTGAME,"Lendário","Kanto","Bulbasaur → Entei; Charmander → Suicune; Squirtle → Raikou."),
+        JourneyStep("frlg-pg-09",32,"Elite Four Rematch","Liga fortalecida com Pokémon de Johto","Nv. 63–75",JourneyChallengeKind.EPILOGUE,"Liga · Rematch","Indigo Plateau","A Liga ganha equipes atualizadas após concluir a quest das Sevii Islands.")
+    )
 
     private val letsGoPikachuEevee = listOf(
         JourneyStep("lgpe-01",1,"Pallet Town → Viridian","Receba Partner Pikachu ou Partner Eevee","Nv. 5–7",JourneyChallengeKind.STORY,"Início","Pallet Town / Route 1","O parceiro é definido pela versão e não evolui."),
