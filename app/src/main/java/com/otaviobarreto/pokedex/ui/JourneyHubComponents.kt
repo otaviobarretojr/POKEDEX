@@ -45,10 +45,7 @@ internal fun JourneyGamePicker(
     val activeGamePreview=AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame}
         ?: AppGameCatalog.adventureGames.firstOrNull()
     val dexIdsBySource by rememberJourneyDexIdsBySource(activeGamePreview)
-    val national=remember { PokedexDataStore.cachedNationalDex().orEmpty() }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
     var showCollectionProfile by rememberSaveable { mutableStateOf(false) }
-    var showAllMissingDex by rememberSaveable { mutableStateOf(false) }
     val activeGame=activeGamePreview
     val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
     val activeRegionSource=activeGame?.let{game->
@@ -56,59 +53,11 @@ internal fun JourneyGamePicker(
             ?.takeIf{it in activeSources}
             ?: game.regions.firstOrNull()?.source
     }
-    val activeOwned=remember(captured,activeSources){activeSources.flatMap{captured[it].orEmpty()}.toSet()}
     val activeDexIds=activeGame?.let{dexIdsByGame[it.label].orEmpty()}.orEmpty()
     val officialPokedexTotal=activeGame?.let{game->
         game.pokedexTotal ?: dexIdsBySource[game.regions.firstOrNull()?.source].orEmpty().size.takeIf{it>0}
     }
-    val missingIds=remember(activeDexIds,activeOwned){activeDexIds.sorted().filter{it !in activeOwned}}
-    val nextMissing=remember(missingIds,activeRegionSource,dexIdsBySource,captured){
-        val regional=dexIdsBySource[activeRegionSource].orEmpty()
-        missingIds.firstOrNull{it in regional && it !in captured[activeRegionSource].orEmpty()}
-            ?: missingIds.firstOrNull()
-    }
-    val nextMissingSource=remember(nextMissing,activeRegionSource,dexIdsBySource,activeSources,captured){
-        nextMissing?.let{id->
-            activeRegionSource?.takeIf{id in dexIdsBySource[it].orEmpty() && id !in captured[it].orEmpty()}
-                ?: activeSources.firstOrNull{source->id in dexIdsBySource[source].orEmpty() && id !in captured[source].orEmpty()}
-                ?: activeRegionSource
-        }
-    }
-    val journeyRevision=JourneyProgressStore.revision
-    val activeSteps=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyCatalog.steps(it.label)}.orEmpty()}
-    val activeCompleted=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyProgressStore.completed(it.label)}.orEmpty()}
-    val nextStep=remember(activeSteps,activeCompleted){activeSteps.firstOrNull{it.id !in activeCompleted}}
-    val journeyDone=remember(activeSteps,activeCompleted){DataIntegrityRules.completedCount(activeSteps.map{it.id},activeCompleted)}
-    val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
-    val collectionRatio=if(activeDexIds.isEmpty())0f else activeOwned.count{it in activeDexIds}.toFloat()/activeDexIds.size
-    val activeRegionDexIds=dexIdsBySource[activeRegionSource].orEmpty()
-    val activeRegionOwned=captured[activeRegionSource].orEmpty()
-    val regionalMissingIds=remember(activeRegionDexIds,activeRegionOwned){
-        activeRegionDexIds.sorted().filter{it !in activeRegionOwned}
-    }
-    val regionRatio=if(activeRegionDexIds.isEmpty())0f else activeRegionOwned.count{it in activeRegionDexIds}.toFloat()/activeRegionDexIds.size
-    val plannerTargets=remember(regionalMissingIds,missingIds,activeRegionSource,dexIdsBySource,activeSources){
-        val preferred=if(regionalMissingIds.isNotEmpty()) regionalMissingIds else missingIds
-        preferred.take(5).map{id->
-            val source=activeRegionSource?.takeIf{id in dexIdsBySource[it].orEmpty()}
-                ?: activeSources.firstOrNull{s->id in dexIdsBySource[s].orEmpty()}
-            id to source
-        }
-    }
     val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
-    val animatedCollectionRatio by animateFloatAsState(targetValue=collectionRatio,label="companionCollection")
-    val animatedRegionRatio by animateFloatAsState(targetValue=regionRatio,label="companionRegion")
-    val searchResultIds=remember(searchQuery,national){
-        val q=searchQuery.trim()
-        if(q.length<2) emptyList()
-        else if(national.isNotEmpty()){
-            national.filter{
-                it.name.contains(q,ignoreCase=true) || it.id.toString()==q.removePrefix("#")
-            }.take(8).map{it.id}
-        }else{
-            PokemonRepository.search(PokemonFilter(query=q)).take(8).map{it.id}
-        }
-    }
     val shinyTotal=VariantCollectionStore.ownedVariants.count{it.shiny}
     val formTotal=VariantCollectionStore.formCount()
 
@@ -234,148 +183,6 @@ internal fun JourneyGamePicker(
                 }
             }
 
-            if(activeGame!=null && activeDexIds.isNotEmpty()){
-                item(key="living_dex_planner"){
-                    val livingDexCaptured=activeOwned.count{it in activeDexIds}
-                    val livingDexMissing=activeDexIds.size-livingDexCaptured
-                    Card(
-                        shape=RoundedCornerShape(20.dp),
-                        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)
-                    ){
-                        Column(Modifier.fillMaxWidth().padding(14.dp)){
-                            Row(verticalAlignment=Alignment.CenterVertically){
-                                Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.secondaryContainer){
-                                    Icon(Icons.Default.Checklist,null,Modifier.padding(8.dp).size(19.dp),tint=MaterialTheme.colorScheme.secondary)
-                                }
-                                Column(Modifier.weight(1f).padding(start=10.dp)){
-                                    Text("Living Dex Planner",fontWeight=FontWeight.Black)
-                                    Text(
-                                        if(livingDexMissing<=0) "Living Dex completa para este jogo."
-                                        else "Faltam "+livingDexMissing+" de "+activeDexIds.size+" Pokémon.",
-                                        style=MaterialTheme.typography.bodySmall,
-                                        color=MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                TextButton(
-                                    onClick={showAllMissingDex=true},
-                                    enabled=missingIds.isNotEmpty()
-                                ){ Text(if(missingIds.isEmpty())"Completa" else "Ver todos") }
-                            }
-                            Row(
-                                Modifier.fillMaxWidth().padding(top=10.dp),
-                                verticalAlignment=Alignment.CenterVertically
-                            ){
-                                Text(
-                                    livingDexCaptured.toString()+"/"+activeDexIds.size,
-                                    style=MaterialTheme.typography.titleSmall,
-                                    fontWeight=FontWeight.Black,
-                                    modifier=Modifier.widthIn(min=58.dp)
-                                )
-                                LinearProgressIndicator(
-                                    progress={animatedCollectionRatio.coerceIn(0f,1f)},
-                                    modifier=Modifier.weight(1f).height(7.dp),
-                                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
-                                )
-                            }
-                            if(missingIds.isNotEmpty()){
-                                Text(
-                                    "PRÓXIMOS FALTANTES",
-                                    style=MaterialTheme.typography.labelSmall,
-                                    fontWeight=FontWeight.Black,
-                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier=Modifier.padding(top=11.dp,bottom=6.dp)
-                                )
-                                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                                    missingIds.take(3).forEach{id->
-                                        val targetSource=activeRegionSource?.takeIf{id in dexIdsBySource[it].orEmpty()}
-                                            ?: activeSources.firstOrNull{s->id in dexIdsBySource[s].orEmpty()}
-                                        Surface(
-                                            modifier=Modifier.weight(1f).clickable{onPokemonClick(id,targetSource)},
-                                            shape=RoundedCornerShape(14.dp),
-                                            color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.58f)
-                                        ){
-                                            Row(
-                                                Modifier.padding(horizontal=8.dp,vertical=7.dp),
-                                                verticalAlignment=Alignment.CenterVertically
-                                            ){
-                                                AsyncImage(
-                                                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+id+".png",
-                                                    contentDescription=PokemonRepository.byId(id)?.name,
-                                                    modifier=Modifier.size(34.dp),
-                                                    contentScale=ContentScale.Fit
-                                                )
-                                                Text(
-                                                    "#"+id.toString().padStart(4,'0'),
-                                                    fontWeight=FontWeight.Bold,
-                                                    style=MaterialTheme.typography.labelSmall,
-                                                    modifier=Modifier.padding(start=4.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item(key="universal_search"){
-                OutlinedTextField(
-                    value=searchQuery,
-                    onValueChange={searchQuery=it},
-                    modifier=Modifier.fillMaxWidth(),
-                    singleLine=true,
-                    leadingIcon={Icon(Icons.Default.Search,null)},
-                    trailingIcon={
-                        if(searchQuery.isNotBlank()){
-                            IconButton(onClick={searchQuery=""}){Icon(Icons.Default.Close,"Limpar busca")}
-                        }
-                    },
-                    label={Text("Busca rápida")},
-                    placeholder={Text("Nome ou número do Pokémon")},
-                    shape=RoundedCornerShape(18.dp),
-                    supportingText={
-                        if(national.isEmpty()) Text("Usando catálogo local enquanto a Dex termina de carregar.")
-                    }
-                )
-            }
-            if(searchResultIds.isNotEmpty()){
-                item(key="search_results"){
-                    Card(shape=RoundedCornerShape(18.dp)){
-                        Column(Modifier.fillMaxWidth()){
-                            searchResultIds.forEachIndexed{index,pokemonId->
-                                val cached=national.firstOrNull{it.id==pokemonId}
-                                val fallback=PokemonRepository.byId(pokemonId)
-                                val pokemonName=(cached?.name ?: fallback?.name ?: "#"+pokemonId)
-                                    .replaceFirstChar{it.uppercase()}
-                                Row(
-                                    Modifier.fillMaxWidth().clickable{
-                                        searchQuery=""
-                                        onPokemonClick(pokemonId,null)
-                                    }.padding(horizontal=14.dp,vertical=11.dp),
-                                    verticalAlignment=Alignment.CenterVertically
-                                ){
-                                    AsyncImage(
-                                        model=cached?.spriteUrl
-                                            ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+pokemonId+".png",
-                                        contentDescription=pokemonName,
-                                        modifier=Modifier.size(42.dp),
-                                        contentScale=ContentScale.Fit
-                                    )
-                                    Column(Modifier.weight(1f).padding(start=10.dp)){
-                                        Text(pokemonName,fontWeight=FontWeight.Bold)
-                                        Text("#"+pokemonId.toString().padStart(4,'0'),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    Icon(Icons.Default.ChevronRight,null)
-                                }
-                                if(index<searchResultIds.lastIndex) HorizontalDivider(Modifier.padding(horizontal=14.dp))
-                            }
-                        }
-                    }
-                }
-            }
-
             item{
                 Text("TODOS OS JOGOS",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp,bottom=1.dp))
             }
@@ -416,66 +223,6 @@ internal fun JourneyGamePicker(
             item{Spacer(Modifier.height(20.dp))}
         }
 
-        if(showAllMissingDex && activeGame!=null){
-            ModalBottomSheet(onDismissRequest={showAllMissingDex=false}){
-                Column(Modifier.fillMaxWidth().padding(horizontal=16.dp)){
-                    Text(
-                        "Faltando na Living Dex",
-                        style=MaterialTheme.typography.headlineSmall,
-                        fontWeight=FontWeight.Black
-                    )
-                    Text(
-                        missingIds.size.toString()+" Pokémon ainda não registrados em "+activeGame.label,
-                        style=MaterialTheme.typography.bodyMedium,
-                        color=MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier=Modifier.padding(top=2.dp,bottom=10.dp)
-                    )
-                    LazyColumn(
-                        modifier=Modifier.fillMaxWidth().heightIn(max=560.dp),
-                        verticalArrangement=Arrangement.spacedBy(6.dp),
-                        contentPadding=PaddingValues(bottom=24.dp)
-                    ){
-                        items(missingIds,key={it}){id->
-                            val targetSource=activeRegionSource?.takeIf{id in dexIdsBySource[it].orEmpty()}
-                                ?: activeSources.firstOrNull{s->id in dexIdsBySource[s].orEmpty()}
-                            val pokemon=PokemonRepository.byId(id)
-                            Surface(
-                                modifier=Modifier.fillMaxWidth().clickable{
-                                    showAllMissingDex=false
-                                    onPokemonClick(id,targetSource)
-                                },
-                                shape=RoundedCornerShape(14.dp),
-                                color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.45f)
-                            ){
-                                Row(
-                                    Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=8.dp),
-                                    verticalAlignment=Alignment.CenterVertically
-                                ){
-                                    AsyncImage(
-                                        model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+id+".png",
-                                        contentDescription=pokemon?.name,
-                                        modifier=Modifier.size(44.dp),
-                                        contentScale=ContentScale.Fit
-                                    )
-                                    Column(Modifier.weight(1f).padding(start=10.dp)){
-                                        Text(
-                                            pokemon?.name?.replaceFirstChar{it.uppercase()} ?: "Pokémon #"+id,
-                                            fontWeight=FontWeight.Bold
-                                        )
-                                        Text(
-                                            "#"+id.toString().padStart(4,'0'),
-                                            style=MaterialTheme.typography.labelSmall,
-                                            color=MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    Icon(Icons.Default.ChevronRight,null)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
