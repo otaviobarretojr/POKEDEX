@@ -1,0 +1,2 @@
+Temporary CI validation trigger for v20.6.0 Journey Objective Preview.
+Application sources match main.
