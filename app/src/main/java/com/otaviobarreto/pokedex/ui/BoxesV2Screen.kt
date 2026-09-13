@@ -48,7 +48,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-private val QBbg=Color(0xFFFBF8FF);private val QBsurface=Color(0xFFF1EEFA);private val QBink=Color(0xFF171522);private val QBmuted=Color(0xFF777286);private val QBmint=Color(0xFF67D7CB)
 private data class QBRegion(val label:String,val source:String,val badge:String)
 private data class QBGame(val label:String,val accent:Color,val regions:List<QBRegion>)
 private fun qbAccent(game:String):Color=when(game){
@@ -166,7 +165,7 @@ private val qbGames=AppGameCatalog.games.map{game->
       DropdownMenuItem(
        text={Column{
         Text(r.label,fontWeight=FontWeight.SemiBold)
-        if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=QBmuted)
+        if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
        }},
        onClick={regionSource=r.source;AppStatePreferences.setActiveRegionForGame(game.label,r.source);page=AppStatePreferences.boxPage(r.source);regionMenu=false}
       )
@@ -199,7 +198,7 @@ private val qbGames=AppGameCatalog.games.map{game->
       " · Nacional "+nationalCaptured+"/"+PokeApiService.MAX_NATIONAL_DEX_ID+
       " · ★"+shinyCaptured+" · Formas "+formCaptured,
      fontSize=8.5.sp,
-     color=QBmuted
+     color=MaterialTheme.colorScheme.onSurfaceVariant
     )
    }
    IconButton(
@@ -209,7 +208,7 @@ private val qbGames=AppGameCatalog.games.map{game->
     Icon(
      Icons.Default.AutoAwesome,
      contentDescription="Evolução especial",
-     tint=if(specialEvolutionFilter)game.accent else QBmuted
+     tint=if(specialEvolutionFilter)game.accent else MaterialTheme.colorScheme.onSurfaceVariant
     )
    }
    Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
@@ -236,7 +235,7 @@ private val qbGames=AppGameCatalog.games.map{game->
       caught.toString()+"/"+dex.size,
       fontSize=7.sp,
       lineHeight=8.sp,
-      color=QBmuted
+      color=MaterialTheme.colorScheme.onSurfaceVariant
      )
     }
    }
@@ -391,7 +390,7 @@ private fun QBSlot(
                 Surface(
                     Modifier.align(Alignment.TopEnd).padding(3.dp),
                     shape=RoundedCornerShape(8.dp),
-                    color=Color.White.copy(alpha=.92f)
+                    color=MaterialTheme.colorScheme.surface.copy(alpha=.94f)
                 ){Text("✦",Modifier.padding(horizontal=4.dp,vertical=1.dp),fontSize=9.sp,fontWeight=FontWeight.Black,color=Color(0xFF7A5A00))}
             }
             Surface(
@@ -415,7 +414,7 @@ private fun QBSlot(
                             "#"+pk.gameNumber.toString().padStart(3,'0'),
                             fontSize=7.sp,
                             lineHeight=7.sp,
-                            color=QBmuted
+                            color=MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if(isShiny){
                             Text("★",fontSize=7.sp,lineHeight=7.sp,color=Color(0xFFB78900),fontWeight=FontWeight.Black)
@@ -468,14 +467,14 @@ private fun QBVariantManager(
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text(pretty(pk.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-                        Text("Formas e Shiny",fontSize=11.sp,color=QBmuted)
+                        Text("Formas e Shiny",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(dismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
                 Text(
                     "Você pode registrar mais de uma forma e manter Normal + Shiny ao mesmo tempo.",
                     style=MaterialTheme.typography.bodySmall,
-                    color=QBmuted,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier=Modifier.padding(bottom=8.dp)
                 )
                 val isCaptured=CollectionStore.isCapturedIn(source,pk.nationalId)
@@ -585,7 +584,7 @@ private fun QBVariantManager(
                                 Text(
                                     "Este Pokémon já estava marcado como capturado em uma versão antiga. Selecione Normal ou Shiny para migrá-lo ao novo sistema de variantes.",
                                     style=MaterialTheme.typography.bodySmall,
-                                    color=QBmuted,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier=Modifier.padding(8.dp)
                                 )
                             }
@@ -611,13 +610,13 @@ private fun QBAllBoxes(
         Surface(
             Modifier.fillMaxWidth(.96f).fillMaxHeight(.90f),
             shape=RoundedCornerShape(24.dp),
-            color=QBbg
+            color=MaterialTheme.colorScheme.background
         ){
             Column(Modifier.fillMaxSize().padding(16.dp)){
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
-                        Text("Todas as Boxes",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=QBink)
-                        Text("Toque em uma Box para abrir",fontSize=11.sp,color=QBmuted)
+                        Text("Todas as Boxes",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurface)
+                        Text("Toque em uma Box para abrir",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(dismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
@@ -632,7 +631,7 @@ private fun QBAllBoxes(
                             Modifier.fillMaxWidth().clickable{select(index)},
                             shape=RoundedCornerShape(18.dp),
                             colors=CardDefaults.cardColors(
-                                containerColor=if(index==current)accent.copy(alpha=.10f) else Color.White
+                                containerColor=if(index==current)accent.copy(alpha=.14f) else MaterialTheme.colorScheme.surface
                             )
                         ){
                             Row(
@@ -651,11 +650,11 @@ private fun QBAllBoxes(
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)){
-                                    Text("Box "+(index+1),fontWeight=FontWeight.Bold,fontSize=16.sp,color=QBink)
-                                    Text(owned.toString()+" / "+entries.size+" capturados",fontSize=11.sp,color=QBmuted)
+                                    Text("Box "+(index+1),fontWeight=FontWeight.Bold,fontSize=16.sp,color=MaterialTheme.colorScheme.onSurface)
+                                    Text(owned.toString()+" / "+entries.size+" capturados",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 if(index==current)AssistChip(onClick={},label={Text("Atual",fontSize=10.sp)})
-                                else Icon(Icons.Default.ArrowForwardIos,null,tint=QBmuted)
+                                else Icon(Icons.Default.ArrowForwardIos,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -728,7 +727,7 @@ private fun QBSearch(
                 }
             }
             Spacer(Modifier.height(6.dp))
-            Text(results.size.toString()+" resultado(s)",fontSize=10.sp,color=QBmuted)
+            Text(results.size.toString()+" resultado(s)",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
             LazyColumn(Modifier.heightIn(max=360.dp)){
                 items(results,key={it.nationalId}){pk->
                     Row(
@@ -741,7 +740,7 @@ private fun QBSearch(
                             Text(
                                 (if(pk.nationalId in captured)"Capturado" else "Faltando")+
                                     " · Regional #"+pk.gameNumber+" · Nacional #"+pk.nationalId,
-                                fontSize=10.sp,color=QBmuted
+                                fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         TextButton({open(pk)}){Text("Ficha")}
