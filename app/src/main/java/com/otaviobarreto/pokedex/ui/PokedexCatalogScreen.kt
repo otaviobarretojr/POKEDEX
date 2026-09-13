@@ -63,7 +63,7 @@ private fun ArtworkWithFallback(
     var failed by remember(model,fallbackModel){mutableStateOf(false)}
     Surface(
         modifier=modifier,
-        shape=RoundedCornerShape(16.dp),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
         color=MaterialTheme.colorScheme.surfaceContainerLow
     ){
         Box(Modifier.fillMaxSize().padding(6.dp),contentAlignment=Alignment.Center){
@@ -117,7 +117,7 @@ fun PokedexCatalogScreen(
             tonalElevation=2.dp
         ){
             Row(Modifier.padding(horizontal=16.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically){
-                Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
                     Icon(Icons.Default.MenuBook,null,Modifier.padding(11.dp).size(26.dp),tint=MaterialTheme.colorScheme.primary)
                 }
                 Column(Modifier.padding(start=12.dp)){
@@ -146,7 +146,7 @@ fun PokedexCatalogScreen(
                 val accent=PokedexDesignTokens.Colors.type(pk.types.firstOrNull())
                 Card(
                     onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedId=pk.id},
-                    shape=RoundedCornerShape(22.dp),
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
                     elevation=CardDefaults.cardElevation(defaultElevation=2.dp)
                 ){
@@ -259,7 +259,7 @@ private fun PokedexFormsDialog(
     Dialog(onDismissRequest=onDismiss,properties=DialogProperties(usePlatformDefaultWidth=false)){
         Surface(
             Modifier.fillMaxWidth(.94f).heightIn(max=720.dp),
-            shape=RoundedCornerShape(28.dp)
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Xl)
         ){
             Column(Modifier.fillMaxWidth().padding(16.dp)){
                 Row(verticalAlignment=Alignment.CenterVertically){
@@ -319,7 +319,7 @@ private fun PokedexFormsDialog(
                         items(visiblePreviews,key={it.label+"-"+it.formId+"-"+it.shiny}){preview->
                             Card(
                                 onClick={selectedPreview=preview},
-                                shape=RoundedCornerShape(18.dp)
+                                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
                             ){
                                 Column(
                                     Modifier.fillMaxWidth().padding(10.dp),
