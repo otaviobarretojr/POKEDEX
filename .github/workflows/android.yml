@@ -39,6 +39,8 @@ jobs:
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
       - name: Verify source architecture
         run: python3 scripts/verify_repo.py
+      - name: Product hardening audit
+        run: python3 scripts/audit_hardening.py
       - name: Install artwork audit dependency
         run: python3 -m pip install Pillow
       - name: Second-pass artwork audit
