@@ -103,21 +103,29 @@ fun PokedexCatalogScreen(
         }
     }
 
+    DexAppBackground {
     Column(Modifier.fillMaxSize()){
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=12.dp),
-            verticalAlignment=Alignment.CenterVertically
+        Surface(
+            Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
+            shape=RoundedCornerShape(26.dp),
+            color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),
+            tonalElevation=2.dp
         ){
-            Icon(Icons.Default.MenuBook,null,Modifier.size(30.dp))
-            Column(Modifier.padding(start=10.dp)){
-                Text("Pokédex",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                Text("Nacional #0001–#1025 · formas e Shiny",color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.padding(horizontal=16.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically){
+                Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                    Icon(Icons.Default.MenuBook,null,Modifier.padding(11.dp).size(26.dp),tint=MaterialTheme.colorScheme.primary)
+                }
+                Column(Modifier.padding(start=12.dp)){
+                    DexSectionEyebrow("National Dex")
+                    Text("Pokédex",style=MaterialTheme.typography.headlineMedium)
+                    Text("#0001–#1025 · formas e Shiny",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         OutlinedTextField(
             value=query,
             onValueChange={query=it},
-            modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp),
+            modifier=Modifier.fillMaxWidth().padding(horizontal=12.dp),
             singleLine=true,
             leadingIcon={Icon(Icons.Default.Search,null)},
             placeholder={Text("Nome ou número da National Dex")}
@@ -130,35 +138,63 @@ fun PokedexCatalogScreen(
             verticalArrangement=Arrangement.spacedBy(8.dp)
         ){
             items(filtered,key={it.id}){pk->
+                val accent=PokedexDesignTokens.Colors.type(pk.types.firstOrNull())
                 Card(
                     onClick={selectedId=pk.id},
-                    shape=RoundedCornerShape(18.dp)
+                    shape=RoundedCornerShape(22.dp),
+                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
+                    elevation=CardDefaults.cardElevation(defaultElevation=2.dp)
                 ){
-                    Column(
-                        Modifier.fillMaxWidth().padding(8.dp),
-                        horizontalAlignment=Alignment.CenterHorizontally
-                    ){
-                        ArtworkWithFallback(
-                            model=pk.spriteUrl,
-                            contentDescription=pk.name,
-                            modifier=Modifier.size(88.dp)
+                    Box(Modifier.fillMaxWidth()){
+                        Box(
+                            Modifier.fillMaxWidth().height(84.dp)
+                                .background(
+                                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                                        listOf(accent.copy(alpha=.18f),Color.Transparent)
+                                    )
+                                )
                         )
-                        Text(
-                            "#"+pk.id.toString().padStart(4,'0'),
-                            style=MaterialTheme.typography.labelSmall,
-                            color=MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            pk.name,
-                            fontWeight=FontWeight.Bold,
-                            maxLines=1,
-                            overflow=TextOverflow.Ellipsis
-                        )
+                        Column(
+                            Modifier.fillMaxWidth().padding(8.dp),
+                            horizontalAlignment=Alignment.CenterHorizontally
+                        ){
+                            Surface(
+                                shape=RoundedCornerShape(12.dp),
+                                color=accent.copy(alpha=.12f),
+                                modifier=Modifier.align(Alignment.Start)
+                            ){
+                                Text(
+                                    "#"+pk.id.toString().padStart(4,'0'),
+                                    Modifier.padding(horizontal=7.dp,vertical=3.dp),
+                                    style=MaterialTheme.typography.labelSmall,
+                                    color=accent
+                                )
+                            }
+                            ArtworkWithFallback(
+                                model=pk.spriteUrl,
+                                contentDescription=pk.name,
+                                modifier=Modifier.size(90.dp)
+                            )
+                            Text(
+                                pk.name,
+                                style=MaterialTheme.typography.titleSmall,
+                                maxLines=1,
+                                overflow=TextOverflow.Ellipsis
+                            )
+                            Text(
+                                pk.types.take(2).joinToString(" · "){it.uppercase()},
+                                style=MaterialTheme.typography.labelSmall,
+                                color=accent,
+                                maxLines=1
+                            )
+                        }
                     }
                 }
             }
         }
     }
+    }
+
 
     selectedId?.let{id->
         PokedexFormsDialog(
