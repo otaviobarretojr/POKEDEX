@@ -21,6 +21,7 @@ object JourneyCatalog {
         "Pokémon Legends: Z-A" -> "Z-A Royale + Rogue Megas + pós-jogo + Mega Dimension"
         "Legends Arceus" -> "Survey Corps + Nobres + espaço-tempo + pós-jogo + Daybreak"
         "Sword / Shield" -> "Gym Challenge + Champion Cup + pós-jogo + Isle of Armor + Crown Tundra"
+        "Brilliant Diamond / Shining Pearl" -> "Sinnoh + 8 ginásios + Team Galactic + Liga + pós-jogo"
         else -> "Rota de campanha"
     }
 
@@ -29,8 +30,42 @@ object JourneyCatalog {
         "Pokémon Legends: Z-A" -> legendsZa
         "Legends Arceus" -> legendsArceus
         "Sword / Shield" -> swordShield
+        "Brilliant Diamond / Shining Pearl" -> brilliantDiamondShiningPearl
         else -> emptyList()
     }
+
+    private val brilliantDiamondShiningPearl = listOf(
+        JourneyStep("bdsp-01",1,"Twinleaf Town → Lake Verity","Escolha o inicial e comece a Jornada","Nv. 5–7",JourneyChallengeKind.STORY,"Início","Twinleaf Town / Lake Verity","Turtwig, Chimchar ou Piplup iniciam a aventura em Sinnoh."),
+        JourneyStep("bdsp-02",2,"Jubilife → Oreburgh","Pokédex, Barry e Oreburgh Mine","Nv. 7–12",JourneyChallengeKind.STORY,"Exploração","Jubilife / Route 203 / Oreburgh"),
+        JourneyStep("bdsp-g1",3,"Oreburgh Gym","Roark · Coal Badge","Nv. 12–14",JourneyChallengeKind.GYM,"Ginásio · Pedra","Oreburgh Gym"),
+        JourneyStep("bdsp-04",4,"Floaroma & Valley Windworks","Derrote Mars e avance contra Team Galactic","Nv. 14–18",JourneyChallengeKind.STORY,"Team Galactic","Valley Windworks"),
+        JourneyStep("bdsp-g2",5,"Eterna Gym","Gardenia · Forest Badge","Nv. 19–22",JourneyChallengeKind.GYM,"Ginásio · Planta","Eterna Gym"),
+        JourneyStep("bdsp-06",6,"Galactic Eterna Building","Derrote Jupiter e liberte os Pokémon","Nv. 20–23",JourneyChallengeKind.STORY,"Team Galactic","Eterna City"),
+        JourneyStep("bdsp-g3",7,"Veilstone Gym","Maylene · Cobble Badge","Nv. 27–30",JourneyChallengeKind.GYM,"Ginásio · Lutador","Veilstone Gym"),
+        JourneyStep("bdsp-08",8,"Team Galactic · Veilstone","Recupere a Pokédex e investigue o grupo","Nv. 28–31",JourneyChallengeKind.STORY,"Team Galactic","Veilstone City"),
+        JourneyStep("bdsp-g4",9,"Pastoria Gym","Crasher Wake · Fen Badge","Nv. 27–30",JourneyChallengeKind.GYM,"Ginásio · Água","Pastoria Gym"),
+        JourneyStep("bdsp-10",10,"Celestic Town","Ruínas, Cynthia e Cyrus","Nv. 30–34",JourneyChallengeKind.STORY,"Mitologia","Celestic Town"),
+        JourneyStep("bdsp-g5",11,"Hearthome Gym","Fantina · Relic Badge","Nv. 32–36",JourneyChallengeKind.GYM,"Ginásio · Fantasma","Hearthome Gym"),
+        JourneyStep("bdsp-g6",12,"Canalave Gym","Byron · Mine Badge","Nv. 36–39",JourneyChallengeKind.GYM,"Ginásio · Aço","Canalave Gym"),
+        JourneyStep("bdsp-13",13,"Lake Valor / Lake Verity","Responda ao ataque da Team Galactic","Nv. 38–42",JourneyChallengeKind.STORY,"Team Galactic","Lakes of Sinnoh"),
+        JourneyStep("bdsp-14",14,"Lake Acuity","Encontre Barry após Snowpoint","Nv. 40–44",JourneyChallengeKind.STORY,"Team Galactic","Lake Acuity"),
+        JourneyStep("bdsp-g7",15,"Snowpoint Gym","Candice · Icicle Badge","Nv. 38–42",JourneyChallengeKind.GYM,"Ginásio · Gelo","Snowpoint Gym"),
+        JourneyStep("bdsp-16",16,"Galactic HQ","Invada o QG e liberte os Lake Guardians","Nv. 42–46",JourneyChallengeKind.STORY,"Team Galactic","Veilstone Galactic HQ"),
+        JourneyStep("bdsp-17",17,"Spear Pillar","Cyrus + Dialga/Palkia","Nv. 45–47",JourneyChallengeKind.STORY,"Clímax · Lendário","Mt. Coronet / Spear Pillar","Dialga em Brilliant Diamond; Palkia em Shining Pearl."),
+        JourneyStep("bdsp-g8",18,"Sunyshore Gym","Volkner · Beacon Badge","Nv. 46–49",JourneyChallengeKind.GYM,"Ginásio · Elétrico","Sunyshore Gym"),
+        JourneyStep("bdsp-19",19,"Victory Road","Prepare-se para a Liga Pokémon","Nv. 50–58",JourneyChallengeKind.STORY,"Liga","Victory Road"),
+        JourneyStep("bdsp-e4-1",20,"Elite Four · Aaron","Especialista em Inseto","Nv. 53–57",JourneyChallengeKind.STORY,"Elite Four","Pokémon League"),
+        JourneyStep("bdsp-e4-2",21,"Elite Four · Bertha","Especialista em Terra","Nv. 55–59",JourneyChallengeKind.STORY,"Elite Four","Pokémon League"),
+        JourneyStep("bdsp-e4-3",22,"Elite Four · Flint","Especialista em Fogo","Nv. 58–61",JourneyChallengeKind.STORY,"Elite Four","Pokémon League"),
+        JourneyStep("bdsp-e4-4",23,"Elite Four · Lucian","Especialista em Psíquico","Nv. 59–63",JourneyChallengeKind.STORY,"Elite Four","Pokémon League"),
+        JourneyStep("bdsp-24",24,"Champion Cynthia","Conquiste o título de Sinnoh","Nv. 60–66",JourneyChallengeKind.STORY,"Campeã","Pokémon League","Garchomp Nv. 66 fecha uma das batalhas mais exigentes da campanha."),
+        JourneyStep("bdsp-pg-01",25,"National Dex","Veja os 150 Pokémon da Sinnoh Dex","Pós-jogo",JourneyChallengeKind.POSTGAME,"Pós-jogo","Sandgem Town","Desbloqueia National Dex e amplia o conteúdo do Grand Underground."),
+        JourneyStep("bdsp-pg-02",26,"Battle Zone","Fight Area, Battle Tower e novas rotas","Nv. 60+",JourneyChallengeKind.POSTGAME,"Battle Zone","Fight Area"),
+        JourneyStep("bdsp-pg-03",27,"Stark Mountain","Buck, Team Galactic e Heatran","Nv. 65–70",JourneyChallengeKind.POSTGAME,"Lendário","Stark Mountain"),
+        JourneyStep("bdsp-pg-04",28,"Ramanas Park","Slates e lendários","Nv. 70+",JourneyChallengeKind.POSTGAME,"Lendários","Ramanas Park","Substitui o Pal Park e concentra encontros lendários do pós-game."),
+        JourneyStep("bdsp-pg-05",29,"Grand Underground · Endgame","Hideaways e espécies do National Dex","Pós-jogo",JourneyChallengeKind.EPILOGUE,"Exploração","Grand Underground"),
+        JourneyStep("bdsp-pg-06",30,"Liga · Rematches","Elite Four e Cynthia fortalecidos","Nv. 65–88",JourneyChallengeKind.EPILOGUE,"Desafio final","Pokémon League","Os rematches escalam fortemente e representam o endgame de batalha.")
+    )
 
     private val swordShield = listOf(
         JourneyStep("swsh-01",1,"Postwick → Wedgehurst","Receba o inicial e conheça Leon","Nv. 5–7",JourneyChallengeKind.STORY,"Início","Postwick / Wedgehurst","Escolha Grookey, Scorbunny ou Sobble e comece a Jornada por Galar."),
