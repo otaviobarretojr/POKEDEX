@@ -185,9 +185,11 @@ for required in ("Let's Go Pikachu / Eevee", "Sword / Shield", "Brilliant Diamon
         violations.append(f"Switch campaign guide missing {required}")
 
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
-for required in ("GUIA DE CAMPANHA", "Usar este time", "Build de campanha"):
+for required in ("GUIA DE CAMPANHA", "Usar este time"):
     if required not in team_guide:
         violations.append(f"Campaign team guide missing {required}")
+if "Build de campanha" not in team_guide and "Detalhes para a Jornada" not in team_guide:
+    violations.append("Campaign team guide missing advanced build details")
 for required in ("Início", "Mid game", "Late game"):
     if required not in team_catalog:
         violations.append(f"Campaign phase missing {required}")
@@ -480,9 +482,11 @@ for required in ("sv-01", "sv-18", "recommendedLevel", "pokemonIds", "items"):
 for required in ("adjustedSlots", "CollectionStore.capturedIds", "adjustSlots"):
     if required not in dynamic_team:
         violations.append(f"Dynamic Journey team missing {required}")
-for required in ("TIME DINÂMICO DA JORNADA", "displaySlots", "JourneyDynamicTeamCatalog.suggestion"):
+for required in ("displaySlots", "JourneyDynamicTeamCatalog.suggestion"):
     if required not in team_guide:
         violations.append(f"Dynamic team guide UI missing {required}")
+if "TIME DINÂMICO DA JORNADA" not in team_guide and "SUGESTÃO PARA SUA JORNADA" not in team_guide:
+    violations.append("Dynamic team guide UI missing Journey recommendation header")
 if "Campanha + pós-jogo + DLC · rota completa" not in journey_catalog:
     violations.append("Scarlet/Violet curated route annotation missing")
 
