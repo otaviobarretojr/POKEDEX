@@ -49,12 +49,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable private fun PokedexRoot(){var bootReady by remember{mutableStateOf(false)};if(!bootReady)BootExperienceScreen{HomeAudioManager.playMainTrack();bootReady=true}else PokedexApp()}
-data class MainDestination(val route:String,val label:String,val icon:ImageVector)
 private val mainDestinations=listOf(
- MainDestination("home","Jornada",Icons.Default.Map),
- MainDestination("pokedex","Pokédex",Icons.Default.MenuBook),
- MainDestination("boxes","Boxes",Icons.Default.GridView),
- MainDestination("central","Config.",Icons.Default.Settings)
+ DexNavItem("home","Jornada",Icons.Default.Map),
+ DexNavItem("pokedex","Pokédex",Icons.Default.MenuBook),
+ DexNavItem("boxes","Box",Icons.Default.GridView),
+ DexNavItem("central","Config.",Icons.Default.Settings)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,28 +78,14 @@ private val mainDestinations=listOf(
  LaunchedEffect(currentRoute){
   currentRoute?.let(RecentActivityStore::recordRoute)
  }
- Scaffold(bottomBar={if(!isSecondaryScreen){
-  Surface(tonalElevation=6.dp,shadowElevation=10.dp){
-   NavigationBar(containerColor=MaterialTheme.colorScheme.surface){
-    mainDestinations.forEach{d->
-     NavigationBarItem(
-      selected=currentRoute==d.route,
-      onClick={navController.navigate(d.route){popUpTo("home"){saveState=true};launchSingleTop=true;restoreState=true}},
-      icon={Icon(d.icon,d.label)},
-      label={Text(d.label,fontWeight=if(currentRoute==d.route) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Medium)},
-      alwaysShowLabel=true,
-      colors=NavigationBarItemDefaults.colors(
-       selectedIconColor=MaterialTheme.colorScheme.onPrimaryContainer,
-       selectedTextColor=MaterialTheme.colorScheme.primary,
-       indicatorColor=MaterialTheme.colorScheme.primaryContainer,
-       unselectedIconColor=MaterialTheme.colorScheme.onSurfaceVariant,
-       unselectedTextColor=MaterialTheme.colorScheme.onSurfaceVariant
-      )
-     )
-    }
-   }
+ Scaffold(
+ containerColor=MaterialTheme.colorScheme.background,
+ bottomBar={if(!isSecondaryScreen){
+  DexBottomBar(mainDestinations,currentRoute){d->
+   navController.navigate(d.route){popUpTo("home"){saveState=true};launchSingleTop=true;restoreState=true}
   }
- }},topBar={if(isMainDestination&&currentRoute!="home"&&!useCompactOwnHeader ){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
+ }},
+ topBar={if(isMainDestination&&currentRoute!="home"&&!useCompactOwnHeader ){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
   NavHost(navController,"home",Modifier.padding(innerPadding)){
    composable("home"){JourneyScreen(onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase->openCampaignGuide(game,phase)},onOpenBoxes=::openBoxes)}
    composable("campaignGuide?game={game}&phase={phase}",arguments=listOf(navArgument("game"){type=NavType.StringType;nullable=false},navArgument("phase"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val game=entry.arguments?.getString("game")?.let(Uri::decode);val phase=entry.arguments?.getString("phase")?.let(Uri::decode);CampaignTeamGuideScreen(onBackToMyTeams={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)},initialGame=game,initialPhase=phase)}
