@@ -19,15 +19,48 @@ object JourneyCatalog {
     fun routeLabel(game:String):String = when(game){
         "Scarlet / Violet" -> "Campanha + pós-jogo + DLC · rota completa"
         "Pokémon Legends: Z-A" -> "Z-A Royale + Rogue Megas + pós-jogo + Mega Dimension"
+        "Legends Arceus" -> "Survey Corps + Nobres + espaço-tempo + pós-jogo + Daybreak"
         else -> "Rota de campanha"
     }
 
     fun steps(game:String):List<JourneyStep> = when(game){
         "Scarlet / Violet" -> scarletViolet
         "Pokémon Legends: Z-A" -> legendsZa
+        "Legends Arceus" -> legendsArceus
         else -> emptyList()
     }
 
+    private val legendsArceus = listOf(
+        JourneyStep("la-01",1,"In an Unfamiliar Land","Chegada a Hisui e Jubilife Village","Nv. 5",JourneyChallengeKind.STORY,"Prólogo","Jubilife Village","Conheça Laventon, Cyllene e a Galaxy Team."),
+        JourneyStep("la-02",2,"The Galaxy Team's Entry Trial","Capture Bidoof, Starly e Shinx","Nv. 5–7",JourneyChallengeKind.STORY,"Survey Corps","Obsidian Fieldlands","Escolha Rowlet, Cyndaquil ou Oshawott e conclua o teste de entrada."),
+        JourneyStep("la-03",3,"The Basics of Crafting","Aprenda a fabricar Poké Balls","Livre",JourneyChallengeKind.STORY,"Pesquisa","Jubilife Village"),
+        JourneyStep("la-04",4,"Getting to Work on Research Tasks","Inicie as tarefas da Pokédex de Hisui","Nv. 7–10",JourneyChallengeKind.STORY,"Pokédex","Obsidian Fieldlands"),
+        JourneyStep("la-05",5,"A Request from Mai","Conheça Wyrdeer e a Diamond Clan","Nv. 10–12",JourneyChallengeKind.STORY,"Warden","Obsidian Fieldlands"),
+        JourneyStep("la-06",6,"Summoned by Commander Kamado","Receba a missão dos Nobres","Livre",JourneyChallengeKind.STORY,"História","Jubilife Village"),
+        JourneyStep("la-07",7,"The Frenzy of the Lord of the Woods","Acalme Kleavor com balms","Nv. 18",JourneyChallengeKind.STORY,"Nobre · Pedra/Inseto","Grandtree Arena","Primeiro Nobre frenético; use esquiva, balms e batalha nas janelas."),
+        JourneyStep("la-08",8,"Arezu's Predicament","Investigue a Crimson Mirelands e Lilligant","Nv. 25–30",JourneyChallengeKind.STORY,"Nobre · Planta/Lutador","Crimson Mirelands","A progressão libera Ursaluna como montaria."),
+        JourneyStep("la-09",9,"A New Mission","Avance a pesquisa após Lilligant","Nv. 30+",JourneyChallengeKind.STORY,"Survey Corps","Jubilife Village"),
+        JourneyStep("la-10",10,"The Lordless Island","Cobalt Coastlands e Noble Arcanine","Nv. 36",JourneyChallengeKind.STORY,"Nobre · Fogo/Pedra","Firespit Island","Basculegion passa a ampliar a exploração aquática."),
+        JourneyStep("la-11",11,"Scaling Perilous Heights","Suba o Coronet Highlands e acalme Electrode","Nv. 46",JourneyChallengeKind.STORY,"Nobre · Elétrico/Planta","Moonview Arena","Sneasler amplia a mobilidade vertical."),
+        JourneyStep("la-12",12,"The Slumbering Lord of the Tundra","Acalme Avalugg na Alabaster Icelands","Nv. 56",JourneyChallengeKind.STORY,"Nobre · Gelo/Pedra","Icepeak Arena","Braviary completa o conjunto principal de montarias."),
+        JourneyStep("la-13",13,"Disaster Looming","A crise do espaço-tempo se intensifica","Nv. 58+",JourneyChallengeKind.STORY,"Crise","Hisui","O protagonista é afastado de Jubilife e precisa buscar apoio dos clãs."),
+        JourneyStep("la-13b",14,"Seeking the Red Chain","Busque o Red Chain nos três lagos","Nv. 58+",JourneyChallengeKind.STORY,"Lagos","Hisui","A rota se divide entre Verity, Valor e Acuity."),
+        JourneyStep("la-14",15,"The Trial of Lake Verity","Encontre Mesprit","Nv. 58+",JourneyChallengeKind.STORY,"Lago","Lake Verity"),
+        JourneyStep("la-15",16,"The Trial of Lake Valor","Encontre Azelf","Nv. 58+",JourneyChallengeKind.STORY,"Lago","Lake Valor"),
+        JourneyStep("la-16",17,"The Trial of Lake Acuity","Encontre Uxie","Nv. 58+",JourneyChallengeKind.STORY,"Lago","Lake Acuity"),
+        JourneyStep("la-17",18,"Atop Mount Coronet","Suba ao Temple of Sinnoh","Nv. 60–65",JourneyChallengeKind.STORY,"Final","Temple of Sinnoh","Prepare o time para a sequência final da campanha."),
+        JourneyStep("la-18",19,"The Counterpart","Capture o segundo lendário do espaço-tempo","Nv. 65",JourneyChallengeKind.STORY,"Final · Lendário","Temple of Sinnoh","Os créditos rolam após a conclusão desta missão."),
+        JourneyStep("la-19",20,"A New Day Dawns","Retome a missão de completar a Pokédex","Nv. 65+",JourneyChallengeKind.POSTGAME,"Pós-jogo","Jubilife Village"),
+        JourneyStep("la-20",21,"The Researcher of Myths","Inicie a busca das Plates com Volo","Nv. 65+",JourneyChallengeKind.POSTGAME,"Mitologia","Hisui"),
+        JourneyStep("la-21",22,"The Plate of the Lakes","Enfrente os guardiões dos três lagos","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendários","Lakes of Hisui"),
+        JourneyStep("la-22",23,"The Plate of Firespit Island","Enfrente Heatran","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário · Fogo/Aço","Firespit Island"),
+        JourneyStep("la-23",24,"The Plate of Moonview Arena","Enfrente Cresselia","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário · Psíquico","Moonview Arena"),
+        JourneyStep("la-24",25,"The Plate of Snowpoint Temple","Enfrente Regigigas","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário · Normal","Snowpoint Temple"),
+        JourneyStep("la-25",26,"The Plate of Prelude Beach","Batalha com Kamado","Nv. 65+",JourneyChallengeKind.POSTGAME,"Batalha","Prelude Beach"),
+        JourneyStep("la-26",27,"Seeking the Remaining Plates","Volo + Giratina","Nv. 68–70",JourneyChallengeKind.POSTGAME,"Clímax","Temple of Sinnoh","Batalha longa em sequência; preserve recursos para Giratina."),
+        JourneyStep("la-27",28,"The Deified Pokémon","Encontre Arceus após completar a Pokédex","Nv. 75",JourneyChallengeKind.POSTGAME,"Arceus","Temple of Sinnoh","Exige capturar as espécies necessárias de Hisui antes do encontro."),
+        JourneyStep("la-daybreak",29,"Daybreak","Massive Mass Outbreaks e conteúdo 1.1.0","Nv. 65+",JourneyChallengeKind.EPILOGUE,"Daybreak","Hisui","Fecha a linha de pesquisa de Massive Mass Outbreaks e libera conteúdos avançados de batalha.")
+    )
 
     private val legendsZa = listOf(
         JourneyStep("za-01",1,"Get Your Travel Bag Back","Escolha seu inicial e recupere a bolsa","Nv. 5–6",JourneyChallengeKind.STORY,"Tutorial","Vert District","Escolha entre Chikorita, Tepig e Totodile."),
