@@ -1,5 +1,7 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -330,6 +332,15 @@ private fun SpatialRegionMap(
                         val x = (mapWidth * zone.x) - (markerWidth / 2)
                         val y = (mapHeight * zone.y) - (markerHeight / 2)
 
+                        val markerColor by animateColorAsState(
+                            when {
+                                selected -> MaterialTheme.colorScheme.primaryContainer
+                                hasEncounter -> MaterialTheme.colorScheme.secondaryContainer
+                                else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                            },
+                            tween(PokedexDesignTokens.Motion.Standard),
+                            label="mapMarkerColor"
+                        )
                         Card(
                             modifier = Modifier
                                 .offset(x = x, y = y)
@@ -342,13 +353,7 @@ private fun SpatialRegionMap(
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(
-                                        when {
-                                            selected -> MaterialTheme.colorScheme.primaryContainer
-                                            hasEncounter -> MaterialTheme.colorScheme.secondaryContainer
-                                            else -> MaterialTheme.colorScheme.surfaceContainerHigh
-                                        }
-                                    )
+                                    .background(markerColor)
                                     .padding(6.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
