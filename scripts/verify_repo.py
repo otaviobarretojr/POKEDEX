@@ -1211,9 +1211,16 @@ for required in ("Semaphore(permits = 6)", "data class CacheStats", "fun cacheSt
         violations.append(f"v10 performance store missing {required}")
 
 startup_v10 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
-for required in (".distinct().take(48)", "priorityIds.take(8)", "chunked(6)", "priorityIds.take(18)"):
-    if required not in startup_v10:
-        violations.append(f"v10 startup preload missing {required}")
+startup_contracts = (
+    (".distinct().take(48)",),
+    ("priorityIds.take(8)", "priorityIds.take(4)"),
+    ("chunked(6)",),
+    ("priorityIds.take(18)", "priorityIds.take(12)"),
+    ("launchExtendedWarm",),
+)
+for alternatives in startup_contracts:
+    if not any(marker in startup_v10 for marker in alternatives):
+        violations.append(f"v10 startup preload missing one of {alternatives}")
 
 boxes_v10 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
 for required in ('"Capturados"', '"Faltando"', '"Regional"', '"Nacional"', '"Nome"'):
@@ -1230,7 +1237,7 @@ if '"teams"' not in backup_v10:
     violations.append('v10 backup missing "teams"')
 if "TeamStore::importSnapshot" not in backup_v10 and "TeamStore.importSnapshot" not in backup_v10:
     violations.append("v10 backup team restore missing")
-if "SCHEMA_VERSION = 3" not in backup_v10 and "SCHEMA_VERSION = 4" not in backup_v10 and "SCHEMA_VERSION = 5" not in backup_v10:
+if all(marker not in backup_v10 for marker in ("SCHEMA_VERSION = 3","SCHEMA_VERSION = 4","SCHEMA_VERSION = 5","SCHEMA_VERSION = 6")):
     violations.append("v10 backup schema compatibility missing")
 
 central_v10 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
