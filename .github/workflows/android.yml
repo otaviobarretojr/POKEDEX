@@ -35,7 +35,7 @@ jobs:
       - name: Validate v20.4.0 Journey Living Dex Total
         run: |
           grep -q 'versionCode = 20400' app/build.gradle.kts
-          grep -q 'versionName = "20.3.0"' app/build.gradle.kts
+          grep -q 'versionName = "20.4.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
