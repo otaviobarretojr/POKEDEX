@@ -14,7 +14,10 @@ generic={
  "Pokémon selvagens / treinadores","Lendários retornantes","Treinadores possuídos","Nemona",
  "Commander Kamado","Lendário do tempo/espaço","Dialga / Palkia","Volo",
  "Massive Mass Outbreaks","Desafios avançados","Marnie","Hop","Bede","Finalistas",
- "Bea","Allister","Gordie","Melony","Mustard","Lendário final"
+ "Bea","Allister","Gordie","Melony","Mustard","Lendário final",
+ "Blue","Green","Red","Champion rival","Elite Four rematch",
+ "Entei / Suicune / Raikou","Eternamax Eternatus","Glastrier / Spectrier",
+ "Jolteon / Raichu","Regieleki / Regidrago","Vileplume / Marowak"
 }
 aliases=dict((n,int(i)) for n,i in re.findall(r'"([^"]+)" to (\d+)',ui))
 errors=[]
