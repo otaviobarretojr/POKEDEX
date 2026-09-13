@@ -30,10 +30,10 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Validate v19.2.0 Visual Harmony
+      - name: Validate v20.0.0 Companion Experience
         run: |
-          grep -q 'versionCode = 19200' app/build.gradle.kts
-          grep -q 'versionName = "19.2.0"' app/build.gradle.kts
+          grep -q 'versionCode = 20000' app/build.gradle.kts
+          grep -q 'versionName = "20.0.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
