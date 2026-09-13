@@ -12,8 +12,8 @@ android {
         applicationId = "com.otaviobarreto.pokedex"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18500
-        versionName = "18.5.0"
+        versionCode = 18501
+        versionName = "18.5.1"
     }
 
     signingConfigs {
