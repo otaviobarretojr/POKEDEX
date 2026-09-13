@@ -50,17 +50,7 @@ import kotlinx.coroutines.withContext
 
 private data class QBRegion(val label:String,val source:String,val badge:String)
 private data class QBGame(val label:String,val accent:Color,val regions:List<QBRegion>)
-private fun qbAccent(game:String):Color=when(game){
- "Scarlet / Violet"->Color(0xFFB54C5D)
- "Sword / Shield"->Color(0xFF35A9C7)
- "Let's Go Pikachu / Eevee"->Color(0xFFE0A929)
- "Legends Arceus"->Color(0xFF527F7C)
- "Brilliant Diamond / Shining Pearl"->Color(0xFF5968C7)
- "Pokémon Legends: Z-A"->Color(0xFF2D7F8E)
- "FireRed / LeafGreen"->Color(0xFFCC5B43)
- "Pokémon Champions"->Color(0xFF7857D8)
- else->Color(0xFF5B55E7)
-}
+private fun qbAccent(game:String):Color=PokedexDesignTokens.Colors.game(game)
 private val qbGames=AppGameCatalog.games.map{game->
  QBGame(game.label,qbAccent(game.label),game.regions.map{QBRegion(it.label,it.source,it.subtitle)})
 }
@@ -391,7 +381,7 @@ private fun QBSlot(
                     Modifier.align(Alignment.TopEnd).padding(3.dp),
                     shape=RoundedCornerShape(8.dp),
                     color=MaterialTheme.colorScheme.surface.copy(alpha=.94f)
-                ){Text("✦",Modifier.padding(horizontal=4.dp,vertical=1.dp),fontSize=9.sp,fontWeight=FontWeight.Black,color=Color(0xFF7A5A00))}
+                ){Text("✦",Modifier.padding(horizontal=4.dp,vertical=1.dp),fontSize=9.sp,fontWeight=FontWeight.Black,color=PokedexDesignTokens.Colors.SpecialGold)}
             }
             Surface(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
@@ -417,10 +407,10 @@ private fun QBSlot(
                             color=MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if(isShiny){
-                            Text("★",fontSize=7.sp,lineHeight=7.sp,color=Color(0xFFB78900),fontWeight=FontWeight.Black)
+                            Text("★",fontSize=7.sp,lineHeight=7.sp,color=PokedexDesignTokens.Colors.ShinyGold,fontWeight=FontWeight.Black)
                         }
                         if(variant!=null && variant.formPokemonId!=pk.nationalId){
-                            Text("F",fontSize=6.sp,lineHeight=7.sp,color=Color(0xFF5B55E7),fontWeight=FontWeight.Black)
+                            Text("F",fontSize=6.sp,lineHeight=7.sp,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Black)
                         }
                     }
                 }
@@ -516,7 +506,7 @@ private fun QBVariantManager(
                                     Surface(
                                         modifier=Modifier.size(64.dp),
                                         shape=RoundedCornerShape(14.dp),
-                                        color=Color.White
+                                        color=MaterialTheme.colorScheme.surface
                                     ){
                                         Box(
                                             Modifier.fillMaxSize().padding(4.dp),
