@@ -11,7 +11,9 @@ generic={
  "Batalha final","8 Gym Leaders","4 treinadores","Tera Raid 6★",
  "Wo-Chien / Chien-Pao / Ting-Lu / Chi-Yu","Carmine","Encontros de Oni Mountain",
  "Kieran","Treinadores do Terarium","Crispin","Amarys","Lacey","Drayton",
- "Pokémon selvagens / treinadores","Lendários retornantes","Treinadores possuídos","Nemona"
+ "Pokémon selvagens / treinadores","Lendários retornantes","Treinadores possuídos","Nemona",
+ "Commander Kamado","Lendário do tempo/espaço","Dialga / Palkia","Volo",
+ "Massive Mass Outbreaks","Desafios avançados"
 }
 aliases=dict((n,int(i)) for n,i in re.findall(r'"([^"]+)" to (\d+)',ui))
 errors=[]
