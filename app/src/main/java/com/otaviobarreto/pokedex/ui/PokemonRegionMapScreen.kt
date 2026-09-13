@@ -192,7 +192,7 @@ fun PokemonRegionMapScreen(
                             zone.label,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                            modifier = Modifier.padding(horizontal = PokedexDesignTokens.Spacing.Lg)
                         )
                     }
                     if (matching.isEmpty()) {
@@ -205,15 +205,15 @@ fun PokemonRegionMapScreen(
                         }
                     } else {
                         items(matching, key = { it.location }) { encounter ->
-                            Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                                Column(Modifier.padding(14.dp)) {
+                            Card(Modifier.fillMaxWidth().padding(horizontal = PokedexDesignTokens.Spacing.Lg), shape = RoundedCornerShape(PokedexDesignTokens.Radius.Lg), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                                Column(Modifier.padding(PokedexDesignTokens.Spacing.Lg)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.LocationOn, contentDescription = null)
                                         Text(
                                             encounter.location,
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.padding(start = 8.dp)
+                                            modifier = Modifier.padding(start = PokedexDesignTokens.Spacing.Sm)
                                         )
                                     }
                                     encounter.details.forEach { detail ->
@@ -226,7 +226,7 @@ fun PokemonRegionMapScreen(
                                         Text(
                                             listOfNotNull(detail.method, level, chance).joinToString(" · "),
                                             style = MaterialTheme.typography.bodySmall,
-                                            modifier = Modifier.padding(top = 6.dp)
+                                            modifier = Modifier.padding(top = PokedexDesignTokens.Spacing.Sm)
                                         )
                                     }
                                 }
@@ -252,7 +252,7 @@ private fun SpatialRegionMap(
     var scale by remember(regionLabel) { mutableFloatStateOf(1f) }
     var translation by remember(regionLabel) { mutableStateOf(Offset.Zero) }
 
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = PokedexDesignTokens.Spacing.Lg)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -309,7 +309,7 @@ private fun SpatialRegionMap(
                             .border(
                                 width = 1.dp,
                                 color = MaterialTheme.colorScheme.outlineVariant,
-                                shape = RoundedCornerShape(48.dp)
+                                shape = RoundedCornerShape(PokedexDesignTokens.Radius.Xl)
                             )
                             .background(
                                 color = MaterialTheme.colorScheme.surface,
