@@ -595,7 +595,7 @@ private fun JourneyStepCard(
         }
 
         Card(
-            Modifier.weight(1f).padding(bottom=PokedexDesignTokens.Spacing.Md).dexPressFeedback(pressedScale=.985f).clickable(onClick=onOpen),
+            Modifier.weight(1f).padding(bottom=PokedexDesignTokens.Spacing.Md).clickable(onClick=onOpen),
             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
             colors=CardDefaults.cardColors(
                 containerColor=when{
@@ -972,7 +972,7 @@ private fun JourneyObjectiveDetailScreen(
                 val pokemonId=journeyOpponentPokemonId(member.name,national)
                 Card(
                     Modifier.fillMaxWidth().then(
-                        if(pokemonId!=null) Modifier.dexPressFeedback(pressedScale=.97f).clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))}
+                        if(pokemonId!=null) Modifier.clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))}
                         else Modifier
                     ),
                     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
@@ -1047,7 +1047,7 @@ private fun JourneyObjectiveDetailScreen(
             item{JourneyDetailSectionTitle(Icons.Default.CatchingPokemon,"Pokémon úteis agora")}
             items(prep.pokemonIds){pokemonId->
                 val entry=national.firstOrNull{it.id==pokemonId}
-                Card(Modifier.fillMaxWidth().dexPressFeedback(pressedScale=.985f).clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                     Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
                         PokemonArtwork(
                             model=entry?.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
