@@ -80,14 +80,53 @@ fun ReferenceHubScreen(
     Text("Dados Pokémon",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
     Text("Consulte golpes, habilidades e itens sem sair da Pokédex.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
    }
-   TabRow(selectedTabIndex=selected,modifier=Modifier.padding(top=8.dp)){referenceTabs.forEachIndexed{i,t->Tab(selected=i==selected,onClick={selected=i;query="";chosen=null;deepLinkConsumed=true},text={Text(t.label)})}}
-   OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(12.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Buscar em ${tab.label.lowercase()}")})
+   Row(
+    Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Xs),
+    horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+   ){
+    referenceTabs.forEachIndexed{i,t->
+     FilterChip(
+      selected=i==selected,
+      onClick={selected=i;query="";chosen=null;deepLinkConsumed=true},
+      label={Text(t.label)},
+      modifier=Modifier.weight(1f)
+     )
+    }
+   }
+   OutlinedTextField(
+    query,
+    {query=it},
+    Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+    singleLine=true,
+    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+    leadingIcon={Icon(Icons.Default.Search,null)},
+    label={Text("Buscar em ${tab.label.lowercase()}")}
+   )
    when{
-    loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
-    error!=null->Box(Modifier.fillMaxSize().padding(24.dp),contentAlignment=Alignment.Center){Text(error!!)}
+    loading->DexStatusPane(
+     "Preparando ${tab.label.lowercase()}",
+     "Organizando os dados para uma abertura rápida e consistente.",
+     Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg),
+     loading=true
+    )
+    error!=null->DexStatusPane(
+     "Não foi possível carregar",
+     error!!,
+     Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)
+    )
+    filtered.isEmpty()->DexStatusPane(
+     "Nenhum resultado",
+     "Tente outro nome ou termo de busca.",
+     Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)
+    )
     else->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=12.dp,vertical=4.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
      item{Text("${filtered.size} resultados",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-     items(filtered,key={it.url}){entry->Card(Modifier.fillMaxWidth().clickable{chosen=entry},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)){Row(Modifier.fillMaxWidth().padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(pretty(entry.name),fontWeight=FontWeight.SemiBold);Text(entry.name,style=MaterialTheme.typography.labelSmall)};Icon(Icons.Default.ChevronRight,null)}}}
+     items(filtered,key={it.url}){entry->Card(
+      Modifier.fillMaxWidth().clickable{chosen=entry},
+      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+      colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
+      elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
+     ){Row(Modifier.fillMaxWidth().padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(pretty(entry.name),fontWeight=FontWeight.SemiBold);Text(entry.name,style=MaterialTheme.typography.labelSmall)};Icon(Icons.Default.ChevronRight,null)}}}
      item{Spacer(Modifier.height(16.dp))}
     }
    }
@@ -97,14 +136,17 @@ fun ReferenceHubScreen(
  if(chosen!=null)ModalBottomSheet(onDismissRequest={chosen=null;detail=null},dragHandle={BottomSheetDefaults.DragHandle()}){
   when{
    detail!=null->ReferenceDetailSheet(detail!!,source,onPokemonClick)
-   detailError!=null->Box(Modifier.fillMaxWidth().height(220.dp).padding(24.dp),contentAlignment=Alignment.Center){Text(detailError!!)}
-   else->Column(Modifier.fillMaxWidth().height(220.dp).padding(24.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally){
-    Text(pretty(chosen!!.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
-    Spacer(Modifier.height(12.dp))
-    CircularProgressIndicator()
-    Spacer(Modifier.height(8.dp))
-    Text("Carregando detalhes…",style=MaterialTheme.typography.bodySmall)
-   }
+   detailError!=null->DexStatusPane(
+    "Detalhes indisponíveis",
+    detailError!!,
+    Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)
+   )
+   else->DexStatusPane(
+    "Carregando ${pretty(chosen!!.name)}",
+    "Buscando os detalhes completos.",
+    Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg),
+    loading=true
+   )
   }
  }
 }
