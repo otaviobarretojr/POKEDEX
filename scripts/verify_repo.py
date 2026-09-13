@@ -969,7 +969,8 @@ local_v1901 = 'versionName = "19.0.1"' in local_gradle and "versionCode = 19001"
 local_v1910 = 'versionName = "19.1.0"' in local_gradle and "versionCode = 19100" in local_gradle
 local_v1920 = 'versionName = "19.2.0"' in local_gradle and "versionCode = 19200" in local_gradle
 local_v2000 = 'versionName = "20.0.0"' in local_gradle and "versionCode = 20000" in local_gradle
-local_v2030 = 'versionName = "20.3.0"' in local_gradle and "versionCode = 20300" in local_gradle\nlocal_v2040 = 'versionName = "20.4.0"' in local_gradle and "versionCode = 20400" in local_gradle
+local_v2030 = 'versionName = "20.3.0"' in local_gradle and "versionCode = 20300" in local_gradle
+local_v2040 = 'versionName = "20.4.0"' in local_gradle and "versionCode = 20400" in local_gradle
 if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040):
     violations.append("Local build version is not aligned with supported releases")
 
