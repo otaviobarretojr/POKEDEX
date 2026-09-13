@@ -75,8 +75,12 @@ for name, source in [
 if 'android:allowBackup="true"' not in manifest:
     errors.append("Android backup capability unexpectedly disabled")
 
-if 'versionCode = 19200' not in gradle or 'versionName = "19.2.0"' not in gradle:
-    errors.append("stable version contract changed unexpectedly")
+supported_version = (
+    ('versionCode = 19200' in gradle and 'versionName = "19.2.0"' in gradle) or
+    ('versionCode = 20000' in gradle and 'versionName = "20.0.0"' in gradle)
+)
+if not supported_version:
+    errors.append("supported version contract changed unexpectedly")
 
 for path, content in [
     ("JourneyScreen.kt", journey),

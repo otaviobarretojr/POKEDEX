@@ -102,8 +102,13 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "19200" not in workflow or "19.2.0" not in workflow:
-    violations.append("CI v19.2.0 version validation missing")
+if "20000" not in workflow or "20.0.0" not in workflow:
+    violations.append("CI v20.0.0 version validation missing")
+
+companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "Próximo faltante"):
+    if required not in companion:
+        violations.append(f"Companion 20 experience missing {required}")
 
 if violations:
     print("Source verification failed:")
@@ -963,7 +968,8 @@ local_v1900 = 'versionName = "19.0.0"' in local_gradle and "versionCode = 19000"
 local_v1901 = 'versionName = "19.0.1"' in local_gradle and "versionCode = 19001" in local_gradle
 local_v1910 = 'versionName = "19.1.0"' in local_gradle and "versionCode = 19100" in local_gradle
 local_v1920 = 'versionName = "19.2.0"' in local_gradle and "versionCode = 19200" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920):
+local_v2000 = 'versionName = "20.0.0"' in local_gradle and "versionCode = 20000" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
