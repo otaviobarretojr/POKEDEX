@@ -93,7 +93,7 @@ fun PokemonFormDetailScreen(
                     }
                     item{
                         Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
-                            Column(Modifier.fillMaxWidth().padding(16.dp)){
+                            Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                                 Text("Status base",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
                                 StatRow("HP",p.stats.hp)
                                 StatRow("Ataque",p.stats.attack)
@@ -101,7 +101,7 @@ fun PokemonFormDetailScreen(
                                 StatRow("Ataque Esp.",p.stats.specialAttack)
                                 StatRow("Defesa Esp.",p.stats.specialDefense)
                                 StatRow("Velocidade",p.stats.speed)
-                                HorizontalDivider(Modifier.padding(vertical=8.dp))
+                                HorizontalDivider(Modifier.padding(vertical=PokedexDesignTokens.Spacing.Sm))
                                 Text(
                                     "Total: "+(
                                         p.stats.hp+p.stats.attack+p.stats.defense+
@@ -117,7 +117,7 @@ fun PokemonFormDetailScreen(
                             Column(Modifier.fillMaxWidth().padding(16.dp)){
                                 Text("Habilidades",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
                                 p.abilities.forEach{
-                                    Text("• "+it,Modifier.padding(top=6.dp))
+                                    Text("• "+it,Modifier.padding(top=PokedexDesignTokens.Spacing.Sm),style=MaterialTheme.typography.bodyMedium)
                                 }
                             }
                         }
@@ -130,7 +130,7 @@ fun PokemonFormDetailScreen(
 
 @Composable
 private fun StatRow(label:String,value:Int){
-    Row(Modifier.fillMaxWidth().padding(vertical=4.dp)){
+    Row(Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Xs)){
         Text(label,Modifier.weight(1f))
         Text(value.toString(),fontWeight=FontWeight.Bold)
     }
