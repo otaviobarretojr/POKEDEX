@@ -20,12 +20,40 @@ object JourneyStarterCatalog {
         "Legends Arceus" -> hisui
         "Sword / Shield" -> galar
         "Brilliant Diamond / Shining Pearl" -> sinnoh
+        "Let's Go Pikachu / Eevee" -> kantoLetsGo
         else -> emptyList()
     }
 
     fun bestForGame(game:String):JourneyStarterRecommendation? = forGame(game).maxByOrNull{
         it.rating.early*3 + it.rating.mid*2 + it.rating.late
     }
+
+    private val kantoLetsGo=listOf(
+        JourneyStarterRecommendation(
+            25,"Partner Pikachu","Partner Pikachu","Elétrico",
+            "VERSÃO PIKACHU · parceiro fixo",
+            StarterStageRating(5,5,5),
+            listOf(
+                "Moves exclusivos do parceiro compensam o fato de Pikachu não evoluir.",
+                "Excelente contra Misty, vários voadores e boa parte da exploração de Kanto.",
+                "Velocidade e golpes de cobertura mantêm o parceiro relevante até a Liga.",
+                "A relação com o parceiro também influencia recursos e interações do jogo."
+            ),
+            listOf("Brock exige apoio de Água/Planta/Lutador cedo.","Não evolui para Raichu; o planejamento deve considerar o moveset especial do parceiro.")
+        ),
+        JourneyStarterRecommendation(
+            133,"Partner Eevee","Partner Eevee","Normal",
+            "VERSÃO EEVEE · cobertura excepcional por golpes exclusivos",
+            StarterStageRating(5,5,5),
+            listOf(
+                "Golpes exclusivos permitem cobrir Água, Elétrico, Fogo, Psíquico e outros tipos.",
+                "A versatilidade reduz a necessidade de trocar o parceiro durante a campanha.",
+                "Excelente consistência no mid/late game graças à cobertura e utilidade.",
+                "Funciona como núcleo flexível para completar o restante do time conforme o próximo ginásio."
+            ),
+            listOf("Não evolui para uma Eeveelution.","Tipo Normal puro depende bastante dos golpes exclusivos para gerar vantagem ofensiva.")
+        )
+    )
 
     private val sinnoh=listOf(
         JourneyStarterRecommendation(
