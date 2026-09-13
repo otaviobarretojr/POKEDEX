@@ -1152,7 +1152,13 @@ else:
 if not backup.exists(): violations.append("Backup manager missing")
 if not insights.exists(): violations.append("Collection insights missing")
 main_v89 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-if ('MainDestination("central","Central"' not in main_v89 and 'DexNavItem("central","Config."' not in main_v89) or 'composable("central")' not in main_v89:
+central_nav = (
+    'MainDestination("central","Central"' in main_v89 or
+    'DexNavItem("central","Config."' in main_v89 or
+    'DexNavItem(PokedexRoutes.CENTRAL,"Config."' in main_v89
+)
+central_route = 'composable("central")' in main_v89 or 'composable(PokedexRoutes.CENTRAL)' in main_v89
+if not central_nav or not central_route:
     violations.append("Central navigation missing")
 if violations:
     print("Source verification failed:")
