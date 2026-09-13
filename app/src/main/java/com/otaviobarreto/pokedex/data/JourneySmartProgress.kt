@@ -20,7 +20,7 @@ object JourneySmartProgress {
         val phase=when{
             nextId.startsWith("sv-pg-") || nextId.startsWith("sv-dlc-") || nextId.startsWith("sv-epi-") ||
                 nextId.startsWith("za-dlc-") || nextId in setOf("za-38","za-39","za-40","za-41","za-42") ||
-                nextId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27","la-daybreak") -> CampaignPhase.LATE
+                nextId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27") || nextId.startsWith("la-db-") -> CampaignPhase.LATE
             ratio < .34f -> CampaignPhase.EARLY
             ratio < .72f -> CampaignPhase.MID
             else -> CampaignPhase.LATE
