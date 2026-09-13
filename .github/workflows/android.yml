@@ -30,10 +30,12 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
-      - name: Validate v20.0.0 Companion Experience
+      - name: Apply release metadata
+        run: python3 scripts/apply_release_version.py
+      - name: Validate v20.3.0 Journey Dex Accuracy
         run: |
-          grep -q 'versionCode = 20000' app/build.gradle.kts
-          grep -q 'versionName = "20.0.0"' app/build.gradle.kts
+          grep -q 'versionCode = 20300' app/build.gradle.kts
+          grep -q 'versionName = "20.3.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
@@ -73,5 +75,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: pokedex-debug-apk
+          name: POKEDEX-v20.3.0-Journey-Dex-Accuracy
           path: app/build/outputs/apk/debug/app-debug.apk
