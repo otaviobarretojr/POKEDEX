@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
 private val mainDestinations=listOf(
  DexNavItem("home","Jornada",Icons.Default.Map),
  DexNavItem("pokedex","Pokédex",Icons.Default.MenuBook),
- DexNavItem("boxes","Box",Icons.Default.GridView),
+ DexNavItem("boxes","Boxes",Icons.Default.GridView),
  DexNavItem("central","Config.",Icons.Default.Settings)
 )
 
