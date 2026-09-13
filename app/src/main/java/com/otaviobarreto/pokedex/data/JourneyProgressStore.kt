@@ -20,6 +20,20 @@ object JourneyProgressStore {
             ?.getStringSet(key(game),emptySet())?.toSet().orEmpty()
     }
 
+    fun isStarted(game:String):Boolean{
+        val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return false
+        return prefs.getBoolean(startedKey(game),false) || completed(game).isNotEmpty() ||
+            AppStatePreferences.journeyStarterForGame(game)!=null
+    }
+
+    fun start(game:String,reset:Boolean=true){
+        val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return
+        val editor=prefs.edit().putBoolean(startedKey(game),true)
+        if(reset) editor.remove(key(game))
+        editor.apply()
+        revision++
+    }
+
     fun toggle(game:String,stepId:String){
         val next=completed(game).toMutableSet().apply{
             if(!add(stepId)) remove(stepId)
@@ -54,14 +68,17 @@ object JourneyProgressStore {
 
     fun exportSnapshot():JSONObject{
         val games=JSONObject()
+        val started=JSONObject()
         AppGameCatalog.adventureGames.forEach { game ->
             games.put(game.label, JSONArray(completed(game.label).sorted()))
+            started.put(game.label,isStarted(game.label))
         }
-        return JSONObject().put("games",games)
+        return JSONObject().put("games",games).put("started",started)
     }
 
     fun importSnapshot(snapshot:JSONObject):Boolean=runCatching{
         val games=snapshot.optJSONObject("games") ?: JSONObject()
+        val started=snapshot.optJSONObject("started")
         val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return@runCatching false
         val editor=prefs.edit()
         AppGameCatalog.adventureGames.forEach { game ->
@@ -73,6 +90,8 @@ object JourneyProgressStore {
                 }
             }
             editor.putStringSet(key(game.label),restored)
+            val wasStarted=started?.optBoolean(game.label,restored.isNotEmpty()) ?: restored.isNotEmpty()
+            editor.putBoolean(startedKey(game.label),wasStarted)
         }
         editor.apply()
         revision++
@@ -80,4 +99,5 @@ object JourneyProgressStore {
     }.getOrDefault(false)
 
     private fun key(game:String)="completed_"+game.lowercase().replace(Regex("[^a-z0-9]+"),"_")
+    private fun startedKey(game:String)="started_"+game.lowercase().replace(Regex("[^a-z0-9]+"),"_")
 }
