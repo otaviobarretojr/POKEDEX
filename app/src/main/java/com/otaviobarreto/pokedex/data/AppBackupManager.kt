@@ -2,23 +2,37 @@ package com.otaviobarreto.pokedex.data
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.security.MessageDigest
 
 object AppBackupManager {
-    private const val SCHEMA_VERSION = 5
+    private const val SCHEMA_VERSION = 6
 
-    fun exportJson(): String = JSONObject()
-        .put("schemaVersion", SCHEMA_VERSION)
-        .put("createdAt", System.currentTimeMillis())
-        .put("collection", CollectionStore.exportSnapshot())
-        .put("journey", JourneyProgressStore.exportSnapshot())
-        .put("appState", AppStatePreferences.exportSnapshot())
-        .put("recentActivity", RecentActivityStore.exportSnapshot())
-        .put("teams", TeamStore.exportSnapshot())
-        .put("variants", VariantCollectionStore.exportSnapshot())
-        .toString()
+    fun exportJson(): String {
+        val payload = JSONObject()
+            .put("schemaVersion", SCHEMA_VERSION)
+            .put("createdAt", System.currentTimeMillis())
+            .put("collection", CollectionStore.exportSnapshot())
+            .put("journey", JourneyProgressStore.exportSnapshot())
+            .put("appState", AppStatePreferences.exportSnapshot())
+            .put("recentActivity", RecentActivityStore.exportSnapshot())
+            .put("teams", TeamStore.exportSnapshot())
+            .put("variants", VariantCollectionStore.exportSnapshot())
+            .put(
+                "offlinePacks",
+                JSONArray(
+                    AppGameCatalog.adventureGames
+                        .filter { OfflineGamePackManager.status(it.label).downloaded }
+                        .map { it.label }
+                )
+            )
+        return JSONObject(payload.toString())
+            .put("integritySha256", sha256(payload.toString()))
+            .toString()
+    }
 
     fun importJson(raw: String): Boolean {
         val parsed = runCatching { JSONObject(raw) }.getOrNull() ?: return false
+        if (!integrityValid(parsed)) return false
         val incoming = normalizeForRestore(parsed) ?: return false
         val previous = runCatching { normalizeForRestore(JSONObject(exportJson())) }.getOrNull()
 
@@ -61,9 +75,33 @@ object AppBackupManager {
             )
             .put("teams", if (schema >= 3) root.optJSONArray("teams") ?: JSONArray() else JSONArray())
             .put("variants", if (schema >= 4) root.optJSONArray("variants") ?: JSONArray() else JSONArray())
+            .put("offlinePacks", if (schema >= 6) root.optJSONArray("offlinePacks") ?: JSONArray() else JSONArray())
 
         return normalized
     }
+
+    internal fun integrityValid(root: JSONObject): Boolean {
+        val schema = root.optInt("schemaVersion", 0)
+        if (schema < 6) return true
+        val expected = root.optString("integritySha256", "")
+        if (expected.isBlank()) return false
+        val payload = JSONObject(root.toString()).apply { remove("integritySha256") }
+        return sha256(payload.toString()) == expected
+    }
+
+    internal fun downloadedPackLabels(root: JSONObject): List<String> {
+        val array = root.optJSONArray("offlinePacks") ?: return emptyList()
+        return buildList {
+            for (index in 0 until array.length()) {
+                array.optString(index).takeIf { it.isNotBlank() }?.let(::add)
+            }
+        }
+    }
+
+    private fun sha256(value: String): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
 
     private fun applySnapshot(root: JSONObject): Boolean = runCatching {
         val collection = root.optJSONObject("collection") ?: return@runCatching false
