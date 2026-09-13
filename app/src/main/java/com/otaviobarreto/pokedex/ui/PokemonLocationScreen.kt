@@ -117,30 +117,25 @@ fun PokemonLocationScreen(
         }
     ) { innerPadding ->
         when {
-            loading -> Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(12.dp))
-                Text("Carregando áreas de encontro…")
-            }
+            loading -> DexStatusPane(
+                "Carregando localizações",
+                "Organizando áreas e métodos de encontro.",
+                Modifier.fillMaxWidth().padding(innerPadding).padding(PokedexDesignTokens.Spacing.Lg),
+                loading=true
+            )
 
-            error != null -> Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(error!!)
-            }
+            error != null -> DexStatusPane(
+                "Localizações indisponíveis",
+                error!!,
+                Modifier.fillMaxWidth().padding(innerPadding).padding(PokedexDesignTokens.Spacing.Lg)
+            )
 
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(PokedexDesignTokens.Spacing.Md)
             ) {
                 item {
-                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(
                                 model = pokemon?.spriteUrl,
@@ -187,7 +182,7 @@ fun PokemonLocationScreen(
                 }
 
                 items(filtered, key = { it.location }) { location ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = PokedexDesignTokens.Spacing.Lg), shape = RoundedCornerShape(PokedexDesignTokens.Radius.Md)) {
                         Column(Modifier.fillMaxWidth().padding(14.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.LocationOn, contentDescription = null)
