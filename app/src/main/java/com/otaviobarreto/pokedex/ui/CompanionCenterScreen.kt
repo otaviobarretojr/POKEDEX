@@ -81,14 +81,20 @@ fun CompanionCenterScreen(
         verticalArrangement=Arrangement.spacedBy(14.dp)
     ){
         item{
-            Row(verticalAlignment=Alignment.CenterVertically){
-                Icon(Icons.Default.Settings,null,Modifier.size(34.dp))
-                Column(Modifier.padding(start=10.dp)){
-                    Text("Configurações",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
-                    Text(
-                        "Downloads, armazenamento, backup e manutenção do aplicativo.",
-                        color=MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            DexGlassSurface(Modifier.fillMaxWidth()){
+                Row(verticalAlignment=Alignment.CenterVertically){
+                    Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                        Icon(Icons.Default.Settings,null,Modifier.padding(11.dp).size(28.dp),tint=MaterialTheme.colorScheme.primary)
+                    }
+                    Column(Modifier.padding(start=12.dp)){
+                        DexSectionEyebrow("Sistema")
+                        Text("Configurações",style=MaterialTheme.typography.headlineMedium)
+                        Text(
+                            "Downloads, armazenamento, backup e manutenção.",
+                            style=MaterialTheme.typography.bodySmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -106,7 +112,7 @@ fun CompanionCenterScreen(
             item(key=game.label){
                 val pack=OfflineGamePackManager.status(game.label)
                 val audit=OfflineGamePackManager.audit(game.label)
-                Card(shape=RoundedCornerShape(20.dp)){
+                Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         Row(verticalAlignment=Alignment.CenterVertically){
                             Icon(
