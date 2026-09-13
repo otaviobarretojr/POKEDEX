@@ -1,0 +1,2 @@
+Temporary CI validation trigger for v20.7.0 Journey Home Compact.
+Application sources match main.
