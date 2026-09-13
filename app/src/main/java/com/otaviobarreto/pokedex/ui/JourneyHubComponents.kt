@@ -175,8 +175,8 @@ internal fun JourneyGamePicker(
                             Spacer(Modifier.height(14.dp))
                             Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
                                 CompanionMetric("Jornada",(journeyRatio*100).toInt().toString()+"%",journeyDone.toString()+"/"+activeSteps.size,Modifier.weight(1f))
-                                CompanionMetric("Coleção",(collectionRatio*100).toInt().toString()+"%",activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,Modifier.weight(1f))
-                                CompanionMetric("Shiny",shinyTotal.toString(),"Formas "+formTotal,Modifier.weight(1f))
+                                CompanionMetric("Pokédex",(collectionRatio*100).toInt().toString()+"%",activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,Modifier.weight(1f))
+                                CompanionMetric("Pendência",nextMissing?.let{"#"+it} ?: "OK",if(nextMissing==null)"Completa" else "Próximo alvo",Modifier.weight(1f))
                             }
                             Row(Modifier.fillMaxWidth().padding(top=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                                 Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1f)){
