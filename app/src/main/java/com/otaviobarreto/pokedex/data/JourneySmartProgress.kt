@@ -22,7 +22,8 @@ object JourneySmartProgress {
                 nextId.startsWith("za-dlc-") || nextId in setOf("za-38","za-39","za-40","za-41","za-42") ||
                 nextId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27") || nextId.startsWith("la-db-") ||
                 nextId in setOf("swsh-13","swsh-14","swsh-15","swsh-16") || nextId.startsWith("swsh-pg-") || nextId.startsWith("swsh-ioa-") || nextId.startsWith("swsh-ct-") ||
-                nextId=="lgpe-17" || nextId.startsWith("lgpe-e4-") || nextId=="lgpe-22" || nextId.startsWith("lgpe-pg-") -> CampaignPhase.LATE
+                nextId=="lgpe-17" || nextId.startsWith("lgpe-e4-") || nextId=="lgpe-22" || nextId.startsWith("lgpe-pg-") ||
+                nextId=="frlg-18" || nextId.startsWith("frlg-e4-") || nextId=="frlg-23" || nextId.startsWith("frlg-pg-") -> CampaignPhase.LATE
             ratio < .34f -> CampaignPhase.EARLY
             ratio < .72f -> CampaignPhase.MID
             else -> CampaignPhase.LATE
@@ -38,6 +39,7 @@ object JourneySmartProgress {
             nextId.startsWith("la-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             nextId.startsWith("swsh-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             nextId.startsWith("lgpe-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
+            nextId.startsWith("frlg-") -> JourneyTeamProgressCatalog.chapterFor(nextId)
             phase==CampaignPhase.EARLY -> "Início da campanha"
             phase==CampaignPhase.MID -> "Meio da campanha"
             else -> "Reta final"
