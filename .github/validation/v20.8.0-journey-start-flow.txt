@@ -1,0 +1,2 @@
+Temporary CI validation trigger for v20.8.0 Journey Start Flow.
+Application sources match main.
