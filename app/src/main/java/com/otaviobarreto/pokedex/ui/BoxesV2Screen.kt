@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -379,7 +381,21 @@ private fun QBSlot(
         label="boxSlotColor"
     )
     Surface(
-        modifier.alpha(slotAlpha).scale(slotScale).combinedClickable(onClick=open,onLongClick=hold),
+        modifier
+            .alpha(slotAlpha)
+            .scale(slotScale)
+            .semantics {
+                contentDescription = buildString {
+                    append(pk.name)
+                    append(", número ")
+                    append(pk.gameNumber)
+                    append(if(captured) ", capturado" else ", não capturado")
+                    if(isShiny) append(", Shiny")
+                    if(variant!=null && variant.formPokemonId!=pk.nationalId) append(", forma alternativa")
+                    if(specialEvolution) append(", evolução especial")
+                }
+            }
+            .combinedClickable(onClick=open,onLongClick=hold),
         shape=RoundedCornerShape(9.dp),
         color=slotColor
     ){
