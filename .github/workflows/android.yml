@@ -32,10 +32,10 @@ jobs:
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
       - name: Apply release metadata
         run: python3 scripts/apply_release_version.py
-      - name: Validate v20.7.1 Detail Back Behavior
+      - name: Validate v20.8.0 Journey Start Flow
         run: |
-          grep -q 'versionCode = 20701' app/build.gradle.kts
-          grep -q 'versionName = "20.7.1"' app/build.gradle.kts
+          grep -q 'versionCode = 20800' app/build.gradle.kts
+          grep -q 'versionName = "20.8.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
@@ -75,5 +75,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: POKEDEX-v20.7.1-Detail-Back-Behavior
+          name: POKEDEX-v20.8.0-Journey-Start-Flow
           path: app/build/outputs/apk/debug/app-debug.apk
