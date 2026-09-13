@@ -190,6 +190,17 @@ fun CampaignTeamGuideScreen(
                                 }
                             }
                             Text(smart.reason,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=6.dp))
+                            val evolveCount=smart.actions.count{it.type==JourneyTeamActionType.EVOLVE}
+                            val swapCount=smart.actions.count{it.type==JourneyTeamActionType.SWAP}
+                            val catchCount=smart.actions.count{it.type==JourneyTeamActionType.CATCH}
+                            if(evolveCount+swapCount+catchCount>0){
+                                val parts=buildList{
+                                    if(evolveCount>0)add(evolveCount.toString()+" evolução")
+                                    if(swapCount>0)add(swapCount.toString()+" troca")
+                                    if(catchCount>0)add(catchCount.toString()+" captura")
+                                }
+                                Text(parts.joinToString(" · ")+" recomendada(s)",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=6.dp))
+                            }
                             smart.focusStep?.let{step->
                                 Text("Próximo foco: "+step.title+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=6.dp))
                             }
@@ -216,7 +227,10 @@ fun CampaignTeamGuideScreen(
             item{
                 Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
-                        Text(team.starter+" · "+team.phase.label,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
+                        val expectedStarterId=JourneyTeamProgressCatalog.starterMemberForPhase(starterId,phase)
+                        val expectedStarterName=national.firstOrNull{it.id==expectedStarterId}?.name ?: team.starter
+                        val contextualPhase=dynamic?.focusStep?.let{"Antes de "+it.title} ?: team.phase.label
+                        Text(expectedStarterName+" · "+contextualPhase,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
                         Text(team.rationale,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
                         Text("Referência: "+team.sourceLabel,style=MaterialTheme.typography.labelSmall,modifier=Modifier.padding(top=6.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
