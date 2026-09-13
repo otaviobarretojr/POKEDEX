@@ -75,7 +75,9 @@ fun JourneyScreen(
                 selectedGame=it
                 AppStatePreferences.activeGame=it
                 view=JourneyView.GAME_MENU
-            }
+            },
+            onPokemonClick=onPokemonClick,
+            onOpenBoxes=onOpenBoxes
         )
         JourneyView.GAME_MENU -> if(game!=null) JourneyGameMenu(
             game=game,
