@@ -40,12 +40,10 @@ internal fun JourneyGamePicker(
     onPokemonClick:(Int,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit
 ){
-    val captured=CollectionStore.contextualCapturedIds
-    val dexIdsByGame by rememberJourneyDexIdsByGame()
-    val activeGamePreview=AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame}
-        ?: AppGameCatalog.adventureGames.firstOrNull()
+    val activeGamePreview=AppGameCatalog.adventureGames
+        .firstOrNull{it.label==AppStatePreferences.activeGame}
+        ?.takeIf{JourneyProgressStore.isStarted(it.label)}
     val dexIdsBySource by rememberJourneyDexIdsBySource(activeGamePreview)
-    var showCollectionProfile by rememberSaveable { mutableStateOf(false) }
     val activeGame=activeGamePreview
     val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
     val activeRegionSource=activeGame?.let{game->
@@ -53,7 +51,6 @@ internal fun JourneyGamePicker(
             ?.takeIf{it in activeSources}
             ?: game.regions.firstOrNull()?.source
     }
-    val activeDexIds=activeGame?.let{dexIdsByGame[it.label].orEmpty()}.orEmpty()
     val officialPokedexTotal=activeGame?.let{game->
         game.pokedexTotal ?: dexIdsBySource[game.regions.firstOrNull()?.source].orEmpty().size.takeIf{it>0}
     }
@@ -64,8 +61,6 @@ internal fun JourneyGamePicker(
     val journeyDone=remember(activeSteps,activeCompleted){DataIntegrityRules.completedCount(activeSteps.map{it.id},activeCompleted)}
     val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
     val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
-    val shinyTotal=VariantCollectionStore.ownedVariants.count{it.shiny}
-    val formTotal=VariantCollectionStore.formCount()
 
     Box(
         Modifier.fillMaxSize().background(
@@ -94,7 +89,33 @@ internal fun JourneyGamePicker(
                     }
                     Spacer(Modifier.height(10.dp))
                     Text("Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
-                    Text("Continue exatamente de onde parou e encontre o que falta sem procurar em vários menus.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        if(activeGame==null) "Escolha um jogo para começar uma nova Jornada."
+                        else "Continue exatamente de onde parou.",
+                        style=MaterialTheme.typography.bodyMedium,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if(activeGame==null){
+                item(key="no_active_journey"){
+                    Surface(
+                        modifier=Modifier.fillMaxWidth(),
+                        shape=RoundedCornerShape(20.dp),
+                        color=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.45f)
+                    ){
+                        Row(
+                            Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment=Alignment.CenterVertically
+                        ){
+                            Icon(Icons.Default.PlayCircle,null,Modifier.size(28.dp),tint=MaterialTheme.colorScheme.primary)
+                            Column(Modifier.padding(start=12.dp)){
+                                Text("Nenhuma Jornada ativa",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                                Text("Abra um jogo abaixo e toque em Começar Jornada.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -190,41 +211,23 @@ internal fun JourneyGamePicker(
             }
 
             item{
-                Text("TODOS OS JOGOS",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp,bottom=1.dp))
+                Text(
+                    if(activeGame==null)"ESCOLHA UM JOGO" else "OUTRAS JORNADAS",
+                    style=MaterialTheme.typography.labelMedium,
+                    fontWeight=FontWeight.Black,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier=Modifier.padding(top=4.dp,bottom=1.dp)
+                )
             }
-            items(AppGameCatalog.adventureGames,key={it.label}){game->
-                val progress=rememberJourneyCollectionProgress(game=game,capturedBySource=captured,ids=dexIdsByGame[game.label].orEmpty())
-                JourneyGameReferenceCard(game=game,progress=progress,onClick={onSelect(game.label)})
-            }
-            item(key="collection_profile"){
-                val totalCaptured=captured.values.flatten().toSet().size
-                Surface(
-                    modifier=Modifier.fillMaxWidth().animateContentSize().clickable{showCollectionProfile=!showCollectionProfile},
-                    shape=RoundedCornerShape(20.dp),
-                    color=MaterialTheme.colorScheme.surface.copy(alpha=.90f),
-                    tonalElevation=PokedexDesignTokens.Elevation.Low
-                ){
-                    Column(Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=11.dp)){
-                        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                            Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer){
-                                Icon(Icons.Default.CatchingPokemon,null,Modifier.padding(9.dp).size(20.dp),tint=MaterialTheme.colorScheme.primary)
-                            }
-                            Column(Modifier.weight(1f).padding(start=10.dp)){
-                                Text("Perfil da coleção",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("$totalCaptured Pokémon registrados",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold)
-                            }
-                            Icon(if(showCollectionProfile)Icons.Default.ExpandLess else Icons.Default.ExpandMore,null)
-                        }
-                        if(showCollectionProfile){
-                            HorizontalDivider(Modifier.padding(vertical=10.dp))
-                            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                                CompanionMetric("Shiny",shinyTotal.toString(),"Registrados",Modifier.weight(1f))
-                                CompanionMetric("Formas",formTotal.toString(),"Colecionadas",Modifier.weight(1f))
-                                CompanionMetric("Jogos",AppGameCatalog.adventureGames.size.toString(),"Na Jornada",Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
+            items(
+                AppGameCatalog.adventureGames.filter{it.label!=activeGame?.label},
+                key={it.label}
+            ){game->
+                JourneyGameReferenceCard(
+                    game=game,
+                    isCurrent=false,
+                    onClick={onSelect(game.label)}
+                )
             }
             item{Spacer(Modifier.height(20.dp))}
         }
@@ -454,7 +457,7 @@ private fun CompanionMetric(label:String,value:String,subtitle:String,modifier:M
 @Composable
 private fun JourneyGameReferenceCard(
     game: AppGame,
-    progress: JourneyCollectionProgress,
+    isCurrent:Boolean,
     onClick: () -> Unit
 ) {
     val heroIds = JourneyGameVisualCatalog.forGame(game.label).heroPokemonIds
@@ -464,6 +467,8 @@ private fun JourneyGameReferenceCard(
     val nextJourneyStep = remember(routeSteps, completedSteps) { routeSteps.firstOrNull { it.id !in completedSteps } }
     val journeyDone = remember(routeSteps, completedSteps) { DataIntegrityRules.completedCount(routeSteps.map { it.id }, completedSteps) }
     val journeyRatio = if(routeSteps.isEmpty()) 0f else journeyDone.toFloat()/routeSteps.size
+    val started=JourneyProgressStore.isStarted(game.label)
+    val configuring=JourneyProgressStore.isConfiguring(game.label)
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val compact = maxWidth < 360.dp
         val cardHeight = if (compact) PokedexDesignTokens.Journey.CardHeightCompact else PokedexDesignTokens.Journey.CardHeight
@@ -535,47 +540,79 @@ private fun JourneyGameReferenceCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.height(6.dp))
-                    if(routeSteps.isNotEmpty()){
-                        Text(
-                            text = nextJourneyStep?.let { "Próximo: " + it.title } ?: "Jornada principal concluída",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        nextJourneyStep?.let { step ->
+                    when{
+                        configuring->{
                             Text(
-                                text = JourneyTeamProgressCatalog.chapterFor(step.id) + " · " + step.levelLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(top = 2.dp)
+                                "Configuração pendente",
+                                style=MaterialTheme.typography.labelMedium,
+                                fontWeight=FontWeight.Black,
+                                color=MaterialTheme.colorScheme.tertiary
+                            )
+                            Text(
+                                "Escolha o inicial e confirme para iniciar.",
+                                style=MaterialTheme.typography.labelSmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines=2,
+                                overflow=TextOverflow.Ellipsis,
+                                modifier=Modifier.padding(top=2.dp)
                             )
                         }
-                        Row(
-                            Modifier.fillMaxWidth().padding(top=6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            LinearProgressIndicator(
-                                progress = { journeyRatio },
-                                modifier = Modifier.weight(1f).height(7.dp),
-                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
-                            )
-                            Spacer(Modifier.width(10.dp))
+                        !started->{
                             Text(
-                                text = journeyDone.toString() + "/" + routeSteps.size,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                modifier = Modifier
-                                    .padding(start = 2.dp, end = 2.dp)
-                                    .widthIn(min = 42.dp),
-                                textAlign = TextAlign.End
+                                "Começar Jornada",
+                                style=MaterialTheme.typography.labelMedium,
+                                fontWeight=FontWeight.Black,
+                                color=MaterialTheme.colorScheme.primary
                             )
+                            Text(
+                                "Escolha seu inicial e monte o primeiro time.",
+                                style=MaterialTheme.typography.labelSmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines=2,
+                                overflow=TextOverflow.Ellipsis,
+                                modifier=Modifier.padding(top=2.dp)
+                            )
+                        }
+                        routeSteps.isNotEmpty()->{
+                            Text(
+                                text = nextJourneyStep?.let { "Próximo: " + it.title } ?: "Jornada concluída",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            nextJourneyStep?.let { step ->
+                                Text(
+                                    text = JourneyTeamProgressCatalog.chapterFor(step.id) + " · " + step.levelLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                            Row(
+                                Modifier.fillMaxWidth().padding(top=6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                LinearProgressIndicator(
+                                    progress = { journeyRatio },
+                                    modifier = Modifier.weight(1f).height(7.dp),
+                                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    text = journeyDone.toString() + "/" + routeSteps.size,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    modifier = Modifier.widthIn(min = 42.dp),
+                                    textAlign = TextAlign.End
+                                )
+                            }
                         }
                     }
 
