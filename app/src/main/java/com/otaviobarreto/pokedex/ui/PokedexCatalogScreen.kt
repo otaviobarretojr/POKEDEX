@@ -145,7 +145,7 @@ fun PokedexCatalogScreen(
             items(filtered,key={it.id}){pk->
                 val accent=PokedexDesignTokens.Colors.type(pk.types.firstOrNull())
                 Card(
-                    modifier=Modifier.dexPressFeedback(pressedScale=.965f),
+                    modifier=Modifier,
                     onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedId=pk.id},
                     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
@@ -319,7 +319,7 @@ private fun PokedexFormsDialog(
                     ){
                         items(visiblePreviews,key={it.label+"-"+it.formId+"-"+it.shiny}){preview->
                             Card(
-                                modifier=Modifier.dexPressFeedback(pressedScale=.97f),
+                                modifier=Modifier,
                                 onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedPreview=preview},
                                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
                             ){
