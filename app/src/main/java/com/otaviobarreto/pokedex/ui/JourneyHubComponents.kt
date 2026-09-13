@@ -834,17 +834,20 @@ private data class JourneyCollectionProgress(
 }
 
 @Composable
-private fun rememberJourneyDexIdsBySource(game: AppGame?): State<Map<String, Set<Int>>> =
-    produceState(initialValue = emptyMap(), key1 = game?.label) {
-        value = withContext(Dispatchers.IO) {
+private fun rememberJourneyDexIdsBySource(game: AppGame?): State<Map<String, Set<Int>>> {
+    val state=remember(game?.label){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
+    LaunchedEffect(game?.label){
+        state.value=withContext(Dispatchers.IO){
             game?.regions.orEmpty().associate { region ->
-                val ctx = GameContext.fromSource(region.source)
-                region.source to if (ctx == null) emptySet() else runCatching {
-                    GameDexService.loadGameDex(ctx).map { it.nationalId }.toSet()
+                val ctx=GameContext.fromSource(region.source)
+                region.source to if(ctx==null) emptySet() else runCatching{
+                    GameDexService.loadGameDex(ctx).map{it.nationalId}.toSet()
                 }.getOrDefault(emptySet())
             }
         }
     }
+    return state
+}
 
 @Composable
 private fun rememberJourneyDexIdsByGame(): State<Map<String, Set<Int>>> =
