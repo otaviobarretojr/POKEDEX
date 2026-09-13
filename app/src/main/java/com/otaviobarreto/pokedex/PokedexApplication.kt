@@ -21,24 +21,29 @@ import java.io.File
 class PokedexApplication : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
-        PersistentApiCache.initialize(this)
-        OfflineGamePackManager.initialize(this)
-        AppStatePreferences.initialize(this)
-        RecentActivityStore.initialize(this)
-        CollectionStore.initialize(this)
-        VariantCollectionStore.initialize(this)
-        TeamStore.initialize(this)
-        JourneyProgressStore.initialize(this)
-        HomeAudioManager.initialize(this)
-
-        val legacySource = AppStatePreferences.activeRegionSource
-            ?: AppGameCatalog.games
-                .firstOrNull { it.label == AppStatePreferences.activeGame }
-                ?.regions
-                ?.firstOrNull()
-                ?.source
-        CollectionStore.migrateLegacyCapturedToSource(legacySource)
-        CollectionIntegrityService.repair()
+        AppPerformanceTrace.section("pokedex.app.init.core") {
+            PersistentApiCache.initialize(this)
+            OfflineGamePackManager.initialize(this)
+            AppStatePreferences.initialize(this)
+            RecentActivityStore.initialize(this)
+        }
+        AppPerformanceTrace.section("pokedex.app.init.user_state") {
+            CollectionStore.initialize(this)
+            VariantCollectionStore.initialize(this)
+            TeamStore.initialize(this)
+            JourneyProgressStore.initialize(this)
+            HomeAudioManager.initialize(this)
+        }
+        AppPerformanceTrace.section("pokedex.app.integrity") {
+            val legacySource = AppStatePreferences.activeRegionSource
+                ?: AppGameCatalog.games
+                    .firstOrNull { it.label == AppStatePreferences.activeGame }
+                    ?.regions
+                    ?.firstOrNull()
+                    ?.source
+            CollectionStore.migrateLegacyCapturedToSource(legacySource)
+            CollectionIntegrityService.repair()
+        }
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
