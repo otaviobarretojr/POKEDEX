@@ -212,7 +212,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer),
                 modifier=Modifier.fillMaxWidth().padding(bottom=12.dp)
             ){
-                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Column(Modifier.weight(1f)){
                             Text("Progresso da campanha",style=MaterialTheme.typography.labelMedium)
@@ -239,7 +239,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                     )
                     Row(
                         Modifier.fillMaxWidth().padding(top=12.dp).horizontalScroll(rememberScrollState()),
-                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
                         when(game.label){
                             "Pokémon Legends: Z-A" -> {
@@ -334,7 +334,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer),
                         modifier=Modifier.fillMaxWidth().padding(vertical=8.dp)
                     ){
-                        Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
+                        Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg),horizontalAlignment=Alignment.CenterHorizontally){
                             Icon(Icons.Default.TaskAlt,null,Modifier.size(34.dp))
                             Text("Jornada concluída!",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge,modifier=Modifier.padding(top=8.dp))
                             Text("Todos os objetivos estão concluídos. Abra “Objetivos concluídos” para revisar a Jornada.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
@@ -596,7 +596,7 @@ private fun JourneyStepCard(
 
         Card(
             Modifier.weight(1f).padding(bottom=10.dp).clickable(onClick=onOpen),
-            shape=RoundedCornerShape(22.dp),
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
             colors=CardDefaults.cardColors(
                 containerColor=when{
                     done->MaterialTheme.colorScheme.secondaryContainer
@@ -611,7 +611,7 @@ private fun JourneyStepCard(
                         JourneyVisualThumb(it,Modifier.size(62.dp))
                         Spacer(Modifier.width(10.dp))
                     }
-                    Surface(shape=RoundedCornerShape(12.dp),color=kindColor){
+                    Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=kindColor){
                         Row(
                             Modifier.padding(horizontal=8.dp,vertical=5.dp),
                             verticalAlignment=Alignment.CenterVertically
@@ -623,7 +623,7 @@ private fun JourneyStepCard(
                     }
                     Spacer(Modifier.weight(1f))
                     Surface(
-                        shape=RoundedCornerShape(12.dp),
+                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                         color=MaterialTheme.colorScheme.surface
                     ){
                         Text(
@@ -649,7 +649,7 @@ private fun JourneyStepCard(
 
                 Row(
                     Modifier.fillMaxWidth().padding(top=10.dp),
-                    horizontalArrangement=Arrangement.spacedBy(8.dp)
+                    horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                 ){
                     JourneyTypeChip(step.typeLabel)
                     JourneyInfoChip(Icons.Default.LocationOn,step.location,Modifier.weight(1f))
@@ -668,7 +668,7 @@ private fun JourneyStepCard(
 
                 journeyRecommendation?.takeIf{it.isNotBlank()}?.let{recommendation->
                     Surface(
-                        shape=RoundedCornerShape(14.dp),
+                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                         color=MaterialTheme.colorScheme.secondaryContainer,
                         modifier=Modifier.fillMaxWidth().padding(top=10.dp)
                     ){
@@ -689,7 +689,7 @@ private fun JourneyStepCard(
                     )
                     LazyRow(
                         Modifier.fillMaxWidth().padding(top=7.dp),
-                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
                         items(
                             items=members.take(6).mapIndexed { index, member -> member to opponentPokemonIds.getOrNull(index) },
@@ -740,7 +740,7 @@ private fun JourneyInfoChip(
 ){
     Surface(
         modifier=modifier,
-        shape=RoundedCornerShape(12.dp),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
         color=MaterialTheme.colorScheme.surface
     ){
         Row(
@@ -763,7 +763,7 @@ private fun JourneyOpponentMiniCard(
     pokemonId:Int?
 ){
     Surface(
-        shape=RoundedCornerShape(14.dp),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
         color=MaterialTheme.colorScheme.surface,
         tonalElevation=1.dp,
         modifier=Modifier.width(86.dp)
@@ -773,7 +773,7 @@ private fun JourneyOpponentMiniCard(
             horizontalAlignment=Alignment.CenterHorizontally
         ){
             Surface(
-                shape=RoundedCornerShape(12.dp),
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                 color=MaterialTheme.colorScheme.surfaceContainer,
                 modifier=Modifier.size(58.dp)
             ){
@@ -898,7 +898,7 @@ private fun JourneyObjectiveDetailScreen(
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding=PaddingValues(16.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)
+        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Md)
     ){
         item{
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
@@ -916,14 +916,14 @@ private fun JourneyObjectiveDetailScreen(
         item{
             val visual=JourneyVisualAssetCatalog.forStep(step.id)
             Card(
-                shape=RoundedCornerShape(24.dp),
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)
             ){
-                Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg),verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
                     visual?.let{JourneyVisualHero(it)}
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                         Text(step.subtitle,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
-                        Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface){
+                        Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.surface){
                             Text(step.levelLabel,Modifier.padding(horizontal=10.dp,vertical=6.dp),fontWeight=FontWeight.Bold)
                         }
                     }
@@ -938,7 +938,7 @@ private fun JourneyObjectiveDetailScreen(
             item{JourneyDetailSectionTitle(Icons.Default.MenuBook,"Detonado do objetivo")}
             item{
                 Card(
-                    shape=RoundedCornerShape(18.dp),
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)
                 ){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
@@ -975,11 +975,11 @@ private fun JourneyObjectiveDetailScreen(
                         if(pokemonId!=null) Modifier.clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))}
                         else Modifier
                     ),
-                    shape=RoundedCornerShape(18.dp)
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
                 ){
                     Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
                         Surface(
-                            shape=RoundedCornerShape(14.dp),
+                            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                             color=MaterialTheme.colorScheme.secondaryContainer,
                             modifier=Modifier.size(72.dp)
                         ){
@@ -1008,7 +1008,7 @@ private fun JourneyObjectiveDetailScreen(
 
             item{
                 JourneyDetailSectionTitle(Icons.Default.Bolt,"Fraquezas e resposta")
-                Card(shape=RoundedCornerShape(18.dp)){
+                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         Text("Tipos recomendados",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold)
                         Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){
@@ -1023,7 +1023,7 @@ private fun JourneyObjectiveDetailScreen(
 
             item{
                 JourneyDetailSectionTitle(Icons.Default.CardGiftcard,"O que você ganha")
-                Card(shape=RoundedCornerShape(18.dp)){
+                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                     Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
                         Icon(Icons.Default.CardGiftcard,null)
                         Text(info.reward,Modifier.padding(start=10.dp).weight(1f),style=MaterialTheme.typography.bodyMedium)
@@ -1035,7 +1035,7 @@ private fun JourneyObjectiveDetailScreen(
         preparation?.let{prep->
             item{JourneyDetailSectionTitle(Icons.Default.Build,"Preparação recomendada")}
             item{
-                Card(shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)){
+                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         Text("Nível recomendado · "+prep.recommendedLevel,fontWeight=FontWeight.Bold)
                         Text("Cobertura: "+prep.counters.joinToString(" / "),style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
@@ -1047,7 +1047,7 @@ private fun JourneyObjectiveDetailScreen(
             item{JourneyDetailSectionTitle(Icons.Default.CatchingPokemon,"Pokémon úteis agora")}
             items(prep.pokemonIds){pokemonId->
                 val entry=national.firstOrNull{it.id==pokemonId}
-                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))},shape=RoundedCornerShape(18.dp)){
+                Card(Modifier.fillMaxWidth().clickable{onPokemonClick(pokemonId,journeySourceForStep(game,step))},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                     Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
                         PokemonArtwork(
                             model=entry?.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
@@ -1121,7 +1121,7 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
 
 @Composable
 private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
-    Surface(modifier=modifier,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface){
+    Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=MaterialTheme.colorScheme.surface){
         AsyncImage(
             model=asset.imageUrl,
             contentDescription=asset.subject,
@@ -1135,7 +1135,7 @@ private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifi
 private fun JourneyVisualHero(asset:JourneyVisualAsset){
     Card(
         Modifier.fillMaxWidth().height(190.dp),
-        shape=RoundedCornerShape(20.dp),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.72f))
     ){
         Row(Modifier.fillMaxSize().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
@@ -1175,7 +1175,7 @@ private fun JourneyVisualHero(asset:JourneyVisualAsset){
 
 @Composable
 private fun JourneyTypeChip(typeLabel:String){
-    Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface){
+    Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.surface){
         Row(Modifier.padding(horizontal=8.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
             JourneyTypeIconCatalog.iconUrl(typeLabel)?.let{url->
                 AsyncImage(
