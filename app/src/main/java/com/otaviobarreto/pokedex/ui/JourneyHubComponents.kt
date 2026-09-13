@@ -124,6 +124,44 @@ internal fun JourneyGamePicker(
                         elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
                     ){
                         Column(Modifier.fillMaxWidth().padding(16.dp)){
+                            Box(
+                                Modifier.fillMaxWidth().height(190.dp)
+                                    .clip(RoundedCornerShape(20.dp))
+                            ){
+                                JourneyGameCover(
+                                    gameLabel=game.label,
+                                    modifier=Modifier.fillMaxSize()
+                                )
+                                JourneyHeroArtwork(
+                                    ids=JourneyGameVisualCatalog.forGame(game.label).heroPokemonIds,
+                                    modifier=Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(170.dp)
+                                )
+                                Box(
+                                    Modifier.matchParentSize().background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                Color.Transparent,
+                                                MaterialTheme.colorScheme.surface.copy(alpha=.08f),
+                                                MaterialTheme.colorScheme.surface.copy(alpha=.82f)
+                                            )
+                                        )
+                                    )
+                                )
+                                Surface(
+                                    modifier=Modifier.align(Alignment.TopStart).padding(10.dp),
+                                    shape=RoundedCornerShape(999.dp),
+                                    color=MaterialTheme.colorScheme.surface.copy(alpha=.88f)
+                                ){
+                                    Text(
+                                        "JOGO ATIVO",
+                                        Modifier.padding(horizontal=10.dp,vertical=6.dp),
+                                        style=MaterialTheme.typography.labelSmall,
+                                        fontWeight=FontWeight.Black,
+                                        color=accent
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(14.dp))
                             Row(verticalAlignment=Alignment.CenterVertically){
                                 Surface(shape=RoundedCornerShape(14.dp),color=accent.copy(alpha=.14f)){
                                     Icon(Icons.Default.PlayArrow,null,Modifier.padding(10.dp).size(24.dp),tint=accent)
