@@ -13,6 +13,21 @@ object JourneyPreparationCatalog {
     fun forStep(stepId:String):JourneyPreparation? = items[stepId]
 
     private val items=mapOf(
+        "lgpe-g1" to JourneyPreparation("lgpe-g1","10–12",listOf("Água","Planta","Lutador"),listOf(1,56,7),listOf("Potion"),"Brock usa Pedra. Partner Pikachu precisa de apoio; Partner Eevee pode recorrer a cobertura, mas Água/Planta/Lutador são mais simples."),
+        "lgpe-g2" to JourneyPreparation("lgpe-g2","17–19",listOf("Elétrico","Planta"),listOf(25,1,43),listOf("Super Potion"),"Misty usa Água; Partner Pikachu tem vantagem direta, enquanto Eevee depende de cobertura ou parceiro de Planta/Elétrico."),
+        "lgpe-g3" to JourneyPreparation("lgpe-g3","21–25",listOf("Terra"),listOf(31,34,50),listOf("Super Potion","Paralyze Heal"),"Lt. Surge usa Elétrico. Terra é a resposta mais segura."),
+        "lgpe-g4" to JourneyPreparation("lgpe-g4","28–34",listOf("Fogo","Voador","Psíquico"),listOf(37,58,17),listOf("Hyper Potion"),"Erika usa Planta. Voador e Fogo resolvem a maior parte da luta."),
+        "lgpe-g5" to JourneyPreparation("lgpe-g5","43–44",listOf("Psíquico","Terra"),listOf(65,31,34),listOf("Hyper Potion","Antidote"),"Koga usa Veneno; Psíquico é a resposta principal."),
+        "lgpe-g6" to JourneyPreparation("lgpe-g6","43–44",listOf("Fantasma","Sombrio","Inseto"),listOf(94,127,15),listOf("Hyper Potion"),"Sabrina exige atenção à alta força especial. Fantasma/Inseto ajudam a pressionar seus Psíquicos."),
+        "lgpe-g7" to JourneyPreparation("lgpe-g7","47–48",listOf("Água","Terra","Pedra"),listOf(131,31,34),listOf("Full Restore"),"Blaine usa Fogo; Água é a rota mais confortável."),
+        "lgpe-g8" to JourneyPreparation("lgpe-g8","49–50",listOf("Água","Planta","Gelo"),listOf(131,1,87),listOf("Full Restore"),"Giovanni usa Terra. Água/Planta funcionam bem; Gelo ajuda contra combinações secundárias."),
+        "lgpe-e4-1" to JourneyPreparation("lgpe-e4-1","51–53",listOf("Elétrico","Planta","Pedra"),listOf(25,1,76),listOf("Full Restore"),"Lorelei mistura Gelo e Água; Elétrico é excelente contra boa parte da equipe."),
+        "lgpe-e4-2" to JourneyPreparation("lgpe-e4-2","52–54",listOf("Psíquico","Voador","Água","Planta"),listOf(65,18,131),listOf("Full Restore"),"Bruno mistura Lutador e Pedra. Psíquico/Voador cobrem Lutador; Água/Planta cobrem os Onix."),
+        "lgpe-e4-3" to JourneyPreparation("lgpe-e4-3","53–55",listOf("Psíquico","Fantasma","Terra"),listOf(65,94,31),listOf("Full Restore"),"Agatha usa Fantasma/Veneno. Psíquico e Terra têm ótimo valor."),
+        "lgpe-e4-4" to JourneyPreparation("lgpe-e4-4","54–56",listOf("Gelo","Elétrico","Pedra"),listOf(131,25,76),listOf("Full Restore"),"Lance exige cobertura de Gelo; Lapras é uma das melhores respostas para seus Dragões."),
+        "lgpe-22" to JourneyPreparation("lgpe-22","56–58",listOf("Cobertura ampla"),listOf(25,133,131,65,31,94),listOf("Full Restore","Max Revive"),"Trace usa equipe variada. Entre com seis membros preparados e preserve o parceiro."),
+        "lgpe-pg-01" to JourneyPreparation("lgpe-pg-01","70+",listOf("Sombrio","Fantasma","Inseto","Captura"),listOf(94,127,65),listOf("Ultra Ball","Golden Razz Berry"),"Mewtwo é Psíquico e o encontro termina em captura cronometrada após a batalha. Vá preparado para vencer rápido e capturar."),
+        "lgpe-pg-03" to JourneyPreparation("lgpe-pg-03","80–85",listOf("Cobertura ampla"),listOf(25,133,131,65,143,149),listOf("Full Restore"),"Red é um superboss de pós-game. Use seu time mais forte e não dependa apenas do parceiro."),
         "bdsp-g1" to JourneyPreparation("bdsp-g1","12–14",listOf("Água","Planta","Lutador","Terra"),listOf(393,387,391),listOf("Potion"),"Roark termina com Cranidos. Água/Planta simplificam o ginásio; Chimchar ganha resposta ao evoluir para Monferno."),
         "bdsp-g2" to JourneyPreparation("bdsp-g2","19–22",listOf("Fogo","Voador","Inseto","Gelo"),listOf(391,397,77),listOf("Super Potion"),"Gardenia usa Roserade como principal ameaça. Fogo e Voador são as respostas mais simples."),
         "bdsp-g3" to JourneyPreparation("bdsp-g3","27–30",listOf("Psíquico","Voador","Fada"),listOf(397,65,35),listOf("Super Potion"),"Maylene termina com Lucario; não dependa apenas de Psíquico contra sua combinação Lutador/Aço."),
