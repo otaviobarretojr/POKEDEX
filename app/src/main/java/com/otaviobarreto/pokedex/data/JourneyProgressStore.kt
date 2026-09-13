@@ -22,16 +22,42 @@ object JourneyProgressStore {
 
     fun isStarted(game:String):Boolean{
         val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return false
-        return prefs.getBoolean(startedKey(game),false) || completed(game).isNotEmpty() ||
-            AppStatePreferences.journeyStarterForGame(game)!=null
+        return prefs.getBoolean(startedKey(game),false) || completed(game).isNotEmpty()
     }
 
-    fun start(game:String,reset:Boolean=true){
+    fun isConfiguring(game:String):Boolean{
+        val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return false
+        return !isStarted(game) && prefs.getBoolean(configuringKey(game),false)
+    }
+
+    fun beginConfiguration(game:String,reset:Boolean=true){
         val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return
-        val editor=prefs.edit().putBoolean(startedKey(game),true)
+        val editor=prefs.edit()
+            .putBoolean(configuringKey(game),true)
+            .putBoolean(startedKey(game),false)
         if(reset) editor.remove(key(game))
         editor.apply()
         revision++
+    }
+
+    fun confirmStart(game:String){
+        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
+            ?.putBoolean(startedKey(game),true)
+            ?.putBoolean(configuringKey(game),false)
+            ?.apply()
+        revision++
+    }
+
+    fun cancelConfiguration(game:String){
+        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
+            ?.putBoolean(configuringKey(game),false)
+            ?.apply()
+        revision++
+    }
+
+    fun start(game:String,reset:Boolean=true){
+        beginConfiguration(game,reset)
+        confirmStart(game)
     }
 
     fun toggle(game:String,stepId:String){
@@ -69,16 +95,19 @@ object JourneyProgressStore {
     fun exportSnapshot():JSONObject{
         val games=JSONObject()
         val started=JSONObject()
+        val configuring=JSONObject()
         AppGameCatalog.adventureGames.forEach { game ->
             games.put(game.label, JSONArray(completed(game.label).sorted()))
             started.put(game.label,isStarted(game.label))
+            configuring.put(game.label,isConfiguring(game.label))
         }
-        return JSONObject().put("games",games).put("started",started)
+        return JSONObject().put("games",games).put("started",started).put("configuring",configuring)
     }
 
     fun importSnapshot(snapshot:JSONObject):Boolean=runCatching{
         val games=snapshot.optJSONObject("games") ?: JSONObject()
         val started=snapshot.optJSONObject("started")
+        val configuring=snapshot.optJSONObject("configuring")
         val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return@runCatching false
         val editor=prefs.edit()
         AppGameCatalog.adventureGames.forEach { game ->
@@ -92,6 +121,7 @@ object JourneyProgressStore {
             editor.putStringSet(key(game.label),restored)
             val wasStarted=started?.optBoolean(game.label,restored.isNotEmpty()) ?: restored.isNotEmpty()
             editor.putBoolean(startedKey(game.label),wasStarted)
+            editor.putBoolean(configuringKey(game.label),configuring?.optBoolean(game.label,false)==true && !wasStarted)
         }
         editor.apply()
         revision++
@@ -100,4 +130,5 @@ object JourneyProgressStore {
 
     private fun key(game:String)="completed_"+game.lowercase().replace(Regex("[^a-z0-9]+"),"_")
     private fun startedKey(game:String)="started_"+game.lowercase().replace(Regex("[^a-z0-9]+"),"_")
+    private fun configuringKey(game:String)="configuring_"+game.lowercase().replace(Regex("[^a-z0-9]+"),"_")
 }
