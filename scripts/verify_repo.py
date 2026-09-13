@@ -102,11 +102,11 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "20600" not in workflow or "20.6.0" not in workflow:
-    violations.append("CI v20.6.0 version validation missing")
+if "20700" not in workflow or "20.7.0" not in workflow:
+    violations.append("CI v20.7.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
-for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "PRÓXIMA PENDÊNCIA", "Pokédex do jogo", "Living Dex total", "officialPokedexTotal", "JourneyObjectivePreviewCard"):
+for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "Pokédex do jogo", "officialPokedexTotal", "JourneyObjectivePreviewCard", "JourneyCompactStatus", "Ver todos", "Faltando na Living Dex"):
     if required not in companion:
         violations.append(f"Companion 20 experience missing {required}")
 
@@ -973,7 +973,8 @@ local_v2030 = 'versionName = "20.3.0"' in local_gradle and "versionCode = 20300"
 local_v2040 = 'versionName = "20.4.0"' in local_gradle and "versionCode = 20400" in local_gradle
 local_v2050 = 'versionName = "20.5.0"' in local_gradle and "versionCode = 20500" in local_gradle
 local_v2060 = 'versionName = "20.6.0"' in local_gradle and "versionCode = 20600" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060):
+local_v2070 = 'versionName = "20.7.0"' in local_gradle and "versionCode = 20700" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
