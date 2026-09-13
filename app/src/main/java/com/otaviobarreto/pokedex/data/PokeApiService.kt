@@ -146,6 +146,12 @@ object PokeApiService {
         return pieces.distinct().joinToString(" • ").ifBlank{"Método especial"}
     }
 
+    fun isSpecialEvolutionRequirement(requirement:String?):Boolean{
+        val value=requirement?.trim().orEmpty()
+        if(value.isBlank()) return false
+        return !Regex("^Subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(value)
+    }
+
     private fun mergeEvolutionRequirements(
         pokemonId:Int,
         apiRequirements:List<String>
