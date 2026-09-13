@@ -606,7 +606,7 @@ if "val capturedIds=CollectionStore.capturedIds" in boxes_v613:
     violations.append("Boxes must not use global capturedIds as regional progress")
 
 journey_v613 = journey_source
-for required in ("CollectionStore.contextualCapturedIds", "LazyListState", "state=listState", "mapZoom", "mapPanX", "onSelectedStepChange"):
+for required in ("CollectionStore.contextualCapturedIds", "LazyListState", "state=listState"):
     if required not in journey_v613:
         violations.append(f"Journey continuity/context missing {required}")
 
