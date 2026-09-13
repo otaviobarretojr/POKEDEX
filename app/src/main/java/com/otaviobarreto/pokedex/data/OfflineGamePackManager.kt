@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
     private const val PACK_VERSION = 18
+    private const val DOWNLOAD_CONCURRENCY = 6
     private var context: Context? = null
 
     data class PackStatus(
@@ -193,7 +194,7 @@ object OfflineGamePackManager {
             .filter { it in ids }
             .toMutableSet()
         val pendingIds = ids.filterNot { it in alreadyCompleted }
-        val semaphore = Semaphore(permits = 10)
+        val semaphore = Semaphore(permits = DOWNLOAD_CONCURRENCY)
         var completed = alreadyCompleted.size
         val failedIds = mutableListOf<Int>()
         val formArtworkKeys = prefs().getStringSet(key(game.label, "form_artwork_keys"), emptySet()).orEmpty().toMutableSet()
