@@ -398,6 +398,7 @@ internal fun JourneyGameMenu(
     onBoxes:()->Unit,
     onRegion:(String)->Unit
 ){
+    val accent=PokedexDesignTokens.Colors.game(game.label)
     val route=JourneyCatalog.steps(game.label)
     val routeRevision=JourneyProgressStore.revision
     val completed=remember(game.label,routeRevision){JourneyProgressStore.completed(game.label)}
@@ -408,7 +409,7 @@ internal fun JourneyGameMenu(
             Brush.verticalGradient(
                 listOf(
                     MaterialTheme.colorScheme.background,
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha=.16f),
+                    accent.copy(alpha=.12f),
                     MaterialTheme.colorScheme.background
                 )
             )
@@ -432,13 +433,13 @@ internal fun JourneyGameMenu(
                             Text(game.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
                             Text("Central da Jornada",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Surface(shape=RoundedCornerShape(999.dp),color=MaterialTheme.colorScheme.primaryContainer){
+                        Surface(shape=RoundedCornerShape(999.dp),color=accent.copy(alpha=.14f)){
                             Text(
                                 (routeProgress*100).toInt().toString()+"%",
                                 Modifier.padding(horizontal=10.dp,vertical=6.dp),
                                 style=MaterialTheme.typography.labelMedium,
                                 fontWeight=FontWeight.Bold,
-                                color=MaterialTheme.colorScheme.primary
+                                color=accent
                             )
                         }
                     }
@@ -458,11 +459,11 @@ internal fun JourneyGameMenu(
                         nextStep?.let{step->
                             Surface(
                                 shape=RoundedCornerShape(16.dp),
-                                color=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.72f),
+                                color=accent.copy(alpha=.12f),
                                 modifier=Modifier.fillMaxWidth().padding(top=10.dp)
                             ){
                                 Column(Modifier.padding(horizontal=12.dp,vertical=9.dp)){
-                                    Text("PRÓXIMO OBJETIVO",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+                                    Text("PRÓXIMO OBJETIVO",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=accent)
                                     Text(step.title,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleSmall,modifier=Modifier.padding(top=2.dp))
                                     Text(JourneyTeamProgressCatalog.chapterFor(step.id)+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=2.dp))
                                 }
@@ -495,7 +496,7 @@ internal fun JourneyGameMenu(
             Card(
                 Modifier.fillMaxWidth().clickable(onClick=onBoxes),
                 shape=RoundedCornerShape(22.dp),
-                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)
+                colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.11f))
             ){
                 Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
                     Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)){
@@ -623,7 +624,7 @@ private fun JourneyActionCard(
     ){
         Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
             Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.primaryContainer){
-                Icon(icon,null,Modifier.padding(13.dp))
+                Icon(icon,null,Modifier.padding(13.dp),tint=MaterialTheme.colorScheme.primary)
             }
             Column(Modifier.weight(1f).padding(horizontal=12.dp)){
                 Text(title,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
