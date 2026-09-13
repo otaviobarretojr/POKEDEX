@@ -128,7 +128,7 @@ private val qbGames=AppGameCatalog.games.map{game->
   regionalTotals.sumOf{it.second} to regionalTotals.sumOf{it.first}
  }
  val nationalCaptured=CollectionStore.capturedIds.count{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
- Column(Modifier.fillMaxSize().background(QBbg).padding(horizontal=6.dp)){
+ Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=6.dp)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
@@ -178,11 +178,19 @@ private val qbGames=AppGameCatalog.games.map{game->
   ){
    Column(Modifier.weight(1f)){
     Text(
+     region.label.uppercase(),
+     fontSize=8.sp,
+     lineHeight=9.sp,
+     fontWeight=FontWeight.Black,
+     letterSpacing=.7.sp,
+     color=game.accent
+    )
+    Text(
      "Box "+(current+1)+" / "+pages,
      fontSize=16.sp,
      lineHeight=17.sp,
      fontWeight=FontWeight.Black,
-     color=QBink
+     color=MaterialTheme.colorScheme.onSurface
     )
     Text(
      "Deslize para navegar entre as Boxes · Jogo "+gameProgress.first+"/"+gameProgress.second+
@@ -322,7 +330,7 @@ private fun QBGrid(
                 repeat(6){col->
                     val pk=entries.getOrNull(row*6+col)
                     if(pk==null){
-                        Surface(Modifier.weight(1f).fillMaxHeight(),RoundedCornerShape(9.dp),color=QBsurface){}
+                        Surface(Modifier.weight(1f).fillMaxHeight(),RoundedCornerShape(9.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.55f)){}
                     }else{
                         QBSlot(
                             pk=pk,
@@ -362,7 +370,7 @@ private fun QBSlot(
     Surface(
         modifier.alpha(if(specialFilter&&!specialEvolution).18f else 1f).combinedClickable(onClick=open,onLongClick=hold),
         shape=RoundedCornerShape(9.dp),
-        color=if(captured)Color(0xFFEAE6FA)else QBsurface
+        color=if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.78f)else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.82f)
     ){
         Box(Modifier.fillMaxSize()){
             AsyncImage(
@@ -386,7 +394,7 @@ private fun QBSlot(
             }
             Surface(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                color=Color.White.copy(alpha=.90f)
+                color=MaterialTheme.colorScheme.surface.copy(alpha=.92f)
             ){
                 Column(
                     Modifier.padding(vertical=2.dp,horizontal=1.dp),
@@ -398,7 +406,7 @@ private fun QBSlot(
                         lineHeight=8.sp,
                         maxLines=1,
                         overflow=TextOverflow.Ellipsis,
-                        color=if(captured)QBink else QBmuted
+                        color=if(captured)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(2.dp)){
                         Text(
@@ -451,7 +459,7 @@ private fun QBVariantManager(
                 .widthIn(max=560.dp)
                 .heightIn(max=620.dp),
             shape=RoundedCornerShape(24.dp),
-            color=QBbg
+            color=MaterialTheme.colorScheme.background
         ){
             Column(Modifier.fillMaxWidth().padding(16.dp)){
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
