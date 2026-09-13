@@ -372,7 +372,11 @@ for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
 for required in ("completed", "toggle", "clear"):
     if required not in journey_progress:
         violations.append(f"Journey progress persistence missing {required}")
-if 'DexNavItem("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in application_source:
+journey_primary = (
+    'DexNavItem("home","Jornada"' in main or
+    'DexNavItem(PokedexRoutes.HOME,"Jornada"' in main
+)
+if not journey_primary or "JourneyProgressStore.initialize" not in application_source:
     violations.append("Journey is not wired as the primary tab")
 
 if violations:
