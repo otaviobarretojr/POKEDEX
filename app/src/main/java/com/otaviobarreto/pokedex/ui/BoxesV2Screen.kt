@@ -119,7 +119,7 @@ private val qbGames=AppGameCatalog.games.map{game->
   regionalTotals.sumOf{it.second} to regionalTotals.sumOf{it.first}
  }
  val nationalCaptured=CollectionStore.capturedIds.count{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
- Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=6.dp)){
+ Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
   Row(
    Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
@@ -264,13 +264,13 @@ private val qbGames=AppGameCatalog.games.map{game->
    }
   }
   Row(
-   Modifier.fillMaxWidth().height(40.dp).padding(bottom=1.dp),
+   Modifier.fillMaxWidth().height(42.dp).padding(bottom=PokedexDesignTokens.Spacing.Xs),
    horizontalArrangement=Arrangement.spacedBy(4.dp)
   ){
    FilledTonalButton(
     {search=true},
     Modifier.weight(1f).fillMaxHeight(),
-    shape=RoundedCornerShape(13.dp)
+    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
    ){
     Icon(Icons.Default.Search,null,Modifier.size(17.dp))
     Spacer(Modifier.width(5.dp))
@@ -450,7 +450,7 @@ private fun QBVariantManager(
                 .fillMaxWidth(.92f)
                 .widthIn(max=560.dp)
                 .heightIn(max=620.dp),
-            shape=RoundedCornerShape(24.dp),
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
             color=MaterialTheme.colorScheme.background
         ){
             Column(Modifier.fillMaxWidth().padding(16.dp)){
@@ -476,7 +476,7 @@ private fun QBVariantManager(
                             dismiss()
                         },
                         modifier=Modifier.fillMaxWidth(),
-                        shape=RoundedCornerShape(14.dp)
+                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
                     ){
                         Icon(Icons.Default.DeleteOutline,null,Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
@@ -498,7 +498,7 @@ private fun QBVariantManager(
                             val formId=form.pokemonId!!
                             val normalOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,form.name,false)
                             val shinyOwned=VariantCollectionStore.isOwned(source,pk.nationalId,formId,form.name,true)
-                            Card(shape=RoundedCornerShape(18.dp)){
+                            Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                                 Row(
                                     Modifier.fillMaxWidth().padding(10.dp),
                                     verticalAlignment=Alignment.CenterVertically
