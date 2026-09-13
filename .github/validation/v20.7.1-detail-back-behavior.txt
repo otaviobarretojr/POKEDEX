@@ -1,0 +1,2 @@
+Temporary CI validation trigger for v20.7.1 Detail Back Behavior.
+Application sources match main.
