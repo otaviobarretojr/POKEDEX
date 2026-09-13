@@ -15,17 +15,19 @@ object JourneySmartProgress {
         val completed=JourneyProgressStore.completed(game)
         val next=steps.firstOrNull{it.id !in completed}
         val count=completed.count{done->steps.any{it.id==done}}.coerceAtMost(steps.size)
-        val ratio=if(steps.isEmpty())0f else count.toFloat()/steps.size
         val nextId=next?.id.orEmpty()
+        val mainStory=steps.takeWhile{it.kind !in setOf(JourneyChallengeKind.POSTGAME,JourneyChallengeKind.DLC,JourneyChallengeKind.EPILOGUE)}
+        val mainCompleted=completed.count{done->mainStory.any{it.id==done}}.coerceAtMost(mainStory.size)
+        val mainRatio=when{
+            mainStory.isEmpty() -> 0f
+            next!=null && next !in mainStory -> 1f
+            else -> mainCompleted.toFloat()/mainStory.size
+        }
         val phase=when{
-            nextId.startsWith("sv-pg-") || nextId.startsWith("sv-dlc-") || nextId.startsWith("sv-epi-") ||
-                nextId.startsWith("za-dlc-") || nextId in setOf("za-38","za-39","za-40","za-41","za-42") ||
-                nextId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27") || nextId.startsWith("la-db-") ||
-                nextId in setOf("swsh-13","swsh-14","swsh-15","swsh-16") || nextId.startsWith("swsh-pg-") || nextId.startsWith("swsh-ioa-") || nextId.startsWith("swsh-ct-") ||
-                nextId=="lgpe-17" || nextId.startsWith("lgpe-e4-") || nextId=="lgpe-22" || nextId.startsWith("lgpe-pg-") ||
-                nextId=="frlg-18" || nextId.startsWith("frlg-e4-") || nextId=="frlg-23" || nextId.startsWith("frlg-pg-") -> CampaignPhase.LATE
-            ratio < .34f -> CampaignPhase.EARLY
-            ratio < .72f -> CampaignPhase.MID
+            next==null -> CampaignPhase.LATE
+            next.kind in setOf(JourneyChallengeKind.POSTGAME,JourneyChallengeKind.DLC,JourneyChallengeKind.EPILOGUE) -> CampaignPhase.LATE
+            mainRatio < .34f -> CampaignPhase.EARLY
+            mainRatio < .72f -> CampaignPhase.MID
             else -> CampaignPhase.LATE
         }
         val label=when{
