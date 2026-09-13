@@ -76,8 +76,8 @@ object JourneyDynamicTeamCatalog {
             out[starterIndex]=CampaignSlot(expectedStarter)
         }
 
-        recommended.take(2).forEach{candidate->
-            if(out.any{it.pokemonId==candidate})return@forEach
+        recommended.take(3).forEach{candidate->
+            if(out.any{JourneyTeamProgressCatalog.sameEvolutionFamily(it.pokemonId,candidate)})return@forEach
             val replaceIndex=out.indices.lastOrNull{
                 it!=starterIndex &&
                     out[it].pokemonId !in recommended &&
@@ -104,13 +104,32 @@ object JourneyDynamicTeamCatalog {
         }
 
         JourneyTeamProgressCatalog.newlyRelevantCatches(focus).forEach{catch->
-            if(catch.pokemonId !in CollectionStore.capturedIds && actions.none{it.toPokemonId==catch.pokemonId}){
+            if(
+                catch.pokemonId !in CollectionStore.capturedIds &&
+                actions.none{JourneyTeamProgressCatalog.sameEvolutionFamily(it.toPokemonId,catch.pokemonId)} &&
+                out.none{JourneyTeamProgressCatalog.sameEvolutionFamily(it.pokemonId,catch.pokemonId)}
+            ){
                 actions += JourneyTeamAction(
                     type=JourneyTeamActionType.CATCH,
                     toPokemonId=catch.pokemonId,
                     title="Captura recomendada no caminho",
                     reason=catch.reason+" Área: "+catch.area+"."
                 )
+            }
+        }
+        val seenFamilies=mutableSetOf<Int>()
+        out.indices.forEach{index->
+            val key=JourneyTeamProgressCatalog.familyKey(out[index].pokemonId)
+            if(!seenFamilies.add(key)){
+                val replacement=(recommended + JourneyTeamProgressCatalog.catchRecommendationsBefore(focus).map{it.pokemonId} + base.map{it.pokemonId})
+                    .firstOrNull{candidate->
+                        JourneyTeamProgressCatalog.familyKey(candidate) !in seenFamilies &&
+                        out.none{JourneyTeamProgressCatalog.sameEvolutionFamily(it.pokemonId,candidate)}
+                    }
+                if(replacement!=null){
+                    out[index]=CampaignSlot(replacement)
+                    seenFamilies += JourneyTeamProgressCatalog.familyKey(replacement)
+                }
             }
         }
         return AdjustmentResult(out,actions)
