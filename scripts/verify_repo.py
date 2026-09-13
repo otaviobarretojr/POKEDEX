@@ -37,6 +37,23 @@ detail = (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8")
 if "Render as soon as the two core payloads are ready" not in detail:
     violations.append("progressive detail loading guard missing")
 
+# Compatibility guard — fixed Box layout / no Pokémon reordering
+boxes_v2 = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
+for forbidden in (
+    "movePokemon(",
+    "moveMany(",
+    "sortBox(",
+    "detectDragGesturesAfterLongPress",
+    "draggable(",
+    "reorderable",
+    "swap",
+):
+    if forbidden in boxes_v2:
+        violations.append(f"Fixed Box regression: forbidden movement primitive {forbidden}")
+for required in ("repeat(5)", "repeat(6)", "row*6+col", "take(30)"):
+    if required not in boxes_v2:
+        violations.append(f"Fixed Box invariant missing {required}")
+
 if violations:
     print("Source verification failed:")
     for item in violations:
