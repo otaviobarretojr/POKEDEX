@@ -98,6 +98,9 @@ object AppBackupManager {
         }
     }
 
+    fun downloadedPackLabels(raw: String): List<String> =
+        runCatching { downloadedPackLabels(JSONObject(raw)) }.getOrDefault(emptyList())
+
     private fun sha256(value: String): String =
         MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray(Charsets.UTF_8))
