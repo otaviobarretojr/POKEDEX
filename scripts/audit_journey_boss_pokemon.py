@@ -13,7 +13,8 @@ generic={
  "Kieran","Treinadores do Terarium","Crispin","Amarys","Lacey","Drayton",
  "Pokémon selvagens / treinadores","Lendários retornantes","Treinadores possuídos","Nemona",
  "Commander Kamado","Lendário do tempo/espaço","Dialga / Palkia","Volo",
- "Massive Mass Outbreaks","Desafios avançados"
+ "Massive Mass Outbreaks","Desafios avançados","Marnie","Hop","Bede","Finalistas",
+ "Bea","Allister","Gordie","Melony","Mustard","Lendário final"
 }
 aliases=dict((n,int(i)) for n,i in re.findall(r'"([^"]+)" to (\d+)',ui))
 errors=[]
