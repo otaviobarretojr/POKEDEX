@@ -27,7 +27,10 @@ fun CampaignTeamGuideScreen(
     initialGame:String?=null,
     initialPhase:String?=null
 ){
-    val initial=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames} ?: AppStatePreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames} ?: TeamCampaignCatalog.switchGames.first()
+    val journeyContext=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames}
+    val initial=journeyContext
+        ?: AppStatePreferences.activeGame.takeIf{it in TeamCampaignCatalog.switchGames}
+        ?: TeamCampaignCatalog.switchGames.first()
     var game by remember(initial) { mutableStateOf(initial) }
     var starterId by remember(game) {
         mutableIntStateOf(
@@ -36,9 +39,13 @@ fun CampaignTeamGuideScreen(
                 ?: TeamCampaignCatalog.starters(game).first().second
         )
     }
-    val suggestedPhase=remember(initialPhase){CampaignPhase.values().firstOrNull{it.name==initialPhase} ?: CampaignPhase.EARLY}
-    var phase by remember(initialGame,initialPhase) { mutableStateOf(suggestedPhase) }
+    val automaticPhase=remember(game,JourneyProgressStore.revision,initialPhase){
+        if(journeyContext!=null) JourneySmartProgress.context(game).phase
+        else CampaignPhase.values().firstOrNull{it.name==initialPhase} ?: CampaignPhase.EARLY
+    }
+    var phase by remember(game,automaticPhase) { mutableStateOf(automaticPhase) }
     var gameMenu by remember { mutableStateOf(false) }
+    var editStarter by remember { mutableStateOf(false) }
     var createdMessage by remember { mutableStateOf<String?>(null) }
     val preset=remember(game,starterId,phase){TeamCampaignCatalog.preset(game,starterId,phase)}
     val dynamic=remember(game,starterId,JourneyProgressStore.revision){
@@ -57,7 +64,7 @@ fun CampaignTeamGuideScreen(
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                 Column(Modifier.weight(1f)){
                     Text("MEU TIME",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                    Text("GUIA DE CAMPANHA · SWITCH",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+                    Text(if(journeyContext!=null)"PLANO DA JORNADA" else "GUIA DE CAMPANHA · SWITCH",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                 }
                 TextButton(onClick=onBackToMyTeams){Icon(Icons.Default.Groups,null);Spacer(Modifier.width(4.dp));Text("Meus times")}
             }
@@ -65,51 +72,86 @@ fun CampaignTeamGuideScreen(
         item{
             Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
-                    ExposedDropdownMenuBox(expanded=gameMenu,onExpandedChange={gameMenu=!gameMenu}){
-                        OutlinedTextField(
-                            value=game,onValueChange={},readOnly=true,singleLine=true,
-                            modifier=Modifier.menuAnchor().fillMaxWidth(),
-                            label={Text("Jogo")},
-                            trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)}
-                        )
-                        ExposedDropdownMenu(expanded=gameMenu,onDismissRequest={gameMenu=false}){
-                            TeamCampaignCatalog.switchGames.forEach{g->
-                                DropdownMenuItem(text={Text(g)},onClick={
-                                    game=g
-                                    starterId=AppStatePreferences.journeyStarterForGame(g)
-                                        ?: JourneyStarterCatalog.bestForGame(g)?.pokemonId
-                                        ?: TeamCampaignCatalog.starters(g).first().second
-                                    AppStatePreferences.activeGame=g.takeIf{candidate->AppGameCatalog.games.any{it.label==candidate}} ?: AppStatePreferences.activeGame
-                                    gameMenu=false
-                                })
+                    if(journeyContext!=null){
+                        Row(verticalAlignment=Alignment.CenterVertically){
+                            Column(Modifier.weight(1f)){
+                                Text(game,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "Jornada ativa · "+phase.label+" · inicial sincronizado",
+                                    style=MaterialTheme.typography.bodySmall,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                        }
-                    }
-                    Text("Inicial",fontWeight=FontWeight.SemiBold)
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        TeamCampaignCatalog.starters(game).forEach{(name,id)->
-                            FilterChip(
-                                selected=starterId==id,
-                                onClick={
-                                    starterId=id
-                                    AppStatePreferences.setJourneyStarterForGame(game,id)
-                                },
-                                label={Text(name)},
-                                leadingIcon=if(starterId==id){{Icon(Icons.Default.Check,null)}}else null
+                            AssistChip(
+                                onClick={},
+                                enabled=false,
+                                label={Text("Automático")},
+                                leadingIcon={Icon(Icons.Default.AutoAwesome,null,Modifier.size(16.dp))}
                             )
                         }
-                    }
-                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                        Text("Fase da história",fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f))
-                        if(initialPhase!=null && phase==suggestedPhase) AssistChip(onClick={},enabled=false,label={Text("Automático")},leadingIcon={Icon(Icons.Default.AutoAwesome,null,Modifier.size(16.dp))})
-                    }
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()){
-                        CampaignPhase.values().forEachIndexed{index,item->
-                            SegmentedButton(
-                                selected=phase==item,
-                                onClick={phase=item},
-                                shape=SegmentedButtonDefaults.itemShape(index,CampaignPhase.values().size)
-                            ){Text(item.label)}
+                        Row(verticalAlignment=Alignment.CenterVertically){
+                            val starterName=TeamCampaignCatalog.starters(game).firstOrNull{it.second==starterId}?.first ?: "Inicial"
+                            Text("Inicial: "+starterName,fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f))
+                            TextButton(onClick={editStarter=!editStarter}){Text(if(editStarter)"Concluir" else "Editar inicial")}
+                        }
+                        if(editStarter){
+                            Row(
+                                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement=Arrangement.spacedBy(8.dp)
+                            ){
+                                TeamCampaignCatalog.starters(game).forEach{(name,id)->
+                                    FilterChip(
+                                        selected=starterId==id,
+                                        onClick={
+                                            starterId=id
+                                            AppStatePreferences.setJourneyStarterForGame(game,id)
+                                        },
+                                        label={Text(name)},
+                                        leadingIcon=if(starterId==id){{Icon(Icons.Default.Check,null)}}else null
+                                    )
+                                }
+                            }
+                        }
+                    }else{
+                        ExposedDropdownMenuBox(expanded=gameMenu,onExpandedChange={gameMenu=!gameMenu}){
+                            OutlinedTextField(
+                                value=game,onValueChange={},readOnly=true,singleLine=true,
+                                modifier=Modifier.menuAnchor().fillMaxWidth(),
+                                label={Text("Jogo")},
+                                trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)}
+                            )
+                            ExposedDropdownMenu(expanded=gameMenu,onDismissRequest={gameMenu=false}){
+                                TeamCampaignCatalog.switchGames.forEach{g->
+                                    DropdownMenuItem(text={Text(g)},onClick={
+                                        game=g
+                                        starterId=AppStatePreferences.journeyStarterForGame(g)
+                                            ?: JourneyStarterCatalog.bestForGame(g)?.pokemonId
+                                            ?: TeamCampaignCatalog.starters(g).first().second
+                                        gameMenu=false
+                                    })
+                                }
+                            }
+                        }
+                        Text("Inicial",fontWeight=FontWeight.SemiBold)
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                            TeamCampaignCatalog.starters(game).forEach{(name,id)->
+                                FilterChip(
+                                    selected=starterId==id,
+                                    onClick={starterId=id},
+                                    label={Text(name)},
+                                    leadingIcon=if(starterId==id){{Icon(Icons.Default.Check,null)}}else null
+                                )
+                            }
+                        }
+                        Text("Fase da história",fontWeight=FontWeight.SemiBold)
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()){
+                            CampaignPhase.values().forEachIndexed{index,item->
+                                SegmentedButton(
+                                    selected=phase==item,
+                                    onClick={phase=item},
+                                    shape=SegmentedButtonDefaults.itemShape(index,CampaignPhase.values().size)
+                                ){Text(item.label)}
+                            }
                         }
                     }
                 }
