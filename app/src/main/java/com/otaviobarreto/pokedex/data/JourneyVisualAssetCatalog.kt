@@ -20,6 +20,22 @@ object JourneyVisualAssetCatalog {
     private const val DLC_OFFICIAL="https://www.pokemon.co.jp/ex/sv_dlc/assets/img/character/"
 
     private val assets=mapOf(
+        "bdsp-g1" to JourneyVisualAsset("bdsp-g1",JourneyVisualRole.GYM_LEADER,"Roark",ART+"409.png","Oreburgh Gym · Pedra","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-g2" to JourneyVisualAsset("bdsp-g2",JourneyVisualRole.GYM_LEADER,"Gardenia",ART+"407.png","Eterna Gym · Planta","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-g3" to JourneyVisualAsset("bdsp-g3",JourneyVisualRole.GYM_LEADER,"Maylene",ART+"448.png","Veilstone Gym · Lutador","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-g4" to JourneyVisualAsset("bdsp-g4",JourneyVisualRole.GYM_LEADER,"Crasher Wake",ART+"419.png","Pastoria Gym · Água","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-g5" to JourneyVisualAsset("bdsp-g5",JourneyVisualRole.GYM_LEADER,"Fantina",ART+"429.png","Hearthome Gym · Fantasma","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-g6" to JourneyVisualAsset("bdsp-g6",JourneyVisualRole.GYM_LEADER,"Byron",ART+"411.png","Canalave Gym · Aço","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-g7" to JourneyVisualAsset("bdsp-g7",JourneyVisualRole.GYM_LEADER,"Candice",ART+"460.png","Snowpoint Gym · Gelo","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-g8" to JourneyVisualAsset("bdsp-g8",JourneyVisualRole.GYM_LEADER,"Volkner",ART+"405.png","Sunyshore Gym · Elétrico","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-17" to JourneyVisualAsset("bdsp-17",JourneyVisualRole.LEGENDARY,"Dialga / Palkia",ART+"483.png","Spear Pillar","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-e4-1" to JourneyVisualAsset("bdsp-e4-1",JourneyVisualRole.TOURNAMENT,"Aaron",ART+"452.png","Elite Four · Inseto","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-e4-2" to JourneyVisualAsset("bdsp-e4-2",JourneyVisualRole.TOURNAMENT,"Bertha",ART+"450.png","Elite Four · Terra","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-e4-3" to JourneyVisualAsset("bdsp-e4-3",JourneyVisualRole.TOURNAMENT,"Flint",ART+"392.png","Elite Four · Fogo","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-e4-4" to JourneyVisualAsset("bdsp-e4-4",JourneyVisualRole.TOURNAMENT,"Lucian",ART+"437.png","Elite Four · Psíquico","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-24" to JourneyVisualAsset("bdsp-24",JourneyVisualRole.TOURNAMENT,"Cynthia",ART+"445.png","Champion · Sinnoh","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-pg-03" to JourneyVisualAsset("bdsp-pg-03",JourneyVisualRole.LEGENDARY,"Heatran",ART+"485.png","Stark Mountain","Pokémon Brilliant Diamond / Shining Pearl"),
+        "bdsp-pg-04" to JourneyVisualAsset("bdsp-pg-04",JourneyVisualRole.LEGENDARY,"Ramanas Park",ART+"150.png","Lendários · pós-game","Pokémon Brilliant Diamond / Shining Pearl"),
         "swsh-g1" to JourneyVisualAsset("swsh-g1",JourneyVisualRole.GYM_LEADER,"Milo",ART+"830.png","Turffield Gym · Planta","Pokémon Sword / Shield"),
         "swsh-g2" to JourneyVisualAsset("swsh-g2",JourneyVisualRole.GYM_LEADER,"Nessa",ART+"834.png","Hulbury Gym · Água","Pokémon Sword / Shield"),
         "swsh-g3" to JourneyVisualAsset("swsh-g3",JourneyVisualRole.GYM_LEADER,"Kabu",ART+"851.png","Motostoke Gym · Fogo","Pokémon Sword / Shield"),
