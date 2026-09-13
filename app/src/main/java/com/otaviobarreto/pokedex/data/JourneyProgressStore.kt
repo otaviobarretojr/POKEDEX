@@ -95,10 +95,24 @@ object JourneyProgressStore {
         revision++
     }
 
-    fun clear(game:String){
-        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()?.remove(key(game))?.apply()
+    fun resetProgress(game:String){
+        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
+            ?.remove(key(game))
+            ?.apply()
         revision++
     }
+
+    fun endJourney(game:String){
+        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
+            ?.remove(key(game))
+            ?.putBoolean(startedKey(game),false)
+            ?.putBoolean(configuringKey(game),false)
+            ?.apply()
+        revision++
+    }
+
+    @Deprecated("Use resetProgress(game) when keeping the Journey active, or endJourney(game) to finish it.")
+    fun clear(game:String)=resetProgress(game)
 
     fun exportSnapshot():JSONObject{
         val games=JSONObject()
