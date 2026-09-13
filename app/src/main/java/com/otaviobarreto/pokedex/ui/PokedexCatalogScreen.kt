@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -91,6 +93,7 @@ fun PokedexCatalogScreen(
     onPokemonClick:(Int)->Unit,
     onOpenFormDetail:(Int,String,Boolean)->Unit
 ){
+    val haptic=LocalHapticFeedback.current
     var query by remember{mutableStateOf("")}
     var selectedId by remember{mutableStateOf<Int?>(null)}
     val all=remember{PokemonRepository.all()}
@@ -140,7 +143,7 @@ fun PokedexCatalogScreen(
             items(filtered,key={it.id}){pk->
                 val accent=PokedexDesignTokens.Colors.type(pk.types.firstOrNull())
                 Card(
-                    onClick={selectedId=pk.id},
+                    onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedId=pk.id},
                     shape=RoundedCornerShape(22.dp),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
                     elevation=CardDefaults.cardElevation(defaultElevation=2.dp)
