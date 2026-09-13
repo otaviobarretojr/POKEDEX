@@ -15,6 +15,7 @@ journey_source = (
     + (journey_hub_path.read_text(encoding="utf-8") if journey_hub_path.exists() else "")
 )
 application_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
+main_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
 
 # UI must go through PokedexDataStore instead of bypassing the shared cache layer.
 for path in ui.glob("*.kt"):
@@ -79,7 +80,7 @@ for required in ("PokedexDesignTokens.Colors.type", "DexAppBackground"):
     if required not in visual_files["pokedex"]:
         violations.append(f"Visual v19 Pokedex missing {required}")
 
-if "replacePokemonDetail" not in main or "onOpenPokemon={nextId->replacePokemonDetail(nextId,source)}" not in main:
+if "replacePokemonDetail" not in main_source or "onOpenPokemon={nextId->replacePokemonDetail(nextId,source)}" not in main_source:
     violations.append("Pokemon detail browsing must replace the current detail route")
 
 if violations:
