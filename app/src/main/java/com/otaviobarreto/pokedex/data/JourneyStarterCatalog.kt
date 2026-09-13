@@ -17,12 +17,52 @@ object JourneyStarterCatalog {
     fun forGame(game:String):List<JourneyStarterRecommendation> = when(game){
         "Scarlet / Violet" -> paldea
         "Pokémon Legends: Z-A" -> lumiose
+        "Legends Arceus" -> hisui
         else -> emptyList()
     }
 
     fun bestForGame(game:String):JourneyStarterRecommendation? = forGame(game).maxByOrNull{
         it.rating.early*3 + it.rating.mid*2 + it.rating.late
     }
+
+    private val hisui=listOf(
+        JourneyStarterRecommendation(
+            155,"Cyndaquil","Hisuian Typhlosion","Fogo → Fogo/Fantasma",
+            "RECOMENDADO · campanha muito consistente",
+            StarterStageRating(5,5,5),
+            listOf(
+                "Early game: Fogo facilita vários encontros de Obsidian Fieldlands e Crimson Mirelands.",
+                "Mid game: Quilava mantém boa velocidade e pressão enquanto a equipe ainda está se formando.",
+                "Late game: Hisuian Typhlosion combina Fogo/Fantasma e funciona muito bem contra o conteúdo de história e pós-game.",
+                "É a opção mais simples para manter como núcleo ofensivo durante toda a Jornada."
+            ),
+            listOf("Precisa de apoio contra Água, Terra, Pedra, Fantasma e Sombrio.","Em lutas de Nobres, posicionamento e esquiva continuam tão importantes quanto o matchup.")
+        ),
+        JourneyStarterRecommendation(
+            501,"Oshawott","Hisuian Samurott","Água → Água/Sombrio",
+            "ÓTIMO · cobertura física e segurança",
+            StarterStageRating(4,5,5),
+            listOf(
+                "Early game: Água é segura contra Pedra e ajuda na exploração inicial.",
+                "Mid game: Dewott tem boa cobertura física e cresce bem com moves aprendidos/tutor.",
+                "Late game: Hisuian Samurott adiciona Sombrio e oferece excelente cobertura contra Psíquico e Fantasma.",
+                "Boa opção para quem prefere um atacante físico equilibrado."
+            ),
+            listOf("Elétrico e Planta exigem cobertura do restante do time.","Alguns Nobres não são resolvidos apenas com vantagem de tipo.")
+        ),
+        JourneyStarterRecommendation(
+            722,"Rowlet","Hisuian Decidueye","Planta/Voador → Planta/Lutador",
+            "TÁTICO · ótima cobertura no meio/fim",
+            StarterStageRating(3,5,5),
+            listOf(
+                "Early game: Planta ajuda contra Água, Terra e Pedra presentes nas primeiras áreas.",
+                "Mid game: Dartrix mantém utilidade e boa cobertura enquanto Hisui abre novas zonas.",
+                "Late game: Hisuian Decidueye ganha Lutador e amplia muito a cobertura física.",
+                "Ótima escolha para quem aceita um começo mais técnico em troca de muita versatilidade depois."
+            ),
+            listOf("O começo exige mais cuidado contra voadores e gelo.","A forma final acumula fraquezas que pedem trocas inteligentes.")
+        )
+    )
 
     private val lumiose=listOf(
         JourneyStarterRecommendation(
