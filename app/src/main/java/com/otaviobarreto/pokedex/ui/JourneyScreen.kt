@@ -73,7 +73,6 @@ fun JourneyScreen(
             onSelect={
                 explicitGameSelectionRevision++
                 selectedGame=it
-                AppStatePreferences.activeGame=it
                 view=JourneyView.GAME_MENU
             },
             onPokemonClick=onPokemonClick,
