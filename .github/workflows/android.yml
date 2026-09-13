@@ -43,6 +43,8 @@ jobs:
         run: python3 scripts/audit_hardening.py
       - name: Accessibility audit
         run: python3 scripts/audit_accessibility.py
+      - name: Device readiness audit
+        run: python3 scripts/audit_device_readiness.py
       - name: Install artwork audit dependency
         run: python3 -m pip install Pillow
       - name: Second-pass artwork audit
