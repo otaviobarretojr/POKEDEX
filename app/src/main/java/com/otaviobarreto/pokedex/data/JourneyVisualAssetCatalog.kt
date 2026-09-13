@@ -20,6 +20,17 @@ object JourneyVisualAssetCatalog {
     private const val DLC_OFFICIAL="https://www.pokemon.co.jp/ex/sv_dlc/assets/img/character/"
 
     private val assets=mapOf(
+        "frlg-g1" to JourneyVisualAsset("frlg-g1",JourneyVisualRole.GYM_LEADER,"Brock",ART+"95.png","Pewter Gym · Pedra","Pokémon FireRed / LeafGreen"),
+        "frlg-g2" to JourneyVisualAsset("frlg-g2",JourneyVisualRole.GYM_LEADER,"Misty",ART+"121.png","Cerulean Gym · Água","Pokémon FireRed / LeafGreen"),
+        "frlg-g3" to JourneyVisualAsset("frlg-g3",JourneyVisualRole.GYM_LEADER,"Lt. Surge",ART+"26.png","Vermilion Gym · Elétrico","Pokémon FireRed / LeafGreen"),
+        "frlg-g4" to JourneyVisualAsset("frlg-g4",JourneyVisualRole.GYM_LEADER,"Erika",ART+"45.png","Celadon Gym · Planta","Pokémon FireRed / LeafGreen"),
+        "frlg-g5" to JourneyVisualAsset("frlg-g5",JourneyVisualRole.GYM_LEADER,"Koga",ART+"110.png","Fuchsia Gym · Veneno","Pokémon FireRed / LeafGreen"),
+        "frlg-g6" to JourneyVisualAsset("frlg-g6",JourneyVisualRole.GYM_LEADER,"Sabrina",ART+"65.png","Saffron Gym · Psíquico","Pokémon FireRed / LeafGreen"),
+        "frlg-g7" to JourneyVisualAsset("frlg-g7",JourneyVisualRole.GYM_LEADER,"Blaine",ART+"59.png","Cinnabar Gym · Fogo","Pokémon FireRed / LeafGreen"),
+        "frlg-g8" to JourneyVisualAsset("frlg-g8",JourneyVisualRole.GYM_LEADER,"Giovanni",ART+"112.png","Viridian Gym · Terra","Pokémon FireRed / LeafGreen"),
+        "frlg-pg-07" to JourneyVisualAsset("frlg-pg-07",JourneyVisualRole.LEGENDARY,"Mewtwo",ART+"150.png","Cerulean Cave","Pokémon FireRed / LeafGreen"),
+        "frlg-pg-08" to JourneyVisualAsset("frlg-pg-08",JourneyVisualRole.LEGENDARY,"Roaming Beast",ART+"244.png","Entei / Suicune / Raikou","Pokémon FireRed / LeafGreen"),
+        "frlg-pg-09" to JourneyVisualAsset("frlg-pg-09",JourneyVisualRole.TOURNAMENT,"Elite Four Rematch",ART+"149.png","Indigo Plateau · rematch","Pokémon FireRed / LeafGreen"),
         "lgpe-g1" to JourneyVisualAsset("lgpe-g1",JourneyVisualRole.GYM_LEADER,"Brock",ART+"95.png","Pewter Gym · Pedra","Pokémon Let's Go Pikachu / Eevee"),
         "lgpe-g2" to JourneyVisualAsset("lgpe-g2",JourneyVisualRole.GYM_LEADER,"Misty",ART+"121.png","Cerulean Gym · Água","Pokémon Let's Go Pikachu / Eevee"),
         "lgpe-g3" to JourneyVisualAsset("lgpe-g3",JourneyVisualRole.GYM_LEADER,"Lt. Surge",ART+"26.png","Vermilion Gym · Elétrico","Pokémon Let's Go Pikachu / Eevee"),
