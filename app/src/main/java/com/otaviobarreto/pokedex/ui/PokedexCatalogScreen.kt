@@ -111,12 +111,12 @@ fun PokedexCatalogScreen(
     DexAppBackground {
     Column(Modifier.fillMaxSize()){
         Surface(
-            Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
-            shape=RoundedCornerShape(26.dp),
+            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
             color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),
-            tonalElevation=2.dp
+            tonalElevation=PokedexDesignTokens.Elevation.Low
         ){
-            Row(Modifier.padding(horizontal=16.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically){
+            Row(Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
                 Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
                     Icon(Icons.Default.MenuBook,null,Modifier.padding(11.dp).size(26.dp),tint=MaterialTheme.colorScheme.primary)
                 }
@@ -130,15 +130,15 @@ fun PokedexCatalogScreen(
         OutlinedTextField(
             value=query,
             onValueChange={query=it},
-            modifier=Modifier.fillMaxWidth().padding(horizontal=12.dp),
+            modifier=Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
             singleLine=true,
             leadingIcon={Icon(Icons.Default.Search,null)},
             placeholder={Text("Nome ou número da National Dex")}
         )
         LazyVerticalGrid(
             columns=GridCells.Adaptive(112.dp),
-            modifier=Modifier.fillMaxSize().padding(top=10.dp),
-            contentPadding=PaddingValues(start=12.dp,end=12.dp,bottom=24.dp),
+            modifier=Modifier.fillMaxSize().padding(top=PokedexDesignTokens.Spacing.Sm),
+            contentPadding=PaddingValues(start=PokedexDesignTokens.Spacing.Lg,end=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xl),
             horizontalArrangement=Arrangement.spacedBy(8.dp),
             verticalArrangement=Arrangement.spacedBy(8.dp)
         ){
@@ -148,7 +148,7 @@ fun PokedexCatalogScreen(
                     onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedId=pk.id},
                     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
-                    elevation=CardDefaults.cardElevation(defaultElevation=2.dp)
+                    elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
                 ){
                     Box(Modifier.fillMaxWidth()){
                         Box(
