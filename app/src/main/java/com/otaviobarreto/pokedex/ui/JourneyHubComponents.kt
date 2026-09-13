@@ -717,8 +717,19 @@ internal fun JourneyGameMenu(
     val route=JourneyCatalog.steps(game.label)
     val routeRevision=JourneyProgressStore.revision
     val completed=remember(game.label,routeRevision){JourneyProgressStore.completed(game.label)}
+    val started=remember(game.label,routeRevision){JourneyProgressStore.isStarted(game.label)}
     val routeDone=DataIntegrityRules.completedCount(route.map{it.id},completed)
     val routeProgress=if(route.isEmpty())0f else routeDone.toFloat()/route.size
+    val starterOptions=remember(game.label){TeamCampaignCatalog.starters(game.label)}
+    var selectedStarterId by rememberSaveable(game.label){
+        mutableIntStateOf(AppStatePreferences.journeyStarterForGame(game.label) ?: -1)
+    }
+    val smart=remember(game.label,routeRevision){JourneySmartProgress.context(game.label)}
+    val suggestedTeam=remember(game.label,selectedStarterId,smart.phase){
+        if(selectedStarterId>0) TeamCampaignCatalog.preset(game.label,selectedStarterId,smart.phase) else null
+    }
+    val active=AppStatePreferences.activeGame==game.label
+
     Box(
         Modifier.fillMaxSize().background(
             Brush.verticalGradient(
@@ -730,133 +741,329 @@ internal fun JourneyGameMenu(
             )
         )
     ){
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding=PaddingValues(horizontal=16.dp,vertical=14.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)
-    ){
-        item{
-            Card(
-                shape=RoundedCornerShape(26.dp),
-                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),
-                elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
-            ){
-                Column(Modifier.fillMaxWidth().padding(16.dp)){
-                    Row(verticalAlignment=Alignment.CenterVertically){
-                        IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
-                        Column(Modifier.weight(1f).padding(start=4.dp)){
-                            Text(game.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
-                            Text("Central da Jornada",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding=PaddingValues(horizontal=16.dp,vertical=14.dp),
+            verticalArrangement=Arrangement.spacedBy(12.dp)
+        ){
+            item{
+                Card(
+                    shape=RoundedCornerShape(26.dp),
+                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),
+                    elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
+                ){
+                    Column(Modifier.fillMaxWidth().padding(16.dp)){
+                        Row(verticalAlignment=Alignment.CenterVertically){
+                            IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
+                            Column(Modifier.weight(1f).padding(start=4.dp)){
+                                Text(game.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
+                                Text(
+                                    when{
+                                        !started -> "Nova Jornada"
+                                        active -> "Jogo atual · Central da Jornada"
+                                        else -> "Jornada salva"
+                                    },
+                                    style=MaterialTheme.typography.labelMedium,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Surface(shape=RoundedCornerShape(999.dp),color=accent.copy(alpha=.14f)){
+                                Text(
+                                    if(!started)"NOVO" else (routeProgress*100).toInt().toString()+"%",
+                                    Modifier.padding(horizontal=10.dp,vertical=6.dp),
+                                    style=MaterialTheme.typography.labelMedium,
+                                    fontWeight=FontWeight.Bold,
+                                    color=accent
+                                )
+                            }
                         }
-                        Surface(shape=RoundedCornerShape(999.dp),color=accent.copy(alpha=.14f)){
-                            Text(
-                                (routeProgress*100).toInt().toString()+"%",
-                                Modifier.padding(horizontal=10.dp,vertical=6.dp),
-                                style=MaterialTheme.typography.labelMedium,
-                                fontWeight=FontWeight.Bold,
-                                color=accent
+
+                        if(started && route.isNotEmpty()){
+                            LinearProgressIndicator(
+                                progress={routeProgress},
+                                modifier=Modifier.fillMaxWidth().padding(top=10.dp).height(7.dp),
+                                strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
                             )
-                        }
-                    }
-                    if(route.isNotEmpty()){
-                        LinearProgressIndicator(
-                            progress={routeProgress},
-                            modifier=Modifier.fillMaxWidth().padding(top=10.dp).height(7.dp),
-                            strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
-                        )
-                        Text(
-                            routeDone.toString()+" de "+route.size+" objetivos concluídos",
-                            style=MaterialTheme.typography.bodySmall,
-                            color=MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier=Modifier.padding(top=7.dp)
-                        )
-                        val nextStep=route.firstOrNull{it.id !in completed}
-                        nextStep?.let{step->
-                            Surface(
-                                shape=RoundedCornerShape(16.dp),
-                                color=accent.copy(alpha=.12f),
-                                modifier=Modifier.fillMaxWidth().padding(top=10.dp)
-                            ){
-                                Column(Modifier.padding(horizontal=12.dp,vertical=9.dp)){
-                                    Text("PRÓXIMO OBJETIVO",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=accent)
-                                    Text(step.title,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleSmall,modifier=Modifier.padding(top=2.dp))
-                                    Text(JourneyTeamProgressCatalog.chapterFor(step.id)+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=2.dp))
+                            Text(
+                                routeDone.toString()+" de "+route.size+" objetivos concluídos",
+                                style=MaterialTheme.typography.bodySmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier=Modifier.padding(top=7.dp)
+                            )
+                            val nextStep=route.firstOrNull{it.id !in completed}
+                            nextStep?.let{step->
+                                Surface(
+                                    shape=RoundedCornerShape(16.dp),
+                                    color=accent.copy(alpha=.12f),
+                                    modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                                ){
+                                    Column(Modifier.padding(horizontal=12.dp,vertical=9.dp)){
+                                        Text("PRÓXIMO OBJETIVO",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=accent)
+                                        Text(step.title,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleSmall,modifier=Modifier.padding(top=2.dp))
+                                        Text(JourneyTeamProgressCatalog.chapterFor(step.id)+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=2.dp))
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-        item{
-            JourneyActionCard(
-                icon=Icons.Default.Route,
-                title="Melhor rota",
-                subtitle=if(route.isNotEmpty()) "Sequência recomendada por nível, com progresso salvo." else "Estrutura pronta; rota detalhada deste jogo entra na próxima curadoria.",
-                enabled=route.isNotEmpty(),
-                onClick=onRoute
-            )
-        }
-        item{
-            JourneyActionCard(
-                icon=Icons.Default.Groups,
-                title="Time ideal",
-                subtitle="Escolha o inicial e a fase da história. Veja trocas, golpes, item e função de cada Pokémon.",
-                onClick=onTeam
-            )
-        }
-        item{
-            val captured=CollectionStore.contextualCapturedIds
-            val boxProgress by rememberJourneyCollectionProgress(game,captured)
-            Card(
-                Modifier.fillMaxWidth().clickable(onClick=onBoxes),
-                shape=RoundedCornerShape(22.dp),
-                colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.11f))
-            ){
-                Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
-                    Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)){
-                        Icon(Icons.Default.GridView,null,Modifier.padding(13.dp))
-                    }
-                    Column(Modifier.weight(1f).padding(horizontal=12.dp)){
-                        Text("Boxes do jogo",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
-                        if(boxProgress.total>0){
-                            Text(
-                                boxProgress.captured.toString()+" de "+boxProgress.total+" Pokémon · "+(boxProgress.ratio*100).toInt()+"%",
-                                style=MaterialTheme.typography.bodySmall
-                            )
-                            LinearProgressIndicator(
-                                progress={boxProgress.ratio},
-                                modifier=Modifier.fillMaxWidth().padding(top=8.dp).height(7.dp),
-                                strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
-                            )
-                        }else{
-                            Text("Abra a coleção principal deste jogo.",style=MaterialTheme.typography.bodySmall)
+
+            if(!started){
+                item{
+                    Card(
+                        shape=RoundedCornerShape(22.dp),
+                        colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.11f))
+                    ){
+                        Column(Modifier.fillMaxWidth().padding(16.dp)){
+                            Row(verticalAlignment=Alignment.CenterVertically){
+                                Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.76f)){
+                                    Icon(Icons.Default.PlayCircle,null,Modifier.padding(11.dp),tint=accent)
+                                }
+                                Column(Modifier.weight(1f).padding(start=12.dp)){
+                                    Text("Começar Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                                    Text("Transforme este jogo no atual e comece do zero.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Button(
+                                onClick={
+                                    AppStatePreferences.activeGame=game.label
+                                    AppStatePreferences.setActiveRegionForGame(game.label,game.regions.firstOrNull()?.source)
+                                    AppStatePreferences.clearJourneyStarterForGame(game.label)
+                                    selectedStarterId=-1
+                                    JourneyProgressStore.start(game.label,reset=true)
+                                },
+                                modifier=Modifier.fillMaxWidth().padding(top=12.dp).height(50.dp)
+                            ){
+                                Icon(Icons.Default.PlayArrow,null)
+                                Spacer(Modifier.width(7.dp))
+                                Text("Começar Jornada")
+                            }
                         }
                     }
-                    Icon(Icons.Default.ChevronRight,null)
                 }
-            }
-        }
-        if(game.regions.isNotEmpty()){
-            item{Text("Regiões e conteúdos",fontWeight=FontWeight.Bold)}
-            items(game.regions,key={it.source}){region->
-                Card(Modifier.fillMaxWidth().clickable{onRegion(region.source)},shape=RoundedCornerShape(18.dp)){
-                    Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
-                        Icon(Icons.Default.Map,null)
-                        Column(Modifier.weight(1f).padding(start=10.dp)){
-                            Text(region.label,fontWeight=FontWeight.SemiBold)
-                            Text(region.subtitle,style=MaterialTheme.typography.bodySmall)
+            }else{
+                if(starterOptions.isNotEmpty()){
+                    item{
+                        JourneyStarterSetupCard(
+                            gameLabel=game.label,
+                            starters=starterOptions,
+                            selectedStarterId=selectedStarterId,
+                            accent=accent,
+                            onSelect={id->
+                                selectedStarterId=id
+                                AppStatePreferences.setJourneyStarterForGame(game.label,id)
+                            }
+                        )
+                    }
+                }
+
+                suggestedTeam?.let{team->
+                    item{
+                        JourneyProgressTeamCard(
+                            team=team,
+                            accent=accent,
+                            onOpenTeam=onTeam
+                        )
+                    }
+                }
+
+                item{
+                    Button(
+                        onClick={
+                            AppStatePreferences.activeGame=game.label
+                            if(AppStatePreferences.activeRegionForGame(game.label)==null){
+                                AppStatePreferences.setActiveRegionForGame(game.label,game.regions.firstOrNull()?.source)
+                            }
+                            onRoute()
+                        },
+                        enabled=starterOptions.isEmpty() || selectedStarterId>0,
+                        modifier=Modifier.fillMaxWidth().height(52.dp)
+                    ){
+                        Icon(Icons.Default.Explore,null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if(active)"Continuar Jornada" else "Retomar Jornada")
+                    }
+                }
+
+                item{
+                    JourneyActionCard(
+                        icon=Icons.Default.Route,
+                        title="Melhor rota",
+                        subtitle=if(route.isNotEmpty()) "Sequência recomendada por nível, com progresso salvo." else "Estrutura pronta; rota detalhada deste jogo entra na próxima curadoria.",
+                        enabled=route.isNotEmpty(),
+                        onClick=onRoute
+                    )
+                }
+                item{
+                    JourneyActionCard(
+                        icon=Icons.Default.Groups,
+                        title="Time e progressão",
+                        subtitle="O time sugerido acompanha seu inicial e muda conforme a campanha avança.",
+                        enabled=selectedStarterId>0 || starterOptions.isEmpty(),
+                        onClick=onTeam
+                    )
+                }
+                item{
+                    val captured=CollectionStore.contextualCapturedIds
+                    val boxProgress by rememberJourneyCollectionProgress(game,captured)
+                    Card(
+                        Modifier.fillMaxWidth().clickable(onClick=onBoxes),
+                        shape=RoundedCornerShape(22.dp),
+                        colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.11f))
+                    ){
+                        Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+                            Surface(shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)){
+                                Icon(Icons.Default.GridView,null,Modifier.padding(13.dp))
+                            }
+                            Column(Modifier.weight(1f).padding(horizontal=12.dp)){
+                                Text("Boxes do jogo",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
+                                if(boxProgress.total>0){
+                                    Text(
+                                        boxProgress.captured.toString()+" de "+boxProgress.total+" Pokémon · "+(boxProgress.ratio*100).toInt()+"%",
+                                        style=MaterialTheme.typography.bodySmall
+                                    )
+                                    LinearProgressIndicator(
+                                        progress={boxProgress.ratio},
+                                        modifier=Modifier.fillMaxWidth().padding(top=8.dp).height(7.dp),
+                                        strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
+                                    )
+                                }else{
+                                    Text("Abra a coleção principal deste jogo.",style=MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                            Icon(Icons.Default.ChevronRight,null)
                         }
-                        Icon(Icons.Default.ChevronRight,null)
+                    }
+                }
+                if(game.regions.isNotEmpty()){
+                    item{Text("Regiões e conteúdos",fontWeight=FontWeight.Bold)}
+                    items(game.regions,key={it.source}){region->
+                        Card(Modifier.fillMaxWidth().clickable{onRegion(region.source)},shape=RoundedCornerShape(18.dp)){
+                            Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+                                Icon(Icons.Default.Map,null)
+                                Column(Modifier.weight(1f).padding(start=10.dp)){
+                                    Text(region.label,fontWeight=FontWeight.SemiBold)
+                                    Text(region.subtitle,style=MaterialTheme.typography.bodySmall)
+                                }
+                                Icon(Icons.Default.ChevronRight,null)
+                            }
+                        }
                     }
                 }
             }
+            item{Spacer(Modifier.height(20.dp))}
         }
-        item{Spacer(Modifier.height(20.dp))}
-    }
     }
 }
 
+@Composable
+private fun JourneyStarterSetupCard(
+    gameLabel:String,
+    starters:List<Pair<String,Int>>,
+    selectedStarterId:Int,
+    accent:Color,
+    onSelect:(Int)->Unit
+){
+    Card(shape=RoundedCornerShape(22.dp)){
+        Column(Modifier.fillMaxWidth().padding(14.dp)){
+            Text(
+                if(selectedStarterId>0)"Seu inicial" else "1 · Escolha seu inicial",
+                fontWeight=FontWeight.Black,
+                style=MaterialTheme.typography.titleMedium
+            )
+            Text(
+                if(selectedStarterId>0)"Você pode trocar enquanto estiver planejando a Jornada."
+                else "A recomendação do time começa pela sua escolha.",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier=Modifier.padding(top=2.dp,bottom=10.dp)
+            )
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                starters.take(3).forEach{(name,id)->
+                    val selected=selectedStarterId==id
+                    Surface(
+                        modifier=Modifier.weight(1f).clickable{onSelect(id)},
+                        shape=RoundedCornerShape(16.dp),
+                        color=if(selected)accent.copy(alpha=.16f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.55f),
+                        border=if(selected)androidx.compose.foundation.BorderStroke(1.5.dp,accent) else null
+                    ){
+                        Column(
+                            Modifier.fillMaxWidth().padding(vertical=9.dp,horizontal=6.dp),
+                            horizontalAlignment=Alignment.CenterHorizontally
+                        ){
+                            AsyncImage(
+                                model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+id+".png",
+                                contentDescription=name,
+                                modifier=Modifier.size(68.dp),
+                                contentScale=ContentScale.Fit
+                            )
+                            Text(name,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelMedium,maxLines=1,overflow=TextOverflow.Ellipsis)
+                            if(selected){
+                                Icon(Icons.Default.CheckCircle,"Selecionado",Modifier.padding(top=4.dp).size(18.dp),tint=accent)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun JourneyProgressTeamCard(
+    team:CampaignTeamPreset,
+    accent:Color,
+    onOpenTeam:()->Unit
+){
+    Card(
+        shape=RoundedCornerShape(22.dp),
+        colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.08f))
+    ){
+        Column(Modifier.fillMaxWidth().padding(14.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Column(Modifier.weight(1f)){
+                    Text("2 · Time sugerido · "+team.phase.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Baseado no seu inicial e no ponto atual da campanha.",
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                TextButton(onClick=onOpenTeam){Text("Detalhes")}
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(top=10.dp),
+                horizontalArrangement=Arrangement.spacedBy(6.dp)
+            ){
+                team.slots.take(6).forEach{slot->
+                    Surface(
+                        modifier=Modifier.weight(1f),
+                        shape=RoundedCornerShape(12.dp),
+                        color=MaterialTheme.colorScheme.surface.copy(alpha=.82f)
+                    ){
+                        AsyncImage(
+                            model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+slot.pokemonId+".png",
+                            contentDescription=PokemonRepository.byId(slot.pokemonId)?.name,
+                            modifier=Modifier.fillMaxWidth().aspectRatio(1f).padding(4.dp),
+                            contentScale=ContentScale.Fit
+                        )
+                    }
+                }
+            }
+            Text(
+                when(team.phase){
+                    CampaignPhase.EARLY->"Comece com Pokémon acessíveis cedo; o app vai sugerir evoluções e trocas conforme você avançar."
+                    CampaignPhase.MID->"Seu núcleo inicial evoluiu: agora entram coberturas melhores para o meio da história."
+                    CampaignPhase.LATE->"Sugestão atualizada para reta final, chefes e encerramento da campanha."
+                },
+                style=MaterialTheme.typography.labelSmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier=Modifier.padding(top=9.dp)
+            )
+        }
+    }
+}
 
 private data class JourneyCollectionProgress(
     val captured:Int=0,
