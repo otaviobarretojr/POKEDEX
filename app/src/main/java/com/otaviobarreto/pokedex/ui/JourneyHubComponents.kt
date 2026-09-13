@@ -187,13 +187,36 @@ internal fun JourneyGamePicker(
                                 }
                             }
                             nextMissing?.let{id->
-                                FilledTonalButton(
-                                    onClick={onPokemonClick(id,nextMissingSource)},
+                                val entry=national.firstOrNull{it.id==id}
+                                val fallback=PokemonRepository.byId(id)
+                                val displayName=(entry?.name ?: fallback?.name ?: "#"+id)
+                                    .replaceFirstChar{it.uppercase()}
+                                val regionLabel=activeGame.regions.firstOrNull{it.source==nextMissingSource}?.label
+                                    ?: "Região ativa"
+                                Card(
                                     modifier=Modifier.fillMaxWidth().padding(top=8.dp)
+                                        .clickable{onPokemonClick(id,nextMissingSource)},
+                                    shape=RoundedCornerShape(16.dp),
+                                    colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.10f))
                                 ){
-                                    Icon(Icons.Default.TrackChanges,null,Modifier.size(18.dp))
-                                    Spacer(Modifier.width(7.dp))
-                                    Text("Próximo faltante · #"+id)
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=9.dp),
+                                        verticalAlignment=Alignment.CenterVertically
+                                    ){
+                                        AsyncImage(
+                                            model=entry?.spriteUrl
+                                                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+id+".png",
+                                            contentDescription=displayName,
+                                            modifier=Modifier.size(46.dp),
+                                            contentScale=ContentScale.Fit
+                                        )
+                                        Column(Modifier.weight(1f).padding(start=10.dp)){
+                                            Text("PRÓXIMA PENDÊNCIA",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=accent)
+                                            Text(displayName,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleSmall)
+                                            Text("#"+id.toString().padStart(4,'0')+" · "+regionLabel,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        Icon(Icons.Default.ChevronRight,null)
+                                    }
                                 }
                             }
                         }
