@@ -1,5 +1,8 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -20,6 +23,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -279,7 +283,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    FilledTonalButton(
     {allBoxes=true},
     Modifier.weight(1f).fillMaxHeight(),
-    shape=RoundedCornerShape(13.dp)
+    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
    ){
     Icon(Icons.Default.GridView,null,Modifier.size(17.dp))
     Spacer(Modifier.width(5.dp))
@@ -358,10 +362,26 @@ private fun QBSlot(
     }
     val imageModel=variant?.artworkUrl ?: pk.spriteUrl
     val isShiny=variant?.shiny==true
+    val slotAlpha by animateFloatAsState(
+        if(specialFilter&&!specialEvolution).18f else 1f,
+        tween(PokedexDesignTokens.Motion.Fast),
+        label="boxSlotAlpha"
+    )
+    val slotScale by animateFloatAsState(
+        if(captured)1f else .985f,
+        tween(PokedexDesignTokens.Motion.Standard),
+        label="boxSlotScale"
+    )
+    val slotColor by animateColorAsState(
+        if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.78f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.82f),
+        tween(PokedexDesignTokens.Motion.Standard),
+        label="boxSlotColor"
+    )
     Surface(
-        modifier.alpha(if(specialFilter&&!specialEvolution).18f else 1f).combinedClickable(onClick=open,onLongClick=hold),
+        modifier.alpha(slotAlpha).scale(slotScale).combinedClickable(onClick=open,onLongClick=hold),
         shape=RoundedCornerShape(9.dp),
-        color=if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.78f)else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.82f)
+        color=slotColor
     ){
         Box(Modifier.fillMaxSize()){
             AsyncImage(
