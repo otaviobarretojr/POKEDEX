@@ -39,9 +39,13 @@ fun CampaignTeamGuideScreen(
                 ?: TeamCampaignCatalog.starters(game).first().second
         )
     }
-    val automaticPhase=remember(game,JourneyProgressStore.revision,initialPhase){
-        if(journeyContext!=null) JourneySmartProgress.context(game).phase
-        else CampaignPhase.values().firstOrNull{it.name==initialPhase} ?: CampaignPhase.EARLY
+    val journeySmartContext=remember(game,JourneyProgressStore.revision){
+        if(journeyContext!=null) JourneySmartProgress.context(game) else null
+    }
+    val automaticPhase=remember(game,journeySmartContext,initialPhase){
+        journeySmartContext?.phase
+            ?: CampaignPhase.values().firstOrNull{it.name==initialPhase}
+            ?: CampaignPhase.EARLY
     }
     var phase by remember(game,automaticPhase) { mutableStateOf(automaticPhase) }
     var gameMenu by remember { mutableStateOf(false) }
@@ -52,8 +56,10 @@ fun CampaignTeamGuideScreen(
     var showHelp by remember { mutableStateOf(false) }
     var createdMessage by remember { mutableStateOf<String?>(null) }
     val preset=remember(game,starterId,phase){TeamCampaignCatalog.preset(game,starterId,phase)}
-    val dynamic=remember(game,starterId,JourneyProgressStore.revision){
-        if(game=="Scarlet / Violet")JourneyDynamicTeamCatalog.suggestion(game,starterId) else null
+    val dynamic=remember(game,starterId,journeyContext,JourneyProgressStore.revision){
+        if(journeyContext!=null && JourneyCatalog.steps(game).isNotEmpty()){
+            JourneyDynamicTeamCatalog.suggestion(game,starterId)
+        }else null
     }
     val displaySlots=if(dynamic!=null && phase==dynamic.preset?.phase)dynamic.adjustedSlots else preset?.slots.orEmpty()
     val national=PokedexDataStore.cachedNationalDex().orEmpty()
@@ -81,7 +87,7 @@ fun CampaignTeamGuideScreen(
                             Column(Modifier.weight(1f)){
                                 Text(game,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
                                 Text(
-                                    "Jornada ativa · "+phase.label+" · inicial sincronizado",
+                                    "Jornada ativa · "+(journeySmartContext?.phaseLabel ?: phase.label)+" · inicial sincronizado",
                                     style=MaterialTheme.typography.bodySmall,
                                     color=MaterialTheme.colorScheme.onSurfaceVariant
                                 )
