@@ -118,18 +118,19 @@ fun PokemonDetailV2Screen(
     val entry=remember(id){PokedexDataStore.cachedIndexEntry(id)}
     val name=entry?.name ?: "Pokémon #$id"
     val image=entry?.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
-    Column(Modifier.fillMaxSize().background(Color(0xFFF8F8FC))){
-        Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(Color(0xFFEAE8FB),Color(0xFFF8FBFF),Color.White)))){
-            IconButton(onBack,Modifier.padding(16.dp).size(46.dp).background(Color.White.copy(alpha=.82f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
+    val scheme=MaterialTheme.colorScheme
+    Column(Modifier.fillMaxSize().background(scheme.background)){
+        Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(scheme.primaryContainer,scheme.surfaceVariant,scheme.surface)))){
+            IconButton(onBack,Modifier.padding(16.dp).size(46.dp).background(scheme.surface.copy(alpha=.86f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
             Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=36.dp).width(185.dp)){
-                Text("#${id.toString().padStart(4,'0')}",fontSize=15.sp,color=Color(0xFF56607A),fontWeight=FontWeight.SemiBold)
-                Text(name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=Color(0xFF11152A),maxLines=2)
-                Text("Abrindo ficha…",fontSize=14.sp,color=Color(0xFF667085),modifier=Modifier.padding(top=8.dp))
+                Text("#${id.toString().padStart(4,\'0\')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
+                Text(name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=scheme.onSurface,maxLines=2)
+                Text("Abrindo ficha…",fontSize=14.sp,color=scheme.onSurfaceVariant,modifier=Modifier.padding(top=8.dp))
             }
             PokemonArtwork(model=image,contentDescription=name,modifier=Modifier.align(Alignment.CenterEnd).padding(end=20.dp,top=50.dp).size(width=190.dp,height=220.dp).padding(10.dp),pokemonId=id)
         }
-        LinearProgressIndicator(modifier=Modifier.fillMaxWidth(),color=Color(0xFF5B55E7),trackColor=Color(0xFFEAE8FB))
-        Text("Dados complementares são carregados em segundo plano sem bloquear a navegação.",modifier=Modifier.padding(18.dp),style=MaterialTheme.typography.bodyMedium,color=Color(0xFF667085))
+        LinearProgressIndicator(modifier=Modifier.fillMaxWidth(),color=scheme.primary,trackColor=scheme.primaryContainer)
+        Text("Dados complementares são carregados em segundo plano sem bloquear a navegação.",modifier=Modifier.padding(18.dp),style=MaterialTheme.typography.bodyMedium,color=scheme.onSurfaceVariant)
     }
 }
 
