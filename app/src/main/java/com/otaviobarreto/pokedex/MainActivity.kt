@@ -64,7 +64,7 @@ private val mainDestinations=listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun PokedexApp(){
  val navController=rememberNavController();val backStackEntry by navController.currentBackStackEntryAsState();val currentRoute=backStackEntry?.destination?.route
- val isSecondaryScreen=currentRoute=="pokemon/{id}?source={source}"||currentRoute=="formDetail/{id}?name={name}&shiny={shiny}"||currentRoute=="location/{id}?source={source}"||currentRoute=="regionMap/{id}?source={source}"||currentRoute=="reference?kind={kind}&name={name}&source={source}"||currentRoute=="campaignGuide?game={game}&phase={phase}";val isMainDestination=currentRoute in mainDestinations.map{it.route};val useCompactOwnHeader=currentRoute=="boxes"
+ val isSecondaryScreen=currentRoute=="pokemon/{id}?source={source}"||currentRoute=="formDetail/{id}?name={name}&shiny={shiny}"||currentRoute=="location/{id}?source={source}"||currentRoute=="regionMap/{id}?source={source}"||currentRoute=="reference?kind={kind}&name={name}&source={source}"||currentRoute=="campaignGuide?game={game}&phase={phase}"
  fun openPokemon(id:Int,source:String?=null){RecentActivityStore.recordPokemon(id);navController.navigate(if(source.isNullOrBlank())"pokemon/"+id else "pokemon/"+id+"?source="+Uri.encode(source))}
  fun openFormDetail(id:Int,name:String,shiny:Boolean){
   navController.navigate("formDetail/"+id+"?name="+Uri.encode(name)+"&shiny="+shiny)
@@ -89,8 +89,7 @@ private val mainDestinations=listOf(
   DexBottomBar(mainDestinations,currentRoute){d->
    navController.navigate(d.route){popUpTo("home"){saveState=true};launchSingleTop=true;restoreState=true}
   }
- }},
- topBar={if(isMainDestination&&currentRoute!="home"&&!useCompactOwnHeader ){TopAppBar(title={Text(mainDestinations.firstOrNull{it.route==currentRoute}?.label?:"POKEDEX")},navigationIcon={IconButton(onClick={navController.navigate("home"){popUpTo("home"){inclusive=false};launchSingleTop=true}}){Icon(Icons.Default.Home,"Voltar ao início")}})}}){innerPadding->
+ }},){innerPadding->
   NavHost(
    navController,
    "home",
