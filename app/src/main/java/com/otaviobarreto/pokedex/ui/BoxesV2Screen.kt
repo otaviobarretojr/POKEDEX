@@ -379,7 +379,7 @@ private fun QBSlot(
         label="boxSlotColor"
     )
     Surface(
-        modifier.alpha(slotAlpha).scale(slotScale).dexPressFeedback(pressedScale=.955f).combinedClickable(onClick=open,onLongClick=hold),
+        modifier.alpha(slotAlpha).scale(slotScale).combinedClickable(onClick=open,onLongClick=hold),
         shape=RoundedCornerShape(9.dp),
         color=slotColor
     ){
@@ -642,7 +642,7 @@ private fun QBAllBoxes(
                         val owned=entries.count{it.nationalId in captured}
                         val pct=owned.toFloat()/total
                         Card(
-                            Modifier.fillMaxWidth().dexPressFeedback(pressedScale=.985f).clickable{select(index)},
+                            Modifier.fillMaxWidth().clickable{select(index)},
                             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                             colors=CardDefaults.cardColors(
                                 containerColor=if(index==current)accent.copy(alpha=.14f) else MaterialTheme.colorScheme.surface
@@ -745,7 +745,7 @@ private fun QBSearch(
             LazyColumn(Modifier.heightIn(max=360.dp)){
                 items(results,key={it.nationalId}){pk->
                     Row(
-                        Modifier.fillMaxWidth().dexPressFeedback(pressedScale=.985f).clickable{select(pk)}.padding(vertical=5.dp),
+                        Modifier.fillMaxWidth().clickable{select(pk)}.padding(vertical=5.dp),
                         verticalAlignment=Alignment.CenterVertically
                     ){
                         AsyncImage(pk.spriteUrl,pk.name,Modifier.size(48.dp))
