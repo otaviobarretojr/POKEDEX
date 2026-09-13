@@ -20,6 +20,16 @@ object JourneyVisualAssetCatalog {
     private const val DLC_OFFICIAL="https://www.pokemon.co.jp/ex/sv_dlc/assets/img/character/"
 
     private val assets=mapOf(
+        "la-07" to JourneyVisualAsset("la-07",JourneyVisualRole.STORY,"Kleavor",ART+"900.png","Nobre · Lord of the Woods","Pokémon Legends: Arceus"),
+        "la-17" to JourneyVisualAsset("la-17",JourneyVisualRole.LEGENDARY,"Dialga / Palkia",ART+"483.png","Temple of Sinnoh","Pokémon Legends: Arceus"),
+        "la-18" to JourneyVisualAsset("la-18",JourneyVisualRole.LEGENDARY,"Dialga / Palkia",ART+"484.png","The Counterpart","Pokémon Legends: Arceus"),
+        "la-21" to JourneyVisualAsset("la-21",JourneyVisualRole.LEGENDARY,"Mesprit / Azelf / Uxie",ART+"481.png","Lake Guardians","Pokémon Legends: Arceus"),
+        "la-22" to JourneyVisualAsset("la-22",JourneyVisualRole.LEGENDARY,"Heatran",ART+"485.png","Firespit Island","Pokémon Legends: Arceus"),
+        "la-23" to JourneyVisualAsset("la-23",JourneyVisualRole.LEGENDARY,"Cresselia",ART+"488.png","Moonview Arena","Pokémon Legends: Arceus"),
+        "la-24" to JourneyVisualAsset("la-24",JourneyVisualRole.LEGENDARY,"Regigigas",ART+"486.png","Snowpoint Temple","Pokémon Legends: Arceus"),
+        "la-26" to JourneyVisualAsset("la-26",JourneyVisualRole.LEGENDARY,"Giratina",ART+"487.png","Volo + Giratina","Pokémon Legends: Arceus"),
+        "la-27" to JourneyVisualAsset("la-27",JourneyVisualRole.LEGENDARY,"Arceus",ART+"493.png","The Deified Pokémon","Pokémon Legends: Arceus"),
+        "la-daybreak" to JourneyVisualAsset("la-daybreak",JourneyVisualRole.EPILOGUE,"Massive Mass Outbreaks",ART+"899.png","Daybreak","Pokémon Legends: Arceus"),
         "sv-01" to JourneyVisualAsset("sv-01",JourneyVisualRole.GYM_LEADER,"Katy","https://www.pokemon.co.jp/ex/sv/assets/img/character/230112_01/img_01.jpg","Bug Gym"),
         "sv-02" to JourneyVisualAsset("sv-02",JourneyVisualRole.TITAN,"Klawf",ART+"950.png","Stony Cliff Titan"),
         "sv-03" to JourneyVisualAsset("sv-03",JourneyVisualRole.GYM_LEADER,"Brassius","https://www.pokemon.co.jp/ex/sv/assets/img/character/220907_02/ja/img_01.jpg","Grass Gym"),
