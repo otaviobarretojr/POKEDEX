@@ -2,6 +2,8 @@ package com.otaviobarreto.pokedex.ui
 
 import android.util.Base64
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -72,6 +74,8 @@ internal fun JourneyGamePicker(
     val journeyDone=remember(activeSteps,activeCompleted){DataIntegrityRules.completedCount(activeSteps.map{it.id},activeCompleted)}
     val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
     val collectionRatio=if(activeDexIds.isEmpty())0f else activeOwned.count{it in activeDexIds}.toFloat()/activeDexIds.size
+    val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
+    val animatedCollectionRatio by animateFloatAsState(targetValue=collectionRatio,label="companionCollection")
     val searchResults=remember(searchQuery,national){
         val q=searchQuery.trim().lowercase()
         if(q.length<2) emptyList() else national.filter{
@@ -174,8 +178,8 @@ internal fun JourneyGamePicker(
                             }
                             Spacer(Modifier.height(14.dp))
                             Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
-                                CompanionMetric("Jornada",(journeyRatio*100).toInt().toString()+"%",journeyDone.toString()+"/"+activeSteps.size,Modifier.weight(1f))
-                                CompanionMetric("Pokédex",(collectionRatio*100).toInt().toString()+"%",activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,Modifier.weight(1f))
+                                CompanionMetric("Jornada",(animatedJourneyRatio*100).toInt().toString()+"%",journeyDone.toString()+"/"+activeSteps.size,Modifier.weight(1f))
+                                CompanionMetric("Pokédex",(animatedCollectionRatio*100).toInt().toString()+"%",activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,Modifier.weight(1f))
                                 CompanionMetric("Pendência",nextMissing?.let{"#"+it} ?: "OK",if(nextMissing==null)"Completa" else "Próximo alvo",Modifier.weight(1f))
                             }
                             Row(Modifier.fillMaxWidth().padding(top=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
@@ -195,6 +199,7 @@ internal fun JourneyGamePicker(
                                     ?: "Região ativa"
                                 Card(
                                     modifier=Modifier.fillMaxWidth().padding(top=8.dp)
+                                        .animateContentSize()
                                         .clickable{onPokemonClick(id,nextMissingSource)},
                                     shape=RoundedCornerShape(16.dp),
                                     colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.10f))
@@ -269,7 +274,7 @@ internal fun JourneyGamePicker(
                                     }
                                 }
                                 LinearProgressIndicator(
-                                    progress={collectionRatio.coerceIn(0f,1f)},
+                                    progress={animatedCollectionRatio.coerceIn(0f,1f)},
                                     modifier=Modifier.fillMaxWidth().padding(top=12.dp).height(7.dp)
                                 )
                             }
