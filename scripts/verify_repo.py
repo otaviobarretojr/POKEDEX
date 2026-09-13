@@ -54,6 +54,31 @@ for required in ("repeat(5)", "repeat(6)", "row*6+col", "take(30)"):
     if required not in boxes_v2:
         violations.append(f"Fixed Box invariant missing {required}")
 
+# Compatibility guard — visual redesign foundation v19
+visual_files = {
+    "theme": (ui / "PokedexTheme.kt").read_text(encoding="utf-8"),
+    "tokens": (ui / "PokedexDesignTokens.kt").read_text(encoding="utf-8"),
+    "chrome": (ui / "PokedexChrome.kt").read_text(encoding="utf-8"),
+    "detail": (ui / "PokemonDetailV2Screen.kt").read_text(encoding="utf-8"),
+    "pokedex": (ui / "PokedexCatalogScreen.kt").read_text(encoding="utf-8"),
+    "box": (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8"),
+}
+for required in ("PokedexDarkColors", "isSystemInDarkTheme"):
+    if required not in visual_files["theme"]:
+        violations.append(f"Visual v19 theme missing {required}")
+for required in ("Motion", "fun game(label:String)", "headlineLarge"):
+    if required not in visual_files["tokens"]:
+        violations.append(f"Visual v19 tokens missing {required}")
+for required in ("DexBottomBar", "DexAppBackground", "DexGlassSurface"):
+    if required not in visual_files["chrome"]:
+        violations.append(f"Visual v19 chrome missing {required}")
+for required in ("DexSectionEyebrow", "animateFloatAsState"):
+    if required not in visual_files["detail"]:
+        violations.append(f"Visual v19 detail missing {required}")
+for required in ("PokedexDesignTokens.Colors.type", "DexAppBackground"):
+    if required not in visual_files["pokedex"]:
+        violations.append(f"Visual v19 Pokedex missing {required}")
+
 if violations:
     print("Source verification failed:")
     for item in violations:
@@ -77,8 +102,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "18501" not in workflow or "18.5.1" not in workflow:
-    violations.append("CI v18.5.1 version validation missing")
+if "19000" not in workflow or "19.0.0" not in workflow:
+    violations.append("CI v19.0.0 version validation missing")
 
 if violations:
     print("Source verification failed:")
@@ -929,7 +954,8 @@ local_v1841 = 'versionName = "18.4.1"' in local_gradle and "versionCode = 18401"
 local_v1842 = 'versionName = "18.4.2"' in local_gradle and "versionCode = 18402" in local_gradle
 local_v1850 = 'versionName = "18.5.0"' in local_gradle and "versionCode = 18500" in local_gradle
 local_v1851 = 'versionName = "18.5.1"' in local_gradle and "versionCode = 18501" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851):
+local_v1900 = 'versionName = "19.0.0"' in local_gradle and "versionCode = 19000" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900):
     violations.append("Local build version is not aligned with supported v16/v17/v18 releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
