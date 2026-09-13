@@ -118,40 +118,31 @@ fun PokemonRegionMapScreen(
         }
     ) { innerPadding ->
         when {
-            loading -> Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(12.dp))
-                Text("Montando mapa de encontros…")
-            }
+            loading -> DexStatusPane(
+                "Montando mapa",
+                "Organizando zonas e encontros da região.",
+                Modifier.fillMaxWidth().padding(innerPadding).padding(PokedexDesignTokens.Spacing.Lg),
+                loading=true
+            )
 
-            error != null -> Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(error!!)
-            }
+            error != null -> DexStatusPane(
+                "Mapa indisponível",
+                error!!,
+                Modifier.fillMaxWidth().padding(innerPadding).padding(PokedexDesignTokens.Spacing.Lg)
+            )
 
-            zones.isEmpty() -> Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(48.dp))
-                Spacer(Modifier.height(12.dp))
-                Text("O mapa visual ainda está disponível somente para Paldea, Kitakami e Blueberry.")
-            }
+            zones.isEmpty() -> DexStatusPane(
+                "Mapa ainda não disponível",
+                "O mapa visual está disponível para Paldea, Kitakami e Blueberry.",
+                Modifier.fillMaxWidth().padding(innerPadding).padding(PokedexDesignTokens.Spacing.Lg)
+            )
 
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(PokedexDesignTokens.Spacing.Md)
             ) {
                 item {
-                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(
                                 model = pokemon?.spriteUrl,
@@ -281,7 +272,7 @@ private fun SpatialRegionMap(
             shape = RoundedCornerShape(PokedexDesignTokens.Radius.Xl),
             color = MaterialTheme.colorScheme.surfaceVariant,
             tonalElevation = 0.dp,
-            shadowElevation = 2.dp
+            shadowElevation = PokedexDesignTokens.Elevation.Low
         ) {
             Box(
                 modifier = Modifier
@@ -345,7 +336,7 @@ private fun SpatialRegionMap(
                                 .width(markerWidth)
                                 .height(markerHeight)
                                 .clickable { onSelect(zone) },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                             colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.Transparent)
                         ) {
                             Column(
