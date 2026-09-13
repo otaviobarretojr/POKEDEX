@@ -96,14 +96,13 @@ private val qbGames=AppGameCatalog.games.map{game->
   else{
    specialEvolutionLoading=true
    specialEvolutionIds=withContext(Dispatchers.IO){
+    val byChain=entries.groupBy{entry->runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()}
+    val specialByChain=byChain.keys.filterNotNull().associateWith{url->
+     runCatching{PokeApiService.loadSpecialEvolutionSourceIds(url)}.getOrElse{emptySet()}
+    }
     entries.mapNotNull{entry->
-     runCatching{
-      val species=PokedexDataStore.species(entry.nationalId)
-      val chain=species.evolutionChainUrl?.let{PokedexDataStore.evolutions(it)}.orEmpty()
-      val currentIndex=chain.indexOfFirst{it.pokemonId==entry.nationalId}
-      val candidates=if(currentIndex>=0)chain.drop(currentIndex+1)else chain
-      entry.nationalId.takeIf{candidates.any{PokeApiService.isSpecialEvolutionRequirement(it.requirement)}}
-     }.getOrNull()
+     val url=runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()
+     entry.nationalId.takeIf{url!=null && entry.nationalId in specialByChain[url].orEmpty()}
     }.toSet()
    }
    specialEvolutionLoading=false
