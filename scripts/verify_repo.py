@@ -548,6 +548,22 @@ for required in ('"Legends Arceus" -> hisui', '"Cyndaquil"', '"Oshawott"', '"Row
     if required not in starter_catalog:
         violations.append(f"Legends Arceus starter context missing {required}")
 
+for required in ('"Sword / Shield" -> swordShield', '"swsh-g1"', '"swsh-g8"', '"swsh-15"', '"swsh-pg-02"', '"swsh-ioa-04"', '"swsh-ct-05"'):
+    if required not in journey_catalog:
+        violations.append(f"Sword Shield Journey route missing {required}")
+
+for required in ("stepId.startsWith(\"swsh-\")", "galarCatchPlan", "GYM CHALLENGE · PRIMEIRAS BADGES", "DLC · ISLE OF ARMOR", "DLC · CROWN TUNDRA"):
+    if required not in journey_team_progress:
+        violations.append(f"Sword Shield dynamic progression missing {required}")
+
+for required in ('"swsh-g1"', '"swsh-g8"', '"swsh-15"', '"swsh-ioa-04"', '"swsh-ct-05"'):
+    if required not in journey_preparation:
+        violations.append(f"Sword Shield preparation coverage missing {required}")
+
+for required in ('"Sword / Shield" -> galar', '"Scorbunny"', '"Grookey"', '"Sobble"'):
+    if required not in starter_catalog:
+        violations.append(f"Sword Shield starter context missing {required}")
+
 if violations:
     print("Source verification failed:")
     for item in violations:
@@ -564,6 +580,9 @@ for required in ("Katy","Brassius","Iono","Kofu","Larry","Ryme","Tulip","Grusha"
 for required in ("Kleavor","Hisuian Lilligant","Hisuian Arcanine","Hisuian Electrode","Hisuian Avalugg","Dialga / Palkia","Heatran","Cresselia","Regigigas","Giratina","Arceus","Daybreak"):
     if required not in visual_catalog:
         violations.append(f"Legends Arceus visual asset missing {required}")
+for required in ("Milo","Nessa","Kabu","Bea / Allister","Opal","Gordie / Melony","Piers","Raihan","Eternatus","Leon","Zacian / Zamazenta","Kubfu","Urshifu","Calyrex","Legendary Giants","Galarian Legendary Birds","Dynamax Adventures"):
+    if required not in visual_catalog:
+        violations.append(f"Sword Shield visual asset missing {required}")
 for required in ("JourneyVisualThumb","JourneyVisualHero","JourneyVisualAssetCatalog.forStep"):
     if required not in journey_ui:
         violations.append(f"Journey visual rendering missing {required}")
