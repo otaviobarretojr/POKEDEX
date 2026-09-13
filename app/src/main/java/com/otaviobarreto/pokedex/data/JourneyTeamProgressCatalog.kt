@@ -94,7 +94,7 @@ object JourneyTeamProgressCatalog {
         stepId in setOf("swsh-01","swsh-02","swsh-03","swsh-04") -> "GALAR · INÍCIO DO GYM CHALLENGE"
         stepId in setOf("swsh-g1","swsh-g2","swsh-g3") -> "GYM CHALLENGE · PRIMEIRAS BADGES"
         stepId in setOf("swsh-g4","swsh-g5","swsh-g6") -> "GYM CHALLENGE · MEIO DA CAMPANHA"
-        stepId in setOf("swsh-g7","swsh-g8","swsh-13","swsh-14","swsh-15") -> "WYNDON · RETA FINAL"
+        stepId in setOf("swsh-g7","swsh-g8","swsh-13","swsh-14","swsh-15","swsh-16") -> "WYNDON · RETA FINAL"
         stepId.startsWith("swsh-pg-") -> "PÓS-GAME · HEROES OF GALAR"
         stepId.startsWith("swsh-ioa-") -> "DLC · ISLE OF ARMOR"
         stepId.startsWith("swsh-ct-") -> "DLC · CROWN TUNDRA"
