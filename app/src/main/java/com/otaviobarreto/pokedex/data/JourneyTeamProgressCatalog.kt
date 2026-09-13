@@ -84,9 +84,9 @@ object JourneyTeamProgressCatalog {
         stepId in setOf("la-07","la-08") -> "NOBRES · FIELDLANDS / MIRELANDS"
         stepId in setOf("la-09","la-10") -> "COBALT COASTLANDS"
         stepId in setOf("la-11","la-12") -> "CORONET / ALABASTER"
-        stepId in setOf("la-13","la-13b","la-14","la-15","la-16","la-17","la-18") -> "CRISE DO ESPAÇO-TEMPO"
+        stepId in setOf("la-13","la-14","la-15","la-16","la-17","la-18") -> "CRISE DO ESPAÇO-TEMPO"
         stepId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27") -> "PÓS-GAME · PLATES E ARCEUS"
-        stepId=="la-daybreak" -> "DAYBREAK · MASSIVE MASS OUTBREAKS"
+        stepId.startsWith("la-db-") -> "DAYBREAK · MASSIVE MASS OUTBREAKS"
         else -> "JORNADA"
     }
 
