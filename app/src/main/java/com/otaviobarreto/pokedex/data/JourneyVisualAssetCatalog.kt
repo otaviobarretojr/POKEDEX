@@ -20,6 +20,21 @@ object JourneyVisualAssetCatalog {
     private const val DLC_OFFICIAL="https://www.pokemon.co.jp/ex/sv_dlc/assets/img/character/"
 
     private val assets=mapOf(
+        "lgpe-g1" to JourneyVisualAsset("lgpe-g1",JourneyVisualRole.GYM_LEADER,"Brock",ART+"95.png","Pewter Gym · Pedra","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-g2" to JourneyVisualAsset("lgpe-g2",JourneyVisualRole.GYM_LEADER,"Misty",ART+"121.png","Cerulean Gym · Água","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-g3" to JourneyVisualAsset("lgpe-g3",JourneyVisualRole.GYM_LEADER,"Lt. Surge",ART+"26.png","Vermilion Gym · Elétrico","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-g4" to JourneyVisualAsset("lgpe-g4",JourneyVisualRole.GYM_LEADER,"Erika",ART+"45.png","Celadon Gym · Planta","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-g5" to JourneyVisualAsset("lgpe-g5",JourneyVisualRole.GYM_LEADER,"Koga",ART+"110.png","Fuchsia Gym · Veneno","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-g6" to JourneyVisualAsset("lgpe-g6",JourneyVisualRole.GYM_LEADER,"Sabrina",ART+"65.png","Saffron Gym · Psíquico","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-g7" to JourneyVisualAsset("lgpe-g7",JourneyVisualRole.GYM_LEADER,"Blaine",ART+"59.png","Cinnabar Gym · Fogo","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-g8" to JourneyVisualAsset("lgpe-g8",JourneyVisualRole.GYM_LEADER,"Giovanni",ART+"112.png","Viridian Gym · Terra","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-e4-1" to JourneyVisualAsset("lgpe-e4-1",JourneyVisualRole.TOURNAMENT,"Lorelei",ART+"131.png","Elite Four · Gelo/Água","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-e4-2" to JourneyVisualAsset("lgpe-e4-2",JourneyVisualRole.TOURNAMENT,"Bruno",ART+"68.png","Elite Four · Lutador","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-e4-3" to JourneyVisualAsset("lgpe-e4-3",JourneyVisualRole.TOURNAMENT,"Agatha",ART+"94.png","Elite Four · Fantasma/Veneno","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-e4-4" to JourneyVisualAsset("lgpe-e4-4",JourneyVisualRole.TOURNAMENT,"Lance",ART+"149.png","Elite Four · Dragão","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-22" to JourneyVisualAsset("lgpe-22",JourneyVisualRole.TOURNAMENT,"Trace",ART+"135.png","Champion · Kanto","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-pg-01" to JourneyVisualAsset("lgpe-pg-01",JourneyVisualRole.LEGENDARY,"Mewtwo",ART+"150.png","Cerulean Cave","Pokémon Let's Go Pikachu / Eevee"),
+        "lgpe-pg-03" to JourneyVisualAsset("lgpe-pg-03",JourneyVisualRole.TOURNAMENT,"Red",ART+"25.png","Master Trainer superboss","Pokémon Let's Go Pikachu / Eevee"),
         "bdsp-g1" to JourneyVisualAsset("bdsp-g1",JourneyVisualRole.GYM_LEADER,"Roark",ART+"409.png","Oreburgh Gym · Pedra","Pokémon Brilliant Diamond / Shining Pearl"),
         "bdsp-g2" to JourneyVisualAsset("bdsp-g2",JourneyVisualRole.GYM_LEADER,"Gardenia",ART+"407.png","Eterna Gym · Planta","Pokémon Brilliant Diamond / Shining Pearl"),
         "bdsp-g3" to JourneyVisualAsset("bdsp-g3",JourneyVisualRole.GYM_LEADER,"Maylene",ART+"448.png","Veilstone Gym · Lutador","Pokémon Brilliant Diamond / Shining Pearl"),
