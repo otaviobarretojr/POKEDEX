@@ -257,7 +257,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
-    else->QBGrid(entries,capturedIds,region.source,specialEvolutionFilter,specialEvolutionIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+    else->QBGrid(entries,capturedIds,region.source,specialEvolutionFilter&&!specialEvolutionLoading,specialEvolutionIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
    }
    if(specialEvolutionFilter&&specialEvolutionLoading){
     LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter),color=game.accent)
@@ -702,13 +702,13 @@ private fun QBSearch(
                 placeholder={Text("Nome ou número")}
             )
             Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                listOf("Todos","Capturados","Faltantes","Normal","Shiny","Formas").forEach{option->
+            LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                items(listOf("Todos","Capturados","Faltantes","Normal","Shiny","Formas")){option->
                     FilterChip(selected=status==option,onClick={status=option},label={Text(option,fontSize=10.sp)})
                 }
             }
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                listOf("Regional","Nacional","Nome").forEach{option->
+            LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                items(listOf("Regional","Nacional","Nome")){option->
                     FilterChip(selected=order==option,onClick={order=option},label={Text(option,fontSize=10.sp)})
                 }
             }
