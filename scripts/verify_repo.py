@@ -532,7 +532,7 @@ for required in ('"Pokémon Legends: Z-A" -> lumiose', '"Tepig"', '"Totodile"', 
     if required not in starter_catalog:
         violations.append(f"Legends Z-A starter context missing {required}")
 
-for required in ('"Legends Arceus" -> legendsArceus', '"la-01"', '"la-07"', '"la-18"', '"la-27"', '"la-daybreak"'):
+for required in ('"Legends Arceus" -> legendsArceus', '"la-01"', '"la-07"', '"la-18"', '"la-27"', '"la-db-95"', '"la-db-102"'):
     if required not in journey_catalog:
         violations.append(f"Legends Arceus Journey route missing {required}")
 
@@ -540,7 +540,7 @@ for required in ("stepId.startsWith(\"la-\")", "hisuiCatchPlan", "HISUI · SURVE
     if required not in journey_team_progress:
         violations.append(f"Legends Arceus dynamic progression missing {required}")
 
-for required in ('"la-07"', '"la-12"', '"la-26"', '"la-27"', '"la-daybreak"'):
+for required in ('"la-07"', '"la-12"', '"la-26"', '"la-27"', '"la-db-95"', '"la-db-102"'):
     if required not in journey_preparation:
         violations.append(f"Legends Arceus preparation coverage missing {required}")
 
@@ -561,7 +561,7 @@ journey_ui = journey_source
 for required in ("Katy","Brassius","Iono","Kofu","Larry","Ryme","Tulip","Grusha","Giacomo","Mela","Atticus","Ortega","Eri","Klawf","Bombirdier","Orthworm","Great Tusk / Iron Treads","Dondozo & Tatsugiri"):
     if required not in visual_catalog:
         violations.append(f"Journey visual asset missing {required}")
-for required in ("Kleavor","Dialga / Palkia","Heatran","Cresselia","Regigigas","Giratina","Arceus","Daybreak"):
+for required in ("Kleavor","Hisuian Lilligant","Hisuian Arcanine","Hisuian Electrode","Hisuian Avalugg","Dialga / Palkia","Heatran","Cresselia","Regigigas","Giratina","Arceus","Daybreak"):
     if required not in visual_catalog:
         violations.append(f"Legends Arceus visual asset missing {required}")
 for required in ("JourneyVisualThumb","JourneyVisualHero","JourneyVisualAssetCatalog.forStep"):
