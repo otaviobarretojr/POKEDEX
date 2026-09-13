@@ -4,7 +4,10 @@ import android.content.Context
 import android.os.SystemClock
 import coil.imageLoader
 import coil.request.ImageRequest
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -19,6 +22,7 @@ data class StartupPreloadProgress(
 )
 
 object StartupPreloader {
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile var lastWarmDurationMs: Long = 0L
         private set
 
@@ -87,16 +91,16 @@ object StartupPreloader {
             .toList()
 
         val priorityIds = buildList {
-            addAll(RecentActivityStore.recentPokemon.take(12))
-            addAll(activePageIds)
-            addAll(ownedVariantIds)
-            addAll(OfflineGamePackManager.manifestIds(activeGame).take(18))
-            addAll(gameDexIds.take(18))
-        }.distinct().take(48)
+            addAll(RecentActivityStore.recentPokemon.take(8))
+            addAll(activePageIds.take(12))
+            addAll(ownedVariantIds.take(8))
+            addAll(OfflineGamePackManager.manifestIds(activeGame).take(8))
+            addAll(gameDexIds.take(8))
+        }.distinct().take(24)
 
         progress(.60f, "Aquecendo detalhes dos Pokémon")
         coroutineScope {
-            priorityIds.take(8).map { id ->
+            priorityIds.take(4).map { id ->
                 async {
                     runCatching {
                         PokedexDataStore.prefetchFullDetails(id)
@@ -105,7 +109,7 @@ object StartupPreloader {
                 }
             }.awaitAll()
 
-            priorityIds.drop(8).chunked(6).forEachIndexed { index, chunk ->
+            priorityIds.drop(4).chunked(6).forEachIndexed { index, chunk ->
                 chunk.map { id ->
                     async {
                         runCatching {
@@ -114,7 +118,7 @@ object StartupPreloader {
                         }
                     }
                 }.awaitAll()
-                val groups = ((priorityIds.drop(8).size + 5) / 6).coerceAtLeast(1)
+                val groups = ((priorityIds.drop(4).size + 5) / 6).coerceAtLeast(1)
                 val local = .66f + ((index + 1f) / groups) * .17f
                 progress(local, "Aquecendo detalhes dos Pokémon")
             }
@@ -171,7 +175,7 @@ object StartupPreloader {
         }
 
         progress(.91f, "Preparando imagens")
-        val spriteIds = priorityIds.take(18)
+        val spriteIds = priorityIds.take(12)
         val spriteSemaphore = Semaphore(4)
         supervisorScope {
             spriteIds.mapIndexed { index, id ->
@@ -197,5 +201,51 @@ object StartupPreloader {
 
         progress(1f, "Tudo pronto")
         lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
+    }
+
+    fun launchExtendedWarm(context: Context) {
+        val appContext = context.applicationContext
+        backgroundScope.launch {
+            val activeGame = AppStatePreferences.activeGame
+            val activeRegionSource = AppGameCatalog.games
+                .firstOrNull { it.label == activeGame }
+                ?.let { AppStatePreferences.activeRegionForGame(it.label) }
+            val activeContext = GameContext.fromSource(activeRegionSource)
+            val activeDex = activeContext?.let { GameDexService.cached(it).orEmpty() }.orEmpty()
+            val activePage = activeRegionSource?.let { AppStatePreferences.boxPage(it) } ?: 0
+            val pageIds = activeDex.drop(activePage.coerceAtLeast(0) * 30).take(30).map { it.nationalId }
+            val ids = buildList {
+                addAll(RecentActivityStore.recentPokemon.take(16))
+                addAll(pageIds)
+                addAll(OfflineGamePackManager.manifestIds(activeGame).take(24))
+            }.distinct().take(48)
+
+            ids.chunked(6).forEach { chunk ->
+                coroutineScope {
+                    chunk.map { id ->
+                        async { runCatching { PokedexDataStore.prefetchCoreDetails(id) } }
+                    }.awaitAll()
+                }
+            }
+
+            val imageSemaphore = Semaphore(permits = 3)
+            supervisorScope {
+                ids.take(24).map { id ->
+                    async {
+                        val sprite = PokedexDataStore.cachedPokemon(id)?.spriteUrl ?: return@async
+                        imageSemaphore.withPermit {
+                            runCatching {
+                                appContext.imageLoader.execute(
+                                    ImageRequest.Builder(appContext)
+                                        .data(sprite)
+                                        .size(192)
+                                        .build()
+                                )
+                            }
+                        }
+                    }
+                }.awaitAll()
+            }
+        }
     }
 }
