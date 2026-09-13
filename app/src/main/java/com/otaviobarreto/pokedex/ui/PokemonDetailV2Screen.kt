@@ -287,58 +287,6 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         Modifier.fillMaxSize().padding(horizontal=14.dp,vertical=10.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp)
     ){
-        if(context!=null)item{
-            SectionCard("Contexto do jogo",Icons.Default.SportsEsports){
-                Column(verticalArrangement=Arrangement.spacedBy(6.dp)){
-                    Text(context.label,fontWeight=FontWeight.Bold)
-                    Text("Região: " + context.regionLabel,style=MaterialTheme.typography.bodyMedium)
-                    Text("Golpes e localizações são filtrados para este jogo.",style=MaterialTheme.typography.bodySmall,color=Color(0xFF667085))
-                }
-            }
-        }
-        item{
-            SectionCard("Onde conseguir",Icons.Default.Route){
-                val allOptions=CollectionAdvisor.cachedOptions(b.pokemon.id)
-                val options=if(source.isNullOrBlank()) allOptions else allOptions.filter{it.source==source}
-                val contextual=source?.let{GameContext.fromSource(it)}
-                Text(
-                    when{
-                        !source.isNullOrBlank() && options.isNotEmpty() -> "Disponível nesta Pokédex regional"
-                        !source.isNullOrBlank() -> "Sem registro de captura nesta Pokédex regional"
-                        else -> CollectionAdvisor.acquisitionLabel(b.pokemon.id)
-                    },
-                    style=MaterialTheme.typography.labelLarge,
-                    color=accent,
-                    fontWeight=FontWeight.Bold
-                )
-                Text(
-                    when{
-                        !source.isNullOrBlank() && options.isNotEmpty() -> {
-                            val option=options.first()
-                            option.game+" · "+option.region+" #"+option.regionalNumber
-                        }
-                        !source.isNullOrBlank() -> {
-                            "No contexto "+(contextual?.label ?: "atual")+
-                                ", verifique evolução, troca, HOME, evento ou outro método compatível."
-                        }
-                        else -> CollectionAdvisor.recommendation(b.pokemon.id)
-                    },
-                    style=MaterialTheme.typography.bodyMedium,
-                    modifier=Modifier.padding(top=4.dp)
-                )
-                if(options.isNotEmpty()){
-                    options.take(4).forEach{option->
-                        Text(
-                            "• "+option.game+" · "+option.region+" #"+option.regionalNumber,
-                            style=MaterialTheme.typography.bodySmall,
-                            color=Color(0xFF667085)
-                        )
-                    }
-                }else if(!advisorReady){
-                    LinearProgressIndicator(Modifier.fillMaxWidth())
-                }
-            }
-        }
         item{
             SectionCard("Informações gerais",Icons.Default.Info){
                 Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
@@ -347,10 +295,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
                         InfoMini("Felicidade base",b.species.baseHappiness.toString(),Modifier.weight(1f))
                         InfoMini("Crescimento",b.species.growthRate?:"—",Modifier.weight(1f))
                     }
-                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        InfoMini("Habitat",b.species.habitat?:"—",Modifier.weight(1f))
-                        InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.weight(2f))
-                    }
+                    InfoMini("Grupos de ovo",b.species.eggGroups.joinToString().ifBlank{"—"},Modifier.fillMaxWidth())
                 }
             }
         }
@@ -496,9 +441,46 @@ private fun PokemonFormsSummaryCard(
 @Composable private fun SectionCard(title:String,icon:androidx.compose.ui.graphics.vector.ImageVector,content:@Composable ColumnScope.()->Unit){Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=Color.White)){Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){Row(verticalAlignment=Alignment.CenterVertically){Icon(icon,null,tint=Color(0xFF263C8C));Spacer(Modifier.width(9.dp));Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)};content()}}}
 @Composable private fun InfoMini(label:String,value:String,modifier:Modifier){Surface(modifier,shape=RoundedCornerShape(14.dp),color=Color(0xFFF4F5FA)){Column(Modifier.padding(11.dp)){Text(label,fontSize=10.sp,color=Color(0xFF6F7890));Text(value,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)}}}
 @Composable private fun V2Stats(s:PokemonStats){val rows=listOf("HP" to s.hp,"Ataque" to s.attack,"Defesa" to s.defense,"Ataque Esp." to s.specialAttack,"Defesa Esp." to s.specialDefense,"Velocidade" to s.speed);LazyColumn(Modifier.fillMaxSize().padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){items(rows){(name,v)->Column{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(name,fontWeight=FontWeight.SemiBold);Text(v.toString())};LinearProgressIndicator(progress={(v/200f).coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=4.dp))}};item{HorizontalDivider();InfoMini("Total",rows.sumOf{it.second}.toString(),Modifier.fillMaxWidth())}}}
-@Composable private fun V2Evolution(e:List<PokeApiService.EvolutionStage>,currentId:Int,openPokemon:((Int)->Unit)?){LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){item{Text("Família evolutiva",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)};if(e.isEmpty())item{Text("Nenhuma evolução encontrada.")}else items(e,key={it.pokemonId}){stage->val active=stage.pokemonId==currentId;Card(Modifier.fillMaxWidth().then(if(openPokemon!=null&&!active)Modifier.clickable{openPokemon(stage.pokemonId)}else Modifier)){Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){PokemonArtwork("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${stage.pokemonId}.png",stage.name,Modifier.size(70.dp).padding(4.dp),pokemonId=stage.pokemonId);Column(Modifier.weight(1f).padding(start=10.dp)){Text(stage.name,fontWeight=FontWeight.Bold);Text(stage.requirement?:"Forma inicial",style=MaterialTheme.typography.bodySmall);if(active)Text("Pokémon atual",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)};if(openPokemon!=null&&!active)Icon(Icons.Default.ChevronRight,null)}}}}}
+@Composable private fun V2Evolution(e:List<PokeApiService.EvolutionStage>,currentId:Int,openPokemon:((Int)->Unit)?){LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){item{Text("Família evolutiva",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)};if(e.isEmpty())item{Text("Nenhuma evolução encontrada.")}else items(e,key={it.pokemonId}){stage->val active=stage.pokemonId==currentId;Card(Modifier.fillMaxWidth().then(if(openPokemon!=null&&!active)Modifier.clickable{openPokemon(stage.pokemonId)}else Modifier)){Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){PokemonArtwork("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${stage.pokemonId}.png",stage.name,Modifier.size(70.dp).padding(4.dp),pokemonId=stage.pokemonId);Column(Modifier.weight(1f).padding(start=10.dp)){Text(stage.name,fontWeight=FontWeight.Bold);Text(stage.requirement?:"Forma inicial",style=MaterialTheme.typography.bodySmall,fontWeight=if(PokeApiService.isSpecialEvolutionRequirement(stage.requirement))FontWeight.Bold else FontWeight.Normal,color=if(PokeApiService.isSpecialEvolutionRequirement(stage.requirement))Color(0xFF7655E8) else Color.Unspecified);if(active)Text("Pokémon atual",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)};if(openPokemon!=null&&!active)Icon(Icons.Default.ChevronRight,null)}}}}}
 @Composable private fun V2Moves(moves:List<PokeApiService.RemoteMove>,context:GameContext?,openRef:((String,String)->Unit)?){var query by remember(moves,context){mutableStateOf("")};var methodFilter by remember(moves,context){mutableStateOf("Todos")};val base=remember(moves,context){if(context==null)moves.map{MoveView(it,it.learnDetails)}else moves.mapNotNull{move->move.learnDetails.filter{context.matchesVersionGroup(it.versionGroup)}.takeIf{it.isNotEmpty()}?.let{MoveView(move,it)}}};val methods=remember(base){base.flatMap{it.details}.map{methodLabel(it.method)}.distinct().sorted()};val visible=remember(base,query,methodFilter){base.filter{v->(query.isBlank()||v.move.name.contains(query,true))&&(methodFilter=="Todos"||v.details.any{methodLabel(it.method)==methodFilter})}.sortedBy{it.move.name}};LazyColumn(Modifier.fillMaxSize().padding(horizontal=16.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){item{Text("Golpes",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=14.dp));OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(top=8.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Buscar golpe")});LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){item{FilterChip(methodFilter=="Todos",{methodFilter="Todos"},{Text("Todos")})};items(methods,key={it}){label->FilterChip(methodFilter==label,{methodFilter=label},{Text(label)})}}};items(visible,key={it.move.name}){view->Card(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",view.move.name)}else Modifier)){Row(Modifier.fillMaxWidth().padding(11.dp),verticalAlignment=Alignment.CenterVertically){Text(view.move.name,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}};item{Spacer(Modifier.height(16.dp))}}}
 private fun methodLabel(method:String):String=when(method.lowercase()){"level up"->"Nível";"machine"->"TM";"egg"->"Ovo";"tutor"->"Tutor";else->method}
-@Composable private fun V2Locations(encounters:List<PokeApiService.EncounterLocation>,context:GameContext?,openLocation:(()->Unit)?){val visible=if(context==null)encounters else encounters.mapNotNull{e->val versions=e.versions.filter(context::matchesVersion);val details=e.details.filter{context.matchesVersion(it.version)};if(versions.isEmpty()&&details.isEmpty())null else e.copy(versions=versions,details=details)};LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){item{if(openLocation!=null)Button(openLocation,Modifier.fillMaxWidth()){Icon(Icons.Default.LocationOn,null);Spacer(Modifier.width(8.dp));Text("Abrir localização / mapa")}};if(visible.isEmpty())item{Text("Nenhum encontro detalhado disponível para este contexto.")}else items(visible,key={it.location}){e->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(10.dp)){Text(e.location,fontWeight=FontWeight.Bold);e.details.take(4).forEach{d->Text(listOfNotNull(d.method,d.minLevel.takeIf{it>0}?.let{"Nv. $it"}).joinToString(" · "),style=MaterialTheme.typography.bodySmall)}}}}}}
+@Composable private fun V2Locations(
+    encounters:List<PokeApiService.EncounterLocation>,
+    species:PokeApiService.SpeciesInfo,
+    context:GameContext?,
+    source:String?,
+    openLocation:(()->Unit)?
+){
+    val visible=if(context==null)encounters else encounters.mapNotNull{e->
+        val versions=e.versions.filter(context::matchesVersion)
+        val details=e.details.filter{context.matchesVersion(it.version)}
+        if(versions.isEmpty()&&details.isEmpty())null else e.copy(versions=versions,details=details)
+    }
+    LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+        item{
+            Text("Localização",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
+            if(context!=null)Text(context.label+" · "+context.regionLabel,style=MaterialTheme.typography.labelMedium,color=Color(0xFF667085))
+            species.habitat?.takeIf{it.isNotBlank()}?.let{
+                Text("Habitat: "+it,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
+            }
+            if(openLocation!=null)Button(openLocation,Modifier.fillMaxWidth().padding(top=8.dp)){
+                Icon(Icons.Default.LocationOn,null);Spacer(Modifier.width(8.dp));Text("Ver localizações detalhadas")
+            }
+        }
+        if(visible.isEmpty())item{
+            Text(if(source.isNullOrBlank())"Nenhum encontro detalhado disponível." else "Sem encontro selvagem detalhado neste contexto. O Pokémon pode ser obtido por evolução, troca, evento ou outro método.")
+        }else items(visible,key={it.location}){e->
+            Card(Modifier.fillMaxWidth()){
+                Column(Modifier.padding(10.dp)){
+                    Text(e.location,fontWeight=FontWeight.Bold)
+                    e.details.take(4).forEach{d->
+                        Text(listOfNotNull(d.method,d.minLevel.takeIf{it>0}?.let{"Nv. $it"}).joinToString(" · "),style=MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+    }
+}
+
 private fun typeColor(type:String)=when(type.lowercase()){ "grass"->Color(0xFF38B84A);"fire"->Color(0xFFE85C43);"water"->Color(0xFF4E8FEA);"electric"->Color(0xFFE3B62F);"psychic"->Color(0xFFE8679A);"ice"->Color(0xFF6CC7D8);"dragon"->Color(0xFF6553C7);"dark"->Color(0xFF5B5363);"fairy"->Color(0xFFE484C4);"fighting"->Color(0xFFC65443);"poison"->Color(0xFF9B5BC6);"ground"->Color(0xFFC9A45D);"rock"->Color(0xFFAA9554);"bug"->Color(0xFF8AAE2D);"ghost"->Color(0xFF665F9A);"steel"->Color(0xFF7F9AA7);"flying"->Color(0xFF7E9AD8);else->Color(0xFF6D7180)}
 private fun gameColor(label:String?)=when{label?.contains("Scarlet",true)==true->Color(0xFF7655E8);label?.contains("Sword",true)==true->Color(0xFF35A9C7);label?.contains("Let's Go",true)==true->Color(0xFFE0A929);label?.contains("Arceus",true)==true->Color(0xFF527F7C);label?.contains("HOME",true)==true->Color(0xFF5B55E7);else->Color(0xFF6C63E8)}
