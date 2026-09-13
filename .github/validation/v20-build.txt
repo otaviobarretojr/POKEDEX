@@ -1,0 +1,2 @@
+Temporary CI validation trigger for POKEDEX v20.0.0.
+Application sources unchanged.
