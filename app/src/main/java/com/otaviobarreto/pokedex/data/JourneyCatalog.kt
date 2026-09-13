@@ -20,6 +20,7 @@ object JourneyCatalog {
         "Scarlet / Violet" -> "Campanha + pós-jogo + DLC · rota completa"
         "Pokémon Legends: Z-A" -> "Z-A Royale + Rogue Megas + pós-jogo + Mega Dimension"
         "Legends Arceus" -> "Survey Corps + Nobres + espaço-tempo + pós-jogo + Daybreak"
+        "Sword / Shield" -> "Gym Challenge + Champion Cup + pós-jogo + Isle of Armor + Crown Tundra"
         else -> "Rota de campanha"
     }
 
@@ -27,8 +28,40 @@ object JourneyCatalog {
         "Scarlet / Violet" -> scarletViolet
         "Pokémon Legends: Z-A" -> legendsZa
         "Legends Arceus" -> legendsArceus
+        "Sword / Shield" -> swordShield
         else -> emptyList()
     }
+
+    private val swordShield = listOf(
+        JourneyStep("swsh-01",1,"Postwick → Wedgehurst","Receba o inicial e conheça Leon","Nv. 5–7",JourneyChallengeKind.STORY,"Início","Postwick / Wedgehurst","Escolha Grookey, Scorbunny ou Sobble e comece a Jornada por Galar."),
+        JourneyStep("swsh-02",2,"Slumbering Weald","Investigue o Pokémon misterioso","Nv. 6–8",JourneyChallengeKind.STORY,"História","Slumbering Weald"),
+        JourneyStep("swsh-03",3,"Pokédex e Wild Area","Receba a Pokédex e atravesse a Wild Area","Nv. 8–15",JourneyChallengeKind.STORY,"Exploração","Wild Area","Use a Wild Area para montar a base do time antes do Gym Challenge."),
+        JourneyStep("swsh-04",4,"Gym Challenge Opening","Registre-se em Motostoke","Nv. 15–18",JourneyChallengeKind.STORY,"Gym Challenge","Motostoke Stadium"),
+        JourneyStep("swsh-g1",5,"Turffield Gym","Milo · Grass Badge","Nv. 19–20",JourneyChallengeKind.GYM,"Ginásio · Planta","Turffield Stadium","Dynamax é a mecânica central dos ginásios de Galar."),
+        JourneyStep("swsh-g2",6,"Hulbury Gym","Nessa · Water Badge","Nv. 23–24",JourneyChallengeKind.GYM,"Ginásio · Água","Hulbury Stadium"),
+        JourneyStep("swsh-g3",7,"Motostoke Gym","Kabu · Fire Badge","Nv. 25–27",JourneyChallengeKind.GYM,"Ginásio · Fogo","Motostoke Stadium"),
+        JourneyStep("swsh-g4",8,"Stow-on-Side Gym","Bea (Sword) / Allister (Shield)","Nv. 34–36",JourneyChallengeKind.GYM,"Ginásio · Lutador/Fantasma","Stow-on-Side Stadium","Primeira grande diferença de versão: Bea em Sword, Allister em Shield."),
+        JourneyStep("swsh-g5",9,"Ballonlea Gym","Opal · Fairy Badge","Nv. 36–38",JourneyChallengeKind.GYM,"Ginásio · Fada","Ballonlea Stadium"),
+        JourneyStep("swsh-g6",10,"Circhester Gym","Gordie (Sword) / Melony (Shield)","Nv. 40–42",JourneyChallengeKind.GYM,"Ginásio · Pedra/Gelo","Circhester Stadium","Segunda diferença importante de versão."),
+        JourneyStep("swsh-g7",11,"Spikemuth Gym","Piers · Dark Badge","Nv. 44–46",JourneyChallengeKind.GYM,"Ginásio · Sombrio","Spikemuth","Piers não usa Dynamax; a batalha mantém formato tradicional."),
+        JourneyStep("swsh-g8",12,"Hammerlocke Gym","Raihan · Dragon Badge","Nv. 46–48",JourneyChallengeKind.GYM,"Ginásio · Dragão","Hammerlocke Stadium","Raihan usa clima e batalha dupla, exigindo preparação diferente dos demais líderes."),
+        JourneyStep("swsh-13",13,"Energy Plant Crisis","Interrompa o Darkest Day","Nv. 55–60",JourneyChallengeKind.STORY,"Darkest Day","Hammerlocke","Eternatus antecede a etapa final do Champion Cup."),
+        JourneyStep("swsh-14",14,"Champion Cup Finals","Semifinais e finais em Wyndon","Nv. 49–55",JourneyChallengeKind.STORY,"Champion Cup","Wyndon Stadium","Enfrente rivais e líderes antes do campeão."),
+        JourneyStep("swsh-15",15,"Champion Leon","Derrote Leon","Nv. 62–65",JourneyChallengeKind.STORY,"Campeão","Wyndon Stadium","Leon encerra a campanha principal de Galar."),
+        JourneyStep("swsh-pg-01",16,"Sordward & Shielbert","Investigue os incidentes Dynamax","Nv. 60–65",JourneyChallengeKind.POSTGAME,"Pós-jogo","Galar","Revisite os ginásios durante a crise pós-game."),
+        JourneyStep("swsh-pg-02",17,"Zacian / Zamazenta","Conclua o episódio pós-game","Nv. 70",JourneyChallengeKind.POSTGAME,"Lendário","Slumbering Weald","O lendário capturável depende da versão."),
+        JourneyStep("swsh-ioa-01",18,"The Isle of Armor","Chegue à Master Dojo","Nv. escalável",JourneyChallengeKind.DLC,"Isle of Armor","Isle of Armor","A DLC pode ser iniciada cedo; o nível dos encontros varia conforme o progresso."),
+        JourneyStep("swsh-ioa-02",19,"Master Dojo Trials","Complete os três testes de Mustard","Nv. escalável",JourneyChallengeKind.DLC,"Isle of Armor","Master Dojo"),
+        JourneyStep("swsh-ioa-03",20,"Kubfu","Receba Kubfu e aumente a amizade","Nv. escalável",JourneyChallengeKind.DLC,"Isle of Armor","Isle of Armor"),
+        JourneyStep("swsh-ioa-04",21,"Tower of Two Fists","Tower of Darkness / Waters","Nv. 70 recomendado",JourneyChallengeKind.DLC,"Isle of Armor","Tower of Darkness / Waters","A torre escolhida determina a forma Single Strike ou Rapid Strike de Urshifu."),
+        JourneyStep("swsh-ioa-05",22,"Gigantamax Urshifu","Conclua o arco do Master Dojo","Nv. 70+",JourneyChallengeKind.DLC,"Isle of Armor","Master Dojo"),
+        JourneyStep("swsh-ct-01",23,"The Crown Tundra","Conheça Peony e Freezington","Nv. 60+",JourneyChallengeKind.DLC,"Crown Tundra","Freezington"),
+        JourneyStep("swsh-ct-02",24,"The Sacred Bonds of Sovereign and Steed","Calyrex + Glastrier/Spectrier","Nv. 70–80",JourneyChallengeKind.DLC,"Crown Tundra","Crown Tundra","A escolha do campo define Glastrier ou Spectrier e a forma montada de Calyrex."),
+        JourneyStep("swsh-ct-03",25,"The Legendary Giants","Resolva os templos dos Regis","Nv. 70+",JourneyChallengeKind.DLC,"Crown Tundra","Crown Tundra","Inclui a escolha entre Regieleki e Regidrago."),
+        JourneyStep("swsh-ct-04",26,"A Legendary Tree of a Legendary Three","Articuno, Zapdos e Moltres de Galar","Nv. 70+",JourneyChallengeKind.DLC,"Crown Tundra","Galar / Crown Tundra"),
+        JourneyStep("swsh-ct-05",27,"Dynamax Adventures","Explore o Max Lair","Nv. 65+",JourneyChallengeKind.DLC,"Crown Tundra","Max Lair","Pokémon de aluguel e lendários tornam esta atividade diferente do time normal da Jornada."),
+        JourneyStep("swsh-ct-06",28,"They Came From The Ultra Beyond!","Feche as Legendary Clues","Nv. 70+",JourneyChallengeKind.EPILOGUE,"Crown Tundra","Max Lair","Ultra Beasts e o encerramento das aventuras de Peony.")
+    )
 
     private val legendsArceus = listOf(
         JourneyStep("la-01",1,"In an Unfamiliar Land","Chegada a Hisui e Jubilife Village","Nv. 5",JourneyChallengeKind.STORY,"Prólogo","Jubilife Village","Conheça Laventon, Cyllene e a Galaxy Team."),
