@@ -26,7 +26,7 @@ workflow=read(".github/workflows/android.yml")
 
 checks={
     "stable package id": 'applicationId = "com.otaviobarreto.pokedex"' in gradle,
-    "update-safe version code": ('versionCode = 19200' in gradle) or ('versionCode = 20000' in gradle) or ('versionCode = 20300' in gradle) or ('versionCode = 20400' in gradle) or ('versionCode = 20500' in gradle) or ('versionCode = 20600' in gradle) or ('versionCode = 20700' in gradle) or ('versionCode = 20701' in gradle),
+    "update-safe version code": ('versionCode = 19200' in gradle) or ('versionCode = 20000' in gradle) or ('versionCode = 20300' in gradle) or ('versionCode = 20400' in gradle) or ('versionCode = 20500' in gradle) or ('versionCode = 20600' in gradle) or ('versionCode = 20700' in gradle) or ('versionCode = 20701' in gradle) or ('versionCode = 20800' in gradle),
     "minimum supported Android": 'minSdk = 26' in gradle,
     "current target SDK": 'targetSdk = 35' in gradle,
     "stable signing config": 'stableDebug' in gradle and 'pokedex-release.jks' in gradle,
