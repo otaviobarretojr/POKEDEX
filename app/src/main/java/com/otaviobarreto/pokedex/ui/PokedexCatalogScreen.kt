@@ -309,9 +309,11 @@ private fun PokedexFormsDialog(
                     }
                 }
                 if(forms==null){
-                    Box(Modifier.fillMaxWidth().height(160.dp),contentAlignment=Alignment.Center){
-                        CircularProgressIndicator()
-                    }
+                    DexLoadingPane(
+                        title="Preparando formas",
+                        message="Carregando variantes e artes disponíveis.",
+                        modifier=Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Md)
+                    )
                 }else{
                     LazyVerticalGrid(
                         columns=GridCells.Fixed(2),
@@ -320,9 +322,11 @@ private fun PokedexFormsDialog(
                         verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
                         items(visiblePreviews,key={it.label+"-"+it.formId+"-"+it.shiny}){preview->
+                            val previewInteraction=remember(preview.formId,preview.shiny){MutableInteractionSource()}
                             Card(
-                                modifier=Modifier,
+                                modifier=Modifier.dexInteractiveSurface(interactionSource=previewInteraction,pressedScale=.97f),
                                 onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedPreview=preview},
+                                interactionSource=previewInteraction,
                                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
                             ){
                                 Column(
