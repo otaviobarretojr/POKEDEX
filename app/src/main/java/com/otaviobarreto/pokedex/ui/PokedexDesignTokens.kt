@@ -52,6 +52,16 @@ object PokedexDesignTokens {
         val Fairy = Color(0xFFE88FC6)
         val Normal = Color(0xFF98969B)
 
+        fun game(label:String):Color=when{
+            label.contains("Scarlet",true) || label.contains("Violet",true) -> Color(0xFFB54C5D)
+            label.contains("Sword",true) || label.contains("Shield",true) -> Color(0xFF35A9C7)
+            label.contains("Arceus",true) -> Color(0xFF527F7C)
+            label.contains("Brilliant",true) || label.contains("Diamond",true) -> Color(0xFF5968C7)
+            label.contains("Let's Go",true) -> Color(0xFFE0A929)
+            label.contains("Z-A",true) -> Color(0xFF2D7F8E)
+            else -> Primary
+        }
+
         fun type(type:String?):Color=when(type?.lowercase()){
             "fire"->Fire; "water"->Water; "grass"->Grass; "electric"->Electric
             "psychic"->Psychic; "ice"->Ice; "dragon"->Dragon; "dark"->Dark
