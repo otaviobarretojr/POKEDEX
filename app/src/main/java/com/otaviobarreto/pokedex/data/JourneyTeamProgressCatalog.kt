@@ -28,6 +28,9 @@ object JourneyTeamProgressCatalog {
         722->listOf(722,723,724)
         155->listOf(155,156,157)
         501->listOf(501,502,503)
+        810->listOf(810,811,812)
+        813->listOf(813,814,815)
+        816->listOf(816,817,818)
         else->listOf(starterId)
     }
 
@@ -59,6 +62,7 @@ object JourneyTeamProgressCatalog {
         stepId.startsWith("za-") -> lumioseCatchPlan
         stepId.startsWith("sv-") -> paldeaCatchPlan
         stepId.startsWith("la-") -> hisuiCatchPlan
+        stepId.startsWith("swsh-") -> galarCatchPlan
         else -> emptyList()
     }
 
@@ -87,8 +91,28 @@ object JourneyTeamProgressCatalog {
         stepId in setOf("la-13","la-14","la-15","la-16","la-17","la-18") -> "CRISE DO ESPAÇO-TEMPO"
         stepId in setOf("la-19","la-20","la-21","la-22","la-23","la-24","la-25","la-26","la-27") -> "PÓS-GAME · PLATES E ARCEUS"
         stepId.startsWith("la-db-") -> "DAYBREAK · MASSIVE MASS OUTBREAKS"
+        stepId in setOf("swsh-01","swsh-02","swsh-03","swsh-04") -> "GALAR · INÍCIO DO GYM CHALLENGE"
+        stepId in setOf("swsh-g1","swsh-g2","swsh-g3") -> "GYM CHALLENGE · PRIMEIRAS BADGES"
+        stepId in setOf("swsh-g4","swsh-g5","swsh-g6") -> "GYM CHALLENGE · MEIO DA CAMPANHA"
+        stepId in setOf("swsh-g7","swsh-g8","swsh-13","swsh-14","swsh-15") -> "WYNDON · RETA FINAL"
+        stepId.startsWith("swsh-pg-") -> "PÓS-GAME · HEROES OF GALAR"
+        stepId.startsWith("swsh-ioa-") -> "DLC · ISLE OF ARMOR"
+        stepId.startsWith("swsh-ct-") -> "DLC · CROWN TUNDRA"
         else -> "JORNADA"
     }
+
+    private val galarCatchPlan=listOf(
+        JourneyCatchRecommendation(821,2,"Route 1 / Route 2","Rookidee evolui para Corviknight e oferece excelente utilidade defensiva e cobertura Voador/Aço."),
+        JourneyCatchRecommendation(835,3,"Route 2","Yamper/Boltund dão cobertura Elétrica cedo, especialmente útil contra Nessa."),
+        JourneyCatchRecommendation(850,3,"Route 3","Sizzlipede evolui para Centiskorch e ajuda muito se o inicial não for de Fogo."),
+        JourneyCatchRecommendation(829,4,"Route 3","Gossifleur/Eldegoss são opções Planta seguras para Água e Terra."),
+        JourneyCatchRecommendation(859,5,"Motostoke Outskirts / Glimwood Tangle","Impidimp evolui para Grimmsnarl e oferece cobertura Sombrio/Fada excelente para a reta final."),
+        JourneyCatchRecommendation(848,6,"Route 7 / Wild Area","Toxel evolui para Toxtricity e combina Elétrico/Veneno para excelente cobertura ofensiva."),
+        JourneyCatchRecommendation(529,7,"Galar Mine / Wild Area","Drilbur evolui para Excadrill e entrega Terra/Aço de altíssimo valor contra vários líderes."),
+        JourneyCatchRecommendation(679,8,"Hammerlocke Hills","Honedge evolui para Aegislash e oferece enorme utilidade contra Fada, Psíquico e Gelo."),
+        JourneyCatchRecommendation(447,10,"Giant's Cap","Riolu/Lucario oferece Lutador/Aço para Circhester, Champion Cup e pós-game."),
+        JourneyCatchRecommendation(885,12,"Lake of Outrage","Dreepy evolui para Dragapult e é um excelente upgrade para Champion Cup e conteúdo final.")
+    )
 
     private val hisuiCatchPlan=listOf(
         JourneyCatchRecommendation(403,2,"Obsidian Fieldlands","Shinx é capturado no teste de entrada e evolui para Luxray, excelente cobertura Elétrica para toda a campanha."),
