@@ -1891,13 +1891,15 @@ if violations:
 
 # v18.3.0 Foundation Lock guards
 backup_v1830 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppBackupManager.kt").read_text(encoding="utf-8")
-for required in (
-    "SCHEMA_VERSION = 5",
+backup_v1830_required = (
     "normalizeForRestore",
     "CollectionIntegrityService.repair()",
     'put("teams"',
     'put("variants"',
-):
+)
+if all(marker not in backup_v1830 for marker in ("SCHEMA_VERSION = 5","SCHEMA_VERSION = 6")):
+    violations.append("v18.3 backup foundation guard missing compatible schema")
+for required in backup_v1830_required:
     if required not in backup_v1830:
         violations.append(f"v18.3 backup foundation guard missing {required}")
 
