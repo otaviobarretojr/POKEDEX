@@ -106,7 +106,7 @@ if "20000" not in workflow or "20.0.0" not in workflow:
     violations.append("CI v20.0.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
-for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "Próximo faltante"):
+for required in ("COMPANION", "Living Dex Planner", "Busca rápida", "PRÓXIMA PENDÊNCIA"):
     if required not in companion:
         violations.append(f"Companion 20 experience missing {required}")
 
