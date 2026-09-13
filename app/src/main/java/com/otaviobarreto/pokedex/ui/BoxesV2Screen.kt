@@ -131,7 +131,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.18f)){
     OutlinedTextField(
      game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
-     readOnly=true,singleLine=true,label={Text("Jogo",fontSize=9.sp)},
+     readOnly=true,singleLine=true,label={Text("Jogo",style=MaterialTheme.typography.labelSmall)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
@@ -149,7 +149,7 @@ private val qbGames=AppGameCatalog.games.map{game->
     OutlinedTextField(
      region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
      readOnly=true,singleLine=true,
-     label={Text(if(game.regions.size>1)"Região / DLC" else "Região",fontSize=9.sp)},
+     label={Text(if(game.regions.size>1)"Região / DLC" else "Região",style=MaterialTheme.typography.labelSmall)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
@@ -159,7 +159,7 @@ private val qbGames=AppGameCatalog.games.map{game->
       DropdownMenuItem(
        text={Column{
         Text(r.label,fontWeight=FontWeight.SemiBold)
-        if(r.badge.isNotBlank())Text(r.badge,fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        if(r.badge.isNotBlank())Text(r.badge,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
        }},
        onClick={regionSource=r.source;AppStatePreferences.setActiveRegionForGame(game.label,r.source);page=AppStatePreferences.boxPage(r.source);regionMenu=false}
       )
@@ -278,7 +278,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    ){
     Icon(Icons.Default.Search,null,Modifier.size(17.dp))
     Spacer(Modifier.width(5.dp))
-    Text("Pesquisar",fontWeight=FontWeight.Bold,fontSize=12.sp)
+    Text("Pesquisar",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
    }
    FilledTonalButton(
     {allBoxes=true},
@@ -287,7 +287,7 @@ private val qbGames=AppGameCatalog.games.map{game->
    ){
     Icon(Icons.Default.GridView,null,Modifier.size(17.dp))
     Spacer(Modifier.width(5.dp))
-    Text("Todas as Boxes",fontWeight=FontWeight.Bold,fontSize=12.sp)
+    Text("Todas as Boxes",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
    }
   }
  }
@@ -477,7 +477,7 @@ private fun QBVariantManager(
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text(pretty(pk.name),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-                        Text("Formas e Shiny",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Formas e Shiny",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(dismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
@@ -626,7 +626,7 @@ private fun QBAllBoxes(
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text("Todas as Boxes",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurface)
-                        Text("Toque em uma Box para abrir",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Toque em uma Box para abrir",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(dismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
@@ -660,10 +660,10 @@ private fun QBAllBoxes(
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)){
-                                    Text("Box "+(index+1),fontWeight=FontWeight.Bold,fontSize=16.sp,color=MaterialTheme.colorScheme.onSurface)
-                                    Text(owned.toString()+" / "+entries.size+" capturados",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Box "+(index+1),fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium,color=MaterialTheme.colorScheme.onSurface)
+                                    Text(owned.toString()+" / "+entries.size+" capturados",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                if(index==current)AssistChip(onClick={},label={Text("Atual",fontSize=10.sp)})
+                                if(index==current)AssistChip(onClick={},label={Text("Atual",style=MaterialTheme.typography.labelSmall)})
                                 else Icon(Icons.Default.ArrowForwardIos,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -728,16 +728,16 @@ private fun QBSearch(
             Spacer(Modifier.height(8.dp))
             LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){
                 items(listOf("Todos","Capturados","Faltantes","Normal","Shiny","Formas")){option->
-                    FilterChip(selected=status==option,onClick={status=option},label={Text(option,fontSize=10.sp)})
+                    FilterChip(selected=status==option,onClick={status=option},label={Text(option,style=MaterialTheme.typography.labelSmall)})
                 }
             }
             LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){
                 items(listOf("Regional","Nacional","Nome")){option->
-                    FilterChip(selected=order==option,onClick={order=option},label={Text(option,fontSize=10.sp)})
+                    FilterChip(selected=order==option,onClick={order=option},label={Text(option,style=MaterialTheme.typography.labelSmall)})
                 }
             }
             Spacer(Modifier.height(6.dp))
-            Text(results.size.toString()+" resultado(s)",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(results.size.toString()+" resultado(s)",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             LazyColumn(Modifier.heightIn(max=360.dp)){
                 items(results,key={it.nationalId}){pk->
                     Row(
