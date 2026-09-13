@@ -147,7 +147,7 @@ fun PokemonRegionMapScreen(
             }
 
             else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).background(Color(0xFFF8F8FC)),
+                modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
@@ -164,7 +164,7 @@ fun PokemonRegionMapScreen(
                                     pokemon?.name ?: "Pokémon #$pokemonId",
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = Color(0xFF151426)
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Text("${context?.label ?: source} · ${context?.regionLabel ?: ""}")
                                 Text(
@@ -278,8 +278,8 @@ private fun SpatialRegionMap(
 
         Surface(
             modifier = Modifier.fillMaxWidth().height(460.dp),
-            shape = RoundedCornerShape(28.dp),
-            color = Color(0xFFF1F0F8),
+            shape = RoundedCornerShape(PokedexDesignTokens.Radius.Xl),
+            color = MaterialTheme.colorScheme.surfaceVariant,
             tonalElevation = 0.dp,
             shadowElevation = 2.dp
         ) {
