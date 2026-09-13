@@ -51,6 +51,9 @@ object JourneyTeamProgressCatalog {
         }
     }
 
+    fun starterMemberForProgress(starterId:Int,step:JourneyStep?):Int =
+        progressMemberFor(starterLine(starterId).first(),step)
+
     fun isStarterLinePokemon(starterId:Int,pokemonId:Int):Boolean =
         pokemonId in starterLine(starterId)
 
@@ -79,6 +82,79 @@ object JourneyTeamProgressCatalog {
 
     fun hasFamilyDuplicate(ids:List<Int>):Boolean =
         ids.map(::familyKey).let{keys->keys.size!=keys.distinct().size}
+
+    private data class LevelEvolution(val family:List<Int>,val thresholds:List<Int>)
+
+    private val levelEvolutions=listOf(
+        LevelEvolution(listOf(906,907,908),listOf(16,36)),
+        LevelEvolution(listOf(909,910,911),listOf(16,36)),
+        LevelEvolution(listOf(912,913,914),listOf(16,36)),
+        LevelEvolution(listOf(821,822,823),listOf(18,38)),
+        LevelEvolution(listOf(940,941),listOf(25)),
+        LevelEvolution(listOf(194,980),listOf(20)),
+        LevelEvolution(listOf(928,929,930),listOf(25,35)),
+        LevelEvolution(listOf(129,130),listOf(20)),
+        LevelEvolution(listOf(296,297),listOf(24)),
+        LevelEvolution(listOf(280,281),listOf(20)),
+        LevelEvolution(listOf(328,329,330),listOf(35,45)),
+        LevelEvolution(listOf(56,57),listOf(28)),
+        LevelEvolution(listOf(810,811,812),listOf(16,35)),
+        LevelEvolution(listOf(813,814,815),listOf(16,35)),
+        LevelEvolution(listOf(816,817,818),listOf(16,35)),
+        LevelEvolution(listOf(835,836),listOf(25)),
+        LevelEvolution(listOf(850,851),listOf(28)),
+        LevelEvolution(listOf(829,830),listOf(20)),
+        LevelEvolution(listOf(859,860,861),listOf(32,42)),
+        LevelEvolution(listOf(848,849),listOf(30)),
+        LevelEvolution(listOf(529,530),listOf(31)),
+        LevelEvolution(listOf(679,680),listOf(35)),
+        LevelEvolution(listOf(885,886,887),listOf(50,60)),
+        LevelEvolution(listOf(722,723,724),listOf(17,36)),
+        LevelEvolution(listOf(155,156,157),listOf(17,36)),
+        LevelEvolution(listOf(501,502,503),listOf(17,36)),
+        LevelEvolution(listOf(403,404,405),listOf(15,30)),
+        LevelEvolution(listOf(396,397,398),listOf(14,34)),
+        LevelEvolution(listOf(418,419),listOf(26)),
+        LevelEvolution(listOf(390,391,392),listOf(14,36)),
+        LevelEvolution(listOf(216,217),listOf(30)),
+        LevelEvolution(listOf(443,444,445),listOf(24,48)),
+        LevelEvolution(listOf(387,388,389),listOf(18,32)),
+        LevelEvolution(listOf(393,394,395),listOf(16,36)),
+        LevelEvolution(listOf(459,460),listOf(40)),
+        LevelEvolution(listOf(152,153,154),listOf(16,32)),
+        LevelEvolution(listOf(498,499,500),listOf(17,36)),
+        LevelEvolution(listOf(158,159,160),listOf(18,30)),
+        LevelEvolution(listOf(659,660),listOf(20)),
+        LevelEvolution(listOf(661,662,663),listOf(17,35)),
+        LevelEvolution(listOf(92,93),listOf(25)),
+        LevelEvolution(listOf(1,2,3),listOf(16,32)),
+        LevelEvolution(listOf(4,5,6),listOf(16,36)),
+        LevelEvolution(listOf(7,8,9),listOf(16,36)),
+        LevelEvolution(listOf(16,17,18),listOf(18,36)),
+        LevelEvolution(listOf(29,30),listOf(16)),
+        LevelEvolution(listOf(32,33),listOf(16)),
+        LevelEvolution(listOf(43,44),listOf(21)),
+        LevelEvolution(listOf(63,64),listOf(16))
+    )
+
+    private fun targetLevel(step:JourneyStep?):Int? {
+        val raw=step?.levelLabel ?: return null
+        val nums=Regex("""\d+""").findAll(raw).mapNotNull{it.value.toIntOrNull()}.toList()
+        return nums.maxOrNull()
+    }
+
+    fun progressMemberFor(pokemonId:Int,step:JourneyStep?):Int {
+        val level=targetLevel(step) ?: return pokemonId
+        val rule=levelEvolutions.firstOrNull{pokemonId in it.family} ?: return pokemonId
+        var stage=0
+        rule.thresholds.forEachIndexed{index,threshold->
+            if(level>=threshold)stage=index+1
+        }
+        return rule.family.getOrElse(stage){rule.family.last()}
+    }
+
+    fun normalizedForProgress(ids:List<Int>,step:JourneyStep?):List<Int> =
+        ids.map{progressMemberFor(it,step)}
 
     fun catchRecommendationsBefore(step:JourneyStep?):List<JourneyCatchRecommendation> {
         val order=step?.order ?: return emptyList()
