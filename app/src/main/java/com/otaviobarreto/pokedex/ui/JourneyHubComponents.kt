@@ -57,6 +57,12 @@ internal fun JourneyGamePicker(
     val officialPokedexTotal=activeGame?.let{game->
         game.pokedexTotal ?: dexIdsBySource[game.regions.firstOrNull()?.source].orEmpty().size.takeIf{it>0}
     }
+    val journeyRevision=JourneyProgressStore.revision
+    val activeSteps=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyCatalog.steps(it.label)}.orEmpty()}
+    val activeCompleted=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyProgressStore.completed(it.label)}.orEmpty()}
+    val nextStep=remember(activeSteps,activeCompleted){activeSteps.firstOrNull{it.id !in activeCompleted}}
+    val journeyDone=remember(activeSteps,activeCompleted){DataIntegrityRules.completedCount(activeSteps.map{it.id},activeCompleted)}
+    val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
     val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
     val shinyTotal=VariantCollectionStore.ownedVariants.count{it.shiny}
     val formTotal=VariantCollectionStore.formCount()
