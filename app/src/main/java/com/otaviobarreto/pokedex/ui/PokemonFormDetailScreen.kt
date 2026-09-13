@@ -46,27 +46,30 @@ fun PokemonFormDetailScreen(
         }
     ){padding->
         when{
-            error!=null -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment=Alignment.Center
-            ){Text("Não foi possível carregar esta forma.")}
-            data==null -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment=Alignment.Center
-            ){CircularProgressIndicator()}
+            error!=null -> DexStatusPane(
+                "Forma indisponível",
+                "Não foi possível carregar esta forma.",
+                Modifier.fillMaxWidth().padding(padding).padding(PokedexDesignTokens.Spacing.Lg)
+            )
+            data==null -> DexStatusPane(
+                "Preparando forma",
+                "Carregando arte e dados de batalha.",
+                Modifier.fillMaxWidth().padding(padding).padding(PokedexDesignTokens.Spacing.Lg),
+                loading=true
+            )
             else -> {
                 val p=data!!
                 val imageUrl="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+
                     (if(shiny)"shiny/" else "")+formId+".png"
                 LazyColumn(
                     Modifier.fillMaxSize().padding(padding),
-                    contentPadding=PaddingValues(16.dp),
-                    verticalArrangement=Arrangement.spacedBy(12.dp)
+                    contentPadding=PaddingValues(PokedexDesignTokens.Spacing.Lg),
+                    verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Md)
                 ){
                     item{
                         Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                             Column(
-                                Modifier.fillMaxWidth().padding(16.dp),
+                                Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg),
                                 horizontalAlignment=Alignment.CenterHorizontally
                             ){
                                 AsyncImage(
