@@ -225,7 +225,6 @@ internal fun JourneyGamePicker(
             ){game->
                 JourneyGameReferenceCard(
                     game=game,
-                    isCurrent=false,
                     onClick={onSelect(game.label)}
                 )
             }
@@ -457,7 +456,6 @@ private fun CompanionMetric(label:String,value:String,subtitle:String,modifier:M
 @Composable
 private fun JourneyGameReferenceCard(
     game: AppGame,
-    isCurrent:Boolean,
     onClick: () -> Unit
 ) {
     val heroIds = JourneyGameVisualCatalog.forGame(game.label).heroPokemonIds
