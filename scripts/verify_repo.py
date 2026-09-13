@@ -372,7 +372,7 @@ for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
 for required in ("completed", "toggle", "clear"):
     if required not in journey_progress:
         violations.append(f"Journey progress persistence missing {required}")
-if 'MainDestination("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in application_source:
+if 'DexNavItem("home","Jornada"' not in main or "JourneyProgressStore.initialize" not in application_source:
     violations.append("Journey is not wired as the primary tab")
 
 if violations:
@@ -565,10 +565,10 @@ for forbidden in ('"Living Dex"','"Companion"'):
     if forbidden in main_nav:
         violations.append(f"Legacy primary tab still present: {forbidden}")
 for required in (
-    'MainDestination("home","Jornada"',
-    'MainDestination("pokedex","Pokédex"',
-    'MainDestination("central","Config."',
-    'MainDestination("boxes","Boxes"'
+    'DexNavItem("home","Jornada"',
+    'DexNavItem("pokedex","Pokédex"',
+    'DexNavItem("central","Config."',
+    'DexNavItem("boxes","Boxes"'
 ):
     if required not in main_nav:
         violations.append(f"Primary navigation missing {required}")
@@ -1144,7 +1144,7 @@ else:
 if not backup.exists(): violations.append("Backup manager missing")
 if not insights.exists(): violations.append("Collection insights missing")
 main_v89 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-if ('MainDestination("central","Central"' not in main_v89 and 'MainDestination("central","Config."' not in main_v89) or 'composable("central")' not in main_v89:
+if ('MainDestination("central","Central"' not in main_v89 and 'DexNavItem("central","Config."' not in main_v89) or 'composable("central")' not in main_v89:
     violations.append("Central navigation missing")
 if violations:
     print("Source verification failed:")
@@ -1520,7 +1520,7 @@ if violations:
 
 # Compatibility guard — settings + form-aware Pokedex
 main_v161 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-for required in ('MainDestination("pokedex","Pokédex"', 'MainDestination("central","Config."', "PokemonFormDetailScreen", "PokedexCatalogScreen"):
+for required in ('DexNavItem("pokedex","Pokédex"', 'DexNavItem("central","Config."', "PokemonFormDetailScreen", "PokedexCatalogScreen"):
     if required not in main_v161:
         violations.append(f"v16.1 navigation missing {required}")
 
@@ -1552,10 +1552,10 @@ if violations:
 # Compatibility guard — navigation + Box removal
 main_v1612 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
 expected_order = [
-    'MainDestination("home","Jornada"',
-    'MainDestination("pokedex","Pokédex"',
-    'MainDestination("boxes","Boxes"',
-    'MainDestination("central","Config."',
+    'DexNavItem("home","Jornada"',
+    'DexNavItem("pokedex","Pokédex"',
+    'DexNavItem("boxes","Boxes"',
+    'DexNavItem("central","Config."',
 ]
 positions = [main_v1612.find(marker) for marker in expected_order]
 if any(pos < 0 for pos in positions) or positions != sorted(positions):
