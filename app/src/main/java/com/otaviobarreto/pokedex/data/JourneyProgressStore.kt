@@ -22,12 +22,20 @@ object JourneyProgressStore {
 
     fun isStarted(game:String):Boolean{
         val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return false
-        return prefs.getBoolean(startedKey(game),false) || completed(game).isNotEmpty()
+        val completedAny=completed(game).isNotEmpty()
+        val starterRequired=TeamCampaignCatalog.starters(game).isNotEmpty()
+        val starterReady=!starterRequired || AppStatePreferences.journeyStarterForGame(game)!=null
+        return completedAny || (prefs.getBoolean(startedKey(game),false) && starterReady)
     }
 
     fun isConfiguring(game:String):Boolean{
         val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return false
-        return !isStarted(game) && prefs.getBoolean(configuringKey(game),false)
+        if(isStarted(game)) return false
+        val legacyIncomplete=prefs.getBoolean(startedKey(game),false) &&
+            TeamCampaignCatalog.starters(game).isNotEmpty() &&
+            AppStatePreferences.journeyStarterForGame(game)==null &&
+            completed(game).isEmpty()
+        return prefs.getBoolean(configuringKey(game),false) || legacyIncomplete
     }
 
     fun beginConfiguration(game:String,reset:Boolean=true){
