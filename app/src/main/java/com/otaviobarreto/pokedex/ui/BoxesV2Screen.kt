@@ -399,9 +399,9 @@ private fun QBSlot(
             if(specialEvolution){
                 Surface(
                     Modifier.align(Alignment.TopEnd).padding(3.dp),
-                    shape=RoundedCornerShape(8.dp),
-                    color=MaterialTheme.colorScheme.surface.copy(alpha=.94f)
-                ){Text("✦",Modifier.padding(horizontal=4.dp,vertical=1.dp),fontSize=9.sp,fontWeight=FontWeight.Black,color=PokedexDesignTokens.Colors.SpecialGold)}
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
+                    color=PokedexDesignTokens.Colors.SpecialGold.copy(alpha=.16f)
+                ){Text("✦",Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Xs,vertical=1.dp),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=PokedexDesignTokens.Colors.SpecialGold)}
             }
             Surface(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
@@ -427,10 +427,14 @@ private fun QBSlot(
                             color=MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if(isShiny){
-                            Text("★",fontSize=7.sp,lineHeight=7.sp,color=PokedexDesignTokens.Colors.ShinyGold,fontWeight=FontWeight.Black)
+                            Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=PokedexDesignTokens.Colors.ShinyGold.copy(alpha=.14f)){
+                                Text("★",Modifier.padding(horizontal=2.dp),style=MaterialTheme.typography.labelSmall,color=PokedexDesignTokens.Colors.ShinyGold,fontWeight=FontWeight.Black)
+                            }
                         }
                         if(variant!=null && variant.formPokemonId!=pk.nationalId){
-                            Text("F",fontSize=6.sp,lineHeight=7.sp,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Black)
+                            Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primary.copy(alpha=.12f)){
+                                Text("F",Modifier.padding(horizontal=2.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Black)
+                            }
                         }
                     }
                 }
