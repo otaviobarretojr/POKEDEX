@@ -1,0 +1,2 @@
+Temporary CI validation trigger for Companion 10/10 polish.
+Application sources match main.
