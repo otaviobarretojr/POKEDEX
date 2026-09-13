@@ -128,3 +128,31 @@ fun DexGlassSurface(
         Column(Modifier.padding(PokedexDesignTokens.Spacing.Lg),content=content)
     }
 }
+
+
+@Composable
+fun DexStatusPane(
+    title:String,
+    message:String,
+    modifier:Modifier=Modifier,
+    loading:Boolean=false
+){
+    DexGlassSurface(modifier){
+        Column(
+            Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Lg),
+            horizontalAlignment=Alignment.CenterHorizontally
+        ){
+            Text(title,style=MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(PokedexDesignTokens.Spacing.Xs))
+            Text(
+                message,
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if(loading){
+                Spacer(Modifier.height(PokedexDesignTokens.Spacing.Md))
+                LinearProgressIndicator(Modifier.fillMaxWidth(.55f))
+            }
+        }
+    }
+}
