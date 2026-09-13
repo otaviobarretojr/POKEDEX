@@ -568,14 +568,15 @@ prefs_v611=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/AppStatePrefe
 for forbidden in ('"Living Dex"','"Companion"'):
     if forbidden in main_nav:
         violations.append(f"Legacy primary tab still present: {forbidden}")
-for required in (
-    'DexNavItem("home","Jornada"',
-    'DexNavItem("pokedex","Pokédex"',
-    'DexNavItem("central","Config."',
-    'DexNavItem("boxes","Boxes"'
-):
-    if required not in main_nav:
-        violations.append(f"Primary navigation missing {required}")
+nav_contracts = (
+    ('DexNavItem("home","Jornada"', 'DexNavItem(PokedexRoutes.HOME,"Jornada"'),
+    ('DexNavItem("pokedex","Pokédex"', 'DexNavItem(PokedexRoutes.POKEDEX,"Pokédex"'),
+    ('DexNavItem("central","Config."', 'DexNavItem(PokedexRoutes.CENTRAL,"Config."'),
+    ('DexNavItem("boxes","Boxes"', 'DexNavItem(PokedexRoutes.BOXES,"Boxes"'),
+)
+for legacy, centralized in nav_contracts:
+    if legacy not in main_nav and centralized not in main_nav:
+        violations.append(f"Primary navigation missing {legacy}")
 for required in ("Boxes do jogo","rememberJourneyCollectionProgress","CollectionStore.contextualCapturedIds","onOpenBoxes"):
     if required not in journey_v611:
         violations.append(f"Journey/Boxes consolidation missing {required}")
