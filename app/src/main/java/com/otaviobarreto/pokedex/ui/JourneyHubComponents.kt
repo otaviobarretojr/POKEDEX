@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -33,7 +34,7 @@ import kotlinx.coroutines.withContext
 internal fun JourneyGamePicker(
     onSelect:(String)->Unit,
     onPokemonClick:(Int,String?)->Unit,
-    onOpenBoxes:(String?,String?)->Unit
+    onOpenBoxes:(String,String?)->Unit
 ){
     val captured=CollectionStore.contextualCapturedIds
     val dexIdsByGame by rememberJourneyDexIdsByGame()
@@ -207,7 +208,11 @@ internal fun JourneyGamePicker(
                     modifier=Modifier.fillMaxWidth(),
                     singleLine=true,
                     leadingIcon={Icon(Icons.Default.Search,null)},
-                    trailingIcon={if(searchQuery.isNotBlank()){{IconButton(onClick={searchQuery=""}){Icon(Icons.Default.Close,"Limpar busca")}}}else null},
+                    trailingIcon={
+                        if(searchQuery.isNotBlank()){
+                            IconButton(onClick={searchQuery=""}){Icon(Icons.Default.Close,"Limpar busca")}
+                        }
+                    },
                     label={Text("Busca rápida")},
                     placeholder={Text("Nome ou número do Pokémon")},
                     shape=RoundedCornerShape(18.dp)
