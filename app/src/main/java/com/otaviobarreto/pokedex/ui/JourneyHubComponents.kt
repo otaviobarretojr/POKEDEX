@@ -55,6 +55,8 @@ internal fun JourneyGamePicker(
             ?: game.regions.firstOrNull()?.source
     }
     val activeOwned=remember(captured,activeSources){activeSources.flatMap{captured[it].orEmpty()}.toSet()}
+    val baseGameSource=activeGame?.regions?.firstOrNull()?.source
+    val baseGameDexIds=dexIdsBySource[baseGameSource].orEmpty()
     val activeDexIds=activeGame?.let{dexIdsByGame[it.label].orEmpty()}.orEmpty()
     val missingIds=remember(activeDexIds,activeOwned){activeDexIds.sorted().filter{it !in activeOwned}}
     val nextMissing=remember(missingIds,activeRegionSource,dexIdsBySource,captured){
@@ -204,8 +206,8 @@ internal fun JourneyGamePicker(
                             CompanionMetricGroup(
                                 journeyValue=(animatedJourneyRatio*100).toInt().toString()+"%",
                                 journeySubtitle=journeyDone.toString()+"/"+activeSteps.size,
-                                dexValue=(animatedCollectionRatio*100).toInt().toString()+"%",
-                                dexSubtitle=activeOwned.count{it in activeDexIds}.toString()+"/"+activeDexIds.size,
+                                dexValue=baseGameDexIds.size.toString(),
+                                dexSubtitle="Pokémon no jogo base",
                                 pendingValue=nextMissing?.let{"#"+it} ?: "OK",
                                 pendingSubtitle=if(nextMissing==null)"Completa" else "Próximo alvo"
                             )
@@ -266,7 +268,6 @@ internal fun JourneyGamePicker(
             if(activeGame!=null && activeDexIds.isNotEmpty()){
                 item(key="living_dex_planner"){
                     val regionLabel=activeGame.regions.firstOrNull{it.source==activeRegionSource}?.label
-                    val gameCaptured=activeOwned.count{it in activeDexIds}
                     val regionCaptured=activeRegionOwned.count{it in activeRegionDexIds}
                     val regionMissingCount=regionalMissingIds.size
                     Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
@@ -279,30 +280,23 @@ internal fun JourneyGamePicker(
                                     Text("Living Dex Planner",fontWeight=FontWeight.Black)
                                     Text(
                                         when{
-                                            activeGame.regions.size>1 && regionLabel!=null ->
-                                                if(regionMissingCount==0) regionLabel+" completa."
-                                                else "Faltam "+regionMissingCount+" em "+regionLabel+"."
-                                            missingIds.isEmpty() -> "Coleção do jogo completa."
-                                            else -> "Faltam "+missingIds.size+" Pokémon neste jogo."
+                                            activeRegionDexIds.isEmpty() -> "Progresso da sua Living Dex."
+                                            regionMissingCount==0 && regionLabel!=null -> "Living Dex de "+regionLabel+" completa."
+                                            regionLabel!=null -> "Faltam "+regionMissingCount+" em "+regionLabel+"."
+                                            else -> "Faltam "+regionMissingCount+" Pokémon."
                                         },
                                         style=MaterialTheme.typography.bodySmall,
                                         color=MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-                            Row(
-                                Modifier.fillMaxWidth().padding(top=12.dp),
-                                horizontalArrangement=Arrangement.spacedBy(8.dp)
-                            ){
-                                CompanionProgressMini(
-                                    label="Jogo",
-                                    value=gameCaptured.toString()+"/"+activeDexIds.size,
-                                    progress=animatedCollectionRatio,
-                                    modifier=Modifier.weight(1f)
-                                )
-                                if(activeGame.regions.size>1 && activeRegionDexIds.isNotEmpty()){
+                            if(activeRegionDexIds.isNotEmpty()){
+                                Row(
+                                    Modifier.fillMaxWidth().padding(top=12.dp),
+                                    horizontalArrangement=Arrangement.spacedBy(8.dp)
+                                ){
                                     CompanionProgressMini(
-                                        label=regionLabel ?: "Região",
+                                        label="Living Dex"+(regionLabel?.let{" · "+it} ?: ""),
                                         value=regionCaptured.toString()+"/"+activeRegionDexIds.size,
                                         progress=animatedRegionRatio,
                                         modifier=Modifier.weight(1f)
