@@ -67,10 +67,16 @@ fun CompanionCenterScreen(
                         context.contentResolver.openInputStream(uri)?.bufferedReader()?.use{it.readText()}.orEmpty()
                     }.getOrDefault("")
                 }
+                val offlineLabels=if(raw.isNotBlank()) AppBackupManager.downloadedPackLabels(raw) else emptyList()
                 val ok=raw.isNotBlank() && withContext(Dispatchers.IO){
                     AppBackupManager.importJson(raw)
                 }
-                statusText=if(ok)"Backup restaurado com sucesso." else "Arquivo inválido ou incompatível."
+                statusText=when{
+                    !ok -> "Arquivo inválido, corrompido ou incompatível."
+                    offlineLabels.isNotEmpty() ->
+                        "Backup restaurado. "+offlineLabels.size+" pacote(s) offline precisam ser baixados novamente."
+                    else -> "Backup restaurado com sucesso."
+                }
             }
         }
     }
@@ -166,7 +172,13 @@ fun CompanionCenterScreen(
                             ){
                                 Icon(Icons.Default.Download,null)
                                 Spacer(Modifier.width(6.dp))
-                                Text(if(pack.downloaded)"Atualizar" else "Baixar")
+                                Text(
+                                    when{
+                                        pack.downloaded && !audit.valid -> "Reparar"
+                                        pack.downloaded -> "Atualizar"
+                                        else -> "Baixar"
+                                    }
+                                )
                             }
                             FilledTonalButton(
                                 enabled=activeDownload==null && pack.downloaded,
@@ -310,7 +322,7 @@ fun CompanionCenterScreen(
         item{
             SettingsSectionTitle("Backup e restauração")
             Text(
-                "O backup preserva coleção, Jornada, times, formas, Shiny e preferências compatíveis.",
+                "O backup preserva coleção, Jornada, times, formas, Shiny e preferências. Pacotes offline são registrados no backup, mas precisam ser baixados novamente após restauração.",
                 style=MaterialTheme.typography.bodyMedium,
                 color=MaterialTheme.colorScheme.onSurfaceVariant
             )
