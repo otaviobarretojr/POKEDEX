@@ -97,6 +97,7 @@ fun PokemonLocationScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Localizações") },
@@ -135,7 +136,7 @@ fun PokemonLocationScreen(
             }
 
             else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).background(Color(0xFFF8F8FC)),
+                modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item {
@@ -152,7 +153,7 @@ fun PokemonLocationScreen(
                                     pokemon?.name ?: "Pokémon #$pokemonId",
                                     fontSize = 27.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = Color(0xFF151426)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text("National Dex #${pokemonId.toString().padStart(4, '0')}")
                                 gameContext?.let {
