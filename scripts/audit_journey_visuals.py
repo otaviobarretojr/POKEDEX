@@ -7,7 +7,7 @@ visual=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAsse
 type_text=(root/"app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTypeIconCatalog.kt").read_text(encoding="utf-8")
 
 constants=dict(re.findall(r'private const val\s+(\w+)="([^"]+)"',visual))
-urls=re.findall(r'https://[^"\\s]+', visual)
+urls=re.findall(r'https://[^"\s]+', visual)
 for name,base in constants.items():
     for suffix in re.findall(r'\b'+re.escape(name)+r'\+"([^"]+)"',visual):
         urls.append(base+suffix)
