@@ -190,7 +190,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
     ){
         item(key="route_header",contentType="header"){
             Row(
-                Modifier.fillMaxWidth().padding(bottom=10.dp),
+                Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md),
                 verticalAlignment=Alignment.CenterVertically
             ){
                 IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
@@ -228,7 +228,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                         ){
                             Text(
                                 (progress*100).toInt().toString()+"%",
-                                modifier=Modifier.padding(horizontal=12.dp,vertical=8.dp),
+                                modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Md,vertical=PokedexDesignTokens.Spacing.Sm),
                                 fontWeight=FontWeight.Bold
                             )
                         }
@@ -313,7 +313,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                             fontWeight=FontWeight.Black,
                             style=MaterialTheme.typography.labelMedium,
                             color=MaterialTheme.colorScheme.primary,
-                            modifier=Modifier.padding(top=10.dp,bottom=8.dp,start=8.dp)
+                            modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md,bottom=PokedexDesignTokens.Spacing.Sm,start=PokedexDesignTokens.Spacing.Sm)
                         )
                         JourneyStepCard(
                             step=step,
@@ -411,7 +411,7 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
         item{
             TextButton(
                 onClick={confirmReset=true},
-                modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
             ){
                 Icon(Icons.Default.RestartAlt,null)
                 Spacer(Modifier.width(6.dp))
@@ -452,10 +452,10 @@ private fun JourneyStarterGuideCard(
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainerHigh),
         modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
     ){
-        Column(Modifier.fillMaxWidth().padding(15.dp)){
+        Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
             Row(verticalAlignment=Alignment.CenterVertically){
                 Icon(Icons.Default.CatchingPokemon,null)
-                Column(Modifier.weight(1f).padding(start=10.dp)){
+                Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){
                     Text("QUAL INICIAL ESCOLHER?",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)
                     Text(recommended.name+" · "+recommended.verdict,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
                     Text("Compare o impacto no início, meio e fim da campanha.",style=MaterialTheme.typography.bodySmall)
@@ -464,7 +464,7 @@ private fun JourneyStarterGuideCard(
             }
             if(expanded){
                 starters.forEach{starter->
-                    HorizontalDivider(Modifier.padding(vertical=10.dp))
+                    HorizontalDivider(Modifier.padding(vertical=PokedexDesignTokens.Spacing.Md))
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Column(Modifier.weight(1f)){
                             Text(starter.name+" → "+starter.finalName,fontWeight=FontWeight.Black)
@@ -595,7 +595,7 @@ private fun JourneyStepCard(
         }
 
         Card(
-            Modifier.weight(1f).padding(bottom=10.dp).clickable(onClick=onOpen),
+            Modifier.weight(1f).padding(bottom=PokedexDesignTokens.Spacing.Md).clickable(onClick=onOpen),
             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
             colors=CardDefaults.cardColors(
                 containerColor=when{
@@ -605,7 +605,7 @@ private fun JourneyStepCard(
                 }
             )
         ){
-            Column(Modifier.fillMaxWidth().padding(14.dp)){
+            Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(verticalAlignment=Alignment.CenterVertically){
                     visual?.let{
                         JourneyVisualThumb(it,Modifier.size(62.dp))
@@ -639,7 +639,7 @@ private fun JourneyStepCard(
                     displayTitle,
                     style=MaterialTheme.typography.titleMedium,
                     fontWeight=FontWeight.Black,
-                    modifier=Modifier.padding(top=10.dp)
+                    modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
                 )
                 Text(
                     step.subtitle,
@@ -648,7 +648,7 @@ private fun JourneyStepCard(
                 )
 
                 Row(
-                    Modifier.fillMaxWidth().padding(top=10.dp),
+                    Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md),
                     horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                 ){
                     JourneyTypeChip(step.typeLabel)
@@ -672,15 +672,15 @@ private fun JourneyStepCard(
                         color=MaterialTheme.colorScheme.secondaryContainer,
                         modifier=Modifier.fillMaxWidth().padding(top=10.dp)
                     ){
-                        Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
+                        Row(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
                             Icon(Icons.Default.AutoAwesome,null,Modifier.size(18.dp))
-                            Text(recommendation,style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(start=8.dp))
+                            Text(recommendation,style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(start=PokedexDesignTokens.Spacing.Sm))
                         }
                     }
                 }
 
                 detail?.opponents?.takeIf{it.isNotEmpty()}?.let{members->
-                    HorizontalDivider(Modifier.padding(top=10.dp,bottom=8.dp))
+                    HorizontalDivider(Modifier.padding(top=PokedexDesignTokens.Spacing.Md,bottom=PokedexDesignTokens.Spacing.Sm))
                     Text(
                         if(step.kind==JourneyChallengeKind.TITAN)"ALVO" else "EQUIPE",
                         style=MaterialTheme.typography.labelSmall,
@@ -977,7 +977,7 @@ private fun JourneyObjectiveDetailScreen(
                     ),
                     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
                 ){
-                    Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+                    Row(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
                         Surface(
                             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
                             color=MaterialTheme.colorScheme.secondaryContainer,
