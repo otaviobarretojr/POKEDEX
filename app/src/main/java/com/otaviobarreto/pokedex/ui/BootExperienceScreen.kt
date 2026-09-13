@@ -49,6 +49,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             state = BootState(progress.fraction, progress.label)
         }
         finished = true
+        StartupPreloader.launchExtendedWarm(context)
         onReady()
     }
 
