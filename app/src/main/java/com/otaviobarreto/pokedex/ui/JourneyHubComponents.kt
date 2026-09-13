@@ -761,6 +761,7 @@ internal fun JourneyGameMenu(
     val routeRevision=JourneyProgressStore.revision
     val completed=remember(game.label,routeRevision){JourneyProgressStore.completed(game.label)}
     val started=remember(game.label,routeRevision){JourneyProgressStore.isStarted(game.label)}
+    val configuring=remember(game.label,routeRevision){JourneyProgressStore.isConfiguring(game.label)}
     val routeDone=DataIntegrityRules.completedCount(route.map{it.id},completed)
     val routeProgress=if(route.isEmpty())0f else routeDone.toFloat()/route.size
     val starterOptions=remember(game.label){TeamCampaignCatalog.starters(game.label)}
@@ -768,10 +769,11 @@ internal fun JourneyGameMenu(
         mutableIntStateOf(AppStatePreferences.journeyStarterForGame(game.label) ?: -1)
     }
     val smart=remember(game.label,routeRevision){JourneySmartProgress.context(game.label)}
-    val suggestedTeam=remember(game.label,selectedStarterId,smart.phase){
-        if(selectedStarterId>0) TeamCampaignCatalog.preset(game.label,selectedStarterId,smart.phase) else null
+    val setupPhase=if(started)smart.phase else CampaignPhase.EARLY
+    val suggestedTeam=remember(game.label,selectedStarterId,setupPhase){
+        if(selectedStarterId>0) TeamCampaignCatalog.preset(game.label,selectedStarterId,setupPhase) else null
     }
-    val active=AppStatePreferences.activeGame==game.label
+    val active=started && AppStatePreferences.activeGame==game.label
 
     Box(
         Modifier.fillMaxSize().background(
@@ -802,6 +804,7 @@ internal fun JourneyGameMenu(
                                 Text(game.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
                                 Text(
                                     when{
+                                        configuring -> "Configuração da Jornada"
                                         !started -> "Nova Jornada"
                                         active -> "Jogo atual · Central da Jornada"
                                         else -> "Jornada salva"
@@ -812,10 +815,16 @@ internal fun JourneyGameMenu(
                             }
                             Surface(shape=RoundedCornerShape(999.dp),color=accent.copy(alpha=.14f)){
                                 Text(
-                                    if(!started)"NOVO" else (routeProgress*100).toInt().toString()+"%",
+                                    when{
+                                        configuring -> "CONFIGURANDO"
+                                        !started -> "NOVO"
+                                        active -> "ATUAL"
+                                        routeProgress>=1f -> "100%"
+                                        else -> (routeProgress*100).toInt().toString()+"%"
+                                    },
                                     Modifier.padding(horizontal=10.dp,vertical=6.dp),
-                                    style=MaterialTheme.typography.labelMedium,
-                                    fontWeight=FontWeight.Bold,
+                                    style=MaterialTheme.typography.labelSmall,
+                                    fontWeight=FontWeight.Black,
                                     color=accent
                                 )
                             }
@@ -846,13 +855,19 @@ internal fun JourneyGameMenu(
                                         Text(JourneyTeamProgressCatalog.chapterFor(step.id)+" · "+step.levelLabel,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=2.dp))
                                     }
                                 }
-                            }
+                            } ?: Text(
+                                "Jornada concluída",
+                                style=MaterialTheme.typography.titleSmall,
+                                fontWeight=FontWeight.Bold,
+                                color=accent,
+                                modifier=Modifier.padding(top=10.dp)
+                            )
                         }
                     }
                 }
             }
 
-            if(!started){
+            if(!started && !configuring){
                 item{
                     Card(
                         shape=RoundedCornerShape(22.dp),
@@ -865,27 +880,25 @@ internal fun JourneyGameMenu(
                                 }
                                 Column(Modifier.weight(1f).padding(start=12.dp)){
                                     Text("Começar Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                                    Text("Transforme este jogo no atual e comece do zero.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Configure seu inicial e conheça o time sugerido antes de tornar este o jogo atual.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                             Button(
                                 onClick={
-                                    AppStatePreferences.activeGame=game.label
-                                    AppStatePreferences.setActiveRegionForGame(game.label,game.regions.firstOrNull()?.source)
                                     AppStatePreferences.clearJourneyStarterForGame(game.label)
                                     selectedStarterId=-1
-                                    JourneyProgressStore.start(game.label,reset=true)
+                                    JourneyProgressStore.beginConfiguration(game.label,reset=true)
                                 },
                                 modifier=Modifier.fillMaxWidth().padding(top=12.dp).height(50.dp)
                             ){
                                 Icon(Icons.Default.PlayArrow,null)
                                 Spacer(Modifier.width(7.dp))
-                                Text("Começar Jornada")
+                                Text("Configurar Jornada")
                             }
                         }
                     }
                 }
-            }else{
+            }else if(configuring){
                 if(starterOptions.isNotEmpty()){
                     item{
                         JourneyStarterSetupCard(
@@ -906,7 +919,44 @@ internal fun JourneyGameMenu(
                         JourneyProgressTeamCard(
                             team=team,
                             accent=accent,
-                            onOpenTeam=onTeam
+                            onOpenTeam=onTeam,
+                            stepLabel="2 · Conheça seu time sugerido"
+                        )
+                    }
+                }
+
+                item{
+                    Button(
+                        onClick={
+                            AppStatePreferences.activeGame=game.label
+                            AppStatePreferences.setActiveRegionForGame(game.label,game.regions.firstOrNull()?.source)
+                            JourneyProgressStore.confirmStart(game.label)
+                            onRoute()
+                        },
+                        enabled=starterOptions.isEmpty() || selectedStarterId>0,
+                        modifier=Modifier.fillMaxWidth().height(54.dp)
+                    ){
+                        Icon(Icons.Default.RocketLaunch,null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Iniciar aventura")
+                    }
+                    Text(
+                        if(selectedStarterId>0)"Seu progresso começa no primeiro objetivo e o time será atualizado ao longo da campanha."
+                        else "Escolha seu inicial para liberar o início da aventura.",
+                        style=MaterialTheme.typography.labelSmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier=Modifier.fillMaxWidth().padding(top=6.dp),
+                        textAlign=TextAlign.Center
+                    )
+                }
+            }else{
+                suggestedTeam?.let{team->
+                    item{
+                        JourneyProgressTeamCard(
+                            team=team,
+                            accent=accent,
+                            onOpenTeam=onTeam,
+                            stepLabel="Seu time · "+team.phase.label
                         )
                     }
                 }
@@ -920,33 +970,28 @@ internal fun JourneyGameMenu(
                             }
                             onRoute()
                         },
-                        enabled=starterOptions.isEmpty() || selectedStarterId>0,
-                        modifier=Modifier.fillMaxWidth().height(52.dp)
+                        modifier=Modifier.fillMaxWidth().height(54.dp)
                     ){
                         Icon(Icons.Default.Explore,null)
                         Spacer(Modifier.width(8.dp))
-                        Text(if(active)"Continuar Jornada" else "Retomar Jornada")
+                        Text(
+                            when{
+                                routeProgress>=1f -> "Revisar Jornada"
+                                active -> "Continuar Jornada"
+                                else -> "Retomar Jornada"
+                            }
+                        )
                     }
+                    Text(
+                        if(routeProgress>=1f)"Veja novamente a rota completa."
+                        else "Abre diretamente sua rota no objetivo atual.",
+                        style=MaterialTheme.typography.labelSmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier=Modifier.fillMaxWidth().padding(top=5.dp),
+                        textAlign=TextAlign.Center
+                    )
                 }
 
-                item{
-                    JourneyActionCard(
-                        icon=Icons.Default.Route,
-                        title="Melhor rota",
-                        subtitle=if(route.isNotEmpty()) "Sequência recomendada por nível, com progresso salvo." else "Estrutura pronta; rota detalhada deste jogo entra na próxima curadoria.",
-                        enabled=route.isNotEmpty(),
-                        onClick=onRoute
-                    )
-                }
-                item{
-                    JourneyActionCard(
-                        icon=Icons.Default.Groups,
-                        title="Time e progressão",
-                        subtitle="O time sugerido acompanha seu inicial e muda conforme a campanha avança.",
-                        enabled=selectedStarterId>0 || starterOptions.isEmpty(),
-                        onClick=onTeam
-                    )
-                }
                 item{
                     val captured=CollectionStore.contextualCapturedIds
                     val boxProgress by rememberJourneyCollectionProgress(game,captured)
@@ -963,7 +1008,7 @@ internal fun JourneyGameMenu(
                                 Text("Boxes do jogo",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
                                 if(boxProgress.total>0){
                                     Text(
-                                        boxProgress.captured.toString()+" de "+boxProgress.total+" Pokémon · "+(boxProgress.ratio*100).toInt()+"%",
+                                        boxProgress.captured.toString()+" de "+boxProgress.total+" Pokémon registrados neste jogo",
                                         style=MaterialTheme.typography.bodySmall
                                     )
                                     LinearProgressIndicator(
@@ -972,15 +1017,28 @@ internal fun JourneyGameMenu(
                                         strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
                                     )
                                 }else{
-                                    Text("Abra a coleção principal deste jogo.",style=MaterialTheme.typography.bodySmall)
+                                    Text("Abra a coleção geral deste jogo.",style=MaterialTheme.typography.bodySmall)
                                 }
                             }
                             Icon(Icons.Default.ChevronRight,null)
                         }
                     }
                 }
+
                 if(game.regions.isNotEmpty()){
-                    item{Text("Regiões e conteúdos",fontWeight=FontWeight.Bold)}
+                    item{
+                        Text(
+                            "Regiões e conteúdos",
+                            fontWeight=FontWeight.Bold,
+                            modifier=Modifier.padding(top=2.dp)
+                        )
+                        Text(
+                            "Atalhos para abrir a Box diretamente em cada região ou DLC.",
+                            style=MaterialTheme.typography.labelSmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier=Modifier.padding(top=2.dp)
+                        )
+                    }
                     items(game.regions,key={it.source}){region->
                         Card(Modifier.fillMaxWidth().clickable{onRegion(region.source)},shape=RoundedCornerShape(18.dp)){
                             Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
@@ -1011,12 +1069,12 @@ private fun JourneyStarterSetupCard(
     Card(shape=RoundedCornerShape(22.dp)){
         Column(Modifier.fillMaxWidth().padding(14.dp)){
             Text(
-                if(selectedStarterId>0)"Seu inicial" else "1 · Escolha seu inicial",
+                "1 · Escolha seu inicial",
                 fontWeight=FontWeight.Black,
                 style=MaterialTheme.typography.titleMedium
             )
             Text(
-                if(selectedStarterId>0)"Você pode trocar enquanto estiver planejando a Jornada."
+                if(selectedStarterId>0)"Inicial selecionado. Revise o time sugerido abaixo."
                 else "A recomendação do time começa pela sua escolha.",
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1057,23 +1115,25 @@ private fun JourneyStarterSetupCard(
 private fun JourneyProgressTeamCard(
     team:CampaignTeamPreset,
     accent:Color,
-    onOpenTeam:()->Unit
+    onOpenTeam:()->Unit,
+    stepLabel:String
 ){
     Card(
+        modifier=Modifier.fillMaxWidth().clickable(onClick=onOpenTeam),
         shape=RoundedCornerShape(22.dp),
         colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.08f))
     ){
         Column(Modifier.fillMaxWidth().padding(14.dp)){
             Row(verticalAlignment=Alignment.CenterVertically){
                 Column(Modifier.weight(1f)){
-                    Text("2 · Time sugerido · "+team.phase.label,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                    Text(stepLabel,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
                     Text(
                         "Baseado no seu inicial e no ponto atual da campanha.",
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                TextButton(onClick=onOpenTeam){Text("Detalhes")}
+                Icon(Icons.Default.ChevronRight,null,tint=accent)
             }
             Row(
                 Modifier.fillMaxWidth().padding(top=10.dp),
@@ -1096,13 +1156,20 @@ private fun JourneyProgressTeamCard(
             }
             Text(
                 when(team.phase){
-                    CampaignPhase.EARLY->"Comece com Pokémon acessíveis cedo; o app vai sugerir evoluções e trocas conforme você avançar."
-                    CampaignPhase.MID->"Seu núcleo inicial evoluiu: agora entram coberturas melhores para o meio da história."
-                    CampaignPhase.LATE->"Sugestão atualizada para reta final, chefes e encerramento da campanha."
+                    CampaignPhase.EARLY->"Pokémon acessíveis cedo; o app sugere evoluções e trocas conforme você avança."
+                    CampaignPhase.MID->"Seu núcleo evoluiu e recebe coberturas melhores para o meio da história."
+                    CampaignPhase.LATE->"Composição atualizada para reta final, chefes e encerramento da campanha."
                 },
                 style=MaterialTheme.typography.labelSmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier=Modifier.padding(top=9.dp)
+            )
+            Text(
+                "Toque para ver o plano completo.",
+                style=MaterialTheme.typography.labelSmall,
+                fontWeight=FontWeight.Bold,
+                color=accent,
+                modifier=Modifier.padding(top=4.dp)
             )
         }
     }
