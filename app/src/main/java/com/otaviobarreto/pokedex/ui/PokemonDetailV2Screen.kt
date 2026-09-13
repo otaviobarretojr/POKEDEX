@@ -244,7 +244,7 @@ private fun resolveSaveLocation(
             shadowElevation=3.dp
         ){
             Box(contentAlignment=Alignment.Center){
-                Icon(Icons.Default.CatchingPokemon,if(inCollection)"Capturado" else "Não capturado",tint=if(inCollection)Color(0xFFE53935) else scheme.onSurfaceVariant,modifier=Modifier.size(36.dp).alpha(if(inCollection)1f else .34f))
+                Icon(Icons.Default.CatchingPokemon,if(inCollection)"Capturado" else "Não capturado",tint=if(inCollection)MaterialTheme.colorScheme.error else scheme.onSurfaceVariant,modifier=Modifier.size(36.dp).alpha(if(inCollection)1f else .34f))
             }
         }
         Column(Modifier.align(Alignment.CenterStart).padding(start=24.dp,top=50.dp).width(220.dp)){
@@ -267,7 +267,7 @@ private fun resolveSaveLocation(
         }
     }
 }
-@Composable private fun TypeBadge(type:String){Surface(shape=RoundedCornerShape(11.dp),color=typeColor(type),modifier=Modifier.wrapContentWidth()){Row(Modifier.padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Eco,null,tint=Color.White,modifier=Modifier.size(15.dp));Spacer(Modifier.width(5.dp));Text(type.uppercase(),color=Color.White,fontWeight=FontWeight.Bold,fontSize=12.sp,maxLines=1)}}}
+@Composable private fun TypeBadge(type:String){Surface(shape=RoundedCornerShape(11.dp),color=PokedexDesignTokens.Colors.type(type),modifier=Modifier.wrapContentWidth()){Row(Modifier.padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Eco,null,tint=Color.White,modifier=Modifier.size(15.dp));Spacer(Modifier.width(5.dp));Text(type.uppercase(),color=Color.White,fontWeight=FontWeight.Bold,fontSize=12.sp,maxLines=1)}}}
 private fun gameFromBox(box:String):String=when{box.contains("Scarlet / Violet",true)->"Scarlet / Violet";box.contains("Sword / Shield",true)->"Sword / Shield";box.contains("Let's Go",true)->"Let's Go Pikachu / Eevee";box.contains("Arceus",true)->"Legends Arceus";box.contains("HOME",true)->"Pokémon HOME";else->box.substringBefore(" · Box").substringBefore(" Box ").trim()}
 private fun compactBoxName(box:String):String=when{box.contains("· Box",true)->box.substringAfter("· ").trim();Regex("Box \\d+",RegexOption.IGNORE_CASE).containsMatchIn(box)->Regex("Box \\d+",RegexOption.IGNORE_CASE).find(box)?.value?:box;else->box}
 @Composable private fun DetailMetric(icon:androidx.compose.ui.graphics.vector.ImageVector,text:String){
