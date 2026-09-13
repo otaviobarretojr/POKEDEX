@@ -596,6 +596,22 @@ for required in ('"Let\'s Go Pikachu / Eevee" -> kantoLetsGo', '"Partner Pikachu
     if required not in starter_catalog:
         violations.append(f"Let's Go partner context missing {required}")
 
+for required in ('"FireRed / LeafGreen" -> fireRedLeafGreen', '"frlg-g1"', '"frlg-g8"', '"frlg-sevii-1"', '"frlg-pg-05"', '"frlg-pg-07"', '"frlg-pg-09"'):
+    if required not in journey_catalog:
+        violations.append(f"FRLG Journey route missing {required}")
+
+for required in ("stepId.startsWith(\"frlg-\")", "frlgCatchPlan", "KANTO · TEAM ROCKET", "SEVII ISLANDS · PÓS-GAME"):
+    if required not in journey_team_progress:
+        violations.append(f"FRLG dynamic progression missing {required}")
+
+for required in ('"frlg-g1"', '"frlg-g8"', '"frlg-pg-05"', '"frlg-pg-07"', '"frlg-pg-08"', '"frlg-pg-09"'):
+    if required not in journey_preparation:
+        violations.append(f"FRLG preparation coverage missing {required}")
+
+for required in ('"FireRed / LeafGreen" -> kantoFrlg', '"Bulbasaur"', '"Charmander"', '"Squirtle"'):
+    if required not in starter_catalog:
+        violations.append(f"FRLG starter context missing {required}")
+
 if violations:
     print("Source verification failed:")
     for item in violations:
@@ -621,6 +637,9 @@ for required in ("Roark","Gardenia","Maylene","Crasher Wake","Fantina","Byron","
 for required in ("Brock","Misty","Lt. Surge","Erika","Koga","Sabrina","Blaine","Giovanni","Lorelei","Bruno","Agatha","Lance","Trace","Mewtwo","Green","Red","Blue"):
     if required not in visual_catalog:
         violations.append(f"Let's Go visual asset missing {required}")
+for required in ("Brock","Misty","Lt. Surge","Erika","Koga","Sabrina","Blaine","Giovanni","Mewtwo","Roaming Beast","Elite Four Rematch"):
+    if required not in visual_catalog:
+        violations.append(f"FRLG visual asset missing {required}")
 for required in ("JourneyVisualThumb","JourneyVisualHero","JourneyVisualAssetCatalog.forStep"):
     if required not in journey_ui:
         violations.append(f"Journey visual rendering missing {required}")
