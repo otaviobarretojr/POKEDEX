@@ -123,7 +123,7 @@ fun PokemonDetailV2Screen(
         Box(Modifier.fillMaxWidth().height(338.dp).background(Brush.linearGradient(listOf(scheme.primaryContainer,scheme.surfaceVariant,scheme.surface)))){
             IconButton(onBack,Modifier.padding(16.dp).size(46.dp).background(scheme.surface.copy(alpha=.86f),CircleShape)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
             Column(Modifier.align(Alignment.CenterStart).padding(start=28.dp,top=36.dp).width(185.dp)){
-                Text("#${id.toString().padStart(4,\'0\')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
+                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
                 Text(name,fontSize=34.sp,lineHeight=36.sp,fontWeight=FontWeight.Black,color=scheme.onSurface,maxLines=2)
                 Text("Abrindo ficha…",fontSize=14.sp,color=scheme.onSurfaceVariant,modifier=Modifier.padding(top=8.dp))
             }
@@ -234,7 +234,7 @@ private fun resolveSaveLocation(
                 IconButton(back,Modifier.size(46.dp)){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
             }
             Surface(shape=RoundedCornerShape(999.dp),color=scheme.surface.copy(alpha=.78f),modifier=Modifier.padding(start=8.dp)){
-                Text("#"+b.pokemon.id.toString().padStart(4,'0'),Modifier.padding(horizontal=11.dp,vertical=6.dp),style=MaterialTheme.typography.labelMedium,color=scheme.onSurfaceVariant)
+                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
             }
         }
         Surface(
@@ -292,14 +292,14 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         ){
             Icon(Icons.AutoMirrored.Filled.ArrowBack,null,Modifier.size(17.dp))
             Spacer(Modifier.width(5.dp))
-            Text(previous?.let{"#"+it.toString().padStart(4,'0')} ?: "Início")
+                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
         }
         OutlinedButton(
             onClick={next?.let(openPokemon)},
             enabled=next!=null,
             modifier=Modifier.weight(1f)
         ){
-            Text(next?.let{"#"+it.toString().padStart(4,'0')} ?: "Fim")
+                Text("#\${id.toString().padStart(4,'0')}",fontSize=15.sp,color=scheme.onSurfaceVariant,fontWeight=FontWeight.SemiBold)
             Spacer(Modifier.width(5.dp))
             Icon(Icons.Default.ArrowForward,null,Modifier.size(17.dp))
         }
