@@ -12,7 +12,8 @@ data class AppGame(
     val label: String,
     val regions: List<AppRegion>,
     val subtitle: String = "",
-    val kind: AppGameKind = AppGameKind.ADVENTURE
+    val kind: AppGameKind = AppGameKind.ADVENTURE,
+    val pokedexTotal: Int? = null
 )
 
 object AppGameCatalog {
@@ -36,7 +37,8 @@ object AppGameCatalog {
                 AppRegion("Kitakami", "Scarlet / Violet · Kitakami", "DLC · The Teal Mask"),
                 AppRegion("Blueberry", "Scarlet / Violet · Blueberry", "DLC · The Indigo Disk")
             ),
-            subtitle = "Paldea + The Hidden Treasure of Area Zero"
+            subtitle = "Paldea + The Hidden Treasure of Area Zero",
+            pokedexTotal = 400
         ),
         AppGame(
             "Sword / Shield",
