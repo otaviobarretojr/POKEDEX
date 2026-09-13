@@ -106,8 +106,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "21000" not in workflow or "20.10.0" not in workflow:
-    violations.append("CI v20.10.0 version validation missing")
+if "21100" not in workflow or "20.11.0" not in workflow:
+    violations.append("CI v20.11.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
@@ -612,15 +612,15 @@ for required in ('"FireRed / LeafGreen" -> kantoFrlg', '"Bulbasaur"', '"Charmand
     if required not in starter_catalog:
         violations.append(f"FRLG starter context missing {required}")
 
-# Compatibility guard — Journey team intelligence v20.10.0
+# Compatibility guard — Journey evolution intelligence v20.11.0
 team_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyTeamProgressCatalog.kt").read_text(encoding="utf-8")
 dynamic_team = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyDynamicTeamCatalog.kt").read_text(encoding="utf-8")
 smart_progress = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneySmartProgress.kt").read_text(encoding="utf-8")
 team_guide = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
 
-for required in ("knownFamilies", "familyKey", "sameEvolutionFamily", "hasFamilyDuplicate"):
+for required in ("knownFamilies", "familyKey", "sameEvolutionFamily", "hasFamilyDuplicate", "levelEvolutions", "targetLevel", "progressMemberFor", "starterMemberForProgress"):
     if required not in team_progress:
-        violations.append(f"Journey team evolution-family guard missing {required}")
+        violations.append(f"Journey team evolution-progress guard missing {required}")
 for required in ("sameEvolutionFamily", "seenFamilies", "catchRecommendationsBefore"):
     if required not in dynamic_team:
         violations.append(f"Journey dynamic team dedupe missing {required}")
@@ -1152,7 +1152,8 @@ local_v2071 = 'versionName = "20.7.1"' in local_gradle and "versionCode = 20701"
 local_v2080 = 'versionName = "20.8.0"' in local_gradle and "versionCode = 20800" in local_gradle
 local_v2090 = 'versionName = "20.9.0"' in local_gradle and "versionCode = 20900" in local_gradle
 local_v2100 = 'versionName = "20.10.0"' in local_gradle and "versionCode = 21000" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100):
+local_v2110 = 'versionName = "20.11.0"' in local_gradle and "versionCode = 21100" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
