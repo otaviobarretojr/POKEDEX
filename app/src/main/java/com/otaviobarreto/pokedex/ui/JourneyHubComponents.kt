@@ -76,11 +76,19 @@ internal fun JourneyGamePicker(
     val collectionRatio=if(activeDexIds.isEmpty())0f else activeOwned.count{it in activeDexIds}.toFloat()/activeDexIds.size
     val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
     val animatedCollectionRatio by animateFloatAsState(targetValue=collectionRatio,label="companionCollection")
-    val searchResults=remember(searchQuery,national){
+    val searchResultIds=remember(searchQuery,national){
         val q=searchQuery.trim().lowercase()
-        if(q.length<2) emptyList() else national.filter{
-            it.name.lowercase().contains(q) || it.id.toString()==q.removePrefix("#")
-        }.take(8)
+        if(q.length<2) emptyList()
+        else if(national.isNotEmpty()){
+            national.filter{
+                it.name.lowercase().contains(q) || it.id.toString()==q.removePrefix("#")
+            }.take(8).map{it.id}
+        }else{
+            q.removePrefix("#").toIntOrNull()
+                ?.takeIf{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
+                ?.let{listOf(it)}
+                .orEmpty()
+        }
     }
     val shinyTotal=VariantCollectionStore.ownedVariants.count{it.shiny}
     val formTotal=VariantCollectionStore.formCount()
@@ -298,34 +306,42 @@ internal fun JourneyGamePicker(
                     },
                     label={Text("Busca rápida")},
                     placeholder={Text("Nome ou número do Pokémon")},
-                    shape=RoundedCornerShape(18.dp)
+                    shape=RoundedCornerShape(18.dp),
+                    supportingText={
+                        if(national.isEmpty()) Text("Dex carregando: a busca por número continua disponível.")
+                    }
                 )
             }
-            if(searchResults.isNotEmpty()){
+            if(searchResultIds.isNotEmpty()){
                 item(key="search_results"){
                     Card(shape=RoundedCornerShape(18.dp)){
                         Column(Modifier.fillMaxWidth()){
-                            searchResults.forEachIndexed{index,pokemon->
+                            searchResultIds.forEachIndexed{index,pokemonId->
+                                val cached=national.firstOrNull{it.id==pokemonId}
+                                val fallback=PokemonRepository.byId(pokemonId)
+                                val pokemonName=(cached?.name ?: fallback?.name ?: "#"+pokemonId)
+                                    .replaceFirstChar{it.uppercase()}
                                 Row(
                                     Modifier.fillMaxWidth().clickable{
                                         searchQuery=""
-                                        onPokemonClick(pokemon.id,null)
+                                        onPokemonClick(pokemonId,null)
                                     }.padding(horizontal=14.dp,vertical=11.dp),
                                     verticalAlignment=Alignment.CenterVertically
                                 ){
                                     AsyncImage(
-                                        model=pokemon.spriteUrl,
-                                        contentDescription=null,
+                                        model=cached?.spriteUrl
+                                            ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+pokemonId+".png",
+                                        contentDescription=pokemonName,
                                         modifier=Modifier.size(42.dp),
                                         contentScale=ContentScale.Fit
                                     )
                                     Column(Modifier.weight(1f).padding(start=10.dp)){
-                                        Text(pokemon.name.replaceFirstChar{it.uppercase()},fontWeight=FontWeight.Bold)
-                                        Text("#"+pokemon.id.toString().padStart(4,'0'),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(pokemonName,fontWeight=FontWeight.Bold)
+                                        Text("#"+pokemonId.toString().padStart(4,'0'),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Icon(Icons.Default.ChevronRight,null)
                                 }
-                                if(index<searchResults.lastIndex) HorizontalDivider(Modifier.padding(horizontal=14.dp))
+                                if(index<searchResultIds.lastIndex) HorizontalDivider(Modifier.padding(horizontal=14.dp))
                             }
                         }
                     }
