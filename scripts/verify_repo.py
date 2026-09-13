@@ -596,7 +596,7 @@ for required in ('"Let\'s Go Pikachu / Eevee" -> kantoLetsGo', '"Partner Pikachu
     if required not in starter_catalog:
         violations.append(f"Let's Go partner context missing {required}")
 
-for required in ('"FireRed / LeafGreen" -> fireRedLeafGreen', '"frlg-g1"', '"frlg-g8"', '"frlg-sevii-1"', '"frlg-pg-05"', '"frlg-pg-07"', '"frlg-pg-09"'):
+for required in ('"FireRed / LeafGreen" -> fireRedLeafGreen', '"frlg-g1"', '"frlg-g8"', '"frlg-sevii-1"', '"frlg-pg-05"', '"frlg-pg-07"', '"frlg-pg-09"', '"frlg-pg-10"', '"frlg-pg-11"', '"frlg-pg-12"'):
     if required not in journey_catalog:
         violations.append(f"FRLG Journey route missing {required}")
 
