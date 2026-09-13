@@ -564,7 +564,7 @@ for required in ('"Sword / Shield" -> galar', '"Scorbunny"', '"Grookey"', '"Sobb
     if required not in starter_catalog:
         violations.append(f"Sword Shield starter context missing {required}")
 
-for required in ('"Brilliant Diamond / Shining Pearl" -> brilliantDiamondShiningPearl', '"bdsp-g1"', '"bdsp-g8"', '"bdsp-17"', '"bdsp-24"', '"bdsp-pg-04"'):
+for required in ('"Brilliant Diamond / Shining Pearl" -> brilliantDiamondShiningPearl', '"bdsp-g1"', '"bdsp-g8"', '"bdsp-17"', '"bdsp-24"', '"bdsp-pg-03"', '"bdsp-pg-05"', '"bdsp-pg-08"', '"bdsp-pg-10"'):
     if required not in journey_catalog:
         violations.append(f"BDSP Journey route missing {required}")
 
@@ -572,7 +572,7 @@ for required in ("stepId.startsWith(\"bdsp-\")", "sinnohCatchPlan", "TEAM GALACT
     if required not in journey_team_progress:
         violations.append(f"BDSP dynamic progression missing {required}")
 
-for required in ('"bdsp-g1"', '"bdsp-g8"', '"bdsp-24"', '"bdsp-pg-03"', '"bdsp-pg-06"'):
+for required in ('"bdsp-g1"', '"bdsp-g8"', '"bdsp-24"', '"bdsp-pg-03"', '"bdsp-pg-05"', '"bdsp-pg-08"', '"bdsp-pg-10"'):
     if required not in journey_preparation:
         violations.append(f"BDSP preparation coverage missing {required}")
 
@@ -599,7 +599,7 @@ for required in ("Kleavor","Hisuian Lilligant","Hisuian Arcanine","Hisuian Elect
 for required in ("Milo","Nessa","Kabu","Bea / Allister","Opal","Gordie / Melony","Piers","Raihan","Eternatus","Leon","Zacian / Zamazenta","Kubfu","Urshifu","Calyrex","Legendary Giants","Galarian Legendary Birds","Dynamax Adventures"):
     if required not in visual_catalog:
         violations.append(f"Sword Shield visual asset missing {required}")
-for required in ("Roark","Gardenia","Maylene","Crasher Wake","Fantina","Byron","Candice","Volkner","Aaron","Bertha","Flint","Lucian","Cynthia","Ramanas Park"):
+for required in ("Roark","Gardenia","Maylene","Crasher Wake","Fantina","Byron","Candice","Volkner","Aaron","Bertha","Flint","Lucian","Cynthia","Lake Guardians","Ramanas Park","Cresselia","Giratina","Regigigas","Heatran"):
     if required not in visual_catalog:
         violations.append(f"BDSP visual asset missing {required}")
 for required in ("JourneyVisualThumb","JourneyVisualHero","JourneyVisualAssetCatalog.forStep"):
