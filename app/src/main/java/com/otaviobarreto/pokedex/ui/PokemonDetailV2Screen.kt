@@ -1,5 +1,6 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -159,12 +160,18 @@ fun PokemonDetailV2Screen(
         if(openPokemon!=null){
             DetailDexNavigator(b.pokemon.id,openPokemon)
         }
-        when(tab){
-            0->InfoTab(b,accent,context,collectionSource,openRef)
-            1->V2Stats(b.pokemon.stats)
-            2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
-            3->V2Moves(b.pokemon.moves,context,openRef)
-            else->V2Locations(b.encounters,b.species,context,source,openLocation)
+        Crossfade(
+            targetState=tab,
+            animationSpec=tween(PokedexDesignTokens.Motion.Standard),
+            label="detailTabTransition"
+        ){activeTab->
+            when(activeTab){
+                0->InfoTab(b,accent,context,collectionSource,openRef)
+                1->V2Stats(b.pokemon.stats)
+                2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
+                3->V2Moves(b.pokemon.moves,context,openRef)
+                else->V2Locations(b.encounters,b.species,context,source,openLocation)
+            }
         }
       }
     }
@@ -557,7 +564,12 @@ private fun PokemonFormsSummaryCard(
         }
     }
 }
-@Composable private fun V2Moves(moves:List<PokeApiService.RemoteMove>,context:GameContext?,openRef:((String,String)->Unit)?){var query by remember(moves,context){mutableStateOf("")};var methodFilter by remember(moves,context){mutableStateOf("Todos")};val base=remember(moves,context){if(context==null)moves.map{MoveView(it,it.learnDetails)}else moves.mapNotNull{move->move.learnDetails.filter{context.matchesVersionGroup(it.versionGroup)}.takeIf{it.isNotEmpty()}?.let{MoveView(move,it)}}};val methods=remember(base){base.flatMap{it.details}.map{methodLabel(it.method)}.distinct().sorted()};val visible=remember(base,query,methodFilter){base.filter{v->(query.isBlank()||v.move.name.contains(query,true))&&(methodFilter=="Todos"||v.details.any{methodLabel(it.method)==methodFilter})}.sortedBy{it.move.name}};LazyColumn(Modifier.fillMaxSize().padding(horizontal=16.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){item{Text("Golpes",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=14.dp));OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(top=8.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Buscar golpe")});LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){item{FilterChip(methodFilter=="Todos",{methodFilter="Todos"},{Text("Todos")})};items(methods,key={it}){label->FilterChip(methodFilter==label,{methodFilter=label},{Text(label)})}}};items(visible,key={it.move.name}){view->Card(Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",view.move.name)}else Modifier)){Row(Modifier.fillMaxWidth().padding(11.dp),verticalAlignment=Alignment.CenterVertically){Text(view.move.name,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}};item{Spacer(Modifier.height(16.dp))}}}
+@Composable private fun V2Moves(moves:List<PokeApiService.RemoteMove>,context:GameContext?,openRef:((String,String)->Unit)?){var query by remember(moves,context){mutableStateOf("")};var methodFilter by remember(moves,context){mutableStateOf("Todos")};val base=remember(moves,context){if(context==null)moves.map{MoveView(it,it.learnDetails)}else moves.mapNotNull{move->move.learnDetails.filter{context.matchesVersionGroup(it.versionGroup)}.takeIf{it.isNotEmpty()}?.let{MoveView(move,it)}}};val methods=remember(base){base.flatMap{it.details}.map{methodLabel(it.method)}.distinct().sorted()};val visible=remember(base,query,methodFilter){base.filter{v->(query.isBlank()||v.move.name.contains(query,true))&&(methodFilter=="Todos"||v.details.any{methodLabel(it.method)==methodFilter})}.sortedBy{it.move.name}};LazyColumn(Modifier.fillMaxSize().padding(horizontal=16.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){item{Text("Golpes",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=14.dp));OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(top=8.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},label={Text("Buscar golpe")});LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){item{FilterChip(methodFilter=="Todos",{methodFilter="Todos"},{Text("Todos")})};items(methods,key={it}){label->FilterChip(methodFilter==label,{methodFilter=label},{Text(label)})}}};items(visible,key={it.move.name}){view->Card(
+    Modifier.fillMaxWidth().then(if(openRef!=null)Modifier.clickable{openRef("move",view.move.name)}else Modifier),
+    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
+    elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
+){Row(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){Text(view.move.name,Modifier.weight(1f),fontWeight=FontWeight.SemiBold);if(openRef!=null)Icon(Icons.Default.ChevronRight,null)}}};item{Spacer(Modifier.height(16.dp))}}}
 private fun methodLabel(method:String):String=when(method.lowercase()){"level up"->"Nível";"machine"->"TM";"egg"->"Ovo";"tutor"->"Tutor";else->method}
 @Composable private fun V2Locations(
     encounters:List<PokeApiService.EncounterLocation>,
