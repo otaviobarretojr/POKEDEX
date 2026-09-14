@@ -221,6 +221,7 @@ private val qbGames=AppGameCatalog.games.map{game->
      DropdownMenuItem(text={Text("Todos que faltam")},leadingIcon={Icon(Icons.Default.AutoAwesome,null)},onClick={evolutionFilterName="ALL";evolutionFilterMenu=false})
      DropdownMenuItem(text={Text("Nível")},onClick={evolutionFilterName="LEVEL";evolutionFilterMenu=false})
      DropdownMenuItem(text={Text("Condição")},onClick={evolutionFilterName="CONDITION";evolutionFilterMenu=false})
+     DropdownMenuItem(text={Text("Transferência")},onClick={evolutionFilterName="TRANSFER";evolutionFilterMenu=false})
      PokeApiService.EvolutionMethod.entries
       .filterNot{it in setOf(PokeApiService.EvolutionMethod.LEVEL,PokeApiService.EvolutionMethod.LEVEL_CONDITION)}
       .forEach{method->
