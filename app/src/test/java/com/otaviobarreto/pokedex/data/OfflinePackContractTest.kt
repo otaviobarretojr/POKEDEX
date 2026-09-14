@@ -8,11 +8,11 @@ class OfflinePackContractTest {
         val ok = OfflineGamePackManager.PackStatus(
             downloaded = true,
             pokemonCount = 400,
-            packVersion = 19,
+            packVersion = 20,
             completeCount = 400
         )
         val incomplete = ok.copy(completeCount = 399)
-        val old = ok.copy(packVersion = 18)
+        val old = ok.copy(packVersion = 19)
         assertTrue(ok.verified)
         assertFalse(incomplete.verified)
         assertFalse(old.verified)
@@ -51,6 +51,20 @@ class OfflinePackContractTest {
             assertTrue(game.label, urls.containsAll(expectedRegionUrls))
             assertTrue(game.label, urls.containsAll(JourneyReadinessAudit.referenceCatalogUrls()))
         }
+    }
+
+    @Test fun packStatusTracksSharedReuseWithoutAffectingVerification() {
+        val status=OfflineGamePackManager.PackStatus(
+            downloaded=true,
+            pokemonCount=300,
+            packVersion=20,
+            completeCount=300,
+            reusedCount=220,
+            downloadedNewCount=80
+        )
+        assertTrue(status.verified)
+        assertEquals(220,status.reusedCount)
+        assertEquals(80,status.downloadedNewCount)
     }
 
 }
