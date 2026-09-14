@@ -5,8 +5,10 @@ object RegionalDexLayering {
     data class LayerResult(
         val exclusiveSpeciesIds:Set<Int>,
         val exclusiveEntries:List<GameDexService.GameDexEntry>,
-        val novelFormTargetIds:Set<Int>
-    )
+        val novelFormIdentities:Set<Pair<Int,String>>
+    ){
+        val novelFormTargetIds:Set<Int> get()=novelFormIdentities.mapTo(linkedSetOf()){it.first}
+    }
 
     fun exclusiveIdsForRegion(
         game: AppGame,
@@ -60,18 +62,17 @@ object RegionalDexLayering {
             .mapNotNull{route->route.targetFormKey?.let{route.targetPokemonId to it}}
             .toSet()
 
-        val novelFormTargetIds=routesBySource[regionSource].orEmpty()
+        val novelFormIdentities=routesBySource[regionSource].orEmpty()
             .mapNotNull{route->
                 val formKey=route.targetFormKey ?: return@mapNotNull null
-                val identity=route.targetPokemonId to formKey
-                route.targetPokemonId.takeIf{identity !in previousFormKeys}
+                (route.targetPokemonId to formKey).takeIf{it !in previousFormKeys}
             }
             .toSet()
 
         return LayerResult(
             exclusiveSpeciesIds=speciesIds,
             exclusiveEntries=entries,
-            novelFormTargetIds=novelFormTargetIds
+            novelFormIdentities=novelFormIdentities
         )
     }
 }
