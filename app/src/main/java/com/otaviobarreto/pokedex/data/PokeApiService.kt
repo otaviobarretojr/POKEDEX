@@ -311,6 +311,8 @@ object PokeApiService {
             "segurando","usar oval stone","usar razor claw","usar razor fang","usar dawn stone",
             "usar leaf stone","usar ice stone","usar thunder stone","prism scale","linking cord",
             "metal coat","upgrade","dubious disc","protector","electirizer","magmarizer","reaper cloth",
+            "tart apple","sweet apple","syrupy apple","cracked pot","chipped pot","auspicious armor",
+            "malicious armor","unremarkable teacup","masterpiece teacup","metal alloy",
             "peat block","leader's crest","scroll of darkness","scroll of waters","sweet"
         ).any{it in r}) result+=EvolutionMethod.ITEM
         if(listOf("amizade","afeição","affection","pokémon-amie","beleza","beauty").any{it in r}) result+=EvolutionMethod.FRIENDSHIP
