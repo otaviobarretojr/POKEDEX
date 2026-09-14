@@ -39,7 +39,7 @@ class GameContextRegressionTest {
 
         assertEquals("Subir de nível conhecendo Barb Barrage", PokeApiService.auditSpecialRequirement(904, sv))
         assertTrue(PokeApiService.auditSpecialRequirement(904, la)?.contains("Strong Style")==true)
-        assertEquals("Acertar 20 alvos com Barb Barrage", PokeApiService.auditSpecialRequirement(904, za))
+        assertEquals("Usar Barb Barrage 20 vezes", PokeApiService.auditSpecialRequirement(904, za))
         assertTrue(PokeApiService.auditSpecialRequirement(899, sv)?.startsWith("Evolução indisponível")==true)
         assertTrue(PokeApiService.auditSpecialRequirement(899, la)?.contains("Psyshield Bash")==true)
     }
