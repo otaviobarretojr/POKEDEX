@@ -132,7 +132,16 @@ fun CompanionCenterScreen(
                                 Text(
                                     when{
                                         activeDownload==game.label -> progress?.label ?: "Preparando download…"
-                                        audit.valid -> "Offline pronto · "+pack.pokemonCount+" Pokémon"
+                                        audit.valid -> buildString {
+                                            append("Offline pronto · ")
+                                            append(pack.pokemonCount)
+                                            append(" Pokémon")
+                                            if(pack.reusedCount>0){
+                                                append(" · ")
+                                                append(pack.reusedCount)
+                                                append(" reaproveitados")
+                                            }
+                                        }
                                         pack.downloaded -> audit.summary
                                         audit.expectedCount>0 && audit.completedIds>0 ->
                                             "Download parcial · "+audit.completedIds+" / "+audit.expectedCount+" Pokémon"
