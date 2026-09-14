@@ -65,4 +65,21 @@ class VariantCollectionIdentityRegressionTest {
 
         assertFalse(sameOwnedVariantIdentity(ruby, matcha))
     }
+    @Test
+    fun formDexCountsOnlyAlternateNormalForms() {
+        val defaultForm = variant(
+            formName = "Alcremie",
+            formKey = "alcremie"
+        ).copy(isDefault = true)
+        val alternate = variant(
+            formName = "Alcremie Matcha Cream",
+            formKey = "alcremie-matcha-cream"
+        ).copy(isDefault = false)
+        val shinyAlternate = alternate.copy(shiny = true)
+
+        assertFalse(defaultForm.countsForFormDex())
+        assertTrue(alternate.countsForFormDex())
+        assertFalse(shinyAlternate.countsForFormDex())
+    }
+
 }
