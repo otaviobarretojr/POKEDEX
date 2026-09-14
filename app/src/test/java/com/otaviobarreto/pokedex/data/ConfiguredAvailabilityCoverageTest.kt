@@ -35,7 +35,11 @@ class ConfiguredAvailabilityCoverageTest {
                         CanonicalAcquisitionKind.UNAVAILABLE,
                         record.acquisitionKind
                     )
-                    assertTrue("${region.source} #$id precisa de rótulo explícito", record.acquisitionLabel.isNotBlank())
+                    if(record.confidence==AvailabilityConfidence.CONFIRMED){
+                        assertTrue("${region.source} #$id confirmado precisa de rótulo explícito", record.acquisitionLabel.isNotBlank())
+                    }else{
+                        assertTrue("${region.source} #$id parcial deve permanecer visualmente silencioso", record.acquisitionLabel.isBlank())
+                    }
                     assertTrue("${region.source} #$id precisa de proveniência", record.provenance.isNotEmpty())
                 }
             }
@@ -119,6 +123,7 @@ class ConfiguredAvailabilityCoverageTest {
         )
         assertEquals(CanonicalAcquisitionKind.OTHER_METHOD, record.acquisitionKind)
         assertEquals(AvailabilityConfidence.PARTIAL, record.confidence)
-        assertTrue(record.acquisitionLabel.contains("não identificado"))
+        assertTrue(record.acquisitionLabel.isBlank())
+        assertNull(record.requirement)
     }
 }
