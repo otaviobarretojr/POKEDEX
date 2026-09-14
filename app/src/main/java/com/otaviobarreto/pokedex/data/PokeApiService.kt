@@ -301,6 +301,9 @@ object PokeApiService {
         return result
     }
 
+    internal fun auditFallbackMethods(requirement:String):Set<EvolutionMethod> = fallbackMethods(requirement)
+    internal fun auditSpecialRequirement(pokemonId:Int,context:GameContext?):String? = specialRequirementFor(pokemonId,context)
+
     private fun hasContextualOverride(pokemonId:Int,context:GameContext?):Boolean =
         context!=null && pokemonId in setOf(899,904,892)
 
