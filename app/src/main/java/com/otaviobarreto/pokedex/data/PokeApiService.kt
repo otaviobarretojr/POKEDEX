@@ -65,10 +65,11 @@ object PokeApiService {
                     }
                 }
             }.distinct()
-            val requirement=mergeEvolutionRequirements(
+            val special=specialRequirementFor(pokemonId,context)
+            val requirement=if(hasContextualOverride(pokemonId,context)) special else mergeEvolutionRequirements(
                 pokemonId=pokemonId,
                 apiRequirements=apiRequirements,
-                special=specialRequirementFor(pokemonId,context)
+                special=special
             )
             result+=EvolutionStage(
                 pokemonId,
@@ -91,24 +92,32 @@ object PokeApiService {
                 val child=children.getJSONObject(i)
                 val childId=idFromUrl(child.getJSONObject("species").getString("url"))
                 val details=child.optJSONArray("evolution_details")
-                var matched=false
-                if(details!=null){
-                    for(j in 0 until details.length()){
-                        val detail=details.optJSONObject(j)?:continue
-                        if(!detailAppliesToContext(detail,context)) continue
-                        matched=true
-                        val requirement=evolutionRequirement(detail)
-                        if(isSpecialEvolutionRequirement(requirement)){
-                            evolutionMethods(detail,requirement).forEach{method->
-                                result+=EvolutionSourceMethod(parentId,childId,method,requirement)
+                val special=specialRequirementFor(childId,context)
+                if(hasContextualOverride(childId,context)){
+                    if(!special.isNullOrBlank()){
+                        fallbackMethods(special).forEach{method->
+                            result+=EvolutionSourceMethod(parentId,childId,method,special)
+                        }
+                    }
+                }else{
+                    var produced=false
+                    if(details!=null){
+                        for(j in 0 until details.length()){
+                            val detail=details.optJSONObject(j)?:continue
+                            if(!detailAppliesToContext(detail,context)) continue
+                            val requirement=evolutionRequirement(detail)
+                            if(isSpecialEvolutionRequirement(requirement)){
+                                produced=true
+                                evolutionMethods(detail,requirement).forEach{method->
+                                    result+=EvolutionSourceMethod(parentId,childId,method,requirement)
+                                }
                             }
                         }
                     }
-                }
-                val special=specialRequirementFor(childId,context)
-                if(!special.isNullOrBlank() && (!matched || result.none{it.sourcePokemonId==parentId && it.targetPokemonId==childId && it.requirement==special})){
-                    fallbackMethods(special).forEach{method->
-                        result+=EvolutionSourceMethod(parentId,childId,method,special)
+                    if(!produced && !special.isNullOrBlank()){
+                        fallbackMethods(special).forEach{method->
+                            result+=EvolutionSourceMethod(parentId,childId,method,special)
+                        }
                     }
                 }
                 walk(child)
@@ -291,6 +300,9 @@ object PokeApiService {
         if(result.isEmpty()) result+=EvolutionMethod.OTHER
         return result
     }
+
+    private fun hasContextualOverride(pokemonId:Int,context:GameContext?):Boolean =
+        context!=null && pokemonId in setOf(899,904,892)
 
     private fun specialRequirementFor(pokemonId:Int,context:GameContext?):String?{
         val game=context?.label.orEmpty()
