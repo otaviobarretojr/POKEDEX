@@ -27,22 +27,29 @@ data class EvolutionRoute(
 object EvolutionResolutionEngine {
     fun load(chainUrl:String,context:GameContext?):List<EvolutionRoute> =
         PokeApiService.loadEvolutionSourceMethods(chainUrl,context)
-            .groupBy{Triple(it.sourcePokemonId,it.targetPokemonId,it.requirement)}
-            .map{(key,items)->
-                val detail=key.third
+            .groupBy{listOf(
+                it.sourcePokemonId.toString(),
+                it.targetPokemonId.toString(),
+                it.requirement,
+                it.sourceFormKey.orEmpty(),
+                it.targetFormKey.orEmpty()
+            ).joinToString("|")}
+            .map{(_,items)->
+                val first=items.first()
+                val detail=first.requirement
                 val methods=items.mapTo(linkedSetOf()){it.method}
                 val formKeys=EvolutionCuratedCatalog.formKeysFor(key.second,context)
                 EvolutionRoute(
-                    sourcePokemonId=key.first,
-                    targetPokemonId=key.second,
+                    sourcePokemonId=first.sourcePokemonId,
+                    targetPokemonId=first.targetPokemonId,
                     methods=methods,
                     summary=EvolutionRuleCatalog.simplify(detail),
                     detail=detail,
                     availability=availabilityFor(detail,methods),
                     contextLabel=context?.label,
                     regionLabel=context?.regionLabel,
-                    sourceFormKey=formKeys.first,
-                    targetFormKey=formKeys.second
+                    sourceFormKey=first.sourceFormKey ?: formKeys.first,
+                    targetFormKey=first.targetFormKey ?: formKeys.second
                 )
             }
             .sortedWith(
