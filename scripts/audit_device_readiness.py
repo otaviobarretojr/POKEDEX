@@ -45,7 +45,7 @@ checks={
     "background warmup isolated from UI scope": 'SupervisorJob() + Dispatchers.IO' in preloader,
     "backup integrity checksum": 'integritySha256' in backup and 'MessageDigest.getInstance("SHA-256")' in backup,
     "offline resume manifest": 'completed_ids' in offline and 'pendingIds' in offline,
-    "offline concurrency bounded": 'DOWNLOAD_CONCURRENCY = 6' in offline,
+    "offline concurrency bounded": 'DOWNLOAD_CONCURRENCY = 10' in offline and 'FORM_DOWNLOAD_CONCURRENCY = 4' in offline,
 }
 for label,ok in checks.items():
     if not ok:
