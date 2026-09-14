@@ -25,6 +25,8 @@ import com.otaviobarreto.pokedex.data.MoveMetadata
 import com.otaviobarreto.pokedex.data.MoveMetadataService
 import com.otaviobarreto.pokedex.data.PokeApiService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 private data class MoveView(
@@ -40,6 +42,7 @@ internal fun PokemonMovesTab(
 ){
     var query by remember(moves,context){mutableStateOf("")}
     var methodFilter by remember(moves,context){mutableStateOf("Todos")}
+    var metadataByUrl by remember(moves,context){mutableStateOf<Map<String,MoveMetadata>>(emptyMap())}
     val base=remember(moves,context){
         if(context==null) moves.map{MoveView(it,it.learnDetails)}
         else moves.mapNotNull{move->
@@ -54,15 +57,36 @@ internal fun PokemonMovesTab(
         val found=base.flatMap{it.details}.map{moveMethodLabel(it.method)}.distinct()
         preferred.filter{it in found}+found.filterNot{it in preferred}.sorted()
     }
-    val visible=remember(base,query,methodFilter){
+
+    LaunchedEffect(base,context?.label){
+        val cached=base.mapNotNull{view->
+            val url=view.move.resourceUrl
+            MoveMetadataService.cached(url,context)?.let{url to it}
+        }.toMap()
+        metadataByUrl=cached
+        val initialUrls=base.asSequence().map{it.move.resourceUrl}.filter{it.isNotBlank() && it !in cached}.distinct().take(24).toList()
+        if(initialUrls.isNotEmpty()) metadataByUrl=metadataByUrl+loadMetadataBatch(initialUrls,context)
+    }
+
+    LaunchedEffect(methodFilter,base,context?.label){
+        val methodUrls=when(methodFilter){
+            "TM" -> base.filter{view->view.details.any{moveMethodLabel(it.method)=="TM"}}
+            "Nível" -> base.filter{view->view.details.any{moveMethodLabel(it.method)=="Nível"}}.take(40)
+            "Ovo" -> base.filter{view->view.details.any{moveMethodLabel(it.method)=="Ovo"}}
+            else -> emptyList()
+        }.map{it.move.resourceUrl}.filter{it.isNotBlank() && it !in metadataByUrl}.distinct()
+        if(methodUrls.isNotEmpty()) metadataByUrl=metadataByUrl+loadMetadataBatch(methodUrls,context)
+    }
+    val visible=remember(base,query,methodFilter,metadataByUrl){
         base.filter{view->
             (query.isBlank()||view.move.name.contains(query,true)) &&
                 (methodFilter=="Todos"||view.details.any{moveMethodLabel(it.method)==methodFilter})
         }.sortedWith(
-            compareBy<MoveView>{
-                if(methodFilter=="Nível") it.details.filter{d->moveMethodLabel(d.method)=="Nível"}.map{d->d.level}.filter{l->l>0}.minOrNull() ?: Int.MAX_VALUE
-                else 0
-            }.thenBy{it.move.name}
+            when(methodFilter){
+                "Nível" -> compareBy<MoveView>{minimumLevel(it)}.thenBy{it.move.name}
+                "TM" -> compareBy<MoveView>{machineSortKey(metadataByUrl[it.move.resourceUrl]?.machineLabel)}.thenBy{it.move.name}
+                else -> compareBy{it.move.name}
+            }
         )
     }
 
@@ -78,7 +102,8 @@ internal fun PokemonMovesTab(
                 modifier=Modifier.padding(top=14.dp)
             )
             Text(
-                "Veja primeiro como o golpe é aprendido, seu tipo e sua categoria.",
+                context?.let{"Learnset de "+it.label+": nível, TM, ovo, tipo e categoria."}
+                    ?: "Veja como o golpe é aprendido, seu tipo e sua categoria.",
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier=Modifier.padding(top=2.dp,bottom=8.dp)
@@ -103,10 +128,13 @@ internal fun PokemonMovesTab(
         }
 
         items(visible,key={it.move.name}){view->
+            val metadata=metadataByUrl[view.move.resourceUrl]
             MoveCompactRow(
                 view=view,
                 activeMethod=methodFilter,
                 context=context,
+                metadata=metadata,
+                onMetadataLoaded={loaded->metadataByUrl=metadataByUrl+(view.move.resourceUrl to loaded)},
                 onClick=openRef?.let{{openRef("move",view.move.name)}}
             )
         }
@@ -119,17 +147,15 @@ private fun MoveCompactRow(
     view:MoveView,
     activeMethod:String,
     context:GameContext?,
+    metadata:MoveMetadata?,
+    onMetadataLoaded:(MoveMetadata)->Unit,
     onClick:(()->Unit)?
 ){
-    val metadata by produceState<MoveMetadata?>(
-        initialValue=MoveMetadataService.cached(view.move.resourceUrl,context),
-        key1=view.move.resourceUrl,
-        key2=context?.label
-    ){
-        if(value==null && view.move.resourceUrl.isNotBlank()){
-            value=runCatching{
+    LaunchedEffect(view.move.resourceUrl,context?.label,metadata){
+        if(metadata==null && view.move.resourceUrl.isNotBlank()){
+            runCatching{
                 withContext(Dispatchers.IO){MoveMetadataService.load(view.move.resourceUrl,context)}
-            }.getOrNull()
+            }.onSuccess(onMetadataLoaded)
         }
     }
     val relevant=remember(view.details,activeMethod){
@@ -164,7 +190,7 @@ private fun MoveCompactRow(
                 ){
                     metadata?.let{
                         TypePill(it.type)
-                        DamageClassPill(it.category)
+                        DamageClassPill(MoveMetadataService.effectiveCategory(it,context))
                     } ?: Text(
                         "Carregando dados…",
                         style=MaterialTheme.typography.labelSmall,
@@ -248,18 +274,21 @@ private fun primaryLearnLabel(
     metadata:MoveMetadata?,
     activeMethod:String
 ):String{
-    val selected=if(activeMethod=="Todos"){
-        details.sortedWith(compareBy<PokeApiService.MoveLearnDetail>{
-            when(moveMethodLabel(it.method)){"Nível"->0;"TM"->1;"Ovo"->2;"Tutor"->3;else->4}
-        }.thenBy{it.level}).firstOrNull()
-    }else details.firstOrNull()
-    val method=selected?.let{moveMethodLabel(it.method)} ?: activeMethod
-    return when(method){
-        "Nível" -> selected?.level?.takeIf{it>0}?.let{"Nv. $it"} ?: "Nível"
+    if(activeMethod=="Todos"){
+        val labels=buildList{
+            details.filter{moveMethodLabel(it.method)=="Nível"}.map{it.level}.filter{it>0}.minOrNull()?.let{add("Nv. "+it)}
+            if(details.any{moveMethodLabel(it.method)=="TM"}) add(metadata?.machineLabel ?: "TM")
+            if(details.any{moveMethodLabel(it.method)=="Ovo"}) add("Ovo")
+            if(details.any{moveMethodLabel(it.method)=="Tutor"}) add("Tutor")
+        }.distinct()
+        return labels.take(2).joinToString(" · ").ifBlank{"Golpe"}
+    }
+    return when(activeMethod){
+        "Nível" -> details.map{it.level}.filter{it>0}.minOrNull()?.let{"Nv. "+it} ?: "Nível"
         "TM" -> metadata?.machineLabel ?: "TM"
         "Ovo" -> "Ovo"
         "Tutor" -> "Tutor"
-        else -> method.ifBlank{"Golpe"}
+        else -> details.firstOrNull()?.let{moveMethodLabel(it.method)} ?: activeMethod
     }
 }
 
@@ -269,4 +298,35 @@ private fun moveMethodLabel(method:String):String=when(method.lowercase()){
     "egg"->"Ovo"
     "tutor"->"Tutor"
     else->method
+}
+
+
+private fun minimumLevel(view:MoveView):Int =
+    view.details.filter{moveMethodLabel(it.method)=="Nível"}.map{it.level}.filter{it>0}.minOrNull() ?: Int.MAX_VALUE
+
+private fun machineSortKey(label:String?):String{
+    if(label.isNullOrBlank()) return "9-9999"
+    val upper=label.uppercase().replace(" ","")
+    val prefix=when{
+        upper.startsWith("TM")->"0"
+        upper.startsWith("HM")->"1"
+        upper.startsWith("TR")->"2"
+        else->"8"
+    }
+    val number=Regex("\\d+").find(upper)?.value?.toIntOrNull() ?: 9999
+    return prefix+"-"+number.toString().padStart(4,'0')
+}
+
+private suspend fun loadMetadataBatch(
+    urls:List<String>,
+    context:GameContext?
+):Map<String,MoveMetadata> = withContext(Dispatchers.IO){
+    val result=linkedMapOf<String,MoveMetadata>()
+    urls.distinct().chunked(6).forEach{chunk->
+        val loaded=coroutineScope{
+            chunk.map{url->async{url to runCatching{MoveMetadataService.load(url,context)}.getOrNull()}}.map{it.await()}
+        }
+        loaded.forEach{(url,metadata)->if(metadata!=null) result[url]=metadata}
+    }
+    result
 }
