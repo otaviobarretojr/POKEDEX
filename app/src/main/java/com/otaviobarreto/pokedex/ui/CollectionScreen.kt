@@ -94,19 +94,6 @@ private fun CollectionHome(
         item{AlbumPortalCard("Living Dex","${plan.capturedSpecies} de ${plan.totalSpecies} espécies",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
         item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome){onOpenArea(CollectionArea.SHINY)}}
         item{AlbumPortalCard("Form Dex","${plan.formRegistrations} formas alternativas registradas",null,listOf(26,157,724),false,Icons.Default.Extension){onOpenArea(CollectionArea.FORMS)}}
-        item{
-            val action=if(advisorReady) CollectionAdvisor.nextAction(plan.missingSpecies) else null
-            DexGlassSurface(Modifier.fillMaxWidth()){
-                DexSectionEyebrow("Próxima captura")
-                Text(action?.title ?: "Preparando recomendação…",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
-                Text(action?.subtitle ?: "Organizando a melhor rota com os jogos disponíveis.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))
-                if(action?.game!=null){
-                    Button(onClick={onOpenBoxes(action.game,action.source)},modifier=Modifier.fillMaxWidth().padding(top=12.dp)){Text("Abrir ${action.game}")}
-                }else if(action!=null && action.targetIds.isNotEmpty()){
-                    TextButton(onClick={onPokemonClick(action.targetIds.first())},modifier=Modifier.fillMaxWidth()){Text("Ver sugestão")}
-                }
-            }
-        }
         item{Text("${insights.gamesWithProgress} jogo(s) com coleção registrada",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
     }
 }
