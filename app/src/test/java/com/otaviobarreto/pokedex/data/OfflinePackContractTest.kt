@@ -67,4 +67,17 @@ class OfflinePackContractTest {
         assertEquals(80,status.downloadedNewCount)
     }
 
+    @Test fun generalLibraryStatusOnlyVerifiesCompleteCurrentV20() {
+        val ok=OfflineGamePackManager.GeneralLibraryStatus(
+            ready=true,
+            total=700,
+            complete=700,
+            packVersion=20
+        )
+        assertTrue(ok.verified)
+        assertFalse(ok.copy(complete=699).verified)
+        assertFalse(ok.copy(packVersion=19).verified)
+        assertFalse(ok.copy(ready=false).verified)
+    }
+
 }
