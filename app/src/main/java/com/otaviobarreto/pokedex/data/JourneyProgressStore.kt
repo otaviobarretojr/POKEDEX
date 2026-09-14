@@ -69,12 +69,17 @@ object JourneyProgressStore {
     }
 
     fun toggle(game:String,stepId:String){
-        val next=completed(game).toMutableSet().apply{
-            if(!add(stepId)) remove(stepId)
+        val current=completed(game)
+        if(stepId in current){
+            setCompleted(game,stepId,false)
+            return
         }
-        context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
-            ?.putStringSet(key(game),next)?.apply()
-        revision++
+        val ordered=JourneyCatalog.steps(game).map{it.id}
+        if(stepId in ordered){
+            completeThrough(game,ordered,stepId)
+        }else{
+            setCompleted(game,stepId,true)
+        }
     }
 
     fun setCompleted(game:String,stepId:String,completed:Boolean){
