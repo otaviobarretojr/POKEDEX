@@ -19,6 +19,7 @@ object EvolutionRuleCatalog {
         PokeApiService.EvolutionMethod.MULTIPLAYER,
         PokeApiService.EvolutionMethod.FRIENDSHIP,
         PokeApiService.EvolutionMethod.TIME,
+        PokeApiService.EvolutionMethod.GENDER,
         PokeApiService.EvolutionMethod.MOVE,
         PokeApiService.EvolutionMethod.LOCATION,
         PokeApiService.EvolutionMethod.ACTION,
@@ -77,6 +78,7 @@ object EvolutionRuleCatalog {
             PokeApiService.EvolutionMethod.MULTIPLAYER -> "MULTIPLAYER"
             PokeApiService.EvolutionMethod.FRIENDSHIP -> "FRIENDSHIP"
             PokeApiService.EvolutionMethod.TIME -> "TIME"
+            PokeApiService.EvolutionMethod.GENDER -> "GENDER"
             PokeApiService.EvolutionMethod.MOVE -> "MOVE"
             PokeApiService.EvolutionMethod.LOCATION -> "LOCATION"
             PokeApiService.EvolutionMethod.ACTION -> "ACTION"
