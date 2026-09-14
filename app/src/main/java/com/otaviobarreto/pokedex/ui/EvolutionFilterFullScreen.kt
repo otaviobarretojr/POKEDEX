@@ -434,6 +434,15 @@ internal fun EvolutionFilterFullScreen(
                                                         overflow=TextOverflow.Ellipsis
                                                     )
                                                 }
+                                                advice.alternative?.let{alternative->
+                                                    Text(
+                                                        "Alternativa: "+alternative.method.label+" · "+alternative.title,
+                                                        style=MaterialTheme.typography.labelSmall,
+                                                        color=MaterialTheme.colorScheme.primary,
+                                                        maxLines=2,
+                                                        overflow=TextOverflow.Ellipsis
+                                                    )
+                                                }
                                             }
                                         }
                                         route?.let{resolved->
