@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.*
@@ -61,10 +62,6 @@ internal fun EvolutionFilterFullScreen(
     var loading by remember(selectedSource){mutableStateOf(true)}
     var failed by remember(selectedSource){mutableStateOf(false)}
     var sortMode by rememberSaveable(gameLabel){mutableStateOf(MissingSortMode.DEX.name)}
-    val versionOptions=remember(gameLabel){VersionAvailabilityCatalog.versionsForGame(gameLabel)}
-    var selectedVersion by rememberSaveable(gameLabel){
-        mutableStateOf(AppStatePreferences.selectedVersionForGame(gameLabel))
-    }
     var canonicalById by remember(selectedSource){mutableStateOf<Map<Int,CanonicalAvailability>>(emptyMap())}
     var canonicalLoading by remember(selectedSource){mutableStateOf(false)}
 
@@ -215,7 +212,7 @@ internal fun EvolutionFilterFullScreen(
         canonicalLoading=false
     }
 
-    val adviceById=remember(pending,routes,context,owned,names,selectedVersion,canonicalById){
+    val adviceById=remember(pending,routes,context,owned,names,canonicalById){
         val resolvedContext=context
         if(resolvedContext==null) emptyMap()
         else pending.associate{entry->
@@ -225,7 +222,7 @@ internal fun EvolutionFilterFullScreen(
                 routes=routes,
                 owned=owned,
                 names=names,
-                selectedVersion=selectedVersion,
+                selectedVersion=null,
                 canonical=canonicalById[entry.nationalId],
                 inRegionalDex=true
             )
@@ -294,32 +291,6 @@ internal fun EvolutionFilterFullScreen(
                         )
                     }
                 }
-                if(versionOptions.isNotEmpty()){
-                    Text(
-                        "Minha versão",
-                        style=MaterialTheme.typography.labelMedium,
-                        color=MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier=Modifier.padding(top=6.dp)
-                    )
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement=Arrangement.spacedBy(8.dp)
-                    ){
-                        versionOptions.forEach{version->
-                            FilterChip(
-                                selected=selectedVersion==version,
-                                onClick={
-                                    selectedVersion=if(selectedVersion==version)null else version
-                                    AppStatePreferences.setSelectedVersionForGame(
-                                        gameLabel,
-                                        if(selectedVersion==version) version else selectedVersion
-                                    )
-                                },
-                                label={Text(version)}
-                            )
-                        }
-                    }
-                }
                 if(canonicalLoading){
                     LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=6.dp))
                 }
@@ -381,16 +352,52 @@ internal fun EvolutionFilterFullScreen(
                                             contentDescription=entry.name,
                                             modifier=Modifier.fillMaxWidth().aspectRatio(1f)
                                         )
-                                        Text(
-                                            entry.name,
-                                            style=MaterialTheme.typography.labelLarge,
-                                            fontWeight=FontWeight.Black,
-                                            maxLines=1,
-                                            overflow=TextOverflow.Ellipsis
-                                        )
+                                        Row(
+                                            verticalAlignment=Alignment.CenterVertically,
+                                            horizontalArrangement=Arrangement.spacedBy(5.dp)
+                                        ){
+                                            Text(
+                                                entry.name,
+                                                style=MaterialTheme.typography.labelLarge,
+                                                fontWeight=FontWeight.Black,
+                                                maxLines=1,
+                                                overflow=TextOverflow.Ellipsis,
+                                                modifier=Modifier.weight(1f,false)
+                                            )
+                                            VersionAvailabilityCatalog
+                                                .forPokemon(entry.nationalId,context,true)
+                                                ?.takeIf{it.kind==VersionAvailabilityKind.EXCLUSIVE}
+                                                ?.exclusiveVersion
+                                                ?.let{exclusiveVersion->
+                                                    val badgeColor=when(exclusiveVersion){
+                                                        "Scarlet" -> Color(0xFFD83A3A)
+                                                        "Violet" -> Color(0xFF6D45C6)
+                                                        else -> MaterialTheme.colorScheme.primary
+                                                    }
+                                                    Surface(
+                                                        shape=RoundedCornerShape(999.dp),
+                                                        color=badgeColor
+                                                    ){
+                                                        Text(
+                                                            exclusiveVersion,
+                                                            style=MaterialTheme.typography.labelSmall,
+                                                            fontWeight=FontWeight.Bold,
+                                                            color=Color.White,
+                                                            modifier=Modifier.padding(horizontal=6.dp,vertical=2.dp),
+                                                            maxLines=1
+                                                        )
+                                                    }
+                                                }
+                                        }
                                         if(filterKey=="ALL"){
                                             adviceById[entry.nationalId]
-                                                ?.takeIf{advice->advice.title.isNotBlank()}
+                                                ?.takeIf{advice->
+                                                    advice.title.isNotBlank() &&
+                                                        !(
+                                                            advice.method==CompletionMethodKind.DIRECT &&
+                                                                (advice.detail.isNullOrBlank() || "Local:" !in advice.detail)
+                                                        )
+                                                }
                                                 ?.let{advice->
                                                 Surface(
                                                     shape=RoundedCornerShape(999.dp),
@@ -411,22 +418,6 @@ internal fun EvolutionFilterFullScreen(
                                                     color=MaterialTheme.colorScheme.primary,
                                                     maxLines=1
                                                 )
-                                                advice.versionAvailability?.takeIf{
-                                                    it.kind==VersionAvailabilityKind.EXCLUSIVE ||
-                                                        it.kind==VersionAvailabilityKind.SPLIT_FORMS
-                                                }?.let{version->
-                                                    Text(
-                                                        when(advice.availableInSelectedVersion){
-                                                            true -> "Na sua versão"
-                                                            false -> "Precisa troca / HOME"
-                                                            null -> version.title
-                                                        },
-                                                        style=MaterialTheme.typography.labelSmall,
-                                                        color=MaterialTheme.colorScheme.primary,
-                                                        maxLines=2,
-                                                        overflow=TextOverflow.Ellipsis
-                                                    )
-                                                }
                                                 Text(
                                                     advice.title,
                                                     style=MaterialTheme.typography.labelSmall,
