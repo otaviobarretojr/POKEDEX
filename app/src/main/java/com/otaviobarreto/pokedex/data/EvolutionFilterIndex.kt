@@ -2,37 +2,50 @@ package com.otaviobarreto.pokedex.data
 
 object EvolutionFilterIndex {
     private val memory=mutableMapOf<String,Map<String,Set<Int>>>()
-    private val ruleMemory=mutableMapOf<String,List<ContextualEvolutionRule>>()
+    private val routeMemory=mutableMapOf<String,List<EvolutionRoute>>()
 
     fun cached(source:String):Map<String,Set<Int>>? = memory[source]
-    fun cachedRules(source:String):List<ContextualEvolutionRule>? = ruleMemory[source]
+    fun cachedRoutes(source:String):List<EvolutionRoute>? = routeMemory[source]
 
     fun clear(source:String?=null){
         if(source==null){
             memory.clear()
-            ruleMemory.clear()
+            routeMemory.clear()
         }else{
             memory.remove(source)
-            ruleMemory.remove(source)
+            routeMemory.remove(source)
         }
     }
 
-    fun buildRules(
+    fun buildRoutes(
         source:String,
         dex:List<GameDexService.GameDexEntry>
-    ):List<ContextualEvolutionRule>{
-        ruleMemory[source]?.let{return it}
+    ):List<EvolutionRoute>{
+        routeMemory[source]?.let{return it}
         val context=GameContext.fromSource(source)
         val dexIds=dex.mapTo(hashSetOf()){it.nationalId}
         val urls=dex.mapNotNull{entry->
             runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()
         }.distinct()
-        val rules=urls.flatMap{url->
-            runCatching{EvolutionRuleCatalog.load(url,context)}.getOrElse{emptyList()}
-        }.filter{rule->
-            rule.sourcePokemonId in dexIds && rule.targetPokemonId in dexIds
-        }.distinctBy{Triple(it.sourcePokemonId,it.targetPokemonId,it.summary)}
-        return rules.also{ruleMemory[source]=it}
+        val routes=urls.flatMap{url->
+            runCatching{EvolutionResolutionEngine.load(url,context)}.getOrElse{emptyList()}
+        }.filter{route->
+            route.sourcePokemonId in dexIds && route.targetPokemonId in dexIds
+        }.distinctBy{listOf(it.sourcePokemonId,it.targetPokemonId,it.summary,it.availability.name).joinToString(":")}
+        return routes.also{routeMemory[source]=it}
+    }
+
+    fun buildRules(
+        source:String,
+        dex:List<GameDexService.GameDexEntry>
+    ):List<ContextualEvolutionRule> = buildRoutes(source,dex).map{route->
+        ContextualEvolutionRule(
+            sourcePokemonId=route.sourcePokemonId,
+            targetPokemonId=route.targetPokemonId,
+            methods=route.methods,
+            summary=route.summary,
+            rawRequirement=route.detail
+        )
     }
 
     fun build(
@@ -41,14 +54,19 @@ object EvolutionFilterIndex {
     ):Map<String,Set<Int>>{
         memory[source]?.let{return it}
         val result=mutableMapOf<String,MutableSet<Int>>()
-        buildRules(source,dex).forEach{rule->
-            val target=rule.targetPokemonId
-            result.getOrPut("ALL"){mutableSetOf()}.add(target)
-            result.getOrPut(EvolutionRuleCatalog.filterBucket(rule)){mutableSetOf()}.add(target)
-            rule.methods.forEach{method->
-                result.getOrPut(method.name){mutableSetOf()}.add(target)
+        buildRoutes(source,dex)
+            .filter(EvolutionResolutionEngine::executable)
+            .forEach{route->
+                val target=route.targetPokemonId
+                result.getOrPut("ALL"){mutableSetOf()}.add(target)
+                val legacy=ContextualEvolutionRule(
+                    route.sourcePokemonId,route.targetPokemonId,route.methods,route.summary,route.detail
+                )
+                result.getOrPut(EvolutionRuleCatalog.filterBucket(legacy)){mutableSetOf()}.add(target)
+                route.methods.forEach{method->
+                    result.getOrPut(method.name){mutableSetOf()}.add(target)
+                }
             }
-        }
         return result.mapValues{it.value.toSet()}.also{memory[source]=it}
     }
 }
