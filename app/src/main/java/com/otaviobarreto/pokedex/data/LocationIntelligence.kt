@@ -1,7 +1,7 @@
 package com.otaviobarreto.pokedex.data
 
 object LocationIntelligence {
-    enum class Coverage { RELIABLE, PARTIAL, UNSUPPORTED }
+    enum class Coverage { RELIABLE, PARTIAL }
 
     private val kitakami = setOf(
         "kitakami road","mossui town","apple hills","loyalty plaza","revelers road",
@@ -82,8 +82,6 @@ object LocationIntelligence {
 
     fun emptyMessage(context: GameContext?, hasAnyRawEncounter: Boolean): String {
         return when(coverage(context)) {
-            Coverage.UNSUPPORTED ->
-                "Localização selvagem não se aplica a este jogo."
             Coverage.PARTIAL ->
                 if(hasAnyRawEncounter)
                     "Nenhum encontro desta sub-região foi confirmado pela fonte atual."
