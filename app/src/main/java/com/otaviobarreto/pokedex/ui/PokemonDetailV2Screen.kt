@@ -454,8 +454,10 @@ private fun PokemonFormsSummaryCard(
                                         onClick={
                                             VariantCollectionStore.toggle(
                                                 source,pokemonId,formId,form.name,false,
+                                                formKey=form.formKey,
                                                 normalArtworkUrl=form.spriteUrl,
-                                                shinyArtworkUrl=form.shinySpriteUrl
+                                                shinyArtworkUrl=form.shinySpriteUrl,
+                                                isDefault=form.isDefault
                                             )
                                         },
                                         label={Text("Normal",style=MaterialTheme.typography.labelSmall)}
@@ -465,8 +467,10 @@ private fun PokemonFormsSummaryCard(
                                         onClick={
                                             VariantCollectionStore.toggle(
                                                 source,pokemonId,formId,form.name,true,
+                                                formKey=form.formKey,
                                                 normalArtworkUrl=form.spriteUrl,
-                                                shinyArtworkUrl=form.shinySpriteUrl
+                                                shinyArtworkUrl=form.shinySpriteUrl,
+                                                isDefault=form.isDefault
                                             )
                                         },
                                         label={Text("★",style=MaterialTheme.typography.labelSmall)}
