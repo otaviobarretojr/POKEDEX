@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -83,7 +84,9 @@ fun PokemonArtwork(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     alignment: Alignment = Alignment.Center,
-    pokemonId: Int? = null
+    pokemonId: Int? = null,
+    contentScale: ContentScale = ContentScale.Fit,
+    colorFilter: ColorFilter? = null
 ) {
     val context = LocalContext.current
     val tuning = remember(pokemonId) { ArtworkTuningCatalog.forPokemon(pokemonId) }
@@ -114,8 +117,9 @@ fun PokemonArtwork(
                     scaleX = tuning.scale
                     scaleY = tuning.scale
                 },
-            contentScale = ContentScale.Fit,
-            alignment = alignment
+            contentScale = contentScale,
+            alignment = alignment,
+            colorFilter = colorFilter
         )
     }
 }
