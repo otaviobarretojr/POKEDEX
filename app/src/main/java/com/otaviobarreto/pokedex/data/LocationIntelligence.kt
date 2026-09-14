@@ -27,12 +27,10 @@ object LocationIntelligence {
 
     fun coverage(context: GameContext?): Coverage = when(context?.label) {
         "FireRed / LeafGreen" -> Coverage.RELIABLE
-        "Pokémon Champions" -> Coverage.UNSUPPORTED
         null -> Coverage.PARTIAL
         else -> Coverage.PARTIAL
     }
 
-    fun isSupported(context: GameContext?): Boolean = coverage(context) != Coverage.UNSUPPORTED
 
     fun belongsToContext(location: String, context: GameContext?): Boolean {
         if(context==null) return true
