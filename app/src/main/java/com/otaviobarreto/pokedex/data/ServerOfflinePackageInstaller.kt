@@ -339,7 +339,7 @@ object ServerOfflinePackageInstaller {
 
         connection.connect()
         val response=connection.responseCode
-        if(response==HttpURLConnection.HTTP_REQUESTED_RANGE_NOT_SATISFIABLE &&
+        if(response==416 &&
             expectedBytes>0L &&
             destination.exists() &&
             destination.length()==expectedBytes
