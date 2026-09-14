@@ -17,6 +17,7 @@ object EvolutionCuratedCatalog {
             }
             867 -> when(game){
                 "Sword / Shield" -> CuratedEvolutionRule(867,"Galarian Yamask deve perder pelo menos 49 HP sem desmaiar • Passar sob o arco de pedra em Dusty Bowl","yamask-galar",null)
+                "Pokémon Legends: Z-A" -> CuratedEvolutionRule(867,"Galarian Yamask deve perder pelo menos 49 HP sem desmaiar • Passar sob uma das pontes do Coulant Waterway","yamask-galar",null)
                 else -> null
             }
             899 -> when(game){
