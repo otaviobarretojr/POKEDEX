@@ -259,8 +259,8 @@ object CompletionAdviceResolver {
         if(availability==EvolutionAvailability.TRANSFER_ONLY) return 22
 
         val r=requirement.lowercase()
-        val level=Regex("""(?:nível|level)\s*(\d{1,3})""",RegexOption.IGNORE_CASE)
-            .find(requirement)?.groupValues?.getOrNull(1)?.toIntOrNull()
+        val level=Regex("""(?:nível|nivel|level)\s*(\d{1,3})""")
+            .find(r)?.groupValues?.getOrNull(1)?.toIntOrNull()
         val levelPenalty=when{
             level==null -> 0
             level<=20 -> 0
