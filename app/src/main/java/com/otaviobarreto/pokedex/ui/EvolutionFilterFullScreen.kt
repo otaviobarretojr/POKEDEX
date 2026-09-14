@@ -389,7 +389,9 @@ internal fun EvolutionFilterFullScreen(
                                             overflow=TextOverflow.Ellipsis
                                         )
                                         if(filterKey=="ALL"){
-                                            adviceById[entry.nationalId]?.let{advice->
+                                            adviceById[entry.nationalId]
+                                                ?.takeIf{advice->advice.title.isNotBlank()}
+                                                ?.let{advice->
                                                 Surface(
                                                     shape=RoundedCornerShape(999.dp),
                                                     color=MaterialTheme.colorScheme.primaryContainer
