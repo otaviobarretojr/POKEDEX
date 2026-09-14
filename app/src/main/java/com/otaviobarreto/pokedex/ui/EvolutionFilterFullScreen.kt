@@ -345,10 +345,11 @@ internal fun EvolutionFilterFullScreen(
                                     color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.62f)
                                 ){
                                     Column(Modifier.padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally){
-                                        AsyncImage(
+                                        PokemonArtwork(
                                             model=entry.spriteUrl,
                                             contentDescription=entry.name,
-                                            modifier=Modifier.fillMaxWidth().aspectRatio(1f)
+                                            modifier=Modifier.fillMaxWidth().aspectRatio(1f),
+                                            pokemonId=entry.nationalId
                                         )
                                         Row(
                                             verticalAlignment=Alignment.CenterVertically,
