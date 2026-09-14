@@ -29,13 +29,11 @@ internal fun V2Locations(
     }
 
     var loadError by remember(pokemonId,context){mutableStateOf(false)}
-    val canonical by produceState<CanonicalAvailability?>(
-        initialValue=null,
-        key1=pokemonId,
-        key2=context,
-        key3=encounters
-    ){
+    var canonical by remember(pokemonId,context,encounters){mutableStateOf<CanonicalAvailability?>(null)}
+
+    LaunchedEffect(pokemonId,context,encounters){
         loadError=false
+        canonical=null
         val resolved=runCatching{
             withContext(Dispatchers.IO){
                 val dex=GameDexService.cached(context) ?: GameDexService.loadGameDex(context)
@@ -50,8 +48,8 @@ internal fun V2Locations(
                 )
             }
         }
-        if(resolved.isFailure) loadError=true
-        value=resolved.getOrNull()
+        loadError=resolved.isFailure
+        canonical=resolved.getOrNull()
     }
 
     LazyColumn(
