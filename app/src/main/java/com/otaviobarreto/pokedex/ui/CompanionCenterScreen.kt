@@ -205,6 +205,7 @@ fun CompanionCenterScreen(
                                 activeDownload="__general__"
                                 progress=null
                                 serverProgress=null
+                                statusText="Iniciando Download Geral…"
                                 scope.launch{
                                     val result=runCatching{
                                         if(remoteGeneral?.ready==true){
@@ -222,7 +223,8 @@ fun CompanionCenterScreen(
                                         result.isSuccess ->
                                             "Biblioteca geral: download concluído."
                                         else ->
-                                            "Biblioteca geral: falha no download. O progresso salvo pode ser retomado."
+                                            "Biblioteca geral: falha no download · "+
+                                                (result.exceptionOrNull()?.message ?: "tente novamente")
                                     }
                                     activeDownload=null
                                     progress=null
@@ -352,11 +354,13 @@ fun CompanionCenterScreen(
                             horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                         ){
                             Button(
-                                enabled=activeDownload==null,
+                                enabled=activeDownload==null &&
+                                    !(remotePackage?.ready==true && !generalReadyForReuse),
                                 onClick={
                                     activeDownload=game.label
                                     progress=null
                                     serverProgress=null
+                                    statusText=game.label+": iniciando download…"
                                     scope.launch{
                                         val result=runCatching{
                                             if(remotePackage?.ready==true && generalReadyForReuse){
@@ -375,7 +379,8 @@ fun CompanionCenterScreen(
                                             result.isSuccess ->
                                                 game.label+": pacote offline atualizado."
                                             else ->
-                                                game.label+": falha no download. O progresso salvo pode ser retomado."
+                                                game.label+": falha no download · "+
+                                                    (result.exceptionOrNull()?.message ?: "tente novamente")
                                         }
                                         activeDownload=null
                                         progress=null
@@ -390,6 +395,7 @@ fun CompanionCenterScreen(
                                     when{
                                         pack.downloaded && !audit.valid -> "Reparar"
                                         pack.downloaded -> "Atualizar"
+                                        remotePackage?.ready==true && !generalReadyForReuse -> "Baixe geral primeiro"
                                         audit.expectedCount>0 && audit.completedIds>0 -> "Continuar"
                                         else -> "Baixar"
                                     }
