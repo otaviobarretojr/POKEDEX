@@ -50,7 +50,7 @@ fun PokemonDetailV2Screen(
     var bundle by remember(id){ mutableStateOf(cachedDetailBundle(id)) }
     var error by remember(id){ mutableStateOf<String?>(null) }
     var retry by remember{ mutableIntStateOf(0) }
-    var tab by rememberSaveable(id){ mutableIntStateOf(0) }
+    var tab by rememberSaveable(id,source){ mutableIntStateOf(0) }
     val context=remember(source){ GameContext.fromSource(source) }
     val collectionSource=remember(source,AppStatePreferences.activeGame){
         source ?: AppStatePreferences.activeRegionForGame(AppStatePreferences.activeGame)
@@ -154,7 +154,7 @@ fun PokemonDetailV2Screen(
     DexAppBackground {
       Column(Modifier.fillMaxSize()){
         HeroCard(b,context,collectionSource,accent,saveLocation,back)
-        DetailTabs(tab,setTab)
+        DetailTabs(tab,setTab,context)
         if(openPokemon!=null){
             DetailDexNavigator(b.pokemon.id,openPokemon)
         }
@@ -311,8 +311,17 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
     }
 }
 
-@Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit){
-    val tabs=listOf("Info" to Icons.Default.Info,"Stats" to Icons.Default.BarChart,"Evolução" to Icons.Default.AccountTree,"Golpes" to Icons.Default.AutoAwesome,"Localização" to Icons.Default.LocationOn)
+@Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit,context:GameContext?){
+    val base=listOf(
+        "Info" to Icons.Default.Info,
+        "Stats" to Icons.Default.BarChart,
+        "Evolução" to Icons.Default.AccountTree,
+        "Golpes" to Icons.Default.AutoAwesome
+    )
+    val tabs=if(LocationIntelligence.isSupported(context)) base+("Localização" to Icons.Default.LocationOn) else base
+    LaunchedEffect(tabs.size,selected){
+        if(selected>=tabs.size) setSelected(0)
+    }
     Surface(color=MaterialTheme.colorScheme.surface.copy(alpha=.98f),shadowElevation=PokedexDesignTokens.Elevation.Low){
         Row(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)){
             tabs.forEachIndexed{i,(label,icon)->
@@ -335,6 +344,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         }
     }
 }
+
 @Composable private fun InfoTab(b:DetailV2Bundle,accent:Color,context:GameContext?,source:String?,openRef:((String,String)->Unit)?){
     var advisorReady by remember { mutableStateOf(CollectionAdvisor.isWarm()) }
     LaunchedEffect(Unit){
@@ -575,11 +585,7 @@ private fun PokemonFormsSummaryCard(
     context:GameContext?,
     source:String?
 ){
-    val visible=if(context==null)encounters else encounters.mapNotNull{e->
-        val versions=e.versions.filter(context::matchesVersion)
-        val details=e.details.filter{context.matchesVersion(it.version)}
-        if(versions.isEmpty()&&details.isEmpty())null else e.copy(versions=versions,details=details)
-    }.distinctBy{it.location}.sortedBy{it.location}
+    val visible=remember(encounters,context){LocationIntelligence.filter(encounters,context)}
 
     LazyColumn(
         Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),
@@ -598,8 +604,7 @@ private fun PokemonFormsSummaryCard(
             item{
                 DexGlassSurface(Modifier.fillMaxWidth()){
                     Text(
-                        if(source.isNullOrBlank())"Nenhum encontro selvagem registrado."
-                        else "Este Pokémon não possui encontro selvagem registrado neste jogo. Ele pode ser obtido por evolução, troca, evento ou outro método.",
+                        LocationIntelligence.emptyMessage(context,encounters.isNotEmpty()),
                         style=MaterialTheme.typography.bodyMedium,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -630,7 +635,7 @@ private fun PokemonFormsSummaryCard(
                             modifier=Modifier.size(20.dp)
                         )
                         Text(
-                            e.location,
+                            LocationIntelligence.displayName(e.location),
                             modifier=Modifier.padding(start=10.dp).weight(1f),
                             style=MaterialTheme.typography.bodyLarge,
                             fontWeight=FontWeight.SemiBold
