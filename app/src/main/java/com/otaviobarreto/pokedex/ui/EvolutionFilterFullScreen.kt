@@ -21,6 +21,14 @@ import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+private data class EvolutionFilterLoadResult(
+    val displayDex:List<GameDexService.GameDexEntry>,
+    val fullDex:List<GameDexService.GameDexEntry>,
+    val routes:List<EvolutionRoute>,
+    val exclusiveSpeciesIds:Set<Int>,
+    val novelFormIdentities:Set<Pair<Int,String>>
+)
+
 @Composable
 internal fun EvolutionFilterFullScreen(
     gameLabel:String,
@@ -36,7 +44,10 @@ internal fun EvolutionFilterFullScreen(
     }
     val selectedRegion=game.regions.first{it.source==selectedSource}
     var dex by remember(selectedSource){mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())}
+    var fullDex by remember(selectedSource){mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())}
     var routes by remember(selectedSource){mutableStateOf<List<EvolutionRoute>>(emptyList())}
+    var exclusiveSpeciesIds by remember(selectedSource){mutableStateOf<Set<Int>>(emptySet())}
+    var novelFormIdentities by remember(selectedSource){mutableStateOf<Set<Pair<Int,String>>>(emptySet())}
     var loading by remember(selectedSource){mutableStateOf(true)}
     var failed by remember(selectedSource){mutableStateOf(false)}
 
@@ -52,15 +63,35 @@ internal fun EvolutionFilterFullScreen(
                     val regionDex=GameDexService.cached(regionContext) ?: GameDexService.loadGameDex(regionContext)
                     region.source to regionDex
                 }
+                val routesBySource=requiredRegions.associate{region->
+                    val regionDex=entriesBySource[region.source].orEmpty()
+                    region.source to EvolutionFilterIndex.buildRoutes(region.source,regionDex)
+                }
                 val fullSelectedDex=entriesBySource[selectedSource].orEmpty()
-                val layeredDex=RegionalDexLayering.exclusiveEntriesForRegion(game,selectedSource,entriesBySource)
-                layeredDex to EvolutionFilterIndex.buildRoutes(selectedSource,fullSelectedDex)
+                val selectedRoutes=routesBySource[selectedSource].orEmpty()
+                val layer=RegionalDexLayering.layeredResult(
+                    game=game,
+                    regionSource=selectedSource,
+                    entriesBySource=entriesBySource,
+                    routesBySource=routesBySource
+                )
+                val visibleIds=layer.exclusiveSpeciesIds + layer.novelFormTargetIds
+                EvolutionFilterLoadResult(
+                    displayDex=fullSelectedDex.filter{it.nationalId in visibleIds},
+                    fullDex=fullSelectedDex,
+                    routes=selectedRoutes,
+                    exclusiveSpeciesIds=layer.exclusiveSpeciesIds,
+                    novelFormIdentities=layer.novelFormIdentities
+                )
             }
         }
         failed=loaded.isFailure
-        loaded.getOrNull()?.let{(regionalDex,resolvedRoutes)->
-            dex=regionalDex
-            routes=resolvedRoutes
+        loaded.getOrNull()?.let{result->
+            dex=result.displayDex
+            fullDex=result.fullDex
+            routes=result.routes
+            exclusiveSpeciesIds=result.exclusiveSpeciesIds
+            novelFormIdentities=result.novelFormIdentities
         }
         loading=false
     }
@@ -82,11 +113,50 @@ internal fun EvolutionFilterFullScreen(
             }
         }
     }
-    val routesByTarget=remember(filteredRoutes){filteredRoutes.groupBy{it.targetPokemonId}}
-    val pending=remember(dex,routesByTarget,owned){
-        dex.filter{entry->entry.nationalId in routesByTarget && entry.nationalId !in owned}
+    val visibleFilteredRoutes=remember(
+        filteredRoutes,
+        exclusiveSpeciesIds,
+        novelFormIdentities
+    ){
+        filteredRoutes.filter{route->
+            route.targetPokemonId in exclusiveSpeciesIds ||
+                route.targetFormKey?.let{route.targetPokemonId to it} in novelFormIdentities
+        }
     }
-    val names=remember(dex){dex.associate{it.nationalId to it.name}}
+    val routesByTarget=remember(visibleFilteredRoutes){
+        visibleFilteredRoutes.groupBy{it.targetPokemonId}
+    }
+    val pending=remember(
+        dex,
+        routesByTarget,
+        owned,
+        novelFormIdentities,
+        selectedSource,
+        VariantCollectionStore.ownedVariants
+    ){
+        dex.filter{entry->
+            val targetRoutes=routesByTarget[entry.nationalId].orEmpty()
+            if(targetRoutes.isEmpty()) return@filter false
+
+            val novelFormRoutes=targetRoutes.filter{route->
+                route.targetFormKey?.let{route.targetPokemonId to it} in novelFormIdentities
+            }
+            val hasPendingNovelForm=novelFormRoutes.any{route->
+                val formKey=route.targetFormKey ?: return@any false
+                !VariantCollectionStore.isFormOwnedForGame(
+                    source=selectedSource,
+                    speciesId=route.targetPokemonId,
+                    formKey=formKey
+                )
+            }
+
+            hasPendingNovelForm || (
+                entry.nationalId in exclusiveSpeciesIds &&
+                    entry.nationalId !in owned
+            )
+        }
+    }
+    val names=remember(fullDex){fullDex.associate{it.nationalId to it.name}}
 
     val filterLabel=when(filterKey){
         "ALL" -> "Todos que faltam"
@@ -140,6 +210,16 @@ internal fun EvolutionFilterFullScreen(
                     color=MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            visibleFilteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                Text(
+                    if(game.regions.first().source==selectedSource)
+                        "Nenhum Pokémon desta Pokédex usa este método."
+                    else
+                        "Nenhum Pokémon novo desta expansão usa este método.",
+                    style=MaterialTheme.typography.bodyMedium,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             pending.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text(
                     "Você já concluiu todas as pendências deste filtro em "+selectedRegion.label+".",
@@ -187,6 +267,17 @@ internal fun EvolutionFilterFullScreen(
                                                 maxLines=1,
                                                 overflow=TextOverflow.Ellipsis
                                             )
+                                            resolved.targetFormKey?.takeIf{
+                                                resolved.targetPokemonId to it in novelFormIdentities
+                                            }?.let{formKey->
+                                                Text(
+                                                    formKey.replace('-',' ').replaceFirstChar{it.uppercase()},
+                                                    style=MaterialTheme.typography.labelSmall,
+                                                    color=MaterialTheme.colorScheme.primary,
+                                                    maxLines=1,
+                                                    overflow=TextOverflow.Ellipsis
+                                                )
+                                            }
                                             Text(
                                                 resolved.summary,
                                                 style=MaterialTheme.typography.labelSmall,
