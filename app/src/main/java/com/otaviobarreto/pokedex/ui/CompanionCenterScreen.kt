@@ -134,6 +134,8 @@ fun CompanionCenterScreen(
                                         activeDownload==game.label -> progress?.label ?: "Preparando download…"
                                         audit.valid -> "Offline pronto · "+pack.pokemonCount+" Pokémon"
                                         pack.downloaded -> audit.summary
+                                        audit.expectedCount>0 && audit.completedIds>0 ->
+                                            "Download parcial · "+audit.completedIds+" / "+audit.expectedCount+" Pokémon"
                                         else -> "Ainda não baixado"
                                     },
                                     style=MaterialTheme.typography.bodySmall,
@@ -163,7 +165,7 @@ fun CompanionCenterScreen(
                                             OfflineGamePackManager.download(game){p->progress=p}
                                         }
                                         statusText=if(result.isSuccess) game.label+": pacote offline atualizado."
-                                        else game.label+": falha no download."
+                                        else game.label+": falha no download. O progresso salvo pode ser retomado."
                                         activeDownload=null
                                         progress=null
                                     }
@@ -176,12 +178,13 @@ fun CompanionCenterScreen(
                                     when{
                                         pack.downloaded && !audit.valid -> "Reparar"
                                         pack.downloaded -> "Atualizar"
+                                        audit.expectedCount>0 && audit.completedIds>0 -> "Continuar"
                                         else -> "Baixar"
                                     }
                                 )
                             }
                             FilledTonalButton(
-                                enabled=activeDownload==null && pack.downloaded,
+                                enabled=activeDownload==null && (pack.downloaded || audit.expectedCount>0 || audit.completedIds>0),
                                 onClick={
                                     OfflineGamePackManager.remove(game.label)
                                     statusText=game.label+": pacote offline removido."
