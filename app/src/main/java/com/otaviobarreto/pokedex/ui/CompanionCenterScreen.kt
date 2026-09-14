@@ -35,10 +35,18 @@ fun CompanionCenterScreen(
     var audioEnabled by remember{mutableStateOf(HomeAudioManager.enabled)}
     var audioVolume by remember{mutableFloatStateOf(HomeAudioManager.volume)}
     var storageRevision by remember{mutableIntStateOf(0)}
+    var remoteManifestRevision by remember{mutableIntStateOf(0)}
 
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
+
+    LaunchedEffect(Unit){
+        withContext(Dispatchers.IO){
+            runCatching{RemoteOfflinePackageCatalog.refresh()}
+        }
+        remoteManifestRevision++
+    }
 
     val createBackup=rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -119,6 +127,7 @@ fun CompanionCenterScreen(
             val general=OfflineGamePackManager.generalStatus()
             val generalValid=OfflineGamePackManager.generalAudit()
             val generalEstimate=OfflineGamePackManager.estimateGeneral()
+            val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
             Card(
                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                 colors=CardDefaults.cardColors(
@@ -156,6 +165,9 @@ fun CompanionCenterScreen(
                     )
                     Text(
                         when{
+                            remoteGeneral?.sizeBytes!=null && remoteGeneral.sizeBytes>0L ->
+                                "Servidor: "+OfflineGamePackManager.formatBytes(remoteGeneral.sizeBytes)+
+                                    if(remoteGeneral.ready) " · pacote pronto" else " · em preparação"
                             generalValid -> "Armazenado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.totalBytes)
                             generalEstimate.remainingBytes>0 ->
                                 "Estimado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.remainingBytes)+
@@ -244,6 +256,9 @@ fun CompanionCenterScreen(
                 val audit=OfflineGamePackManager.audit(game.label)
                 val gameEstimate=OfflineGamePackManager.estimateGame(game.label)
                 val generalReadyForReuse=OfflineGamePackManager.generalAudit()
+                val remotePackage=remember(remoteManifestRevision,game.label){
+                    RemoteOfflinePackageCatalog.forGameLabel(game.label)
+                }
                 Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
                     Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                         Row(verticalAlignment=Alignment.CenterVertically){
@@ -278,6 +293,9 @@ fun CompanionCenterScreen(
                                 Text(
                                     when{
                                         audit.valid -> "Pacote complementar concluído"
+                                        remotePackage?.sizeBytes!=null && remotePackage.sizeBytes>0L ->
+                                            "Servidor: "+OfflineGamePackManager.formatBytes(remotePackage.sizeBytes)+
+                                                if(remotePackage.ready) " · pronto para CDN" else " · em preparação"
                                         gameEstimate.remainingBytes>0 && (generalReadyForReuse || audit.expectedCount>0) ->
                                             "Falta baixar ~"+OfflineGamePackManager.formatBytes(gameEstimate.remainingBytes)+
                                                 if(gameEstimate.reusedPokemon>0)
