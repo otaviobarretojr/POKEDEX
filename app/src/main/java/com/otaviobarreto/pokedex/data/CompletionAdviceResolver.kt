@@ -71,7 +71,11 @@ object CompletionAdviceResolver {
                 CompletionAdvice(
                     pokemonId=pokemonId,
                     method=method,
-                    title=if(sourceOwned) route.summary else "Obtenha "+sourceName+" primeiro",
+                    title=when{
+                        route.availability==EvolutionAvailability.TRANSFER_ONLY -> route.summary
+                        sourceOwned -> route.summary
+                        else -> "Obtenha "+sourceName+" primeiro"
+                    },
                     detail=detail,
                     sourcePokemonId=route.sourcePokemonId,
                     versionAvailability=version,
