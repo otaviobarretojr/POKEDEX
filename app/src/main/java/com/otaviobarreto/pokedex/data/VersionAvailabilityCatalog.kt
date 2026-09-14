@@ -13,6 +13,9 @@ data class VersionAvailability(
 
 object VersionAvailabilityCatalog {
 
+    fun versionsForGame(label:String):List<String> =
+        pairFor(label)?.let{listOf(it.first,it.second)} ?: emptyList()
+
     fun forPokemon(pokemonId:Int, context:GameContext?, inRegionalDex:Boolean=true):VersionAvailability? {
         val label=context?.label ?: return null
         val pair=pairFor(label) ?: return null
