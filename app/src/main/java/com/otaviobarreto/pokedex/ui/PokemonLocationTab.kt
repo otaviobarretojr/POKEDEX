@@ -215,5 +215,6 @@ private fun acquisitionIcon(kind:CanonicalAcquisitionKind)=when(kind){
     CanonicalAcquisitionKind.RAID -> Icons.Default.Bolt
     CanonicalAcquisitionKind.EVENT_SPECIAL -> Icons.Default.AutoAwesome
     CanonicalAcquisitionKind.HOME_TRANSFER -> Icons.Default.Cloud
+    CanonicalAcquisitionKind.OTHER_METHOD -> Icons.Default.HelpOutline
     CanonicalAcquisitionKind.UNAVAILABLE -> Icons.Default.Block
 }
