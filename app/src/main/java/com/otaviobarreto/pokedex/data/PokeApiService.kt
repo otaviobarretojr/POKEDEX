@@ -23,6 +23,7 @@ object PokeApiService {
         ITEM("Item"),
         FRIENDSHIP("Amizade"),
         TIME("Horário"),
+        GENDER("Gênero"),
         LEVEL_CONDITION("Nível + condição"),
         MOVE("Golpe / movimento"),
         LOCATION("Local / clima"),
@@ -275,6 +276,7 @@ object PokeApiService {
         if(trigger=="use-item" || detail.optJSONObject("item")!=null || detail.optJSONObject("held_item")!=null) result+=EvolutionMethod.ITEM
         if(detail.optInt("min_happiness")>0 || detail.optInt("min_affection")>0 || detail.optInt("min_beauty")>0) result+=EvolutionMethod.FRIENDSHIP
         if(detail.optString("time_of_day").isNotBlank()) result+=EvolutionMethod.TIME
+        if(detail.optInt("gender")>0) result+=EvolutionMethod.GENDER
         if(detail.optJSONObject("known_move")!=null || detail.optJSONObject("known_move_type")!=null || detail.optJSONObject("used_move")!=null) result+=EvolutionMethod.MOVE
         if(detail.optJSONObject("location")!=null || detail.optJSONObject("region")!=null || detail.optBoolean("needs_overworld_rain",false) || detail.optBoolean("near_special_rock",false)) result+=EvolutionMethod.LOCATION
         if(detail.optBoolean("needs_multiplayer",false)) result+=EvolutionMethod.MULTIPLAYER
@@ -293,6 +295,7 @@ object PokeApiService {
         if("troca" in r) result+=EvolutionMethod.TRADE
         if(listOf("segurando","peat block","leader's crest","scroll of darkness","scroll of waters","sweet").any{it in r}) result+=EvolutionMethod.ITEM
         if("amizade" in r || "afeição" in r || "beleza" in r) result+=EvolutionMethod.FRIENDSHIP
+        if(listOf("somente fêmea","somente macho","fêmea","macho").any{it in r}) result+=EvolutionMethod.GENDER
         if(listOf("durante o dia","durante a noite","entardecer","horário","lua cheia").any{it in r}) result+=EvolutionMethod.TIME
         if(listOf("rage fist","psyshield bash","barb barrage","hyper drill","dragon cheer","conhecendo").any{it in r}) result+=EvolutionMethod.MOVE
         if(listOf("dusty bowl","chuva","região de").any{it in r}) result+=EvolutionMethod.LOCATION
