@@ -887,15 +887,24 @@ private fun journeyOpponentPokemonId(
 
 private fun journeySourceForStep(game:AppGame,step:JourneyStep):String?{
     val preferred=AppStatePreferences.activeRegionForGame(game.label)
-    if(game.label=="Scarlet / Violet"){
-        val regionIndex=when{
-            step.id.startsWith("sv-epi-")->1
-            step.id.startsWith("sv-dlc-")->{
+    val regionIndex=when(game.label){
+        "Scarlet / Violet" -> when{
+            step.id.startsWith("sv-epi-") -> 1
+            step.id.startsWith("sv-dlc-") -> {
                 val number=step.id.removePrefix("sv-dlc-").toIntOrNull() ?: 0
                 if(number in 1..7) 1 else 2
             }
-            else->0
+            else -> 0
         }
+        "Sword / Shield" -> when{
+            step.id.startsWith("swsh-ioa-") -> 1
+            step.id.startsWith("swsh-ct-") -> 2
+            else -> 0
+        }
+        "Pokémon Legends: Z-A" -> if(step.id.startsWith("za-dlc-")) 1 else 0
+        else -> -1
+    }
+    if(regionIndex>=0){
         return game.regions.getOrNull(regionIndex)?.source ?: preferred ?: game.regions.firstOrNull()?.source
     }
     return preferred?.takeIf{source->game.regions.any{it.source==source}} ?: game.regions.firstOrNull()?.source
