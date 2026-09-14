@@ -22,8 +22,8 @@ data class LivingDexPlan(
 
 object LivingDexPlanner {
     fun current(limit:Int=24):LivingDexPlan {
-        val captured=CollectionStore.capturedIds
         val total=PokeApiService.MAX_NATIONAL_DEX_ID
+        val captured=CollectionStore.capturedIds.filterTo(linkedSetOf()){it in 1..total}
         val missing=buildList {
             for(id in 1..total){
                 if(id !in captured){
@@ -33,7 +33,7 @@ object LivingDexPlanner {
             }
         }
         val variants=VariantCollectionStore.ownedVariants
-        val shinyIds=variants.asSequence().filter{it.shiny}.map{it.speciesId}.distinct().toSet()
+        val shinyIds=variants.asSequence().filter{it.shiny && it.speciesId in 1..total}.map{it.speciesId}.distinct().toSet()
         val byGeneration=(1..9).map{gen->
             val ids=(1..total).filter{generationForNationalDexId(it)==gen}
             GenerationDexProgress(
@@ -48,8 +48,8 @@ object LivingDexPlanner {
             totalSpecies=total,
             missingSpecies=missing,
             shinySpecies=shinyIds.size,
-            formRegistrations=variants.asSequence().filterNot{it.shiny}.map{Triple(it.source,it.speciesId,it.formPokemonId)}.distinct().count(),
-            speciesWithForms=variants.asSequence().map{it.speciesId}.distinct().count(),
+            formRegistrations=variants.asSequence().filter{!it.shiny && !it.isDefault}.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}.distinct().count(),
+            speciesWithForms=variants.asSequence().filter{!it.shiny && !it.isDefault}.map{it.speciesId}.distinct().count(),
             byGeneration=byGeneration
         )
     }
