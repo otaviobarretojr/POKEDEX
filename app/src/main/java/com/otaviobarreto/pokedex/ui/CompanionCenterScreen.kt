@@ -129,6 +129,10 @@ fun CompanionCenterScreen(
             val generalValid=OfflineGamePackManager.generalAudit()
             val generalEstimate=OfflineGamePackManager.estimateGeneral()
             val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
+            val installedServerVersion=OfflineGamePackManager.generalServerVersion()
+            val serverUpdateAvailable=remoteGeneral?.ready==true &&
+                remoteGeneral.version>installedServerVersion &&
+                installedServerVersion>0
             Card(
                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                 colors=CardDefaults.cardColors(
@@ -147,6 +151,8 @@ fun CompanionCenterScreen(
                             Text(
                                 when{
                                     activeDownload=="__general__" -> serverProgress?.label ?: progress?.label ?: "Preparando biblioteca geral…"
+                                    generalValid && serverUpdateAvailable ->
+                                        "Atualização disponível · servidor v"+remoteGeneral?.version
                                     generalValid -> "Biblioteca compartilhada pronta · "+general.total+" Pokémon"
                                     general.complete>0 && general.total>0 ->
                                         "Download parcial · "+general.complete+" / "+general.total+" Pokémon"
@@ -169,6 +175,8 @@ fun CompanionCenterScreen(
                             remoteGeneral?.sizeBytes!=null && remoteGeneral.sizeBytes>0L ->
                                 "Servidor: "+OfflineGamePackManager.formatBytes(remoteGeneral.sizeBytes)+
                                     if(remoteGeneral.ready) " · pacote pronto" else " · em preparação"
+                            generalValid && serverUpdateAvailable && remoteGeneral?.sizeBytes!=null ->
+                                "Atualização: "+OfflineGamePackManager.formatBytes(remoteGeneral.sizeBytes)
                             generalValid -> "Armazenado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.totalBytes)
                             generalEstimate.remainingBytes>0 ->
                                 "Estimado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.remainingBytes)+
