@@ -66,7 +66,8 @@ object PokeApiService {
                     }
                 }
             }.distinct()
-            val special=specialRequirementFor(pokemonId,context)
+            val curated=EvolutionCuratedCatalog.rulesFor(pokemonId,context)
+            val special=if(curated.isNotEmpty()) curated.joinToString("  OU  "){it.requirement} else specialRequirementFor(pokemonId,context)
             val requirement=when{
                 !special.isNullOrBlank() -> special
                 else -> mergeEvolutionRequirements(
@@ -96,8 +97,15 @@ object PokeApiService {
                 val child=children.getJSONObject(i)
                 val childId=idFromUrl(child.getJSONObject("species").getString("url"))
                 val details=child.optJSONArray("evolution_details")
+                val curated=EvolutionCuratedCatalog.rulesFor(childId,context)
                 val special=specialRequirementFor(childId,context)
-                if(!special.isNullOrBlank()){
+                if(curated.isNotEmpty()){
+                    curated.forEach{rule->
+                        fallbackMethods(rule.requirement).forEach{method->
+                            result+=EvolutionSourceMethod(parentId,childId,method,rule.requirement)
+                        }
+                    }
+                }else if(!special.isNullOrBlank()){
                     fallbackMethods(special).forEach{method->
                         result+=EvolutionSourceMethod(parentId,childId,method,special)
                     }
