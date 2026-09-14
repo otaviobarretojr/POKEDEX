@@ -47,7 +47,12 @@ object CollectionStore {
 
     fun isCaptured(id: Int): Boolean = id in capturedIds
     fun capturedIn(source: String): Set<Int> = contextualCapturedIds[source].orEmpty()
+    fun capturedForGame(source: String): Set<Int> {
+        val game=AppGameCatalog.games.firstOrNull{game->game.regions.any{it.source==source}} ?: return capturedIn(source)
+        return game.regions.flatMap{region->contextualCapturedIds[region.source].orEmpty()}.toSet()
+    }
     fun isCapturedIn(source: String, id: Int): Boolean = id in contextualCapturedIds[source].orEmpty()
+    fun isCapturedInGame(source: String, id: Int): Boolean = id in capturedForGame(source)
     fun toggleCapturedIn(source: String, id: Int) = setCapturedIn(source, id, !isCapturedIn(source, id))
     fun setCapturedIn(source: String, id: Int, captured: Boolean) {
         if (source.isBlank()) { setCaptured(id, captured); return }
