@@ -36,7 +36,7 @@ internal fun V2Locations(
         key3=encounters
     ){
         loadError=false
-        value=runCatching{
+        val resolved=runCatching{
             withContext(Dispatchers.IO){
                 val dex=GameDexService.cached(context) ?: GameDexService.loadGameDex(context)
                 val species=PokedexDataStore.species(pokemonId)
@@ -49,7 +49,9 @@ internal fun V2Locations(
                     evolutionChain=chain
                 )
             }
-        }.onFailure{loadError=true}.getOrNull()
+        }
+        if(resolved.isFailure) loadError=true
+        value=resolved.getOrNull()
     }
 
     LazyColumn(
