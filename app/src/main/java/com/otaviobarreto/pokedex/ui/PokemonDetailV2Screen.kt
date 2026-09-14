@@ -169,7 +169,7 @@ fun PokemonDetailV2Screen(
                 1->V2Stats(b.pokemon.stats)
                 2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
                 3->PokemonMovesTab(b.pokemon.moves,context,openRef)
-                else->V2Locations(b.encounters,context,source)
+                else->V2Locations(b.pokemon.id,b.encounters,context,source)
             }
         }
       }
@@ -581,12 +581,57 @@ private fun PokemonFormsSummaryCard(
         }
     }
 }
+@Composable
+private fun VersionAvailabilityCard(availability:VersionAvailability){
+    val container=when(availability.kind){
+        VersionAvailabilityKind.EXCLUSIVE -> MaterialTheme.colorScheme.primaryContainer
+        VersionAvailabilityKind.SPLIT_FORMS -> MaterialTheme.colorScheme.tertiaryContainer
+        VersionAvailabilityKind.SHARED -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val content=when(availability.kind){
+        VersionAvailabilityKind.EXCLUSIVE -> MaterialTheme.colorScheme.onPrimaryContainer
+        VersionAvailabilityKind.SPLIT_FORMS -> MaterialTheme.colorScheme.onTertiaryContainer
+        VersionAvailabilityKind.SHARED -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Surface(
+        Modifier.fillMaxWidth(),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+        color=container
+    ){
+        Column(Modifier.padding(horizontal=16.dp,vertical=14.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Icon(
+                    if(availability.kind==VersionAvailabilityKind.EXCLUSIVE) Icons.Default.Lock else Icons.Default.CompareArrows,
+                    contentDescription=null,
+                    tint=content,
+                    modifier=Modifier.size(20.dp)
+                )
+                Text(
+                    availability.title,
+                    modifier=Modifier.padding(start=8.dp),
+                    style=MaterialTheme.typography.titleMedium,
+                    fontWeight=FontWeight.Black,
+                    color=content
+                )
+            }
+            Text(
+                availability.subtitle,
+                modifier=Modifier.padding(top=5.dp),
+                style=MaterialTheme.typography.bodySmall,
+                color=content.copy(alpha=.86f)
+            )
+        }
+    }
+}
+
 @Composable private fun V2Locations(
+    pokemonId:Int,
     encounters:List<PokeApiService.EncounterLocation>,
     context:GameContext?,
     source:String?
 ){
     val visible=remember(encounters,context){LocationIntelligence.filter(encounters,context)}
+    val versionAvailability=remember(pokemonId,context){VersionAvailabilityCatalog.forPokemon(pokemonId,context)}
 
     LazyColumn(
         Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),
@@ -600,6 +645,9 @@ private fun PokemonFormsSummaryCard(
                 color=MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier=Modifier.padding(top=2.dp)
             )
+        }
+        versionAvailability?.let{availability->
+            item{VersionAvailabilityCard(availability)}
         }
         if(visible.isEmpty()){
             item{
