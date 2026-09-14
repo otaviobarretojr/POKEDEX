@@ -321,7 +321,10 @@ object PokeApiService {
         if(listOf("rage fist","psyshield bash","barb barrage","hyper drill","dragon cheer","conhecendo").any{it in r}) result+=EvolutionMethod.MOVE
         if(listOf("dusty bowl","coulant waterway","mt. coronet","mossy rock","icy rock","eterna forest","route 217","chuva","chovendo","região de","próximo","perto de").any{it in r}) result+=EvolutionMethod.LOCATION
         if("union circle" in r || "multiplayer" in r) result+=EvolutionMethod.MULTIPLAYER
-        if(listOf("passos","girar","virar o console","golpes críticos","dano","recoil","batalha","coins","vezes","tower of").any{it in r}) result+=EvolutionMethod.ACTION
+        if(listOf(
+            "passos","girar","virar o console","golpes críticos","dano","recoil","batalha","coins","vezes","tower of",
+            "valor interno de personalidade","espaço vazio no time","poké ball na bolsa","forma three-segment","family of three"
+        ).any{it in r}) result+=EvolutionMethod.ACTION
         val plainLevel=Regex("^subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(requirement.trim())
         if(result.isEmpty() && plainLevel) result+=EvolutionMethod.LEVEL
         else if(result.isEmpty() && ("nível" in r || "subir " in r)) result+=EvolutionMethod.LEVEL_CONDITION
