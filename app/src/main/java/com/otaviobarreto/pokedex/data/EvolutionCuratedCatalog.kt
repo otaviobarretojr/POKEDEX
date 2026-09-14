@@ -11,6 +11,54 @@ object EvolutionCuratedCatalog {
     fun rulesFor(targetPokemonId:Int,context:GameContext?):List<CuratedEvolutionRule> {
         val game=context?.label.orEmpty()
         return when(targetPokemonId){
+            65 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(65,"Usar Linking Cord em Kadabra"))
+                else -> emptyList()
+            }
+            68 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(68,"Usar Linking Cord em Machoke"))
+                else -> emptyList()
+            }
+            76 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(76,"Usar Linking Cord em Graveler"))
+                else -> emptyList()
+            }
+            94 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(94,"Usar Linking Cord em Haunter"))
+                else -> emptyList()
+            }
+            208 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(208,"Usar Metal Coat em Onix"))
+                else -> emptyList()
+            }
+            212 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(212,"Usar Metal Coat em Scyther"))
+                else -> emptyList()
+            }
+            233 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(233,"Usar Upgrade em Porygon"))
+                else -> emptyList()
+            }
+            464 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(464,"Usar Protector em Rhydon"))
+                else -> emptyList()
+            }
+            466 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(466,"Usar Electirizer em Electabuzz"))
+                else -> emptyList()
+            }
+            467 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(467,"Usar Magmarizer em Magmar"))
+                else -> emptyList()
+            }
+            474 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(474,"Usar Dubious Disc em Porygon2"))
+                else -> emptyList()
+            }
+            477 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(477,"Usar Reaper Cloth em Dusclops"))
+                else -> emptyList()
+            }
             113 -> when(game){
                 "Legends Arceus" -> listOf(CuratedEvolutionRule(113,"Usar Oval Stone em Happiny durante o dia"))
                 "Brilliant Diamond / Shining Pearl","Sword / Shield","Scarlet / Violet" ->
