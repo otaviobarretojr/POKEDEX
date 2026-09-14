@@ -507,7 +507,7 @@ starter_catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/Jour
 for required in (
     "journeySmartContext",
     "JourneyCatalog.steps(game).isNotEmpty()",
-    "JourneyDynamicTeamCatalog.suggestion(game,starterId)",
+    "JourneyDynamicTeamCatalog.suggestion(game,starterId,initialStepId)",
     "journeySmartContext?.phaseLabel"
 ):
     if required not in team_guide:
@@ -515,6 +515,25 @@ for required in (
 
 if 'if(game=="Scarlet / Violet")JourneyDynamicTeamCatalog.suggestion' in team_guide:
     violations.append("Dynamic Journey team must not be hard-coded to Scarlet/Violet")
+
+for required in ("contextForStep", "phaseLabelFor"):
+    if required not in (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneySmartProgress.kt").read_text(encoding="utf-8"):
+        violations.append(f"Journey objective context missing {required}")
+
+journey_progress_store = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyProgressStore.kt").read_text(encoding="utf-8")
+for required in ("completeThrough(game,ordered,stepId)", "endJourney", "cancelConfiguration"):
+    if required not in journey_progress_store:
+        violations.append(f"Journey lifecycle/progress hardening missing {required}")
+
+journey_hub = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+for required in ("dynamicSuggestedTeam", "Gerenciar Jornada", "Cancelar configuração", "confirmReset", "confirmEnd"):
+    if required not in journey_hub:
+        violations.append(f"Journey menu lifecycle/UI missing {required}")
+
+journey_screen = (ui / "JourneyScreen.kt").read_text(encoding="utf-8")
+for required in ('"Sword / Shield"', '"Pokémon Legends: Z-A"', 'contextForStep(game.label,step.id)'):
+    if required not in journey_screen:
+        violations.append(f"Journey objective/DLC context missing {required}")
 
 for required in ('"Pokémon Legends: Z-A" -> legendsZa', '"za-01"', '"za-37"', '"za-dlc-14"'):
     if required not in journey_catalog:
