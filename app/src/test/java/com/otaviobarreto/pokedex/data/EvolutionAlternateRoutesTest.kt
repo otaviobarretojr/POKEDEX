@@ -20,9 +20,9 @@ class EvolutionAlternateRoutesTest {
         assertTrue(leafeon.any{it.requirement.contains("Mossy Rock")})
 
         val glaceon=EvolutionCuratedCatalog.rulesFor(471,context)
-        assertEquals(2,glaceon.size)
-        assertTrue(glaceon.any{it.requirement.contains("Ice Stone")})
-        assertTrue(glaceon.any{it.requirement.contains("Icy Rock")})
+        assertEquals(1,glaceon.size)
+        assertFalse(glaceon.any{it.requirement.contains("Ice Stone")})
+        assertTrue(glaceon.single().requirement.contains("Icy Rock"))
     }
 
     @Test
