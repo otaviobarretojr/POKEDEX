@@ -301,6 +301,12 @@ object OfflineGamePackManager {
     fun isServerGeneralInstalling():Boolean =
         prefs().getBoolean("general_server_installing",false)
 
+    fun markServerGeneralInstallFailed(){
+        prefs().edit()
+            .putBoolean("general_server_installing",false)
+            .apply()
+    }
+
     fun finalizeImportedGame(
         gameLabel:String,
         ids:Set<Int>,
