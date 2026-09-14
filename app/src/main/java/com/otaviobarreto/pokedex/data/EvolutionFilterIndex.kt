@@ -1,14 +1,18 @@
 package com.otaviobarreto.pokedex.data
 
 object EvolutionFilterIndex {
-    private val memory=mutableMapOf<String,Map<String,Set<Int>>>()
+    private data class FilterCacheEntry(
+        val dexIds:Set<Int>,
+        val buckets:Map<String,Set<Int>>
+    )
+    private val memory=mutableMapOf<String,FilterCacheEntry>()
     private data class RouteCacheEntry(
         val dexIds:Set<Int>,
         val routes:List<EvolutionRoute>
     )
     private val routeMemory=mutableMapOf<String,RouteCacheEntry>()
 
-    fun cached(source:String):Map<String,Set<Int>>? = memory[source]
+    fun cached(source:String):Map<String,Set<Int>>? = memory[source]?.buckets
     fun cachedRoutes(source:String):List<EvolutionRoute>? = routeMemory[source]?.routes
 
     fun clear(source:String?=null){
@@ -67,7 +71,9 @@ object EvolutionFilterIndex {
         source:String,
         dex:List<GameDexService.GameDexEntry>
     ):Map<String,Set<Int>>{
-        memory[source]?.let{return it}
+        val dexIds=dex.mapTo(linkedSetOf()){it.nationalId}
+        memory[source]?.takeIf{it.dexIds==dexIds}?.let{return it.buckets}
+
         val result=mutableMapOf<String,MutableSet<Int>>()
         buildRoutes(source,dex)
             .filter(EvolutionResolutionEngine::executable)
@@ -82,6 +88,8 @@ object EvolutionFilterIndex {
                     result.getOrPut(method.name){mutableSetOf()}.add(target)
                 }
             }
-        return result.mapValues{it.value.toSet()}.also{memory[source]=it}
+        val buckets=result.mapValues{it.value.toSet()}
+        memory[source]=FilterCacheEntry(dexIds,buckets)
+        return buckets
     }
 }
