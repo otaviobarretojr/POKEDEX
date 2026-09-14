@@ -16,6 +16,14 @@ object VersionAvailabilityCatalog {
     fun forPokemon(pokemonId:Int, context:GameContext?, inRegionalDex:Boolean=true):VersionAvailability? {
         val label=context?.label ?: return null
         val pair=pairFor(label) ?: return null
+        val exclusives=exclusiveIds[label] ?: return null
+        if(!inRegionalDex) return VersionAvailability(
+            kind=VersionAvailabilityKind.UNAVAILABLE,
+            title="Fora desta Pokédex regional",
+            subtitle="Esta espécie não pertence à Pokédex "+context.regionLabel+". Consulte outra região/DLC ou a compatibilidade por transferência.",
+            versionA=pair.first,
+            versionB=pair.second
+        )
         splitForms[label]?.get(pokemonId)?.let { note ->
             return VersionAvailability(
                 kind=VersionAvailabilityKind.SPLIT_FORMS,
@@ -25,14 +33,6 @@ object VersionAvailabilityCatalog {
                 versionB=pair.second
             )
         }
-        val exclusives=exclusiveIds[label] ?: return null
-        if(!inRegionalDex) return VersionAvailability(
-            kind=VersionAvailabilityKind.UNAVAILABLE,
-            title="Fora desta Pokédex regional",
-            subtitle="Esta espécie não pertence à Pokédex "+context.regionLabel+". Consulte outra região/DLC ou a compatibilidade por transferência.",
-            versionA=pair.first,
-            versionB=pair.second
-        )
         val exclusiveVersion=when {
             pokemonId in exclusives.first -> pair.first
             pokemonId in exclusives.second -> pair.second
