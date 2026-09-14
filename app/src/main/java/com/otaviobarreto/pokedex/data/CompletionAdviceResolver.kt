@@ -23,96 +23,224 @@ data class CompletionAdvice(
     val detail:String?=null,
     val sourcePokemonId:Int?=null,
     val versionAvailability:VersionAvailability?=null,
-    val directAcquisition:Boolean=false
+    val directAcquisition:Boolean=false,
+    val selectedVersion:String?=null,
+    val availableInSelectedVersion:Boolean?=null,
+    val score:Int=100
 )
 
 object CompletionAdviceResolver {
+
+    private data class Candidate(val advice:CompletionAdvice)
 
     fun resolve(
         pokemonId:Int,
         context:GameContext,
         routes:List<EvolutionRoute>,
+        owned:Set<Int> = emptySet(),
+        names:Map<Int,String> = emptyMap(),
+        selectedVersion:String? = null,
+        canonical:CanonicalAvailability? = null,
         inRegionalDex:Boolean=true
     ):CompletionAdvice {
-        val version=VersionAvailabilityCatalog.forPokemon(pokemonId,context,inRegionalDex)
-        val targetRoutes=EvolutionResolutionEngine.routesForTarget(routes,pokemonId)
-        val preferred=EvolutionResolutionEngine.preferredRoute(targetRoutes)
+        val version=canonical?.version ?: VersionAvailabilityCatalog.forPokemon(pokemonId,context,inRegionalDex)
+        val versionOk=when {
+            selectedVersion==null -> null
+            version?.kind==VersionAvailabilityKind.EXCLUSIVE -> version.exclusiveVersion==selectedVersion
+            version?.kind==VersionAvailabilityKind.UNAVAILABLE -> false
+            else -> true
+        }
 
-        if(preferred!=null){
-            val method=when {
-                preferred.availability==EvolutionAvailability.TRANSFER_ONLY -> CompletionMethodKind.TRANSFER
-                PokeApiService.EvolutionMethod.TRADE in preferred.methods -> CompletionMethodKind.TRADE
-                PokeApiService.EvolutionMethod.ITEM in preferred.methods -> CompletionMethodKind.ITEM
-                PokeApiService.EvolutionMethod.MULTIPLAYER in preferred.methods -> CompletionMethodKind.MULTIPLAYER
-                PokeApiService.EvolutionMethod.FRIENDSHIP in preferred.methods -> CompletionMethodKind.FRIENDSHIP
-                PokeApiService.EvolutionMethod.TIME in preferred.methods -> CompletionMethodKind.TIME
-                PokeApiService.EvolutionMethod.MOVE in preferred.methods -> CompletionMethodKind.MOVE
-                PokeApiService.EvolutionMethod.LOCATION in preferred.methods -> CompletionMethodKind.LOCATION
-                PokeApiService.EvolutionMethod.ACTION in preferred.methods -> CompletionMethodKind.ACTION
-                PokeApiService.EvolutionMethod.LEVEL in preferred.methods -> CompletionMethodKind.LEVEL
-                else -> CompletionMethodKind.CONDITION
+        val candidates=mutableListOf<Candidate>()
+
+        EvolutionResolutionEngine.routesForTarget(routes,pokemonId).forEach{route->
+            val method=methodFor(route)
+            val sourceOwned=route.sourcePokemonId in owned
+            val sourceName=names[route.sourcePokemonId] ?: "Pokémon #"+route.sourcePokemonId
+            val baseScore=routeScore(method,route.availability)
+            val sourcePenalty=if(sourceOwned || route.availability==EvolutionAvailability.TRANSFER_ONLY) 0 else 6
+            val detail=when {
+                route.availability==EvolutionAvailability.TRANSFER_ONLY ->
+                    "Obtenha no jogo compatível e transfira pelo Pokémon HOME."
+                !sourceOwned ->
+                    "Obtenha "+sourceName+" primeiro. Depois: "+route.summary+"."
+                else ->
+                    "Você já possui "+sourceName+"."
             }
-            return CompletionAdvice(
-                pokemonId=pokemonId,
-                method=method,
-                title=preferred.summary,
-                detail=when(preferred.availability){
-                    EvolutionAvailability.TRANSFER_ONLY -> "Obtenha no jogo compatível e transfira pelo Pokémon HOME."
-                    EvolutionAvailability.NOT_AVAILABLE -> "Esta evolução não pode ser feita no jogo atual."
-                    else -> null
-                },
-                sourcePokemonId=preferred.sourcePokemonId,
-                versionAvailability=version
+            candidates+=Candidate(
+                CompletionAdvice(
+                    pokemonId=pokemonId,
+                    method=method,
+                    title=if(sourceOwned) route.summary else "Obtenha "+sourceName+" primeiro",
+                    detail=detail,
+                    sourcePokemonId=route.sourcePokemonId,
+                    versionAvailability=version,
+                    selectedVersion=selectedVersion,
+                    availableInSelectedVersion=versionOk,
+                    score=baseScore+sourcePenalty
+                )
             )
         }
 
-        val special=SpecialAcquisitionCatalog.lookup(pokemonId,context)
-        if(special!=null){
-            return CompletionAdvice(
-                pokemonId=pokemonId,
-                method=when(special.kind){
-                    CanonicalAcquisitionKind.TRADE -> CompletionMethodKind.TRADE
-                    CanonicalAcquisitionKind.HOME_TRANSFER -> CompletionMethodKind.TRANSFER
-                    CanonicalAcquisitionKind.EVOLUTION -> CompletionMethodKind.CONDITION
-                    else -> CompletionMethodKind.SPECIAL
-                },
-                title=special.label,
-                detail=special.requirement,
-                versionAvailability=version,
-                directAcquisition=true
+        canonical?.takeIf{it.inRegionalDex}?.let{availability->
+            canonicalCandidate(
+                availability=availability,
+                selectedVersion=selectedVersion,
+                versionOk=versionOk
+            )?.let{candidates+=Candidate(it)}
+        }
+
+        if(canonical==null){
+            SpecialAcquisitionCatalog.lookup(pokemonId,context)?.let{special->
+                candidates+=Candidate(
+                    CompletionAdvice(
+                        pokemonId=pokemonId,
+                        method=kindForCanonical(special.kind),
+                        title=special.label,
+                        detail=special.requirement,
+                        versionAvailability=version,
+                        directAcquisition=true,
+                        selectedVersion=selectedVersion,
+                        availableInSelectedVersion=versionOk,
+                        score=canonicalScore(special.kind,false)
+                    )
+                )
+            }
+        }
+
+        if(candidates.isEmpty()){
+            candidates+=Candidate(
+                CompletionAdvice(
+                    pokemonId=pokemonId,
+                    method=CompletionMethodKind.DIRECT,
+                    title="Método de obtenção a confirmar",
+                    detail=versionDetail(version,selectedVersion,versionOk),
+                    versionAvailability=version,
+                    directAcquisition=true,
+                    selectedVersion=selectedVersion,
+                    availableInSelectedVersion=versionOk,
+                    score=20
+                )
             )
         }
 
-        val exclusiveDetail=when(version?.kind){
-            VersionAvailabilityKind.EXCLUSIVE ->
-                "Exclusivo de "+version.exclusiveVersion+". Na outra versão, use troca, multiplayer ou HOME quando compatível."
-            VersionAvailabilityKind.SPLIT_FORMS -> version.subtitle
-            else -> null
-        }
+        val best=candidates.minBy{candidate->
+            candidate.advice.score + if(candidate.advice.availableInSelectedVersion==false) 10 else 0
+        }.advice
 
-        return CompletionAdvice(
-            pokemonId=pokemonId,
-            method=CompletionMethodKind.DIRECT,
-            title="Captura / obtenção direta",
-            detail=exclusiveDetail,
-            versionAvailability=version,
-            directAcquisition=true
+        return best.copy(
+            detail=mergeDetails(
+                best.detail,
+                versionDetail(version,selectedVersion,versionOk)
+            )
         )
     }
 
-    fun priority(advice:CompletionAdvice):Int = when(advice.method){
-        CompletionMethodKind.LEVEL -> 0
-        CompletionMethodKind.DIRECT -> 1
-        CompletionMethodKind.ITEM -> 2
-        CompletionMethodKind.FRIENDSHIP -> 3
-        CompletionMethodKind.TIME -> 4
-        CompletionMethodKind.MOVE -> 5
-        CompletionMethodKind.LOCATION -> 6
-        CompletionMethodKind.MULTIPLAYER -> 7
-        CompletionMethodKind.TRADE -> 8
-        CompletionMethodKind.ACTION -> 9
-        CompletionMethodKind.CONDITION -> 10
-        CompletionMethodKind.SPECIAL -> 11
-        CompletionMethodKind.TRANSFER -> 12
+    private fun canonicalCandidate(
+        availability:CanonicalAvailability,
+        selectedVersion:String?,
+        versionOk:Boolean?
+    ):CompletionAdvice? {
+        if(availability.acquisitionKind==CanonicalAcquisitionKind.UNAVAILABLE) return null
+        return CompletionAdvice(
+            pokemonId=availability.pokemonId,
+            method=kindForCanonical(availability.acquisitionKind),
+            title=availability.acquisitionLabel,
+            detail=buildList{
+                availability.requirement?.takeIf{it.isNotBlank()}?.let(::add)
+                availability.locations.firstOrNull()?.let{add("Local: "+it)}
+            }.joinToString(" • ").ifBlank{null},
+            versionAvailability=availability.version,
+            directAcquisition=availability.acquisitionKind!=CanonicalAcquisitionKind.EVOLUTION,
+            selectedVersion=selectedVersion,
+            availableInSelectedVersion=versionOk,
+            score=canonicalScore(
+                availability.acquisitionKind,
+                availability.confidence==AvailabilityConfidence.PARTIAL
+            )
+        )
     }
+
+    private fun methodFor(route:EvolutionRoute):CompletionMethodKind = when {
+        route.availability==EvolutionAvailability.TRANSFER_ONLY -> CompletionMethodKind.TRANSFER
+        PokeApiService.EvolutionMethod.TRADE in route.methods -> CompletionMethodKind.TRADE
+        PokeApiService.EvolutionMethod.ITEM in route.methods -> CompletionMethodKind.ITEM
+        PokeApiService.EvolutionMethod.MULTIPLAYER in route.methods -> CompletionMethodKind.MULTIPLAYER
+        PokeApiService.EvolutionMethod.FRIENDSHIP in route.methods -> CompletionMethodKind.FRIENDSHIP
+        PokeApiService.EvolutionMethod.TIME in route.methods -> CompletionMethodKind.TIME
+        PokeApiService.EvolutionMethod.MOVE in route.methods -> CompletionMethodKind.MOVE
+        PokeApiService.EvolutionMethod.LOCATION in route.methods -> CompletionMethodKind.LOCATION
+        PokeApiService.EvolutionMethod.ACTION in route.methods -> CompletionMethodKind.ACTION
+        PokeApiService.EvolutionMethod.LEVEL in route.methods -> CompletionMethodKind.LEVEL
+        else -> CompletionMethodKind.CONDITION
+    }
+
+    private fun kindForCanonical(kind:CanonicalAcquisitionKind):CompletionMethodKind = when(kind){
+        CanonicalAcquisitionKind.WILD -> CompletionMethodKind.DIRECT
+        CanonicalAcquisitionKind.EVOLUTION -> CompletionMethodKind.CONDITION
+        CanonicalAcquisitionKind.TRADE -> CompletionMethodKind.TRADE
+        CanonicalAcquisitionKind.GIFT_STARTER -> CompletionMethodKind.SPECIAL
+        CanonicalAcquisitionKind.RAID -> CompletionMethodKind.SPECIAL
+        CanonicalAcquisitionKind.EVENT_SPECIAL -> CompletionMethodKind.SPECIAL
+        CanonicalAcquisitionKind.HOME_TRANSFER -> CompletionMethodKind.TRANSFER
+        CanonicalAcquisitionKind.OTHER_METHOD -> CompletionMethodKind.SPECIAL
+        CanonicalAcquisitionKind.UNAVAILABLE -> CompletionMethodKind.TRANSFER
+    }
+
+    private fun routeScore(method:CompletionMethodKind,availability:EvolutionAvailability):Int {
+        if(availability==EvolutionAvailability.TRANSFER_ONLY) return 18
+        return when(method){
+            CompletionMethodKind.LEVEL -> 0
+            CompletionMethodKind.ITEM -> 2
+            CompletionMethodKind.FRIENDSHIP -> 3
+            CompletionMethodKind.TIME -> 4
+            CompletionMethodKind.MOVE -> 4
+            CompletionMethodKind.LOCATION -> 5
+            CompletionMethodKind.MULTIPLAYER -> 7
+            CompletionMethodKind.TRADE -> 8
+            CompletionMethodKind.ACTION -> 6
+            CompletionMethodKind.CONDITION -> 6
+            CompletionMethodKind.DIRECT -> 1
+            CompletionMethodKind.SPECIAL -> 9
+            CompletionMethodKind.TRANSFER -> 18
+        }
+    }
+
+    private fun canonicalScore(kind:CanonicalAcquisitionKind,partial:Boolean):Int {
+        val base=when(kind){
+            CanonicalAcquisitionKind.WILD -> 1
+            CanonicalAcquisitionKind.GIFT_STARTER -> 1
+            CanonicalAcquisitionKind.RAID -> 5
+            CanonicalAcquisitionKind.EVOLUTION -> 6
+            CanonicalAcquisitionKind.TRADE -> 9
+            CanonicalAcquisitionKind.EVENT_SPECIAL -> 10
+            CanonicalAcquisitionKind.OTHER_METHOD -> 11
+            CanonicalAcquisitionKind.HOME_TRANSFER -> 18
+            CanonicalAcquisitionKind.UNAVAILABLE -> 30
+        }
+        return base+if(partial)2 else 0
+    }
+
+    private fun versionDetail(
+        version:VersionAvailability?,
+        selectedVersion:String?,
+        available:Boolean?
+    ):String? = when {
+        version?.kind==VersionAvailabilityKind.SPLIT_FORMS -> version.subtitle
+        version?.kind==VersionAvailabilityKind.EXCLUSIVE && selectedVersion==null ->
+            "Exclusivo de "+version.exclusiveVersion+". Se você joga a outra versão, use troca, multiplayer ou HOME quando compatível."
+        version?.kind==VersionAvailabilityKind.EXCLUSIVE && available==true ->
+            "Disponível na sua versão ("+selectedVersion+")."
+        version?.kind==VersionAvailabilityKind.EXCLUSIVE && available==false ->
+            "Você joga "+selectedVersion+". Este Pokémon é exclusivo de "+version.exclusiveVersion+"; use troca, multiplayer ou HOME quando compatível."
+        else -> null
+    }
+
+    private fun mergeDetails(a:String?,b:String?):String? =
+        listOfNotNull(a?.takeIf{it.isNotBlank()},b?.takeIf{it.isNotBlank()})
+            .distinct()
+            .joinToString(" • ")
+            .ifBlank{null}
+
+    fun priority(advice:CompletionAdvice):Int = advice.score
 }
