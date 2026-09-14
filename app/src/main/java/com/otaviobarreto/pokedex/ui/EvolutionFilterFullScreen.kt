@@ -372,6 +372,14 @@ internal fun EvolutionFilterFullScreen(
                                                     val badgeColor=when(exclusiveVersion){
                                                         "Scarlet" -> Color(0xFFD83A3A)
                                                         "Violet" -> Color(0xFF6D45C6)
+                                                        "Sword" -> Color(0xFF3A86D8)
+                                                        "Shield" -> Color(0xFFD84F86)
+                                                        "Let's Go Pikachu" -> Color(0xFFE0A900)
+                                                        "Let's Go Eevee" -> Color(0xFF9A6B45)
+                                                        "Brilliant Diamond" -> Color(0xFF3D8FD1)
+                                                        "Shining Pearl" -> Color(0xFFD47DA6)
+                                                        "FireRed" -> Color(0xFFD84A32)
+                                                        "LeafGreen" -> Color(0xFF4D9B57)
                                                         else -> MaterialTheme.colorScheme.primary
                                                     }
                                                     Surface(
