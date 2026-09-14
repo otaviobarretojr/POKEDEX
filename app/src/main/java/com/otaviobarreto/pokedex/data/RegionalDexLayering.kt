@@ -2,6 +2,12 @@ package com.otaviobarreto.pokedex.data
 
 object RegionalDexLayering {
 
+    data class LayerResult(
+        val exclusiveSpeciesIds:Set<Int>,
+        val exclusiveEntries:List<GameDexService.GameDexEntry>,
+        val novelFormTargetIds:Set<Int>
+    )
+
     fun exclusiveIdsForRegion(
         game: AppGame,
         regionSource: String,
@@ -31,5 +37,41 @@ object RegionalDexLayering {
         val exclusiveIds = exclusiveIdsForRegion(game, regionSource, entriesBySource)
         return entriesBySource[regionSource].orEmpty()
             .filter { it.nationalId in exclusiveIds }
+    }
+
+    fun layeredResult(
+        game:AppGame,
+        regionSource:String,
+        entriesBySource:Map<String,List<GameDexService.GameDexEntry>>,
+        routesBySource:Map<String,List<EvolutionRoute>>
+    ):LayerResult{
+        val selectedIndex=game.regions.indexOfFirst{it.source==regionSource}
+        if(selectedIndex<0) return LayerResult(emptySet(),emptyList(),emptySet())
+
+        val speciesIds=exclusiveIdsForRegion(game,regionSource,entriesBySource)
+        val entries=exclusiveEntriesForRegion(game,regionSource,entriesBySource)
+
+        if(selectedIndex==0){
+            return LayerResult(speciesIds,entries,emptySet())
+        }
+
+        val previousFormKeys=game.regions.take(selectedIndex)
+            .flatMap{region->routesBySource[region.source].orEmpty()}
+            .mapNotNull{route->route.targetFormKey?.let{route.targetPokemonId to it}}
+            .toSet()
+
+        val novelFormTargetIds=routesBySource[regionSource].orEmpty()
+            .mapNotNull{route->
+                val formKey=route.targetFormKey ?: return@mapNotNull null
+                val identity=route.targetPokemonId to formKey
+                route.targetPokemonId.takeIf{identity !in previousFormKeys}
+            }
+            .toSet()
+
+        return LayerResult(
+            exclusiveSpeciesIds=speciesIds,
+            exclusiveEntries=entries,
+            novelFormTargetIds=novelFormTargetIds
+        )
     }
 }
