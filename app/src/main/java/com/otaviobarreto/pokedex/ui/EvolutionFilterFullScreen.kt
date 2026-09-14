@@ -436,15 +436,6 @@ internal fun EvolutionFilterFullScreen(
                                                 }
                                             }
                                         }
-                                        if(route==null && filterKey=="ALL"){
-                                            Text(
-                                                "Forma inicial pendente",
-                                                style=MaterialTheme.typography.labelSmall,
-                                                color=MaterialTheme.colorScheme.primary,
-                                                maxLines=1,
-                                                overflow=TextOverflow.Ellipsis
-                                            )
-                                        }
                                         route?.let{resolved->
                                             Text(
                                                 (names[resolved.sourcePokemonId] ?: "Pokémon #"+resolved.sourcePokemonId)+" → "+entry.name,
