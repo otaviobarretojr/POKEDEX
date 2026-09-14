@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 19
+    private const val PACK_VERSION = 20
     private const val DOWNLOAD_CONCURRENCY = 6
     private var context: Context? = null
 
@@ -23,7 +23,9 @@ object OfflineGamePackManager {
         val downloadedAt: Long = 0L,
         val pokemonCount: Int = 0,
         val packVersion: Int = 0,
-        val completeCount: Int = 0
+        val completeCount: Int = 0,
+        val reusedCount: Int = 0,
+        val downloadedNewCount: Int = 0
     ) {
         val verified: Boolean
             get() = downloaded && packVersion == PACK_VERSION && pokemonCount > 0 && completeCount == pokemonCount
@@ -136,6 +138,38 @@ object OfflineGamePackManager {
     fun formArtworkKeys(gameLabel: String): Set<String> =
         prefs().getStringSet(key(gameLabel, "form_artwork_keys"), emptySet()).orEmpty()
 
+    private data class SharedPokemonAssets(
+        val resources:Set<String>,
+        val formArtworkKeys:Set<String>
+    )
+
+    private fun sharedPokemonAssets(id:Int):SharedPokemonAssets? {
+        val p=prefs()
+        val resources=p.getStringSet(sharedKey(id,"resource_urls"), emptySet()).orEmpty()
+        val formKeys=p.getStringSet(sharedKey(id,"form_artwork_keys"), emptySet()).orEmpty()
+        val requiredCore=setOf(
+            PokeApiService.pokemonUrl(id),
+            PokeApiService.speciesUrl(id),
+            PokeApiService.encountersUrl(id)
+        )
+        if(!resources.containsAll(requiredCore)) return null
+        if(resources.any{!PersistentApiCache.has(it) || !PersistentApiCache.isPinned(it)}) return null
+        if(!hasOfflineArtwork(id)) return null
+        if(formKeys.any{!hasOfflineCacheKey(it)}) return null
+        return SharedPokemonAssets(resources,formKeys)
+    }
+
+    private fun persistSharedPokemonAssets(
+        id:Int,
+        resources:Set<String>,
+        formKeys:Set<String>
+    ){
+        prefs().edit()
+            .putStringSet(sharedKey(id,"resource_urls"),resources)
+            .putStringSet(sharedKey(id,"form_artwork_keys"),formKeys)
+            .apply()
+    }
+
     private fun formArtworkKey(
         speciesId: Int,
         formPokemonId: Int,
@@ -156,7 +190,9 @@ object OfflineGamePackManager {
             downloadedAt = prefs.getLong(key(gameLabel, "at"), 0L),
             pokemonCount = prefs.getInt(key(gameLabel, "count"), 0),
             packVersion = prefs.getInt(key(gameLabel, "version"), 0),
-            completeCount = prefs.getInt(key(gameLabel, "complete"), 0)
+            completeCount = prefs.getInt(key(gameLabel, "complete"), 0),
+            reusedCount = prefs.getInt(key(gameLabel, "reused"), 0),
+            downloadedNewCount = prefs.getInt(key(gameLabel, "downloaded_new"), 0)
         )
     }
 
@@ -212,11 +248,14 @@ object OfflineGamePackManager {
             .toMutableSet()
         val previousStatus = status(game.label)
         val previousAudit = audit(game.label)
-        val alreadyCompleted = if(previousStatus.downloaded && !previousAudit.valid){
-            // A finished pack that fails integrity must be rebuilt instead of trusting
-            // stale completion markers. Interrupted packs still resume normally.
+        val repairing=previousStatus.downloaded && !previousAudit.valid
+        val alreadyCompleted = if(repairing){
+            // Rebuild a broken finished package, but still allow verified shared assets
+            // from the global library to be attached again below.
             prefs().edit()
                 .putStringSet(completedKey, emptySet())
+                .putStringSet(key(game.label, "resource_urls"), baseResources)
+                .putStringSet(key(game.label, "form_artwork_keys"), emptySet())
                 .putInt(key(game.label, "complete"), 0)
                 .putBoolean(key(game.label, "ready"), false)
                 .apply()
@@ -224,18 +263,56 @@ object OfflineGamePackManager {
         }else{
             storedCompleted
         }
+        val lock = Any()
+        val formArtworkKeys = (
+            if(repairing) emptySet()
+            else prefs().getStringSet(key(game.label, "form_artwork_keys"), emptySet()).orEmpty()
+        ).toMutableSet()
+
+        // Incremental shared library: attach Pokémon already complete from another game
+        // without re-downloading their global data/artwork.
+        val reusable = ids.asSequence()
+            .filterNot { it in alreadyCompleted }
+            .mapNotNull { id -> sharedPokemonAssets(id)?.let { id to it } }
+            .toList()
+        if(reusable.isNotEmpty()){
+            val reusedResources=reusable.flatMapTo(linkedSetOf()){it.second.resources}
+            val reusedFormKeys=reusable.flatMapTo(linkedSetOf()){it.second.formArtworkKeys}
+            alreadyCompleted += reusable.map{it.first}
+            formArtworkKeys += reusedFormKeys
+            val currentResources=prefs().getStringSet(key(game.label, "resource_urls"), emptySet()).orEmpty()
+            prefs().edit()
+                .putStringSet(key(game.label, "resource_urls"), currentResources + reusedResources)
+                .putStringSet(key(game.label, "form_artwork_keys"), formArtworkKeys.toSet())
+                .putStringSet(completedKey, alreadyCompleted.map(Int::toString).toSet())
+                .putInt(key(game.label, "complete"), alreadyCompleted.size)
+                .putInt(key(game.label, "count"), ids.size)
+                .putInt(key(game.label, "version"), PACK_VERSION)
+                .apply()
+            onProgress(
+                Progress(
+                    alreadyCompleted.size,
+                    total,
+                    "${reusable.size} Pokémon reaproveitados · ${ids.size-alreadyCompleted.size} para baixar"
+                )
+            )
+        }
+
         val pendingIds = ids.filterNot { it in alreadyCompleted }
         val semaphore = Semaphore(permits = DOWNLOAD_CONCURRENCY)
         var completed = alreadyCompleted.size
         val failedIds = mutableListOf<Int>()
-        val formArtworkKeys = prefs().getStringSet(key(game.label, "form_artwork_keys"), emptySet()).orEmpty().toMutableSet()
-        val lock = Any()
+        var downloadedNew = 0
 
         onProgress(
             Progress(
                 completed,
                 total,
-                if (completed > 0) "Retomando de $completed / $total" else "Iniciando pacote offline"
+                when {
+                    reusable.isNotEmpty() -> "${reusable.size} reaproveitados · ${pendingIds.size} para baixar"
+                    completed > 0 -> "Retomando de $completed / $total"
+                    else -> "Iniciando pacote offline"
+                }
             )
         )
 
@@ -253,6 +330,7 @@ object OfflineGamePackManager {
                         evolutionUrl?.let { PokedexDataStore.evolutions(it) }
                         encounterJob.await()
                         val forms = formsJob.await()
+                        val pokemonFormKeys=linkedSetOf<String>()
 
                         val resourceUrls = buildSet {
                             add(PokeApiService.pokemonUrl(id))
@@ -262,10 +340,6 @@ object OfflineGamePackManager {
                             addAll(PokemonFormsService.resourceUrlsFor(id))
                         }
                         PersistentApiCache.pinAll(resourceUrls)
-                        synchronized(lock) {
-                            val allResources = prefs().getStringSet(key(game.label, "resource_urls"), emptySet()).orEmpty() + resourceUrls
-                            prefs().edit().putStringSet(key(game.label, "resource_urls"), allResources).apply()
-                        }
 
                         val request = ImageRequest.Builder(appContext)
                             .data(pokemon.spriteUrl)
@@ -305,13 +379,18 @@ object OfflineGamePackManager {
                                 ) is SuccessResult
                             ) { "Falha ao armazenar arte Shiny de forma #$id" }
 
-                            synchronized(lock) {
-                                formArtworkKeys += normalKey
-                                formArtworkKeys += shinyKey
-                                prefs().edit()
-                                    .putStringSet(key(game.label, "form_artwork_keys"), formArtworkKeys.toSet())
-                                    .apply()
-                            }
+                            pokemonFormKeys += normalKey
+                            pokemonFormKeys += shinyKey
+                        }
+
+                        persistSharedPokemonAssets(id,resourceUrls,pokemonFormKeys)
+                        synchronized(lock) {
+                            formArtworkKeys += pokemonFormKeys
+                            val allResources = prefs().getStringSet(key(game.label, "resource_urls"), emptySet()).orEmpty() + resourceUrls
+                            prefs().edit()
+                                .putStringSet(key(game.label, "resource_urls"), allResources)
+                                .putStringSet(key(game.label, "form_artwork_keys"), formArtworkKeys.toSet())
+                                .apply()
                         }
                     }
                 }.isSuccess
@@ -331,6 +410,7 @@ object OfflineGamePackManager {
                                 failedIds += id
                             } else {
                                 alreadyCompleted += id
+                                downloadedNew++
                                 prefs().edit()
                                     .putStringSet(completedKey, alreadyCompleted.map(Int::toString).toSet())
                                     .putInt(key(game.label, "complete"), alreadyCompleted.size)
@@ -353,6 +433,8 @@ object OfflineGamePackManager {
                 .putInt(key(game.label, "count"), ids.size)
                 .putInt(key(game.label, "complete"), alreadyCompleted.size)
                 .putInt(key(game.label, "version"), PACK_VERSION)
+                .putInt(key(game.label, "reused"), reusable.size)
+                .putInt(key(game.label, "downloaded_new"), downloadedNew)
                 .apply()
             error("Falha ao salvar ${failedIds.size} de ${ids.size} Pokémon. Tente atualizar o pacote.")
         }
@@ -363,6 +445,8 @@ object OfflineGamePackManager {
             .putInt(key(game.label, "count"), ids.size)
             .putInt(key(game.label, "complete"), ids.size)
             .putInt(key(game.label, "version"), PACK_VERSION)
+            .putInt(key(game.label, "reused"), reusable.size)
+            .putInt(key(game.label, "downloaded_new"), downloadedNew)
             .putString(key(game.label, "regions"), contexts.joinToString("|") { it.pokedexSlug })
             .putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet())
             .putStringSet(completedKey, ids.map(Int::toString).toSet())
@@ -419,7 +503,13 @@ object OfflineGamePackManager {
             .toSet()
         PersistentApiCache.unpinAll(urls - sharedUrls, deleteFiles = true)
         context?.imageLoader?.diskCache?.let { disk ->
-            (ids - sharedIds).forEach { id -> runCatching { disk.remove("pokemon-offline-$id") } }
+            (ids - sharedIds).forEach { id ->
+                runCatching { disk.remove("pokemon-offline-$id") }
+                prefs().edit()
+                    .remove(sharedKey(id,"resource_urls"))
+                    .remove(sharedKey(id,"form_artwork_keys"))
+                    .apply()
+            }
             (visualUrls - sharedVisualUrls).forEach { url -> runCatching { disk.remove(journeyVisualKey(url)) } }
             (artworkKeys - sharedArtworkKeys).forEach { cacheKey -> runCatching { disk.remove(cacheKey) } }
         }
@@ -435,6 +525,8 @@ object OfflineGamePackManager {
             .remove(key(gameLabel, "resource_urls"))
             .remove(key(gameLabel, "visual_urls"))
             .remove(key(gameLabel, "form_artwork_keys"))
+            .remove(key(gameLabel, "reused"))
+            .remove(key(gameLabel, "downloaded_new"))
             .remove(key(gameLabel, "running"))
             .remove(key(gameLabel, "runtime_done"))
             .remove(key(gameLabel, "runtime_total"))
@@ -450,4 +542,7 @@ object OfflineGamePackManager {
         game.lowercase()
             .replace(Regex("[^a-z0-9]+"), "_")
             .trim('_') + "_" + suffix
+
+    private fun sharedKey(id:Int,suffix:String):String =
+        "shared_pokemon_"+id+"_"+suffix
 }
