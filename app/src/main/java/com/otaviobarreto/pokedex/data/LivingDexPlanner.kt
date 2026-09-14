@@ -48,8 +48,8 @@ object LivingDexPlanner {
             totalSpecies=total,
             missingSpecies=missing,
             shinySpecies=shinyIds.size,
-            formRegistrations=variants.asSequence().filter{!it.shiny && !it.isDefault}.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}.distinct().count(),
-            speciesWithForms=variants.asSequence().filter{!it.shiny && !it.isDefault}.map{it.speciesId}.distinct().count(),
+            formRegistrations=variants.asSequence().filter{it.countsForFormDex()}.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}.distinct().count(),
+            speciesWithForms=variants.asSequence().filter{it.countsForFormDex()}.map{it.speciesId}.distinct().count(),
             byGeneration=byGeneration
         )
     }
