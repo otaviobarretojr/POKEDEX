@@ -1,5 +1,4 @@
 package com.otaviobarreto.pokedex.ui
-
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -55,15 +54,12 @@ import com.otaviobarreto.pokedex.data.VariantCollectionStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-
 private data class QBRegion(val label:String,val source:String,val badge:String)
 private data class QBGame(val label:String,val accent:Color,val regions:List<QBRegion>)
 private fun qbAccent(game:String):Color=PokedexDesignTokens.Colors.game(game)
 private val qbGames=AppGameCatalog.games.map{game->
  QBGame(game.label,qbAccent(game.label),game.regions.map{QBRegion(it.label,it.source,it.subtitle)})
 }
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
  val preferredGame=AppStatePreferences.activeGame.takeIf{g->qbGames.any{it.label==g}} ?: qbGames.first().label
@@ -122,7 +118,6 @@ private val qbGames=AppGameCatalog.games.map{game->
   regionalTotals.sumOf{it.second} to regionalTotals.sumOf{it.first}
  }
  val nationalCaptured=CollectionStore.capturedIds.count{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
-
  if(evolutionFilterName!=null){
   EvolutionFilterFullScreen(
    gameLabel=game.label,
@@ -133,7 +128,6 @@ private val qbGames=AppGameCatalog.games.map{game->
   )
   return
  }
-
  val activeEvolutionIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}.orEmpty()
  val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
@@ -336,7 +330,6 @@ private val qbGames=AppGameCatalog.games.map{game->
   )
  }
 }
-
 @Composable
 private fun QBGrid(
     entries:List<GameDexService.GameDexEntry>,
@@ -371,7 +364,6 @@ private fun QBGrid(
         }
     }
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun QBSlot(
@@ -498,7 +490,6 @@ internal fun QBSlot(
         }
     }
 }
-
 @Composable
 private fun QBVariantManager(
     pk:GameDexService.GameDexEntry,
@@ -523,7 +514,6 @@ private fun QBVariantManager(
     val available=(forms.orEmpty().ifEmpty{
         listOf(PokemonFormVariant(pretty(pk.name),pk.nationalId,true))
     }).filter{it.pokemonId!=null}
-
     Dialog(onDismissRequest=dismiss,properties=DialogProperties(usePlatformDefaultWidth=false)){
         Surface(
             Modifier
@@ -666,7 +656,6 @@ private fun QBVariantManager(
         }
     }
 }
-
 @Composable
 private fun QBAllBoxes(
     dex:List<GameDexService.GameDexEntry>,
@@ -734,7 +723,6 @@ private fun QBAllBoxes(
         }
     }
 }
-
 @Composable
 private fun QBSearch(
     dex:List<GameDexService.GameDexEntry>,
@@ -776,7 +764,6 @@ private fun QBSearch(
             }
             .take(30).toList()
     }
-
     AlertDialog(
         onDismissRequest=dismiss,
         title={Text("Pesquisar Pokémon")},
@@ -823,7 +810,6 @@ private fun QBSearch(
         dismissButton={TextButton(dismiss){Text("Fechar")}}
     )
 }
-
 private fun pretty(name:String)=name.split("-"," ").joinToString(" "){
     it.replaceFirstChar{c->if(c.isLowerCase())c.titlecase()else c.toString()}
 }
