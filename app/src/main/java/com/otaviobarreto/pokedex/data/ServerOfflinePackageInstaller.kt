@@ -86,11 +86,13 @@ object ServerOfflinePackageInstaller {
                 for(j in 0 until images.length()){
                     val image=images.getJSONObject(j)
                     val cacheKey=image.getString("cache_key")
+                    val sourceUrl=image.optString("source_url").takeIf{it.isNotBlank()}
                     val path=image.getString("path")
                     val file=resolveInside(extractDir,path)
                     check(file.exists()){"Imagem ausente: $path"}
                     val imported=runCatching{
                         importImageIntoDiskCache(context,cacheKey,file)
+                        sourceUrl?.let{url->importImageIntoDiskCache(context,url,file)}
                     }.isSuccess
                     if(cacheKey=="pokemon-offline-$id"){
                         check(imported){"Falha ao importar arte principal #$id"}
@@ -204,6 +206,7 @@ object ServerOfflinePackageInstaller {
                     OfflineGamePackManager.journeyVisualCacheKey(visualUrl),
                     file
                 )
+                importImageIntoDiskCache(context,visualUrl,file)
                 visualUrls += visualUrl
                 onProgress(
                     Progress(
