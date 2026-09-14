@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <exclude domain="sharedpref" path="offline_game_packs_v2.xml" />
+    <exclude domain="file" path="api-cache-v1/" />
+    <exclude domain="file" path="pokemon-images-offline/" />
 </full-backup-content>
