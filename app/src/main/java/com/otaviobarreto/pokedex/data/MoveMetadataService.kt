@@ -18,9 +18,23 @@ data class MoveMetadata(
 
 object MoveMetadataService {
     private val memory=ConcurrentHashMap<String,MoveMetadata>()
+    private val gen3PhysicalTypes=setOf("Normal","Fighting","Flying","Poison","Ground","Rock","Bug","Ghost","Steel")
+    private val gen3SpecialTypes=setOf("Fire","Water","Grass","Electric","Psychic","Ice","Dragon","Dark")
 
     fun cached(url:String,context:GameContext?):MoveMetadata? =
         memory[cacheKey(url,context)]
+
+    fun effectiveCategory(metadata:MoveMetadata,context:GameContext?):String {
+        if(metadata.category.equals("Status",true)) return "Status"
+        if(context?.label=="FireRed / LeafGreen"){
+            return when(metadata.type){
+                in gen3PhysicalTypes -> "Physical"
+                in gen3SpecialTypes -> "Special"
+                else -> metadata.category
+            }
+        }
+        return metadata.category
+    }
 
     fun load(url:String,context:GameContext?):MoveMetadata {
         val key=cacheKey(url,context)
