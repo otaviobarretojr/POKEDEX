@@ -1,5 +1,13 @@
 package com.otaviobarreto.pokedex.data
 
+enum class CompletionDifficulty(val label:String){
+    VERY_EASY("Muito fácil"),
+    EASY("Fácil"),
+    MODERATE("Moderado"),
+    HARD("Difícil"),
+    EXTERNAL("Externo")
+}
+
 enum class CompletionMethodKind(val label:String){
     DIRECT("Captura / obtenção"),
     LEVEL("Nível"),
@@ -20,7 +28,8 @@ data class CompletionAlternative(
     val method:CompletionMethodKind,
     val title:String,
     val detail:String?=null,
-    val score:Int
+    val score:Int,
+    val difficulty:CompletionDifficulty
 )
 
 data class CompletionAdvice(
@@ -34,6 +43,7 @@ data class CompletionAdvice(
     val selectedVersion:String?=null,
     val availableInSelectedVersion:Boolean?=null,
     val score:Int=100,
+    val difficulty:CompletionDifficulty=CompletionDifficulty.EXTERNAL,
     val alternative:CompletionAlternative?=null
 )
 
@@ -124,6 +134,26 @@ object CompletionAdviceResolver {
             }
         }
 
+        if(
+            selectedVersion!=null &&
+            version?.kind==VersionAvailabilityKind.EXCLUSIVE &&
+            version.exclusiveVersion!=selectedVersion
+        ){
+            candidates+=Candidate(
+                CompletionAdvice(
+                    pokemonId=pokemonId,
+                    method=CompletionMethodKind.TRADE,
+                    title="Troca / HOME",
+                    detail="Exclusivo de "+version.exclusiveVersion+". Obtenha por troca, multiplayer ou transfira pelo Pokémon HOME quando compatível.",
+                    versionAvailability=version,
+                    directAcquisition=true,
+                    selectedVersion=selectedVersion,
+                    availableInSelectedVersion=false,
+                    score=10
+                )
+            )
+        }
+
         if(candidates.isEmpty()){
             candidates+=Candidate(
                 CompletionAdvice(
@@ -140,22 +170,24 @@ object CompletionAdviceResolver {
             )
         }
 
-        val ranked=candidates.sortedBy{candidate->
-            candidate.advice.score + if(candidate.advice.availableInSelectedVersion==false) 12 else 0
-        }
-        val best=ranked.first().advice
+        val ranked=candidates
+            .map{it.advice.copy(score=effectiveScore(it.advice))}
+            .sortedBy{it.score}
+
+        val bestBase=ranked.first()
+        val best=bestBase.copy(difficulty=difficultyFor(bestBase.score))
         val alternative=ranked.drop(1)
-            .map{it.advice}
             .firstOrNull{
-                it.method!=best.method || it.title!=best.title
+                (it.method!=best.method || it.title!=best.title) &&
+                    difficultyFor(it.score)==best.difficulty
             }
-            ?.takeIf{it.score <= best.score+6}
             ?.let{
                 CompletionAlternative(
                     method=it.method,
-                    title=it.title,
+                    title=alternativeTitle(it),
                     detail=it.detail,
-                    score=it.score
+                    score=it.score,
+                    difficulty=difficultyFor(it.score)
                 )
             }
 
@@ -273,6 +305,39 @@ object CompletionAdviceResolver {
             CanonicalAcquisitionKind.UNAVAILABLE -> 35
         }
         return base+if(partial)3 else 0
+    }
+
+    private fun effectiveScore(advice:CompletionAdvice):Int {
+        val versionPenalty=
+            if(
+                advice.availableInSelectedVersion==false &&
+                advice.method!=CompletionMethodKind.TRADE &&
+                advice.method!=CompletionMethodKind.TRANSFER
+            ) 14 else 0
+        return advice.score+versionPenalty
+    }
+
+    fun difficultyFor(score:Int):CompletionDifficulty = when {
+        score<=2 -> CompletionDifficulty.VERY_EASY
+        score<=5 -> CompletionDifficulty.EASY
+        score<=9 -> CompletionDifficulty.MODERATE
+        score<=15 -> CompletionDifficulty.HARD
+        else -> CompletionDifficulty.EXTERNAL
+    }
+
+    private fun alternativeTitle(advice:CompletionAdvice):String {
+        val local=advice.detail
+            ?.substringAfter("Local:",missingDelimiterValue="")
+            ?.substringBefore("•")
+            ?.trim()
+            .orEmpty()
+        return when {
+            advice.method==CompletionMethodKind.DIRECT && local.isNotBlank() ->
+                "Capturar em "+local
+            advice.method==CompletionMethodKind.TRADE ->
+                "Troca / HOME"
+            else -> advice.title
+        }
     }
 
     private fun versionDetail(
