@@ -319,7 +319,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
         "Evolução" to Icons.Default.AccountTree,
         "Golpes" to Icons.Default.AutoAwesome
     )
-    val tabs=if(LocationIntelligence.isSupported(context)) base+("Localização" to Icons.Default.LocationOn) else base
+    val tabs=base+("Localização" to Icons.Default.LocationOn)
     LaunchedEffect(tabs.size,selected){
         if(selected>=tabs.size) setSelected(0)
     }
