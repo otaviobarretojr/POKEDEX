@@ -118,6 +118,7 @@ fun CompanionCenterScreen(
         item(key="general_offline_library"){
             val general=OfflineGamePackManager.generalStatus()
             val generalValid=OfflineGamePackManager.generalAudit()
+            val generalEstimate=OfflineGamePackManager.estimateGeneral()
             Card(
                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                 colors=CardDefaults.cardColors(
@@ -152,6 +153,18 @@ fun CompanionCenterScreen(
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm)
+                    )
+                    Text(
+                        when{
+                            generalValid -> "Armazenado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.totalBytes)
+                            generalEstimate.remainingBytes>0 ->
+                                "Estimado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.remainingBytes)+
+                                    " restantes · total ~"+OfflineGamePackManager.formatBytes(generalEstimate.totalBytes)
+                            else -> "Estimativa de tamanho indisponível"
+                        },
+                        style=MaterialTheme.typography.labelMedium,
+                        color=MaterialTheme.colorScheme.primary,
+                        modifier=Modifier.padding(top=4.dp)
                     )
 
                     if(activeDownload=="__general__"){
@@ -229,6 +242,8 @@ fun CompanionCenterScreen(
             item(key=game.label){
                 val pack=OfflineGamePackManager.status(game.label)
                 val audit=OfflineGamePackManager.audit(game.label)
+                val gameEstimate=OfflineGamePackManager.estimateGame(game.label)
+                val generalReadyForReuse=OfflineGamePackManager.generalAudit()
                 Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
                     Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                         Row(verticalAlignment=Alignment.CenterVertically){
@@ -259,6 +274,22 @@ fun CompanionCenterScreen(
                                     },
                                     style=MaterialTheme.typography.bodySmall,
                                     color=MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    when{
+                                        audit.valid -> "Pacote complementar concluído"
+                                        gameEstimate.remainingBytes>0 && (generalReadyForReuse || audit.expectedCount>0) ->
+                                            "Falta baixar ~"+OfflineGamePackManager.formatBytes(gameEstimate.remainingBytes)+
+                                                if(gameEstimate.reusedPokemon>0)
+                                                    " · "+gameEstimate.reusedPokemon+" Pokémon já reaproveitados"
+                                                else ""
+                                        generalReadyForReuse ->
+                                            "Complemento estimado: ~"+OfflineGamePackManager.formatBytes(gameEstimate.remainingBytes)
+                                        else ->
+                                            "Tamanho complementar será refinado após mapear este jogo"
+                                    },
+                                    style=MaterialTheme.typography.labelSmall,
+                                    color=MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
