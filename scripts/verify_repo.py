@@ -2127,7 +2127,7 @@ if "PACK_VERSION = 20" not in offline_v1830:
     violations.append("offline pack version must be 20")
 if "runCatching { PokemonFormsService.collectible(id) }" in offline_v1830:
     violations.append("v18.3 offline form loading must fail/retry instead of swallowing errors")
-if "val forms = formsJob.await()" not in offline_v1830:
+if "val forms=formsJob.await()" not in offline_v1830 and "val forms = formsJob.await()" not in offline_v1830:
     violations.append("v18.3 strict form payload await missing")
 
 cache_v1830 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt").read_text(encoding="utf-8")
