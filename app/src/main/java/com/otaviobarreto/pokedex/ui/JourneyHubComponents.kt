@@ -62,6 +62,30 @@ internal fun JourneyGamePicker(
     val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
     val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
 
+    if(confirmReset){
+        AlertDialog(
+            onDismissRequest={confirmReset=false},
+            title={Text("Reiniciar progresso?")},
+            text={Text("A Jornada continuará ativa, mas todos os objetivos concluídos voltarão a ficar pendentes.")},
+            confirmButton={TextButton(onClick={JourneyProgressStore.resetProgress(game.label);confirmReset=false}){Text("Reiniciar")}},
+            dismissButton={TextButton(onClick={confirmReset=false}){Text("Cancelar")}}
+        )
+    }
+    if(confirmEnd){
+        AlertDialog(
+            onDismissRequest={confirmEnd=false},
+            title={Text("Encerrar Jornada?")},
+            text={Text("O progresso desta Jornada será removido. Você poderá começar novamente depois.")},
+            confirmButton={TextButton(onClick={
+                JourneyProgressStore.endJourney(game.label)
+                AppStatePreferences.clearJourneyStarterForGame(game.label)
+                selectedStarterId=-1
+                confirmEnd=false
+            }){Text("Encerrar")}},
+            dismissButton={TextButton(onClick={confirmEnd=false}){Text("Cancelar")}}
+        )
+    }
+
     Box(
         Modifier.fillMaxSize().background(
             Brush.verticalGradient(
@@ -768,10 +792,20 @@ internal fun JourneyGameMenu(
     }
     val smart=remember(game.label,routeRevision){JourneySmartProgress.context(game.label)}
     val setupPhase=if(started)smart.phase else CampaignPhase.EARLY
-    val suggestedTeam=remember(game.label,selectedStarterId,setupPhase){
+    val baseSuggestedTeam=remember(game.label,selectedStarterId,setupPhase){
         if(selectedStarterId>0) TeamCampaignCatalog.preset(game.label,selectedStarterId,setupPhase) else null
     }
+    val dynamicSuggestedTeam=remember(game.label,selectedStarterId,routeRevision,started){
+        if(started && selectedStarterId>0) JourneyDynamicTeamCatalog.suggestion(game.label,selectedStarterId) else null
+    }
+    val suggestedTeam=baseSuggestedTeam?.let{base->
+        if(dynamicSuggestedTeam!=null && dynamicSuggestedTeam.preset?.phase==base.phase){
+            base.copy(slots=dynamicSuggestedTeam.adjustedSlots)
+        }else base
+    }
     val active=started && AppStatePreferences.activeGame==game.label
+    var confirmReset by rememberSaveable(game.label){mutableStateOf(false)}
+    var confirmEnd by rememberSaveable(game.label){mutableStateOf(false)}
 
     Box(
         Modifier.fillMaxSize().background(
@@ -946,6 +980,14 @@ internal fun JourneyGameMenu(
                         modifier=Modifier.fillMaxWidth().padding(top=6.dp),
                         textAlign=TextAlign.Center
                     )
+                    TextButton(
+                        onClick={
+                            JourneyProgressStore.cancelConfiguration(game.label)
+                            AppStatePreferences.clearJourneyStarterForGame(game.label)
+                            selectedStarterId=-1
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("Cancelar configuração")}
                 }
             }else{
                 suggestedTeam?.let{team->
@@ -1046,6 +1088,20 @@ internal fun JourneyGameMenu(
                                     Text(region.subtitle,style=MaterialTheme.typography.bodySmall)
                                 }
                                 Icon(Icons.Default.ChevronRight,null)
+                            }
+                        }
+                    }
+                }
+            }
+            if(started){
+                item{
+                    Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.45f))){
+                        Column(Modifier.fillMaxWidth().padding(14.dp)){
+                            Text("Gerenciar Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                            Text("Controle o progresso sem afetar suas Boxes ou Pokédex.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=2.dp,bottom=8.dp))
+                            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                                OutlinedButton(onClick={confirmReset=true},modifier=Modifier.weight(1f)){Text("Reiniciar")}
+                                OutlinedButton(onClick={confirmEnd=true},modifier=Modifier.weight(1f)){Text("Encerrar")}
                             }
                         }
                     }
