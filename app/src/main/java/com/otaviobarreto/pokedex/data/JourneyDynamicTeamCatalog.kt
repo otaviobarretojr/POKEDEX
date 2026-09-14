@@ -10,8 +10,8 @@ data class DynamicTeamSuggestion(
 )
 
 object JourneyDynamicTeamCatalog {
-    fun suggestion(game:String,starterId:Int):DynamicTeamSuggestion{
-        val smart=JourneySmartProgress.context(game)
+    fun suggestion(game:String,starterId:Int,focusStepId:String?=null):DynamicTeamSuggestion{
+        val smart=focusStepId?.let{JourneySmartProgress.contextForStep(game,it)} ?: JourneySmartProgress.context(game)
         val preset=TeamCampaignCatalog.preset(game,starterId,smart.phase)
         val prep=smart.nextStep?.let{JourneyPreparationCatalog.forStep(it.id)}
         val normalizedBase=preset?.slots.orEmpty().map{slot->
