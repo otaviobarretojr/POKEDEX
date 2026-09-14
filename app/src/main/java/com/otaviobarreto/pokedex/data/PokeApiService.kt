@@ -31,7 +31,14 @@ object PokeApiService {
         MULTIPLAYER("Multiplayer"),
         OTHER("Outro método")
     }
-    data class EvolutionSourceMethod(\n        val sourcePokemonId:Int,\n        val targetPokemonId:Int,\n        val method:EvolutionMethod,\n        val requirement:String,\n        val sourceFormKey:String?=null,\n        val targetFormKey:String?=null\n    )
+    data class EvolutionSourceMethod(
+        val sourcePokemonId:Int,
+        val targetPokemonId:Int,
+        val method:EvolutionMethod,
+        val requirement:String,
+        val sourceFormKey:String?=null,
+        val targetFormKey:String?=null
+    )
     data class EncounterDetail(val version:String,val method:String,val minLevel:Int,val maxLevel:Int,val chance:Int,val conditions:List<String>)
     data class EncounterLocation(val location:String,val versions:List<String>,val details:List<EncounterDetail> = emptyList())
 
