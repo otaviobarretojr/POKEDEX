@@ -19,6 +19,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 private data class EvolutionFilterLoadResult(
@@ -56,6 +61,12 @@ internal fun EvolutionFilterFullScreen(
     var loading by remember(selectedSource){mutableStateOf(true)}
     var failed by remember(selectedSource){mutableStateOf(false)}
     var sortMode by rememberSaveable(gameLabel){mutableStateOf(MissingSortMode.DEX.name)}
+    val versionOptions=remember(gameLabel){VersionAvailabilityCatalog.versionsForGame(gameLabel)}
+    var selectedVersion by rememberSaveable(gameLabel){
+        mutableStateOf(AppStatePreferences.selectedVersionForGame(gameLabel))
+    }
+    var canonicalById by remember(selectedSource){mutableStateOf<Map<Int,CanonicalAvailability>>(emptyMap())}
+    var canonicalLoading by remember(selectedSource){mutableStateOf(false)}
 
     LaunchedEffect(selectedSource){
         loading=true
@@ -176,7 +187,35 @@ internal fun EvolutionFilterFullScreen(
     }
     val names=remember(fullDex){fullDex.associate{it.nationalId to it.name}}
     val context=remember(selectedSource){GameContext.fromSource(selectedSource)}
-    val adviceById=remember(pending,routes,context){
+
+    LaunchedEffect(pending.map{it.nationalId},selectedSource,context){
+        val resolvedContext=context ?: return@LaunchedEffect
+        canonicalLoading=true
+        val loaded=withContext(Dispatchers.IO){
+            val semaphore=Semaphore(6)
+            coroutineScope {
+                pending.map{entry->
+                    async {
+                        semaphore.withPermit {
+                            val encounters=runCatching{PokedexDataStore.encounters(entry.nationalId)}.getOrElse{emptyList()}
+                            val availability=CanonicalAvailabilityResolver.resolve(
+                                pokemonId=entry.nationalId,
+                                context=resolvedContext,
+                                encounters=encounters,
+                                dex=fullDex,
+                                evolutionChain=emptyList()
+                            )
+                            entry.nationalId to availability
+                        }
+                    }
+                }.awaitAll().toMap()
+            }
+        }
+        canonicalById=loaded
+        canonicalLoading=false
+    }
+
+    val adviceById=remember(pending,routes,context,owned,names,selectedVersion,canonicalById){
         val resolvedContext=context
         if(resolvedContext==null) emptyMap()
         else pending.associate{entry->
@@ -184,6 +223,10 @@ internal fun EvolutionFilterFullScreen(
                 pokemonId=entry.nationalId,
                 context=resolvedContext,
                 routes=routes,
+                owned=owned,
+                names=names,
+                selectedVersion=selectedVersion,
+                canonical=canonicalById[entry.nationalId],
                 inRegionalDex=true
             )
         }
@@ -238,16 +281,47 @@ internal fun EvolutionFilterFullScreen(
         }
 
         if(filterKey=="ALL"){
-            Row(
-                Modifier.fillMaxWidth().padding(vertical=8.dp),
-                horizontalArrangement=Arrangement.spacedBy(8.dp)
-            ){
-                MissingSortMode.entries.forEach{mode->
-                    FilterChip(
-                        selected=sortMode==mode.name,
-                        onClick={sortMode=mode.name},
-                        label={Text(mode.label)}
+            Column(Modifier.fillMaxWidth().padding(vertical=8.dp)){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(8.dp)
+                ){
+                    MissingSortMode.entries.forEach{mode->
+                        FilterChip(
+                            selected=sortMode==mode.name,
+                            onClick={sortMode=mode.name},
+                            label={Text(if(mode==MissingSortMode.ROUTE)"Mais fáceis primeiro" else mode.label)}
+                        )
+                    }
+                }
+                if(versionOptions.isNotEmpty()){
+                    Text(
+                        "Minha versão",
+                        style=MaterialTheme.typography.labelMedium,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier=Modifier.padding(top=6.dp)
                     )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                    ){
+                        versionOptions.forEach{version->
+                            FilterChip(
+                                selected=selectedVersion==version,
+                                onClick={
+                                    selectedVersion=if(selectedVersion==version)null else version
+                                    AppStatePreferences.setSelectedVersionForGame(
+                                        gameLabel,
+                                        if(selectedVersion==version) version else selectedVersion
+                                    )
+                                },
+                                label={Text(version)}
+                            )
+                        }
+                    }
+                }
+                if(canonicalLoading){
+                    LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=6.dp))
                 }
             }
         }
@@ -333,7 +407,11 @@ internal fun EvolutionFilterFullScreen(
                                                         it.kind==VersionAvailabilityKind.SPLIT_FORMS
                                                 }?.let{version->
                                                     Text(
-                                                        version.title,
+                                                        when(advice.availableInSelectedVersion){
+                                                            true -> "Na sua versão"
+                                                            false -> "Precisa troca / HOME"
+                                                            null -> version.title
+                                                        },
                                                         style=MaterialTheme.typography.labelSmall,
                                                         color=MaterialTheme.colorScheme.primary,
                                                         maxLines=2,
@@ -347,6 +425,15 @@ internal fun EvolutionFilterFullScreen(
                                                     maxLines=2,
                                                     overflow=TextOverflow.Ellipsis
                                                 )
+                                                advice.detail?.let{detail->
+                                                    Text(
+                                                        detail,
+                                                        style=MaterialTheme.typography.labelSmall,
+                                                        color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        maxLines=3,
+                                                        overflow=TextOverflow.Ellipsis
+                                                    )
+                                                }
                                             }
                                         }
                                         if(route==null && filterKey=="ALL"){
