@@ -50,7 +50,8 @@ fun PokemonDetailV2Screen(
     var bundle by remember(id){ mutableStateOf(cachedDetailBundle(id)) }
     var error by remember(id){ mutableStateOf<String?>(null) }
     var retry by remember{ mutableIntStateOf(0) }
-    var tab by rememberSaveable(id,source){ mutableIntStateOf(0) }
+    var tab by rememberSaveable(id){ mutableIntStateOf(0) }
+    LaunchedEffect(source){ tab=0 }
     val context=remember(source){ GameContext.fromSource(source) }
     val collectionSource=remember(source,AppStatePreferences.activeGame){
         source ?: AppStatePreferences.activeRegionForGame(AppStatePreferences.activeGame)
