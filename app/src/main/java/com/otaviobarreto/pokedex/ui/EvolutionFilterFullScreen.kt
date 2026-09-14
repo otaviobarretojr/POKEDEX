@@ -29,6 +29,11 @@ private data class EvolutionFilterLoadResult(
     val novelFormIdentities:Set<Pair<Int,String>>
 )
 
+private enum class MissingSortMode(val label:String){
+    DEX("Ordem da Pokédex"),
+    ROUTE("Melhor rota")
+}
+
 @Composable
 internal fun EvolutionFilterFullScreen(
     gameLabel:String,
@@ -50,6 +55,7 @@ internal fun EvolutionFilterFullScreen(
     var novelFormIdentities by remember(selectedSource){mutableStateOf<Set<Pair<Int,String>>>(emptySet())}
     var loading by remember(selectedSource){mutableStateOf(true)}
     var failed by remember(selectedSource){mutableStateOf(false)}
+    var sortMode by rememberSaveable(gameLabel){mutableStateOf(MissingSortMode.DEX.name)}
 
     LaunchedEffect(selectedSource){
         loading=true
@@ -169,6 +175,27 @@ internal fun EvolutionFilterFullScreen(
         }
     }
     val names=remember(fullDex){fullDex.associate{it.nationalId to it.name}}
+    val context=remember(selectedSource){GameContext.fromSource(selectedSource)}
+    val adviceById=remember(pending,routes,context){
+        val resolvedContext=context
+        if(resolvedContext==null) emptyMap()
+        else pending.associate{entry->
+            entry.nationalId to CompletionAdviceResolver.resolve(
+                pokemonId=entry.nationalId,
+                context=resolvedContext,
+                routes=routes,
+                inRegionalDex=true
+            )
+        }
+    }
+    val displayedPending=remember(pending,sortMode,adviceById,filterKey){
+        if(filterKey!="ALL" || sortMode==MissingSortMode.DEX.name) pending
+        else pending.sortedWith(
+            compareBy<GameDexService.GameDexEntry>{
+                CompletionAdviceResolver.priority(adviceById.getValue(it.nationalId))
+            }.thenBy{it.gameNumber}
+        )
+    }
 
     val filterLabel=when(filterKey){
         "ALL" -> "Todos que faltam"
@@ -210,6 +237,21 @@ internal fun EvolutionFilterFullScreen(
             )
         }
 
+        if(filterKey=="ALL"){
+            Row(
+                Modifier.fillMaxWidth().padding(vertical=8.dp),
+                horizontalArrangement=Arrangement.spacedBy(8.dp)
+            ){
+                MissingSortMode.entries.forEach{mode->
+                    FilterChip(
+                        selected=sortMode==mode.name,
+                        onClick={sortMode=mode.name},
+                        label={Text(mode.label)}
+                    )
+                }
+            }
+        }
+
         when{
             loading -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
             failed -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
@@ -244,7 +286,7 @@ internal fun EvolutionFilterFullScreen(
                 contentPadding=PaddingValues(vertical=8.dp),
                 verticalArrangement=Arrangement.spacedBy(6.dp)
             ){
-                items(pending.chunked(3),key={row->row.joinToString("-"){it.nationalId.toString()}}){row->
+                items(displayedPending.chunked(3),key={row->row.joinToString("-"){it.nationalId.toString()}}){row->
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                         repeat(3){index->
                             val entry=row.getOrNull(index)
@@ -271,6 +313,41 @@ internal fun EvolutionFilterFullScreen(
                                             maxLines=1,
                                             overflow=TextOverflow.Ellipsis
                                         )
+                                        if(filterKey=="ALL"){
+                                            adviceById[entry.nationalId]?.let{advice->
+                                                Surface(
+                                                    shape=RoundedCornerShape(999.dp),
+                                                    color=MaterialTheme.colorScheme.primaryContainer
+                                                ){
+                                                    Text(
+                                                        advice.method.label,
+                                                        style=MaterialTheme.typography.labelSmall,
+                                                        fontWeight=FontWeight.Bold,
+                                                        modifier=Modifier.padding(horizontal=7.dp,vertical=2.dp),
+                                                        maxLines=1
+                                                    )
+                                                }
+                                                advice.versionAvailability?.takeIf{
+                                                    it.kind==VersionAvailabilityKind.EXCLUSIVE ||
+                                                        it.kind==VersionAvailabilityKind.SPLIT_FORMS
+                                                }?.let{version->
+                                                    Text(
+                                                        version.title,
+                                                        style=MaterialTheme.typography.labelSmall,
+                                                        color=MaterialTheme.colorScheme.primary,
+                                                        maxLines=2,
+                                                        overflow=TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                                Text(
+                                                    advice.title,
+                                                    style=MaterialTheme.typography.labelSmall,
+                                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines=2,
+                                                    overflow=TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
                                         if(route==null && filterKey=="ALL"){
                                             Text(
                                                 "Forma inicial pendente",
@@ -299,13 +376,15 @@ internal fun EvolutionFilterFullScreen(
                                                     overflow=TextOverflow.Ellipsis
                                                 )
                                             }
-                                            Text(
-                                                resolved.summary,
-                                                style=MaterialTheme.typography.labelSmall,
-                                                color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines=2,
-                                                overflow=TextOverflow.Ellipsis
-                                            )
+                                            if(filterKey!="ALL"){
+                                                Text(
+                                                    resolved.summary,
+                                                    style=MaterialTheme.typography.labelSmall,
+                                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines=2,
+                                                    overflow=TextOverflow.Ellipsis
+                                                )
+                                            }
                                             if(targetRoutes.size>1){
                                                 Text(
                                                     "+"+(targetRoutes.size-1)+" alternativa"+if(targetRoutes.size-1==1)"" else "s",
