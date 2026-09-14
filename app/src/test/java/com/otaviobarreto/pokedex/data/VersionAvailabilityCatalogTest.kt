@@ -50,6 +50,18 @@ class VersionAvailabilityCatalogTest {
         assertEquals("LeafGreen",VersionAvailabilityCatalog.forPokemon(184,context)?.exclusiveVersion)
     }
 
+    @Test fun everyPairedGameInAppHasVersionBadgesConfigured() {
+        val pairedGames=AppGameCatalog.games.filter{"/" in it.label}
+        pairedGames.forEach{game->
+            assertTrue(
+                "Missing version configuration for ${game.label}",
+                VersionAvailabilityCatalog.versionsForGame(game.label).size==2
+            )
+        }
+        assertTrue(VersionAvailabilityCatalog.versionsForGame("Pokémon Legends: Z-A").isEmpty())
+        assertTrue(VersionAvailabilityCatalog.versionsForGame("Legends Arceus").isEmpty())
+    }
+
     @Test fun sharedSpeciesAreNotMarkedExclusive() {
         val context=GameContext.fromSource("Scarlet / Violet · Paldea")
         assertEquals(VersionAvailabilityKind.SHARED,VersionAvailabilityCatalog.forPokemon(25,context)?.kind)
