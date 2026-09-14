@@ -117,9 +117,11 @@ class CompletionAdviceIntelligenceTest {
             canonical=canonical
         )
 
+        assertEquals(CompletionMethodKind.TRADE,advice.method)
         assertFalse(advice.availableInSelectedVersion!!)
+        assertEquals(CompletionDifficulty.HARD,advice.difficulty)
+        assertTrue(advice.title.contains("Troca",true) || advice.title.contains("HOME",true))
         assertTrue(advice.detail?.contains("exclusivo de Scarlet",true)==true)
-        assertTrue(advice.detail?.contains("troca",true)==true || advice.detail?.contains("HOME",true)==true)
     }
 
     @Test
