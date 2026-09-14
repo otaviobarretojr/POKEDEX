@@ -67,11 +67,14 @@ object PokeApiService {
                 }
             }.distinct()
             val special=specialRequirementFor(pokemonId,context)
-            val requirement=if(hasContextualOverride(pokemonId,context)) special else mergeEvolutionRequirements(
-                pokemonId=pokemonId,
-                apiRequirements=apiRequirements,
-                special=special
-            )
+            val requirement=when{
+                !special.isNullOrBlank() -> special
+                else -> mergeEvolutionRequirements(
+                    pokemonId=pokemonId,
+                    apiRequirements=apiRequirements,
+                    special=null
+                )
+            }
             result+=EvolutionStage(
                 pokemonId,
                 species.getString("name").toDisplayName(),
@@ -94,28 +97,19 @@ object PokeApiService {
                 val childId=idFromUrl(child.getJSONObject("species").getString("url"))
                 val details=child.optJSONArray("evolution_details")
                 val special=specialRequirementFor(childId,context)
-                if(hasContextualOverride(childId,context)){
-                    if(!special.isNullOrBlank()){
-                        fallbackMethods(special).forEach{method->
-                            result+=EvolutionSourceMethod(parentId,childId,method,special)
-                        }
+                if(!special.isNullOrBlank()){
+                    fallbackMethods(special).forEach{method->
+                        result+=EvolutionSourceMethod(parentId,childId,method,special)
                     }
                 }else{
-                    var produced=false
                     if(details!=null){
                         for(j in 0 until details.length()){
                             val detail=details.optJSONObject(j)?:continue
                             if(!detailAppliesToContext(detail,context)) continue
                             val requirement=evolutionRequirement(detail)
-                            produced=true
                             evolutionMethods(detail,requirement).forEach{method->
                                 result+=EvolutionSourceMethod(parentId,childId,method,requirement)
                             }
-                        }
-                    }
-                    if(!produced && !special.isNullOrBlank()){
-                        fallbackMethods(special).forEach{method->
-                            result+=EvolutionSourceMethod(parentId,childId,method,special)
                         }
                     }
                 }
