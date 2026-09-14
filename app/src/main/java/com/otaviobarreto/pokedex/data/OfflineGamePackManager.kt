@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
-    private const val PACK_VERSION = 18
+    private const val PACK_VERSION = 19
     private const val DOWNLOAD_CONCURRENCY = 6
     private var context: Context? = null
 
@@ -89,7 +89,9 @@ object OfflineGamePackManager {
             .size
         val current = p.getInt(key(gameLabel, "version"), 0) == PACK_VERSION
         val regions = !p.getString(key(gameLabel, "regions"), null).isNullOrBlank()
-        val resources = p.getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
+        val declaredResources = p.getStringSet(key(gameLabel, "resource_urls"), emptySet()).orEmpty()
+        val game = AppGameCatalog.adventureGames.firstOrNull { it.label == gameLabel }
+        val resources = declaredResources + game?.let(::requiredBaseResourceUrls).orEmpty()
         val pinned = resources.count { PersistentApiCache.has(it) && PersistentApiCache.isPinned(it) }
         val ids = manifestIds(gameLabel)
         val cachedImages = ids.count(::hasOfflineArtwork)
