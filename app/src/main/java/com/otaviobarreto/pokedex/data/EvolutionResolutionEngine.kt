@@ -38,7 +38,7 @@ object EvolutionResolutionEngine {
                 val first=items.first()
                 val detail=first.requirement
                 val methods=items.mapTo(linkedSetOf()){it.method}
-                val formKeys=EvolutionCuratedCatalog.formKeysFor(key.second,context)
+                val formKeys=EvolutionCuratedCatalog.formKeysFor(first.targetPokemonId,context)
                 EvolutionRoute(
                     sourcePokemonId=first.sourcePokemonId,
                     targetPokemonId=first.targetPokemonId,
