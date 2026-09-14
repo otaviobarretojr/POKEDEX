@@ -281,6 +281,10 @@ fun CompanionCenterScreen(
                 val remotePackage=remember(remoteManifestRevision,game.label){
                     RemoteOfflinePackageCatalog.forGameLabel(game.label)
                 }
+                val installedGameServerVersion=OfflineGamePackManager.gameServerVersion(game.label)
+                val gameServerUpdateAvailable=remotePackage?.ready==true &&
+                    remotePackage.version>installedGameServerVersion &&
+                    installedGameServerVersion>0
                 Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
                     Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                         Row(verticalAlignment=Alignment.CenterVertically){
@@ -314,6 +318,8 @@ fun CompanionCenterScreen(
                                 )
                                 Text(
                                     when{
+                                        audit.valid && gameServerUpdateAvailable && remotePackage?.sizeBytes!=null ->
+                                            "Atualização disponível · "+OfflineGamePackManager.formatBytes(remotePackage.sizeBytes)
                                         audit.valid -> "Pacote complementar concluído"
                                         remotePackage?.sizeBytes!=null && remotePackage.sizeBytes>0L ->
                                             "Servidor: "+OfflineGamePackManager.formatBytes(remotePackage.sizeBytes)+
