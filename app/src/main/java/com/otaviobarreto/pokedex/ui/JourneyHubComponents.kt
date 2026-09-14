@@ -62,30 +62,6 @@ internal fun JourneyGamePicker(
     val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
     val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
 
-    if(confirmReset){
-        AlertDialog(
-            onDismissRequest={confirmReset=false},
-            title={Text("Reiniciar progresso?")},
-            text={Text("A Jornada continuará ativa, mas todos os objetivos concluídos voltarão a ficar pendentes.")},
-            confirmButton={TextButton(onClick={JourneyProgressStore.resetProgress(game.label);confirmReset=false}){Text("Reiniciar")}},
-            dismissButton={TextButton(onClick={confirmReset=false}){Text("Cancelar")}}
-        )
-    }
-    if(confirmEnd){
-        AlertDialog(
-            onDismissRequest={confirmEnd=false},
-            title={Text("Encerrar Jornada?")},
-            text={Text("O progresso desta Jornada será removido. Você poderá começar novamente depois.")},
-            confirmButton={TextButton(onClick={
-                JourneyProgressStore.endJourney(game.label)
-                AppStatePreferences.clearJourneyStarterForGame(game.label)
-                selectedStarterId=-1
-                confirmEnd=false
-            }){Text("Encerrar")}},
-            dismissButton={TextButton(onClick={confirmEnd=false}){Text("Cancelar")}}
-        )
-    }
-
     Box(
         Modifier.fillMaxSize().background(
             Brush.verticalGradient(
@@ -806,6 +782,30 @@ internal fun JourneyGameMenu(
     val active=started && AppStatePreferences.activeGame==game.label
     var confirmReset by rememberSaveable(game.label){mutableStateOf(false)}
     var confirmEnd by rememberSaveable(game.label){mutableStateOf(false)}
+
+    if(confirmReset){
+        AlertDialog(
+            onDismissRequest={confirmReset=false},
+            title={Text("Reiniciar progresso?")},
+            text={Text("A Jornada continuará ativa, mas todos os objetivos concluídos voltarão a ficar pendentes.")},
+            confirmButton={TextButton(onClick={JourneyProgressStore.resetProgress(game.label);confirmReset=false}){Text("Reiniciar")}},
+            dismissButton={TextButton(onClick={confirmReset=false}){Text("Cancelar")}}
+        )
+    }
+    if(confirmEnd){
+        AlertDialog(
+            onDismissRequest={confirmEnd=false},
+            title={Text("Encerrar Jornada?")},
+            text={Text("O progresso desta Jornada será removido. Você poderá começar novamente depois.")},
+            confirmButton={TextButton(onClick={
+                JourneyProgressStore.endJourney(game.label)
+                AppStatePreferences.clearJourneyStarterForGame(game.label)
+                selectedStarterId=-1
+                confirmEnd=false
+            }){Text("Encerrar")}},
+            dismissButton={TextButton(onClick={confirmEnd=false}){Text("Cancelar")}}
+        )
+    }
 
     Box(
         Modifier.fillMaxSize().background(
