@@ -15,7 +15,8 @@ data class OwnedPokemonVariant(
     val shiny:Boolean,
     val formKey:String=formName.lowercase(),
     val normalArtworkUrl:String?=null,
-    val shinyArtworkUrl:String?=null
+    val shinyArtworkUrl:String?=null,
+    val isDefault:Boolean=(formPokemonId==speciesId)
 ) {
     val key:String get() = listOf(source,speciesId,formPokemonId,formKey.lowercase(),shiny).joinToString("|")
     val artworkUrl:String
@@ -72,14 +73,16 @@ object VariantCollectionStore {
         owned:Boolean,
         formKey:String=formName.lowercase(),
         normalArtworkUrl:String?=null,
-        shinyArtworkUrl:String?=null
+        shinyArtworkUrl:String?=null,
+        isDefault:Boolean=(formPokemonId==speciesId)
     ){
         if(source.isBlank() || speciesId<=0 || formPokemonId<=0) return
         val entry=OwnedPokemonVariant(
             source,speciesId,formPokemonId,formName,shiny,
             formKey=formKey,
             normalArtworkUrl=normalArtworkUrl,
-            shinyArtworkUrl=shinyArtworkUrl
+            shinyArtworkUrl=shinyArtworkUrl,
+            isDefault=isDefault
         )
         fun matchesExisting(value:OwnedPokemonVariant):Boolean =
             sameOwnedVariantIdentity(value, entry)
@@ -106,13 +109,15 @@ object VariantCollectionStore {
         shiny:Boolean,
         formKey:String=formName.lowercase(),
         normalArtworkUrl:String?=null,
-        shinyArtworkUrl:String?=null
+        shinyArtworkUrl:String?=null,
+        isDefault:Boolean=(formPokemonId==speciesId)
     ) = setOwned(
         source,speciesId,formPokemonId,formName,shiny,
         !isOwned(source,speciesId,formPokemonId,formName,shiny),
         formKey=formKey,
         normalArtworkUrl=normalArtworkUrl,
-        shinyArtworkUrl=shinyArtworkUrl
+        shinyArtworkUrl=shinyArtworkUrl,
+        isDefault=isDefault
     )
 
     fun preferred(source:String,speciesId:Int):OwnedPokemonVariant? =
@@ -128,7 +133,7 @@ object VariantCollectionStore {
     }
 
     fun shinyCount():Int = ownedVariants.count{it.shiny}
-    fun formCount():Int = ownedVariants.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formName.lowercase())}.distinct().size
+    fun formCount():Int = ownedVariants.asSequence().filter{!it.shiny && !it.isDefault}.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}.distinct().count()
     fun speciesWithVariants():Int = ownedVariants.map{it.speciesId}.distinct().size
 
     fun exportSnapshot():JSONArray = JSONArray().also{array->
@@ -144,6 +149,7 @@ object VariantCollectionStore {
                         .put("formKey",v.formKey)
                         .put("normalArtworkUrl",v.normalArtworkUrl)
                         .put("shinyArtworkUrl",v.shinyArtworkUrl)
+                        .put("isDefault",v.isDefault)
                 )
             }
     }
@@ -166,7 +172,8 @@ object VariantCollectionStore {
                         formKey=o.optString("formKey").takeIf{it.isNotBlank()}
                             ?: o.optString("formName","Forma").lowercase(),
                         normalArtworkUrl=o.optString("normalArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
-                        shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"}
+                        shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
+                        isDefault=if(o.has("isDefault")) o.optBoolean("isDefault") else form==species
                     )
                 )
             }
