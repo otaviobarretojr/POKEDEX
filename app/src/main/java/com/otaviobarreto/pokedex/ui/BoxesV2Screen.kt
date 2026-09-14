@@ -82,10 +82,8 @@ private val qbGames=AppGameCatalog.games.map{game->
   AppStatePreferences.activeGame=game.label
   AppStatePreferences.setActiveRegionForGame(game.label,region.source)
   page=AppStatePreferences.boxPage(region.source)
-
   val generalReady=withContext(Dispatchers.IO){OfflineGamePackManager.generalAudit()}
   val gameReady=OfflineGamePackManager.status(game.label).verified
-
   if(generalReady && !gameReady){
    dex=emptyList()
    needsComplement=true
