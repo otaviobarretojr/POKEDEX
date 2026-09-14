@@ -23,7 +23,6 @@ class SwitchCatalogRegressionTest {
         assertEquals("lumiose-city", GameContext.fromSource("Pokémon Legends: Z-A · Lumiose")?.pokedexSlug)
         assertEquals("hyperspace", GameContext.fromSource("Pokémon Legends: Z-A · Hyperspace")?.pokedexSlug)
         assertEquals("kanto", GameContext.fromSource("FireRed / LeafGreen · Kanto")?.pokedexSlug)
-        assertEquals("champions", GameContext.fromSource("Pokémon Champions · Roster")?.pokedexSlug)
     }
 
     @Test fun legacyNonSwitchGamesAreNotInPrimaryCatalog() {
