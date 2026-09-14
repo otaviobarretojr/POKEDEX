@@ -293,7 +293,7 @@ fun CompanionCenterScreen(
                                 Text(game.label,fontWeight=FontWeight.Bold)
                                 Text(
                                     when{
-                                        activeDownload==game.label -> progress?.label ?: "Preparando download…"
+                                        activeDownload==game.label -> serverProgress?.label ?: progress?.label ?: "Preparando download…"
                                         audit.valid -> buildString {
                                             append("Offline pronto · ")
                                             append(pack.pokemonCount)
@@ -336,7 +336,7 @@ fun CompanionCenterScreen(
 
                         if(activeDownload==game.label){
                             LinearProgressIndicator(
-                                progress={progress?.fraction ?: 0f},
+                                progress={serverProgress?.fraction ?: progress?.fraction ?: 0f},
                                 modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
                             )
                         }
@@ -350,14 +350,30 @@ fun CompanionCenterScreen(
                                 onClick={
                                     activeDownload=game.label
                                     progress=null
+                                    serverProgress=null
                                     scope.launch{
                                         val result=runCatching{
-                                            OfflineGamePackManager.download(game){p->progress=p}
+                                            if(remotePackage?.ready==true && generalReadyForReuse){
+                                                ServerOfflinePackageInstaller.installGame(
+                                                    context=context,
+                                                    game=game,
+                                                    remote=remotePackage
+                                                ){p->serverProgress=p}
+                                            }else{
+                                                OfflineGamePackManager.download(game){p->progress=p}
+                                            }
                                         }
-                                        statusText=if(result.isSuccess) game.label+": pacote offline atualizado."
-                                        else game.label+": falha no download. O progresso salvo pode ser retomado."
+                                        statusText=when{
+                                            result.isSuccess && remotePackage?.ready==true && generalReadyForReuse ->
+                                                game.label+": complemento do servidor instalado."
+                                            result.isSuccess ->
+                                                game.label+": pacote offline atualizado."
+                                            else ->
+                                                game.label+": falha no download. O progresso salvo pode ser retomado."
+                                        }
                                         activeDownload=null
                                         progress=null
+                                        serverProgress=null
                                     }
                                 },
                                 modifier=Modifier.weight(1f)
