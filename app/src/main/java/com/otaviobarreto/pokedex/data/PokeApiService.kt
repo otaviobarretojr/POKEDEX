@@ -18,6 +18,7 @@ object PokeApiService {
     data class SpeciesInfo(val captureRate:Int,val baseHappiness:Int,val habitat:String?,val growthRate:String?,val eggGroups:List<String>,val flavorText:String?,val evolutionChainUrl:String?,val genus:String?=null)
     data class EvolutionStage(val pokemonId:Int,val name:String,val requirement:String?)
     enum class EvolutionMethod(val label:String){
+        LEVEL("Nível"),
         TRADE("Troca"),
         ITEM("Item"),
         FRIENDSHIP("Amizade"),
@@ -106,11 +107,9 @@ object PokeApiService {
                             val detail=details.optJSONObject(j)?:continue
                             if(!detailAppliesToContext(detail,context)) continue
                             val requirement=evolutionRequirement(detail)
-                            if(isSpecialEvolutionRequirement(requirement)){
-                                produced=true
-                                evolutionMethods(detail,requirement).forEach{method->
-                                    result+=EvolutionSourceMethod(parentId,childId,method,requirement)
-                                }
+                            produced=true
+                            evolutionMethods(detail,requirement).forEach{method->
+                                result+=EvolutionSourceMethod(parentId,childId,method,requirement)
                             }
                         }
                     }
@@ -279,7 +278,8 @@ object PokeApiService {
         if(detail.optBoolean("needs_multiplayer",false)) result+=EvolutionMethod.MULTIPLAYER
         if(detail.optInt("min_steps")>0 || detail.optInt("min_damage_taken")>0 || detail.optInt("min_move_count")>0 || detail.optBoolean("turn_upside_down",false) || trigger in setOf("shed","spin","tower-of-darkness","tower-of-waters","three-critical-hits","take-damage","other")) result+=EvolutionMethod.ACTION
         val plainLevel=Regex("^Subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(requirement.trim())
-        if(!plainLevel && (trigger=="level-up" || detail.optInt("min_level")>0) && result.isEmpty()) result+=EvolutionMethod.LEVEL_CONDITION
+        if(plainLevel) result+=EvolutionMethod.LEVEL
+        else if((trigger=="level-up" || detail.optInt("min_level")>0) && result.isEmpty()) result+=EvolutionMethod.LEVEL_CONDITION
         if(result.isEmpty() && isSpecialEvolutionRequirement(requirement)) result+=EvolutionMethod.OTHER
         return result
     }
@@ -296,7 +296,9 @@ object PokeApiService {
         if(listOf("dusty bowl","chuva","região de").any{it in r}) result+=EvolutionMethod.LOCATION
         if("union circle" in r || "multiplayer" in r) result+=EvolutionMethod.MULTIPLAYER
         if(listOf("passos","girar","virar o console","golpes críticos","dano","recoil","batalha","coins","vezes","tower of").any{it in r}) result+=EvolutionMethod.ACTION
-        if(result.isEmpty() && ("nível" in r || "subir " in r)) result+=EvolutionMethod.LEVEL_CONDITION
+        val plainLevel=Regex("^subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(requirement.trim())
+        if(result.isEmpty() && plainLevel) result+=EvolutionMethod.LEVEL
+        else if(result.isEmpty() && ("nível" in r || "subir " in r)) result+=EvolutionMethod.LEVEL_CONDITION
         if(result.isEmpty()) result+=EvolutionMethod.OTHER
         return result
     }
