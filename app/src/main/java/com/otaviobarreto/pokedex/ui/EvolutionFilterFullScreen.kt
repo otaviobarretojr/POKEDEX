@@ -402,6 +402,13 @@ internal fun EvolutionFilterFullScreen(
                                                         maxLines=1
                                                     )
                                                 }
+                                                Text(
+                                                    advice.difficulty.label,
+                                                    style=MaterialTheme.typography.labelSmall,
+                                                    fontWeight=FontWeight.Bold,
+                                                    color=MaterialTheme.colorScheme.primary,
+                                                    maxLines=1
+                                                )
                                                 advice.versionAvailability?.takeIf{
                                                     it.kind==VersionAvailabilityKind.EXCLUSIVE ||
                                                         it.kind==VersionAvailabilityKind.SPLIT_FORMS
@@ -436,7 +443,7 @@ internal fun EvolutionFilterFullScreen(
                                                 }
                                                 advice.alternative?.let{alternative->
                                                     Text(
-                                                        "Alternativa: "+alternative.method.label+" · "+alternative.title,
+                                                        "Alternativa: "+alternative.title,
                                                         style=MaterialTheme.typography.labelSmall,
                                                         color=MaterialTheme.colorScheme.primary,
                                                         maxLines=2,
@@ -446,13 +453,15 @@ internal fun EvolutionFilterFullScreen(
                                             }
                                         }
                                         route?.let{resolved->
-                                            Text(
-                                                (names[resolved.sourcePokemonId] ?: "Pokémon #"+resolved.sourcePokemonId)+" → "+entry.name,
-                                                style=MaterialTheme.typography.labelSmall,
-                                                color=MaterialTheme.colorScheme.primary,
-                                                maxLines=1,
-                                                overflow=TextOverflow.Ellipsis
-                                            )
+                                            if(filterKey!="ALL"){
+                                                Text(
+                                                    (names[resolved.sourcePokemonId] ?: "Pokémon #"+resolved.sourcePokemonId)+" → "+entry.name,
+                                                    style=MaterialTheme.typography.labelSmall,
+                                                    color=MaterialTheme.colorScheme.primary,
+                                                    maxLines=1,
+                                                    overflow=TextOverflow.Ellipsis
+                                                )
+                                            }
                                             resolved.targetFormKey?.takeIf{
                                                 resolved.targetPokemonId to it in novelFormIdentities
                                             }?.let{formKey->
@@ -473,7 +482,7 @@ internal fun EvolutionFilterFullScreen(
                                                     overflow=TextOverflow.Ellipsis
                                                 )
                                             }
-                                            if(targetRoutes.size>1){
+                                            if(filterKey!="ALL" && targetRoutes.size>1){
                                                 Text(
                                                     "+"+(targetRoutes.size-1)+" alternativa"+if(targetRoutes.size-1==1)"" else "s",
                                                     style=MaterialTheme.typography.labelSmall,
