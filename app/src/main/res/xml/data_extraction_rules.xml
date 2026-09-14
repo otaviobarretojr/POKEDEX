@@ -2,6 +2,8 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="offline_game_packs_v2.xml" />
+        <exclude domain="file" path="api-cache-v1/" />
+        <exclude domain="file" path="pokemon-images-offline/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="offline_game_packs_v2.xml" />
