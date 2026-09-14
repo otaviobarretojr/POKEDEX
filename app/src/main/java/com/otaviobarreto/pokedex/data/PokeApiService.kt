@@ -335,64 +335,9 @@ object PokeApiService {
     internal fun auditFallbackMethods(requirement:String):Set<EvolutionMethod> = fallbackMethods(requirement)
     internal fun auditSpecialRequirement(pokemonId:Int,context:GameContext?):String? = specialRequirementFor(pokemonId,context)
 
-    private fun hasContextualOverride(pokemonId:Int,context:GameContext?):Boolean =
-        context!=null && pokemonId in setOf(899,904,892)
+    private fun specialRequirementFor(pokemonId:Int,context:GameContext?):String? =
+        EvolutionCuratedCatalog.ruleFor(pokemonId,context)?.requirement
 
-    private fun specialRequirementFor(pokemonId:Int,context:GameContext?):String?{
-        EvolutionCuratedCatalog.ruleFor(pokemonId,context)?.let{return it.requirement}
-        val game=context?.label.orEmpty()
-        return when(pokemonId){
-            899 -> when(game){
-                "" -> specialEvolutionRequirements[pokemonId]
-                "Legends Arceus" -> "Usar Psyshield Bash em Agile Style 20 vezes • Depois subir de nível"
-                else -> "Evolução indisponível neste jogo; evolua Stantler em Pokémon Legends: Arceus e transfira pelo Pokémon HOME"
-            }
-            904 -> when(game){
-                "" -> specialEvolutionRequirements[pokemonId]
-                "Legends Arceus" -> "Usar Barb Barrage em Strong Style 20 vezes • Depois subir de nível"
-                "Scarlet / Violet" -> "Subir de nível conhecendo Barb Barrage"
-                "Pokémon Legends: Z-A" -> "Acertar 20 alvos com Barb Barrage"
-                else -> specialEvolutionRequirements[pokemonId]
-            }
-            892 -> when(game){
-                "" -> specialEvolutionRequirements[pokemonId]
-                "Sword / Shield" -> "Concluir a torre correspondente e interagir com o Scroll of Darkness ou Scroll of Waters"
-                "Scarlet / Violet" -> "Usar Scroll of Darkness ou Scroll of Waters"
-                else -> specialEvolutionRequirements[pokemonId]
-            }
-            else -> specialEvolutionRequirements[pokemonId]
-        }
-    }
-
-    /**
-     * Mecânicas especiais que o evolution_details genérico não descreve por completo.
-     */
-    private val specialEvolutionRequirements=mapOf(
-        266 to "Subir ao nível 7 • Resultado entre Silcoon/Cascoon depende do valor de personalidade interno",
-        268 to "Subir ao nível 7 • Resultado entre Silcoon/Cascoon depende do valor de personalidade interno",
-        292 to "Nincada sobe ao nível 20 • Ter um espaço vazio no time • Ter uma Poké Ball na bolsa",
-        687 to "Subir de nível a partir do nível 30 • Virar o console de cabeça para baixo",
-        745 to "Subir de nível a partir do nível 25 • Forma depende do horário; Dusk exige Rockruff com Own Tempo no período correto",
-        849 to "Subir ao nível 30 • Forma Amped ou Low Key depende da Nature do Toxel",
-        865 to "Acertar 3 golpes críticos na mesma batalha com Galarian Farfetch'd",
-        867 to "Galarian Yamask deve perder pelo menos 49 HP sem desmaiar • Passar sob o arco de pedra em Dusty Bowl",
-        869 to "Milcery segurando um Sweet • Girar o personagem; forma e decoração dependem do Sweet, direção, duração e horário",
-        892 to "Kubfu: interagir com o Scroll of Darkness ou Scroll of Waters após concluir a torre correspondente",
-        899 to "Usar Psyshield Bash em Agile Style 20 vezes • Depois subir de nível",
-        901 to "Usar Peat Block em Ursaring durante lua cheia",
-        902 to "Basculin (White-Striped) deve acumular pelo menos 294 de dano de recoil sem desmaiar",
-        904 to "Usar Barb Barrage em Strong Style 20 vezes • Depois subir de nível",
-        923 to "Caminhar 1.000 passos com Pawmo no modo Let's Go • Depois subir de nível",
-        947 to "Caminhar 1.000 passos com Bramblin no modo Let's Go • Depois subir de nível",
-        954 to "Caminhar 1.000 passos com Rellor no modo Let's Go • Depois subir de nível",
-        964 to "Subir Finizen ao nível 38 ou mais enquanto estiver em uma sessão multiplayer/Union Circle",
-        979 to "Usar Rage Fist 20 vezes • Depois subir de nível",
-        983 to "Bisharp segurando Leader's Crest • Derrotar 3 Bisharp líderes que também seguram Leader's Crest • Depois subir de nível",
-        925 to "Tandemaus evolui a partir do nível 25 após participar de uma batalha; a forma Family of Three é rara",
-        982 to "Dunsparce evolui ao subir de nível conhecendo Hyper Drill; a forma Three-Segment é rara",
-        1000 to "Coletar 999 Gimmighoul Coins • Depois subir Gimmighoul de nível",
-        1019 to "Dipplin evolui ao subir de nível conhecendo Dragon Cheer"
-    )
     private fun getJson(url:String)=JSONObject(getText(url));private fun getJsonArray(url:String)=JSONArray(getText(url));private fun getText(url:String):String = PersistentApiCache.getOrFetch(url) { val connection=URL(url).openConnection() as HttpURLConnection;connection.connectTimeout=12_000;connection.readTimeout=12_000;connection.requestMethod="GET";connection.setRequestProperty("Accept","application/json");connection.connect();try{if(connection.responseCode !in 200..299)error("HTTP ${connection.responseCode} while loading $url");connection.inputStream.bufferedReader().use{it.readText()}}finally{connection.disconnect()}}
     private fun idFromUrl(url:String)=url.trimEnd('/').substringAfterLast('/').toInt()
 }
