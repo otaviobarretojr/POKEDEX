@@ -253,10 +253,9 @@ object PokeApiService {
     }
 
     private fun detailAppliesToContext(detail:JSONObject,context:GameContext?):Boolean{
-        if(context==null) return true
-        val vg=detail.optJSONObject("version_group_id")?.optString("name")
-            ?: detail.optJSONObject("version_group")?.optString("name")
-        return vg.isNullOrBlank() || context.matchesVersionGroup(vg)
+        // version_group_id marks when a rule was introduced, not necessarily the only
+        // game where it remains valid. Game-specific changes are handled by overrides.
+        return true
     }
 
     private fun evolutionMethods(detail:JSONObject,requirement:String):Set<EvolutionMethod>{
@@ -277,6 +276,7 @@ object PokeApiService {
     }
 
     private fun fallbackMethods(requirement:String):Set<EvolutionMethod>{
+        if(requirement.startsWith("Evolução indisponível",ignoreCase=true)) return emptySet()
         val r=requirement.lowercase()
         val result=linkedSetOf<EvolutionMethod>()
         if("troca" in r) result+=EvolutionMethod.TRADE
@@ -295,16 +295,23 @@ object PokeApiService {
     private fun specialRequirementFor(pokemonId:Int,context:GameContext?):String?{
         val game=context?.label.orEmpty()
         return when(pokemonId){
-            899 -> if(game=="Legends Arceus") "Usar Psyshield Bash em Agile Style 20 vezes • Depois subir de nível" else null
+            899 -> when(game){
+                "" -> specialEvolutionRequirements[pokemonId]
+                "Legends Arceus" -> "Usar Psyshield Bash em Agile Style 20 vezes • Depois subir de nível"
+                else -> "Evolução indisponível neste jogo; evolua Stantler em Pokémon Legends: Arceus e transfira pelo Pokémon HOME"
+            }
             904 -> when(game){
+                "" -> specialEvolutionRequirements[pokemonId]
                 "Legends Arceus" -> "Usar Barb Barrage em Strong Style 20 vezes • Depois subir de nível"
                 "Scarlet / Violet" -> "Subir de nível conhecendo Barb Barrage"
-                else -> null
+                "Pokémon Legends: Z-A" -> "Acertar 20 alvos com Barb Barrage"
+                else -> specialEvolutionRequirements[pokemonId]
             }
             892 -> when(game){
+                "" -> specialEvolutionRequirements[pokemonId]
                 "Sword / Shield" -> "Concluir a torre correspondente e interagir com o Scroll of Darkness ou Scroll of Waters"
                 "Scarlet / Violet" -> "Usar Scroll of Darkness ou Scroll of Waters"
-                else -> null
+                else -> specialEvolutionRequirements[pokemonId]
             }
             else -> specialEvolutionRequirements[pokemonId]
         }
