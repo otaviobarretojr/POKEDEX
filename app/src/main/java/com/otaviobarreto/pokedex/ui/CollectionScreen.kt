@@ -17,14 +17,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private enum class CollectionSection(val label:String){
-    OVERVIEW("Visão geral"), LIVING("Living Dex"), SHINY("Shiny Dex"), FORMS("Form Dex")
+    OVERVIEW("Resumo"), LIVING("Living"), SHINY("Shiny"), FORMS("Formas")
 }
 
 @Composable
 fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit){
     val captured=CollectionStore.capturedIds
     val variants=VariantCollectionStore.ownedVariants
-    val plan=remember(captured,variants){LivingDexPlanner.current(48)}
+    val plan=remember(captured,variants){LivingDexPlanner.current(PokeApiService.MAX_NATIONAL_DEX_ID)}
     val insights=remember(captured,variants,CollectionStore.boxes){CollectionInsightsService.current()}
     var section by rememberSaveable{mutableStateOf(CollectionSection.OVERVIEW)}
     var advisorReady by remember{mutableStateOf(CollectionAdvisor.isWarm())}
@@ -44,15 +44,15 @@ fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->U
         ){
             item{
                 Column{
-                    DexSectionEyebrow("Sua coleção")
+                    DexSectionEyebrow("Seu progresso")
                     Text("Coleção",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                    Text("O lugar único para acompanhar Living Dex, Shiny Dex, formas e progresso por jogo.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Living Dex, Shinies, formas e progresso de coleção ficam exclusivamente aqui.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             item{
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()){
                     CollectionSection.entries.forEachIndexed{index,item->
-                        SegmentedButton(selected=section==item,onClick={section=item},shape=SegmentedButtonDefaults.itemShape(index,CollectionSection.entries.size),label={Text(item.label)})
+                        SegmentedButton(selected=section==item,onClick={section=item},shape=SegmentedButtonDefaults.itemShape(index,CollectionSection.entries.size),label={Text(item.label,maxLines=1)})
                     }
                 }
             }
@@ -71,25 +71,28 @@ private fun androidx.compose.foundation.lazy.LazyListScope.overviewItems(
     onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit,openSection:(CollectionSection)->Unit
 ){
     item{
-        DexGlassSurface(Modifier.fillMaxWidth()){
+        DexGlassSurface(Modifier.fillMaxWidth().clickable{openSection(CollectionSection.LIVING)}){
             Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-                Text("Living Dex",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-                Text("${plan.capturedSpecies} / ${plan.totalSpecies}",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                    Column{Text("Living Dex",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black);Text("National Dex",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                    Text("${(plan.speciesRatio*100).toInt()}%",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+                }
+                Text("${plan.capturedSpecies} / ${plan.totalSpecies}",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black,modifier=Modifier.padding(top=8.dp))
                 LinearProgressIndicator(progress={plan.speciesRatio},modifier=Modifier.fillMaxWidth().padding(vertical=10.dp))
-                Text("${(plan.speciesRatio*100).toInt()}% da National Dex",color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Faltam ${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies",color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
     item{
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-            CollectionMetricCard("Shiny Dex",plan.shinySpecies.toString(),"espécies",Icons.Default.AutoAwesome,Modifier.weight(1f)){openSection(CollectionSection.SHINY)}
-            CollectionMetricCard("Form Dex",plan.formRegistrations.toString(),"formas",Icons.Default.Extension,Modifier.weight(1f)){openSection(CollectionSection.FORMS)}
+            CollectionMetricCard("Shiny Dex",plan.shinySpecies.toString(),"${percent(plan.shinySpecies,plan.totalSpecies)}%",Icons.Default.AutoAwesome,Modifier.weight(1f)){openSection(CollectionSection.SHINY)}
+            CollectionMetricCard("Form Dex",plan.formRegistrations.toString(),"registros",Icons.Default.Extension,Modifier.weight(1f)){openSection(CollectionSection.FORMS)}
         }
     }
     item{
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-            CollectionMetricCard("Jogos",insights.gamesWithProgress.toString(),"com progresso",Icons.Default.SportsEsports,Modifier.weight(1f),null)
-            CollectionMetricCard("Faltam",(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0).toString(),"espécies",Icons.Default.CatchingPokemon,Modifier.weight(1f)){openSection(CollectionSection.LIVING)}
+            CollectionMetricCard("Jogos",insights.gamesWithProgress.toString(),"com coleção",Icons.Default.SportsEsports,Modifier.weight(1f),null)
+            CollectionMetricCard("Espécies",plan.capturedSpecies.toString(),"únicas",Icons.Default.CatchingPokemon,Modifier.weight(1f),null)
         }
     }
     item{
@@ -118,7 +121,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.overviewItems(
                     Text("${gen.captured}/${gen.total}")
                 }
                 LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(vertical=8.dp))
-                Text("${gen.shiny} Shiny",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${gen.shiny} Shiny · ${percent(gen.shiny,gen.total)}%",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -128,7 +131,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.overviewItems(
             Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
                 Column(Modifier.weight(1f)){
                     Text(game.game,fontWeight=FontWeight.Bold)
-                    Text("${game.regionsWithProgress}/${game.totalRegions} região(ões) com progresso",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${game.regionsWithProgress}/${game.totalRegions} região(ões) com coleção",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(game.captured.toString(),fontWeight=FontWeight.Black)
             }
@@ -138,12 +141,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.overviewItems(
 
 private fun androidx.compose.foundation.lazy.LazyListScope.livingItems(plan:LivingDexPlan,onPokemonClick:(Int)->Unit){
     item{CollectionSectionHeader("Living Dex","${plan.capturedSpecies}/${plan.totalSpecies}","${(plan.speciesRatio*100).toInt()}% completo")}
-    item{Text("Próximos faltantes",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)}
-    items(plan.missingSpecies,key={it}){id->
-        Card(Modifier.fillMaxWidth().clickable{onPokemonClick(id)}){
-            Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
-                Text("#"+id.toString().padStart(4,'0'),fontWeight=FontWeight.Bold)
-                Text("Ver Pokémon",color=MaterialTheme.colorScheme.primary)
+    if(plan.missingSpecies.isEmpty()){
+        item{CollectionEmptyState("Living Dex completa","Todas as espécies da National Dex estão registradas na sua coleção.")}
+    }else{
+        item{Text("Espécies que faltam",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)}
+        items(plan.missingSpecies,key={it}){id->
+            Card(Modifier.fillMaxWidth().clickable{onPokemonClick(id)}){
+                Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
+                    Text("#"+id.toString().padStart(4,'0'),fontWeight=FontWeight.Bold)
+                    Text("Ver Pokémon",color=MaterialTheme.colorScheme.primary)
+                }
             }
         }
     }
@@ -151,9 +158,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.livingItems(plan:Livi
 
 private fun androidx.compose.foundation.lazy.LazyListScope.shinyItems(plan:LivingDexPlan,variants:List<OwnedPokemonVariant>,onPokemonClick:(Int)->Unit){
     val shinySpecies=variants.asSequence().filter{it.shiny}.map{it.speciesId}.distinct().sorted().toList()
-    item{CollectionSectionHeader("Shiny Dex",plan.shinySpecies.toString(),"espécies Shiny registradas")}
+    item{CollectionSectionHeader("Shiny Dex","${plan.shinySpecies}/${plan.totalSpecies}","${percent(plan.shinySpecies,plan.totalSpecies)}% da National Dex em Shiny")}
     if(shinySpecies.isEmpty()){
-        item{CollectionEmptyState("Nenhum Shiny registrado","Quando você registrar uma variante Shiny, ela aparecerá aqui no resumo da coleção.")}
+        item{CollectionEmptyState("Nenhum Shiny registrado","Quando você registrar uma variante Shiny, ela aparecerá aqui.")}
     }else items(shinySpecies,key={it}){id->
         Card(Modifier.fillMaxWidth().clickable{onPokemonClick(id)}){
             Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
@@ -208,4 +215,5 @@ private fun CollectionEmptyState(title:String,subtitle:String){
     Card{Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){Text(title,fontWeight=FontWeight.Black);Text(subtitle,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))}}
 }
 
+private fun percent(value:Int,total:Int):Int=if(total<=0)0 else ((value.toFloat()/total)*100).toInt().coerceIn(0,100)
 private fun roman(value:Int)=when(value){1->"I";2->"II";3->"III";4->"IV";5->"V";6->"VI";7->"VII";8->"VIII";9->"IX";else->value.toString()}
