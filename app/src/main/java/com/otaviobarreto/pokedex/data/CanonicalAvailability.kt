@@ -8,6 +8,7 @@ enum class CanonicalAcquisitionKind(val label:String){
     RAID("Raid"),
     EVENT_SPECIAL("Evento / método especial"),
     HOME_TRANSFER("Transferência / HOME"),
+    OTHER_METHOD("Outro método"),
     UNAVAILABLE("Não disponível nesta Pokédex")
 }
 
@@ -113,11 +114,11 @@ object CanonicalAvailabilityResolver {
             inRegionalDex=true,
             regionalNumber=dexEntry.gameNumber,
             version=version,
-            acquisitionKind=CanonicalAcquisitionKind.EVENT_SPECIAL,
-            acquisitionLabel="Disponível nesta Pokédex por método especial",
-            requirement="Sem encontro selvagem confirmado na fonte estruturada. Verifique presente, missão, raid, troca, evento ou transferência.",
+            acquisitionKind=CanonicalAcquisitionKind.OTHER_METHOD,
+            acquisitionLabel="Método de obtenção ainda não identificado",
+            requirement="A espécie pertence a esta Pokédex, mas a fonte estruturada não confirmou captura selvagem, evolução ou método especial. Consulte presente, missão, raid, troca, evento ou transferência.",
             confidence=AvailabilityConfidence.PARTIAL,
-            provenance=listOf("Pokédex regional","Fallback conservador")
+            provenance=listOf("Pokédex regional","Método pendente de confirmação")
         )
     }
 }
@@ -133,6 +134,7 @@ object SpecialAcquisitionCatalog {
     fun lookup(id:Int,context:GameContext):SpecialAcquisition? {
         val key=context.pokedexSlug
         return when {
+            key in setOf("lumiose-city","hyperspace") && id in setOf(152,498,158) -> SpecialAcquisition(CanonicalAcquisitionKind.GIFT_STARTER,"Pokémon inicial","Escolha inicial da jornada")
             key=="paldea" && id in setOf(906,909,912) -> SpecialAcquisition(CanonicalAcquisitionKind.GIFT_STARTER,"Pokémon inicial","Escolha inicial da jornada")
             key=="hisui" && id in setOf(722,155,501) -> SpecialAcquisition(CanonicalAcquisitionKind.GIFT_STARTER,"Pokémon inicial","Escolha inicial da jornada")
             key=="galar" && id in setOf(810,813,816) -> SpecialAcquisition(CanonicalAcquisitionKind.GIFT_STARTER,"Pokémon inicial","Escolha inicial da jornada")
