@@ -157,7 +157,7 @@ fun CompanionCenterScreen(
                                         "Instalação do pacote do servidor pendente"
                                     generalValid && serverUpdateAvailable ->
                                         "Atualização disponível · servidor v"+remoteGeneral?.version
-                                    generalValid -> "Biblioteca compartilhada pronta · "+general.total+" Pokémon"
+                                    generalValid -> "Concluído · "+general.total+" Pokémon · v"+installedServerVersion
                                     serverPackageAvailable ->
                                         "Pacote do servidor disponível · pronto para instalar"
                                     general.complete>0 && general.total>0 ->
@@ -205,54 +205,61 @@ fun CompanionCenterScreen(
                         Modifier.fillMaxWidth().padding(top=10.dp),
                         horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
-                        Button(
-                            enabled=activeDownload==null,
-                            onClick={
-                                activeDownload="__general__"
-                                progress=null
-                                serverProgress=null
-                                statusText="Iniciando Download Geral…"
-                                scope.launch{
-                                    val result=runCatching{
-                                        if(remoteGeneral?.ready==true){
-                                            ServerOfflinePackageInstaller.installGeneral(
-                                                context=context,
-                                                remote=remoteGeneral
-                                            ){p->serverProgress=p}
-                                        }else{
-                                            OfflineGamePackManager.downloadGeneral{p->progress=p}
-                                        }
-                                    }
-                                    if(result.isFailure){
-                                        OfflineGamePackManager.markServerGeneralInstallFailed()
-                                    }
-                                    statusText=when{
-                                        result.isSuccess && remoteGeneral?.ready==true ->
-                                            "Biblioteca geral: pacote do servidor instalado."
-                                        result.isSuccess ->
-                                            "Biblioteca geral: download concluído."
-                                        else ->
-                                            "Biblioteca geral: falha no download · "+
-                                                (result.exceptionOrNull()?.message ?: "tente novamente")
-                                    }
-                                    activeDownload=null
+                        if(!generalValid || serverUpdateAvailable){
+                            Button(
+                                enabled=activeDownload==null,
+                                onClick={
+                                    activeDownload="__general__"
                                     progress=null
                                     serverProgress=null
-                                }
-                            },
-                            modifier=Modifier.weight(1f)
-                        ){
-                            Icon(Icons.Default.Download,null)
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                when{
-                                    general.ready && !generalValid -> "Reparar"
-                                    generalValid -> "Atualizar"
-                                    remoteGeneral?.ready==true -> "Baixar geral"
-                                    general.complete>0 -> "Continuar"
-                                    else -> "Baixar geral"
-                                }
-                            )
+                                    statusText=if(serverUpdateAvailable) "Iniciando atualização da biblioteca…" else "Iniciando Download Geral…"
+                                    scope.launch{
+                                        val result=runCatching{
+                                            if(remoteGeneral?.ready==true){
+                                                ServerOfflinePackageInstaller.installGeneral(
+                                                    context=context,
+                                                    remote=remoteGeneral
+                                                ){p->serverProgress=p}
+                                            }else{
+                                                OfflineGamePackManager.downloadGeneral{p->progress=p}
+                                            }
+                                        }
+                                        if(result.isFailure){
+                                            OfflineGamePackManager.markServerGeneralInstallFailed()
+                                        }
+                                        statusText=when{
+                                            result.isSuccess && remoteGeneral?.ready==true ->
+                                                "Biblioteca geral concluída · versão "+remoteGeneral.version
+                                            result.isSuccess ->
+                                                "Biblioteca geral concluída."
+                                            else ->
+                                                "Biblioteca geral: falha · "+
+                                                    (result.exceptionOrNull()?.message ?: "tente novamente")
+                                        }
+                                        activeDownload=null
+                                        progress=null
+                                        serverProgress=null
+                                    }
+                                },
+                                modifier=Modifier.weight(1f)
+                            ){
+                                Icon(
+                                    if(serverUpdateAvailable) Icons.Default.SystemUpdate else Icons.Default.Download,
+                                    null
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(if(serverUpdateAvailable) "Atualizar" else "Baixar geral")
+                            }
+                        }else{
+                            FilledTonalButton(
+                                enabled=false,
+                                onClick={},
+                                modifier=Modifier.weight(1f)
+                            ){
+                                Icon(Icons.Default.CheckCircle,null)
+                                Spacer(Modifier.width(6.dp))
+                                Text("Atualizado")
+                            }
                         }
                         FilledTonalButton(
                             enabled=activeDownload==null && (general.ready || general.complete>0 || general.total>0),
@@ -363,6 +370,7 @@ fun CompanionCenterScreen(
                             Modifier.fillMaxWidth().padding(top=10.dp),
                             horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                         ){
+                            if(!audit.valid || gameServerUpdateAvailable){
                             Button(
                                 enabled=activeDownload==null &&
                                     !(remotePackage?.ready==true && !generalReadyForReuse),
@@ -399,17 +407,31 @@ fun CompanionCenterScreen(
                                 },
                                 modifier=Modifier.weight(1f)
                             ){
-                                Icon(Icons.Default.Download,null)
+                                Icon(
+                                    if(gameServerUpdateAvailable) Icons.Default.SystemUpdate else Icons.Default.Download,
+                                    null
+                                )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     when{
+                                        gameServerUpdateAvailable -> "Atualizar"
                                         pack.downloaded && !audit.valid -> "Reparar"
-                                        pack.downloaded -> "Atualizar"
                                         remotePackage?.ready==true && !generalReadyForReuse -> "Baixe geral primeiro"
                                         audit.expectedCount>0 && audit.completedIds>0 -> "Continuar"
                                         else -> "Baixar"
                                     }
                                 )
+                            }
+                            }else{
+                                FilledTonalButton(
+                                    enabled=false,
+                                    onClick={},
+                                    modifier=Modifier.weight(1f)
+                                ){
+                                    Icon(Icons.Default.CheckCircle,null)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Atualizado")
+                                }
                             }
                             FilledTonalButton(
                                 enabled=activeDownload==null && (pack.downloaded || audit.expectedCount>0 || audit.completedIds>0),
