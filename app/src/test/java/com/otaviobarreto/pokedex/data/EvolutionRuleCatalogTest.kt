@@ -64,6 +64,6 @@ class EvolutionRuleCatalogTest {
 
         assertEquals("Subir de nível conhecendo Barb Barrage",PokeApiService.auditSpecialRequirement(904,sv))
         assertTrue(PokeApiService.auditSpecialRequirement(904,hisui)?.contains("Strong Style")==true)
-        assertEquals("Acertar 20 alvos com Barb Barrage",PokeApiService.auditSpecialRequirement(904,za))
+        assertEquals("Usar Barb Barrage 20 vezes",PokeApiService.auditSpecialRequirement(904,za))
     }
 }
