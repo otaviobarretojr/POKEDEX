@@ -31,7 +31,7 @@ object PokeApiService {
         MULTIPLAYER("Multiplayer"),
         OTHER("Outro método")
     }
-    data class EvolutionSourceMethod(val sourcePokemonId:Int,val targetPokemonId:Int,val method:EvolutionMethod,val requirement:String)
+    data class EvolutionSourceMethod(\n        val sourcePokemonId:Int,\n        val targetPokemonId:Int,\n        val method:EvolutionMethod,\n        val requirement:String,\n        val sourceFormKey:String?=null,\n        val targetFormKey:String?=null\n    )
     data class EncounterDetail(val version:String,val method:String,val minLevel:Int,val maxLevel:Int,val chance:Int,val conditions:List<String>)
     data class EncounterLocation(val location:String,val versions:List<String>,val details:List<EncounterDetail> = emptyList())
 
@@ -103,7 +103,14 @@ object PokeApiService {
                 if(curated.isNotEmpty()){
                     curated.forEach{rule->
                         fallbackMethods(rule.requirement).forEach{method->
-                            result+=EvolutionSourceMethod(parentId,childId,method,rule.requirement)
+                            result+=EvolutionSourceMethod(
+                                parentId,
+                                childId,
+                                method,
+                                rule.requirement,
+                                rule.sourceFormKey,
+                                rule.targetFormKey
+                            )
                         }
                     }
                 }else if(!special.isNullOrBlank()){
