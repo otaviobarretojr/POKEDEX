@@ -1,7 +1,5 @@
 package com.otaviobarreto.pokedex.data
 
-enum class AppGameKind { ADVENTURE, BATTLE }
-
 data class AppRegion(
     val label: String,
     val source: String,
@@ -12,7 +10,6 @@ data class AppGame(
     val label: String,
     val regions: List<AppRegion>,
     val subtitle: String = "",
-    val kind: AppGameKind = AppGameKind.ADVENTURE,
     val pokedexTotal: Int? = null
 )
 
@@ -68,9 +65,8 @@ object AppGameCatalog {
             "FireRed / LeafGreen",
             listOf(AppRegion("Kanto", "FireRed / LeafGreen · Kanto", "Kanto + Sevii Islands · HOME em outubro de 2026")),
             subtitle = "Kanto + Sevii Islands · relançamento Switch 2026"
-        ),
+        )
     )
 
-    val adventureGames: List<AppGame> get() = games.filter { it.kind == AppGameKind.ADVENTURE }
-    val battleGames: List<AppGame> get() = games.filter { it.kind == AppGameKind.BATTLE }
+    val adventureGames: List<AppGame> get() = games
 }
