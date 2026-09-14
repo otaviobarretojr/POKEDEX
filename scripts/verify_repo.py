@@ -94,8 +94,8 @@ print("Source verification passed.")
 
 # Current stable release guards
 offline = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 19" not in offline:
-    violations.append("Offline pack version is not v19")
+if "PACK_VERSION = 20" not in offline:
+    violations.append("Offline pack version is not v20")
 
 app = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 if ".crossfade(false)" not in app or "1536L * 1024L * 1024L" not in app:
@@ -932,7 +932,7 @@ if "LaunchedEffect(selectedGame){" in journey_v615:
     violations.append("Journey must not reset saved navigation state merely because selectedGame was restored")
 
 offline_v615 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-for required in ("PACK_VERSION = 19", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
+for required in ("PACK_VERSION = 20", "cachedImages", "expectedImages", "hasOfflineArtwork", 'openSnapshot("pokemon-offline-$id")'):
     if required not in offline_v615:
         violations.append(f"Offline artwork integrity audit missing {required}")
 
@@ -1328,7 +1328,7 @@ for required in (
 
 offline_v631 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 for required in (
-    "PACK_VERSION = 19",
+    "PACK_VERSION = 20",
     "cachedJourneyVisuals",
     "expectedJourneyVisuals",
     "JourneyReadinessAudit.referenceCatalogUrls",
@@ -1605,7 +1605,7 @@ if "PokemonFormsService.collectible" not in startup_v12:
     violations.append("v12 startup form preload missing")
 
 offline_v12 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-for required in ("PACK_VERSION = 19", "formArtworkKey(", '"shiny" else "normal"', "countsForLivingDex"):
+for required in ("PACK_VERSION = 20", "formArtworkKey(", '"shiny" else "normal"', "countsForLivingDex"):
     if required not in offline_v12:
         violations.append(f"v12 offline forms/shiny cache missing {required}")
 
@@ -1647,7 +1647,7 @@ for required in ("COSMETIC", "countsForLivingDex", "family of three", "three seg
         violations.append(f"v13 forms curation missing {required}")
 
 offline_v13 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 19" not in offline_v13:
+if "PACK_VERSION = 20" not in offline_v13:
     violations.append("v13 offline pack version missing")
 
 if violations:
@@ -1669,7 +1669,7 @@ for required in ("Plano de captura", "CollectionAdvisor.capturePlan", 'Text("Abr
         violations.append(f"v14 Central capture planner missing {required}")
 
 offline_v14 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 19" not in offline_v14:
+if "PACK_VERSION = 20" not in offline_v14:
     violations.append("v14 offline pack version missing")
 
 if violations:
@@ -1704,7 +1704,7 @@ for required in (
         violations.append(f"v15 Central route UI missing {required}")
 
 offline_v15 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 19" not in offline_v15:
+if "PACK_VERSION = 20" not in offline_v15:
     violations.append("v15 offline pack version missing")
 
 if violations:
@@ -1743,8 +1743,8 @@ for required in (
         violations.append(f"v16 Central acquisition UI missing {required}")
 
 offline_v16 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 19" not in offline_v16:
-    violations.append("v19 offline pack version missing")
+if "PACK_VERSION = 20" not in offline_v16:
+    violations.append("v20 offline pack version missing")
 
 if violations:
     print("Source verification failed:")
@@ -1978,7 +1978,7 @@ for required in (
 
 offline_v1700 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
 for required in (
-    "PACK_VERSION = 19",
+    "PACK_VERSION = 20",
     "PokemonFormsService.resourceUrlsFor(id)",
     "form.spriteUrl",
     "form.shinySpriteUrl",
@@ -2123,8 +2123,8 @@ for required in ("CollectionIntegrityReport", "missingGlobalOwnership", "missing
         violations.append(f"v18.3 collection integrity guard missing {required}")
 
 offline_v1830 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt").read_text(encoding="utf-8")
-if "PACK_VERSION = 19" not in offline_v1830:
-    violations.append("offline pack version must be 19")
+if "PACK_VERSION = 20" not in offline_v1830:
+    violations.append("offline pack version must be 20")
 if "runCatching { PokemonFormsService.collectible(id) }" in offline_v1830:
     violations.append("v18.3 offline form loading must fail/retry instead of swallowing errors")
 if "val forms = formsJob.await()" not in offline_v1830:
