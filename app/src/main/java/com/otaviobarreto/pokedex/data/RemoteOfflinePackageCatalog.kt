@@ -89,12 +89,12 @@ object RemoteOfflinePackageCatalog {
 
     fun packageKeyForGame(gameLabel:String):String = when(gameLabel){
         "Pokémon Legends: Z-A" -> "legends-za"
-        "Pokémon Scarlet / Violet" -> "scarlet-violet"
-        "Pokémon Sword / Shield" -> "sword-shield"
-        "Pokémon Let's Go Pikachu / Eevee" -> "lets-go"
-        "Pokémon Legends: Arceus" -> "legends-arceus"
-        "Pokémon Brilliant Diamond / Shining Pearl" -> "bdsp"
-        "Pokémon FireRed / LeafGreen" -> "firered-leafgreen"
+        "Pokémon Scarlet / Violet", "Scarlet / Violet" -> "scarlet-violet"
+        "Pokémon Sword / Shield", "Sword / Shield" -> "sword-shield"
+        "Pokémon Let's Go Pikachu / Eevee", "Let's Go Pikachu / Eevee" -> "lets-go"
+        "Pokémon Legends: Arceus", "Legends Arceus" -> "legends-arceus"
+        "Pokémon Brilliant Diamond / Shining Pearl", "Brilliant Diamond / Shining Pearl" -> "bdsp"
+        "Pokémon FireRed / LeafGreen", "FireRed / LeafGreen" -> "firered-leafgreen"
         else -> gameLabel.lowercase()
             .replace(Regex("[^a-z0-9]+"),"-")
             .trim('-')
