@@ -304,6 +304,7 @@ object PokeApiService {
         context!=null && pokemonId in setOf(899,904,892)
 
     private fun specialRequirementFor(pokemonId:Int,context:GameContext?):String?{
+        EvolutionCuratedCatalog.ruleFor(pokemonId,context)?.let{return it.requirement}
         val game=context?.label.orEmpty()
         return when(pokemonId){
             899 -> when(game){
