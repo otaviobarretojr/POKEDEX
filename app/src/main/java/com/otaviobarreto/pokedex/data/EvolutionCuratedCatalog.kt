@@ -91,6 +91,44 @@ object EvolutionCuratedCatalog {
                 CuratedEvolutionRule(849,"Toxel sobe ao nível 30 • Nature compatível com Amped Form",targetFormKey="toxtricity-amped"),
                 CuratedEvolutionRule(849,"Toxel sobe ao nível 30 • Nature compatível com Low Key Form",targetFormKey="toxtricity-low-key")
             )
+            841 -> when(game){
+                "Sword / Shield","Scarlet / Violet" -> listOf(CuratedEvolutionRule(841,"Usar Tart Apple em Applin"))
+                else -> emptyList()
+            }
+            842 -> when(game){
+                "Sword / Shield","Scarlet / Violet" -> listOf(CuratedEvolutionRule(842,"Usar Sweet Apple em Applin"))
+                else -> emptyList()
+            }
+            855 -> when(game){
+                "Sword / Shield","Scarlet / Violet" -> listOf(
+                    CuratedEvolutionRule(855,"Usar Cracked Pot em Sinistea Phony Form"),
+                    CuratedEvolutionRule(855,"Usar Chipped Pot em Sinistea Antique Form")
+                )
+                else -> emptyList()
+            }
+            936 -> when(game){
+                "Scarlet / Violet" -> listOf(CuratedEvolutionRule(936,"Usar Auspicious Armor em Charcadet"))
+                else -> emptyList()
+            }
+            937 -> when(game){
+                "Scarlet / Violet" -> listOf(CuratedEvolutionRule(937,"Usar Malicious Armor em Charcadet"))
+                else -> emptyList()
+            }
+            1011 -> when(game){
+                "Scarlet / Violet" -> listOf(CuratedEvolutionRule(1011,"Usar Syrupy Apple em Applin"))
+                else -> emptyList()
+            }
+            1013 -> when(game){
+                "Scarlet / Violet" -> listOf(
+                    CuratedEvolutionRule(1013,"Usar Unremarkable Teacup em Poltchageist Counterfeit Form"),
+                    CuratedEvolutionRule(1013,"Usar Masterpiece Teacup em Poltchageist Artisan Form")
+                )
+                else -> emptyList()
+            }
+            1018 -> when(game){
+                "Scarlet / Violet" -> listOf(CuratedEvolutionRule(1018,"Usar Metal Alloy em Duraludon"))
+                else -> emptyList()
+            }
             350 -> when(game){
                 "Brilliant Diamond / Shining Pearl" -> listOf(
                     CuratedEvolutionRule(350,"Subir de nível com Beauty 170 ou mais")
