@@ -115,10 +115,10 @@ object CanonicalAvailabilityResolver {
             regionalNumber=dexEntry.gameNumber,
             version=version,
             acquisitionKind=CanonicalAcquisitionKind.OTHER_METHOD,
-            acquisitionLabel="Método de obtenção ainda não identificado",
-            requirement="A espécie pertence a esta Pokédex, mas a fonte estruturada não confirmou captura selvagem, evolução ou método especial. Consulte presente, missão, raid, troca, evento ou transferência.",
+            acquisitionLabel="",
+            requirement=null,
             confidence=AvailabilityConfidence.PARTIAL,
-            provenance=listOf("Pokédex regional","Método pendente de confirmação")
+            provenance=listOf("Pokédex regional")
         )
     }
 }
