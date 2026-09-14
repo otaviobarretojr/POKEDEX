@@ -25,6 +25,8 @@ data class OwnedPokemonVariant(
                 (if(shiny)"shiny/" else "") + formPokemonId + ".png"
 }
 
+internal fun OwnedPokemonVariant.countsForFormDex():Boolean = !shiny && !isDefault
+
 internal fun sameOwnedVariantIdentity(
     existing: OwnedPokemonVariant,
     candidate: OwnedPokemonVariant
@@ -133,7 +135,7 @@ object VariantCollectionStore {
     }
 
     fun shinyCount():Int = ownedVariants.count{it.shiny}
-    fun formCount():Int = ownedVariants.asSequence().filter{!it.shiny && !it.isDefault}.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}.distinct().count()
+    fun formCount():Int = ownedVariants.asSequence().filter{it.countsForFormDex()}.map{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}.distinct().count()
     fun speciesWithVariants():Int = ownedVariants.map{it.speciesId}.distinct().size
 
     fun exportSnapshot():JSONArray = JSONArray().also{array->
@@ -173,7 +175,7 @@ object VariantCollectionStore {
                             ?: o.optString("formName","Forma").lowercase(),
                         normalArtworkUrl=o.optString("normalArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
                         shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
-                        isDefault=if(o.has("isDefault")) o.optBoolean("isDefault") else form==species
+                        isDefault=if(o.has("isDefault")) o.optBoolean("isDefault") else inferLegacyDefaultForm(species,form,o.optString("formKey"),o.optString("formName","Forma"))
                     )
                 )
             }
@@ -183,6 +185,13 @@ object VariantCollectionStore {
         persist()
         true
     }.getOrDefault(false)
+
+    private fun inferLegacyDefaultForm(speciesId:Int,formPokemonId:Int,formKey:String,formName:String):Boolean {
+        if(formPokemonId!=speciesId) return false
+        val identifier=NationalDexCatalog.all.firstOrNull{it.id==speciesId}?.identifier ?: return true
+        fun normalize(value:String)=value.trim().lowercase().replace(' ','-')
+        return normalize(formKey)==identifier || normalize(formName)==identifier
+    }
 
     private fun persist(){
         context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE)?.edit()
