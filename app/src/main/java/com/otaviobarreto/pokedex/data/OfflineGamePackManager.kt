@@ -286,6 +286,37 @@ object OfflineGamePackManager {
     fun generalServerVersion():Int =
         prefs().getInt("general_server_version",0)
 
+    fun finalizeImportedGame(
+        gameLabel:String,
+        ids:Set<Int>,
+        regions:List<String>,
+        resourceUrls:Set<String>,
+        visualUrls:Set<String>,
+        serverVersion:Int
+    ){
+        prefs().edit()
+            .putBoolean(key(gameLabel,"ready"),true)
+            .putLong(key(gameLabel,"at"),System.currentTimeMillis())
+            .putInt(key(gameLabel,"count"),ids.size)
+            .putInt(key(gameLabel,"complete"),ids.size)
+            .putInt(key(gameLabel,"version"),PACK_VERSION)
+            .putInt(key(gameLabel,"reused"),ids.size)
+            .putInt(key(gameLabel,"downloaded_new"),0)
+            .putInt(key(gameLabel,"server_version"),serverVersion)
+            .putString(key(gameLabel,"regions"),regions.joinToString("|"))
+            .putStringSet(key(gameLabel,"manifest_ids"),ids.map(Int::toString).toSet())
+            .putStringSet(key(gameLabel,"completed_ids"),ids.map(Int::toString).toSet())
+            .putStringSet(key(gameLabel,"resource_urls"),resourceUrls)
+            .putStringSet(key(gameLabel,"visual_urls"),visualUrls)
+            .putStringSet(key(gameLabel,"form_artwork_keys"),emptySet())
+            .apply()
+    }
+
+    fun gameServerVersion(gameLabel:String):Int =
+        prefs().getInt(key(gameLabel,"server_version"),0)
+
+    fun journeyVisualCacheKey(url:String):String = journeyVisualKey(url)
+
     private fun formArtworkKey(
         speciesId: Int,
         formPokemonId: Int,
@@ -815,6 +846,7 @@ object OfflineGamePackManager {
             .remove(key(gameLabel, "form_artwork_keys"))
             .remove(key(gameLabel, "reused"))
             .remove(key(gameLabel, "downloaded_new"))
+            .remove(key(gameLabel, "server_version"))
             .remove(key(gameLabel, "running"))
             .remove(key(gameLabel, "runtime_done"))
             .remove(key(gameLabel, "runtime_total"))
