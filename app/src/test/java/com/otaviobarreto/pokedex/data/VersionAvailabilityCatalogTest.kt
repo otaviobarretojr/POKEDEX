@@ -37,6 +37,19 @@ class VersionAvailabilityCatalogTest {
         assertEquals(VersionAvailabilityKind.SPLIT_FORMS,VersionAvailabilityCatalog.forPokemon(386,context)?.kind)
     }
 
+    @Test fun dlcExclusiveIsNotMislabelledInPaldea() {
+        val paldea=GameContext.fromSource("Scarlet / Violet · Paldea")
+        val kitakami=GameContext.fromSource("Scarlet / Violet · Kitakami")
+        assertEquals(VersionAvailabilityKind.UNAVAILABLE,VersionAvailabilityCatalog.forPokemon(37,paldea)?.kind)
+        assertEquals("Scarlet",VersionAvailabilityCatalog.forPokemon(37,kitakami)?.exclusiveVersion)
+    }
+
+    @Test fun fireRedLeafGreenIncludesMarillLine() {
+        val context=GameContext.fromSource("FireRed / LeafGreen · Kanto")
+        assertEquals("LeafGreen",VersionAvailabilityCatalog.forPokemon(183,context)?.exclusiveVersion)
+        assertEquals("LeafGreen",VersionAvailabilityCatalog.forPokemon(184,context)?.exclusiveVersion)
+    }
+
     @Test fun sharedSpeciesAreNotMarkedExclusive() {
         val context=GameContext.fromSource("Scarlet / Violet · Paldea")
         assertEquals(VersionAvailabilityKind.SHARED,VersionAvailabilityCatalog.forPokemon(25,context)?.kind)
