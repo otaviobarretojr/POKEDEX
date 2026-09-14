@@ -39,6 +39,19 @@ internal fun sameOwnedVariantIdentity(
             existing.shiny == candidate.shiny
     )
 
+internal fun isOwnedFormAcrossSources(
+    variants:List<OwnedPokemonVariant>,
+    sources:Set<String>,
+    speciesId:Int,
+    formKey:String,
+    shiny:Boolean=false
+):Boolean = variants.any{
+    it.source in sources &&
+        it.speciesId==speciesId &&
+        it.formKey.equals(formKey,true) &&
+        it.shiny==shiny
+}
+
 object VariantCollectionStore {
     private const val PREFS = "pokedex_variant_collection"
     private const val KEY_VARIANTS = "owned_variants_v1"
@@ -126,6 +139,17 @@ object VariantCollectionStore {
         variantsFor(source,speciesId)
             .sortedWith(compareBy<OwnedPokemonVariant>{it.shiny}.thenBy{it.formPokemonId!=speciesId})
             .firstOrNull()
+
+    fun isFormOwnedForGame(
+        source:String,
+        speciesId:Int,
+        formKey:String,
+        shiny:Boolean=false
+    ):Boolean {
+        val game=AppGameCatalog.games.firstOrNull{game->game.regions.any{it.source==source}}
+        val sources=game?.regions?.mapTo(linkedSetOf()){it.source} ?: linkedSetOf(source)
+        return isOwnedFormAcrossSources(ownedVariants,sources,speciesId,formKey,shiny)
+    }
 
     fun removeAll(source:String,speciesId:Int){
         val before=ownedVariants.size
