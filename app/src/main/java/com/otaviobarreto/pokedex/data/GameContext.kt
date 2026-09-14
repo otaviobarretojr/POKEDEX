@@ -41,13 +41,6 @@ data class GameContext(
                     regionLabel = "Kanto",
                     versionGroups = setOf("firered leafgreen")
                 )
-                "champions" in normalized || "roster" in normalized -> GameContext(
-                    label = "Pokémon Champions",
-                    versions = setOf("champions"),
-                    pokedexSlug = "champions",
-                    regionLabel = "Roster",
-                    versionGroups = setOf("champions")
-                )
                 "kitakami" in normalized -> GameContext(
                     label = "Scarlet / Violet",
                     versions = setOf("scarlet", "violet"),
