@@ -83,7 +83,7 @@ fun PokemonDetailV2Screen(
         bundle=DetailV2Bundle(
             pokemon,
             species,
-            PokedexDataStore.cachedEvolutions(species.evolutionChainUrl).orEmpty(),
+            PokedexDataStore.cachedEvolutions(species.evolutionChainUrl,context).orEmpty(),
             PokedexDataStore.cachedEncounters(id).orEmpty()
         )
 
@@ -91,7 +91,7 @@ fun PokemonDetailV2Screen(
             withContext(Dispatchers.IO) {
                 coroutineScope {
                     val eJob=async {
-                        species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it) } ?: emptyList()
+                        species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it,context) } ?: emptyList()
                     }
                     val lJob=async { PokedexDataStore.encounters(id) }
                     eJob.await() to lJob.await()
