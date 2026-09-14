@@ -2,8 +2,7 @@ package com.otaviobarreto.pokedex.data
 
 import android.content.Context
 import coil.imageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import coil.annotation.ExperimentalCoilApi
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -85,14 +84,7 @@ object ServerOfflinePackageInstaller {
                     val path=image.getString("path")
                     val file=resolveInside(extractDir,path)
                     check(file.exists()){"Imagem ausente: $path"}
-                    val result=context.imageLoader.execute(
-                        ImageRequest.Builder(context)
-                            .data(file)
-                            .diskCacheKey(cacheKey)
-                            .memoryCacheKey(cacheKey)
-                            .build()
-                    )
-                    check(result is SuccessResult){"Falha ao importar imagem $cacheKey"}
+                    importImageIntoDiskCache(context,cacheKey,file)
                     if(cacheKey.startsWith("pokemon-form-offline-")) formKeys += cacheKey
                 }
             }
@@ -129,6 +121,22 @@ object ServerOfflinePackageInstaller {
 
         runCatching{extractDir.deleteRecursively()}
         runCatching{zipFile.delete()}
+    }
+
+    @OptIn(ExperimentalCoilApi::class)
+    private fun importImageIntoDiskCache(context:Context,cacheKey:String,file:File){
+        val disk=requireNotNull(context.imageLoader.diskCache){"Cache de imagens indisponível"}
+        val editor=requireNotNull(disk.openEditor(cacheKey)){"Não foi possível abrir o cache $cacheKey"}
+        try{
+            val bytes=file.readBytes()
+            disk.fileSystem.write(editor.data){
+                write(bytes)
+            }
+            editor.commit()
+        }catch(t:Throwable){
+            editor.abort()
+            throw t
+        }
     }
 
     private fun downloadResumable(
