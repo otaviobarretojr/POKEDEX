@@ -12,6 +12,27 @@ data class ContextualEvolutionRule(
 }
 
 object EvolutionRuleCatalog {
+    data class FilterOption(val key:String,val label:String)
+
+    val filterOptions:List<FilterOption> = listOf(
+        FilterOption("ALL","Todos que faltam"),
+        FilterOption("LEVEL","Nível"),
+        FilterOption("ITEM","Item"),
+        FilterOption("TRADE","Troca"),
+        FilterOption("FRIENDSHIP","Amizade"),
+        FilterOption("TIME","Horário"),
+        FilterOption("GENDER","Gênero"),
+        FilterOption("MOVE","Golpe / movimento"),
+        FilterOption("LOCATION","Local / clima"),
+        FilterOption("MULTIPLAYER","Multiplayer"),
+        FilterOption("ACTION","Ação especial"),
+        FilterOption("CONDITION","Condição"),
+        FilterOption("TRANSFER","Transferência")
+    )
+
+    fun filterLabel(key:String):String =
+        filterOptions.firstOrNull{it.key==key}?.label ?: "Evolução"
+
     private val priority=listOf(
         PokeApiService.EvolutionMethod.LEVEL,
         PokeApiService.EvolutionMethod.TRADE,
