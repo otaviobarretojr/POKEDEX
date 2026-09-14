@@ -27,6 +27,14 @@ object JourneyCatalog {
         else -> "Rota de campanha"
     }
 
+    fun findStep(stepId:String):Pair<String,JourneyStep>?{
+        AppGameCatalog.adventureGames.forEach{game->
+            val step=steps(game.label).firstOrNull{it.id==stepId}
+            if(step!=null)return game.label to step
+        }
+        return null
+    }
+
     fun steps(game:String):List<JourneyStep> = when(game){
         "Scarlet / Violet" -> scarletViolet
         "Pokémon Legends: Z-A" -> legendsZa
