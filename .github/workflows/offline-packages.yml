@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build_offline_general_package.py"
+      - "scripts/build_offline_game_packages.py"
       - ".github/workflows/offline-packages.yml"
 
 permissions:
@@ -63,4 +64,52 @@ jobs:
           gh release upload offline-v20 \
             dist/pokedex-general-v20.zip \
             dist/pokedex-general-v20.meta.json \
+            --clobber
+
+
+  build-games:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package builder dependencies
+        run: python -m pip install --upgrade requests urllib3
+
+      - name: Build game complement packages
+        run: python scripts/build_offline_game_packages.py
+
+      - name: Show package metadata
+        run: cat dist/game-packages/game-packages-v20.meta.json
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokedex-game-packages-v20
+          path: |
+            dist/game-packages/*.zip
+            dist/game-packages/game-packages-v20.meta.json
+          compression-level: 0
+          retention-days: 30
+
+      - name: Publish or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view offline-v20 >/dev/null 2>&1; then
+            echo "Release offline-v20 already exists"
+          else
+            gh release create offline-v20 \
+              --title "POKEDEX Offline Packages v20" \
+              --notes "Pacotes offline versionados para download rápido pelo aplicativo."
+          fi
+          gh release upload offline-v20 \
+            dist/game-packages/*.zip \
+            dist/game-packages/game-packages-v20.meta.json \
             --clobber
