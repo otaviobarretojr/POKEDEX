@@ -15,7 +15,25 @@ data class JourneyObjectiveDetail(
 )
 
 object JourneyObjectiveDetailsCatalog {
-    fun detail(stepId:String):JourneyObjectiveDetail? = details[stepId]
+    fun detail(stepId:String):JourneyObjectiveDetail? =
+        details[stepId] ?: JourneyCatalog.findStep(stepId)?.second?.let{step->
+            val prep=JourneyPreparationCatalog.forStep(step.id)
+            JourneyObjectiveDetail(
+                summary=step.note.ifBlank{step.subtitle},
+                opponents=emptyList(),
+                weakTo=prep?.counters.orEmpty(),
+                recommended=prep?.tip ?: "Siga a rota indicada e mantenha o time preparado para a faixa de nível deste objetivo.",
+                reward=when(step.kind){
+                    JourneyChallengeKind.GYM -> "Avanço na rota de ginásios."
+                    JourneyChallengeKind.TITAN -> "Avanço em Path of Legends."
+                    JourneyChallengeKind.STAR -> "Avanço em Starfall Street."
+                    JourneyChallengeKind.POSTGAME -> "Progresso de pós-game."
+                    JourneyChallengeKind.DLC -> "Progresso do conteúdo adicional."
+                    JourneyChallengeKind.EPILOGUE -> "Progresso do epílogo."
+                    else -> "Avanço da Jornada."
+                }
+            )
+        }
 
     private fun d(
         summary:String,
