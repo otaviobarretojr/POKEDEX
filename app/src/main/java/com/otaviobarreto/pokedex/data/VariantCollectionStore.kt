@@ -219,7 +219,7 @@ object VariantCollectionStore {
                             ?: o.optString("formName","Forma").lowercase(),
                         normalArtworkUrl=o.optString("normalArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
                         shinyArtworkUrl=o.optString("shinyArtworkUrl").takeIf{it.isNotBlank() && it!="null"},
-                        isDefault=if(o.has("isDefault")) o.optBoolean("isDefault") else form==species
+                        isDefault=if(o.has("isDefault")) o.optBoolean("isDefault") else inferLegacyDefaultForm(species,form,o.optString("formKey"),o.optString("formName","Forma"))
                     )
                 )
             }
