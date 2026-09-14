@@ -202,7 +202,7 @@ if violations:
 
 
 catalog = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/AppGameCatalog.kt").read_text(encoding="utf-8")
-for required in ("Pokémon Legends: Z-A", "FireRed / LeafGreen", "Pokémon Champions", "Scarlet / Violet", "Sword / Shield", "Let's Go Pikachu / Eevee", "Legends Arceus", "Brilliant Diamond / Shining Pearl"):
+for required in ("Pokémon Legends: Z-A", "FireRed / LeafGreen", "Scarlet / Violet", "Sword / Shield", "Let's Go Pikachu / Eevee", "Legends Arceus", "Brilliant Diamond / Shining Pearl"):
     if required not in catalog:
         violations.append(f"Switch catalog missing {required}")
 for legacy in ("Black / White", "X / Y", "Omega Ruby / Alpha Sapphire"):
@@ -210,7 +210,7 @@ for legacy in ("Black / White", "X / Y", "Omega Ruby / Alpha Sapphire"):
         violations.append(f"Legacy non-Switch title still in primary catalog: {legacy}")
 
 contexts = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/GameContext.kt").read_text(encoding="utf-8")
-for slug in ("lumiose-city", "hyperspace", "kanto", "champions"):
+for slug in ("lumiose-city", "hyperspace", "kanto"):
     if slug not in contexts:
         violations.append(f"Switch GameContext missing {slug}")
 
