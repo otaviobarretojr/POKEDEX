@@ -9,6 +9,7 @@ data class EvolutionAuditIssue(
 
 object EvolutionCoverageAudit {
     private val formSensitiveTargets=setOf(865,867,902,903,904)
+    private val formBranchedTargets=setOf(745,849)
 
     fun inspect(routes:List<EvolutionRoute>):List<EvolutionAuditIssue> = buildList {
         routes.forEach{route->
@@ -29,6 +30,9 @@ object EvolutionCoverageAudit {
             }
             if(route.targetPokemonId in formSensitiveTargets && route.sourceFormKey.isNullOrBlank()){
                 add(EvolutionAuditIssue("MISSING_SOURCE_FORM","Evolução sensível a forma sem forma de origem.",route.sourcePokemonId,route.targetPokemonId))
+            }
+            if(route.targetPokemonId in formBranchedTargets && route.targetFormKey.isNullOrBlank()){
+                add(EvolutionAuditIssue("MISSING_TARGET_FORM","Bifurcação de forma sem forma de destino.",route.sourcePokemonId,route.targetPokemonId))
             }
         }
     }
