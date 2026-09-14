@@ -19,7 +19,7 @@ data class AppGame(
 object AppGameCatalog {
     /**
      * Current Pokémon titles available on Nintendo Switch / Switch 2 that map
-     * cleanly to a Pokédex or supported battle roster in this app.
+     * cleanly to a Pokédex supported by this app.
      */
     val games = listOf(
         AppGame(
@@ -69,12 +69,6 @@ object AppGameCatalog {
             listOf(AppRegion("Kanto", "FireRed / LeafGreen · Kanto", "Kanto + Sevii Islands · HOME em outubro de 2026")),
             subtitle = "Kanto + Sevii Islands · relançamento Switch 2026"
         ),
-        AppGame(
-            "Pokémon Champions",
-            listOf(AppRegion("Roster", "Pokémon Champions · Roster", "Roster Ranch · Pokémon compatíveis")),
-            subtitle = "Batalhas · Roster Ranch · HOME",
-            kind = AppGameKind.BATTLE
-        )
     )
 
     val adventureGames: List<AppGame> get() = games.filter { it.kind == AppGameKind.ADVENTURE }
