@@ -57,8 +57,8 @@ class CompletionDifficultyBandTest {
             sourcePokemonId=1,
             targetPokemonId=2,
             methods=setOf(PokeApiService.EvolutionMethod.LEVEL),
-            summary="Nível 35",
-            detail="Nível 35",
+            summary="Nível 45",
+            detail="Nível 45",
             availability=EvolutionAvailability.AVAILABLE_WITH_CONDITION,
             contextLabel="Scarlet / Violet",
             regionLabel="Paldea"
