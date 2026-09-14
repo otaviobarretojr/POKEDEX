@@ -15,7 +15,10 @@ import kotlinx.coroutines.withContext
 object OfflineGamePackManager {
     private const val PREFS = "offline_game_packs_v2"
     private const val PACK_VERSION = 20
-    private const val DOWNLOAD_CONCURRENCY = 6
+    private const val DOWNLOAD_CONCURRENCY = 10
+    private const val FORM_DOWNLOAD_CONCURRENCY = 4
+    private const val ESTIMATED_SHARED_POKEMON_BYTES = 620L * 1024L
+    private const val ESTIMATED_GAME_BASE_BYTES = 6L * 1024L * 1024L
     private var context: Context? = null
 
     data class PackStatus(
@@ -78,6 +81,63 @@ object OfflineGamePackManager {
     ){
         val verified:Boolean
             get() = ready && packVersion==PACK_VERSION && total>0 && complete==total
+    }
+
+    data class DownloadEstimate(
+        val totalBytes:Long,
+        val remainingBytes:Long,
+        val remainingPokemon:Int,
+        val reusedPokemon:Int
+    ){
+        val downloadedBytes:Long
+            get()=(totalBytes-remainingBytes).coerceAtLeast(0L)
+    }
+
+    fun estimateGeneral():DownloadEstimate {
+        val status=generalStatus()
+        val manifest=generalManifestIds()
+        val totalCount=when{
+            manifest.isNotEmpty() -> manifest.size
+            status.total>0 -> status.total
+            else -> 1025
+        }
+        val completed=when{
+            manifest.isNotEmpty() -> manifest.count{sharedPokemonAssets(it)!=null}
+            else -> status.complete.coerceAtMost(totalCount)
+        }
+        val remaining=(totalCount-completed).coerceAtLeast(0)
+        val totalBytes=totalCount*ESTIMATED_SHARED_POKEMON_BYTES
+        return DownloadEstimate(
+            totalBytes=totalBytes,
+            remainingBytes=remaining*ESTIMATED_SHARED_POKEMON_BYTES,
+            remainingPokemon=remaining,
+            reusedPokemon=completed
+        )
+    }
+
+    fun estimateGame(gameLabel:String):DownloadEstimate {
+        val game=AppGameCatalog.adventureGames.firstOrNull{it.label==gameLabel}
+            ?: return DownloadEstimate(0,0,0,0)
+        val ids=manifestIds(gameLabel)
+        val expected=if(ids.isNotEmpty()) ids else emptySet()
+        val reusable=expected.count{sharedPokemonAssets(it)!=null}
+        val missingPokemon=(expected.size-reusable).coerceAtLeast(0)
+        val totalBytes=ESTIMATED_GAME_BASE_BYTES + expected.size*ESTIMATED_SHARED_POKEMON_BYTES
+        val remainingBytes=ESTIMATED_GAME_BASE_BYTES + missingPokemon*ESTIMATED_SHARED_POKEMON_BYTES
+        return DownloadEstimate(
+            totalBytes=totalBytes,
+            remainingBytes=remainingBytes,
+            remainingPokemon=missingPokemon,
+            reusedPokemon=reusable
+        )
+    }
+
+    fun formatBytes(bytes:Long):String {
+        val safe=bytes.coerceAtLeast(0L)
+        return if(safe>=1024L*1024L*1024L)
+            String.format("%.2f GB",safe/1024.0/1024.0/1024.0)
+        else
+            String.format("%.0f MB",safe/1024.0/1024.0)
     }
 
     fun generalStatus():GeneralLibraryStatus {
@@ -252,37 +312,47 @@ object OfflineGamePackManager {
         ){"Falha ao armazenar imagem #$id"}
 
         val formKeys=linkedSetOf<String>()
-        forms.filter{it.countsForLivingDex}.forEach{form->
-            val formId=form.pokemonId ?: return@forEach
-            val normalUrl=form.spriteUrl
-                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
-            val shinyUrl=form.shinySpriteUrl
-                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+formId+".png"
-            val normalKey=formArtworkKey(id,formId,form.formKey,false)
-            val shinyKey=formArtworkKey(id,formId,form.formKey,true)
+        val formSemaphore=Semaphore(FORM_DOWNLOAD_CONCURRENCY)
+        coroutineScope {
+            forms.filter{it.countsForLivingDex}.mapNotNull{form->
+                val formId=form.pokemonId ?: return@mapNotNull null
+                async {
+                    formSemaphore.withPermit {
+                        val normalUrl=form.spriteUrl
+                            ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
+                        val shinyUrl=form.shinySpriteUrl
+                            ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+formId+".png"
+                        val normalKey=formArtworkKey(id,formId,form.formKey,false)
+                        val shinyKey=formArtworkKey(id,formId,form.formKey,true)
 
-            check(
-                appContext.imageLoader.execute(
-                    ImageRequest.Builder(appContext)
-                        .data(normalUrl)
-                        .diskCacheKey(normalKey)
-                        .memoryCacheKey(normalKey)
-                        .build()
-                ) is SuccessResult
-            ){"Falha ao armazenar arte de forma #$id"}
+                        val normal=async {
+                            appContext.imageLoader.execute(
+                                ImageRequest.Builder(appContext)
+                                    .data(normalUrl)
+                                    .diskCacheKey(normalKey)
+                                    .memoryCacheKey(normalKey)
+                                    .build()
+                            )
+                        }
+                        val shiny=async {
+                            appContext.imageLoader.execute(
+                                ImageRequest.Builder(appContext)
+                                    .data(shinyUrl)
+                                    .diskCacheKey(shinyKey)
+                                    .memoryCacheKey(shinyKey)
+                                    .build()
+                            )
+                        }
+                        check(normal.await() is SuccessResult){"Falha ao armazenar arte de forma #$id"}
+                        check(shiny.await() is SuccessResult){"Falha ao armazenar arte Shiny de forma #$id"}
 
-            check(
-                appContext.imageLoader.execute(
-                    ImageRequest.Builder(appContext)
-                        .data(shinyUrl)
-                        .diskCacheKey(shinyKey)
-                        .memoryCacheKey(shinyKey)
-                        .build()
-                ) is SuccessResult
-            ){"Falha ao armazenar arte Shiny de forma #$id"}
-
-            formKeys += normalKey
-            formKeys += shinyKey
+                        synchronized(formKeys){
+                            formKeys += normalKey
+                            formKeys += shinyKey
+                        }
+                    }
+                }
+            }.awaitAll()
         }
 
         SharedPokemonAssets(resources,formKeys).also{
