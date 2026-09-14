@@ -208,20 +208,10 @@ private val qbGames=AppGameCatalog.games.map{game->
      )
     }
     DropdownMenu(expanded=evolutionFilterMenu,onDismissRequest={evolutionFilterMenu=false}){
-     DropdownMenuItem(
-      text={Text("Sem filtro")},
-      onClick={evolutionFilterName=null;evolutionFilterMenu=false}
-     )
-     DropdownMenuItem(
-      text={Text("Todas especiais")},
-      leadingIcon={Icon(Icons.Default.AutoAwesome,null)},
-      onClick={evolutionFilterName="ALL";evolutionFilterMenu=false}
-     )
+     DropdownMenuItem(text={Text("Sem filtro")},onClick={evolutionFilterName=null;evolutionFilterMenu=false})
+     DropdownMenuItem(text={Text("Todas especiais")},leadingIcon={Icon(Icons.Default.AutoAwesome,null)},onClick={evolutionFilterName="ALL";evolutionFilterMenu=false})
      PokeApiService.EvolutionMethod.entries.forEach{method->
-      DropdownMenuItem(
-       text={Text(method.label)},
-       onClick={evolutionFilterName=method.name;evolutionFilterMenu=false}
-      )
+      DropdownMenuItem(text={Text(method.label)},onClick={evolutionFilterName=method.name;evolutionFilterMenu=false})
      }
     }
    }
