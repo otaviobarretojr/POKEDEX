@@ -45,9 +45,15 @@ internal fun EvolutionFilterFullScreen(
         failed=false
         val loaded=runCatching{
             withContext(Dispatchers.IO){
-                val context=requireNotNull(GameContext.fromSource(selectedSource))
-                val regionalDex=GameDexService.cached(context) ?: GameDexService.loadGameDex(context)
-                regionalDex to EvolutionFilterIndex.buildRoutes(selectedSource,regionalDex)
+                val selectedIndex=game.regions.indexOfFirst{it.source==selectedSource}.coerceAtLeast(0)
+                val requiredRegions=game.regions.take(selectedIndex+1)
+                val entriesBySource=requiredRegions.associate{region->
+                    val regionContext=requireNotNull(GameContext.fromSource(region.source))
+                    val regionDex=GameDexService.cached(regionContext) ?: GameDexService.loadGameDex(regionContext)
+                    region.source to regionDex
+                }
+                val layeredDex=RegionalDexLayering.exclusiveEntriesForRegion(game,selectedSource,entriesBySource)
+                layeredDex to EvolutionFilterIndex.buildRoutes(selectedSource,layeredDex)
             }
         }
         failed=loaded.isFailure
