@@ -239,6 +239,15 @@ object ServerOfflinePackageInstaller {
         }
     }
 
+    private fun humanBytes(bytes:Long):String =
+        if(bytes>=1024L*1024L*1024L)
+            String.format("%.2f GB",bytes/1024.0/1024.0/1024.0)
+        else
+            String.format("%.1f MB",bytes/1024.0/1024.0)
+
+    private fun humanSpeed(bytesPerSecond:Long):String =
+        humanBytes(bytesPerSecond)+"/s"
+
     private fun downloadResumable(
         url:String,
         destination:File,
@@ -272,6 +281,8 @@ object ServerOfflinePackageInstaller {
             else -> serverLength
         }
 
+        val transferStartedAt=System.nanoTime()
+        val transferStartBytes=start
         FileOutputStream(destination,append).buffered(1024*1024).use{out->
             connection.inputStream.buffered(1024*1024).use{input->
                 val buffer=ByteArray(1024*1024)
@@ -281,7 +292,22 @@ object ServerOfflinePackageInstaller {
                     if(read==0) continue
                     out.write(buffer,0,read)
                     downloaded += read
-                    onProgress(Progress(downloaded,total,label))
+                    val elapsed=((System.nanoTime()-transferStartedAt)/1_000_000_000.0).coerceAtLeast(.05)
+                    val speed=((downloaded-transferStartBytes)/elapsed).toLong().coerceAtLeast(0L)
+                    val progressLabel=buildString{
+                        append(label)
+                        append(" · ")
+                        append(humanBytes(downloaded))
+                        if(total>0L){
+                            append(" / ")
+                            append(humanBytes(total))
+                        }
+                        if(speed>0L){
+                            append(" · ")
+                            append(humanSpeed(speed))
+                        }
+                    }
+                    onProgress(Progress(downloaded,total,progressLabel))
                 }
             }
         }
