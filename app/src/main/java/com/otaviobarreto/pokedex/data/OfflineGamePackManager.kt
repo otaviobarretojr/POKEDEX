@@ -70,6 +70,40 @@ object OfflineGamePackManager {
             get() = if (total <= 0) 0f else (done.toFloat() / total).coerceIn(0f, 1f)
     }
 
+    data class GeneralLibraryStatus(
+        val ready:Boolean,
+        val total:Int,
+        val complete:Int,
+        val packVersion:Int
+    ){
+        val verified:Boolean
+            get() = ready && packVersion==PACK_VERSION && total>0 && complete==total
+    }
+
+    fun generalStatus():GeneralLibraryStatus {
+        val p=prefs()
+        return GeneralLibraryStatus(
+            ready=p.getBoolean("general_ready",false),
+            total=p.getInt("general_count",0),
+            complete=p.getInt("general_complete",0),
+            packVersion=p.getInt("general_version",0)
+        )
+    }
+
+    fun generalManifestIds():Set<Int> =
+        prefs().getStringSet("general_manifest_ids", emptySet()).orEmpty()
+            .mapNotNull{it.toIntOrNull()}.toSet()
+
+    fun generalAudit():Boolean {
+        val status=generalStatus()
+        val ids=generalManifestIds()
+        if(!status.verified || ids.size!=status.total) return false
+        if(JourneyReadinessAudit.referenceCatalogUrls().any{
+            !PersistentApiCache.has(it) || !PersistentApiCache.isPinned(it)
+        }) return false
+        return ids.all{sharedPokemonAssets(it)!=null}
+    }
+
     fun initialize(context: Context) {
         if (this.context != null) return
         this.context = context.applicationContext
@@ -181,6 +215,221 @@ object OfflineGamePackManager {
             .trim('-')
         return "pokemon-form-offline-$speciesId-$formPokemonId-$safeFormKey-" +
             if (shiny) "shiny" else "normal"
+    }
+
+    private suspend fun downloadSharedPokemonAssets(
+        id:Int,
+        appContext:Context
+    ):SharedPokemonAssets = coroutineScope {
+        val pokemonJob=async{PokedexDataStore.pokemon(id)}
+        val speciesJob=async{PokedexDataStore.species(id)}
+        val encounterJob=async{PokedexDataStore.encounters(id)}
+        val formsJob=async{PokemonFormsService.collectible(id)}
+        val pokemon=pokemonJob.await()
+        val species=speciesJob.await()
+        val evolutionUrl=species.evolutionChainUrl
+        evolutionUrl?.let{PokedexDataStore.evolutions(it)}
+        encounterJob.await()
+        val forms=formsJob.await()
+
+        val resources=buildSet {
+            add(PokeApiService.pokemonUrl(id))
+            add(PokeApiService.speciesUrl(id))
+            add(PokeApiService.encountersUrl(id))
+            evolutionUrl?.let(::add)
+            addAll(PokemonFormsService.resourceUrlsFor(id))
+        }
+        PersistentApiCache.pinAll(resources)
+
+        check(
+            appContext.imageLoader.execute(
+                ImageRequest.Builder(appContext)
+                    .data(pokemon.spriteUrl)
+                    .diskCacheKey("pokemon-offline-$id")
+                    .memoryCacheKey("pokemon-offline-$id")
+                    .build()
+            ) is SuccessResult
+        ){"Falha ao armazenar imagem #$id"}
+
+        val formKeys=linkedSetOf<String>()
+        forms.filter{it.countsForLivingDex}.forEach{form->
+            val formId=form.pokemonId ?: return@forEach
+            val normalUrl=form.spriteUrl
+                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png"
+            val shinyUrl=form.shinySpriteUrl
+                ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+formId+".png"
+            val normalKey=formArtworkKey(id,formId,form.formKey,false)
+            val shinyKey=formArtworkKey(id,formId,form.formKey,true)
+
+            check(
+                appContext.imageLoader.execute(
+                    ImageRequest.Builder(appContext)
+                        .data(normalUrl)
+                        .diskCacheKey(normalKey)
+                        .memoryCacheKey(normalKey)
+                        .build()
+                ) is SuccessResult
+            ){"Falha ao armazenar arte de forma #$id"}
+
+            check(
+                appContext.imageLoader.execute(
+                    ImageRequest.Builder(appContext)
+                        .data(shinyUrl)
+                        .diskCacheKey(shinyKey)
+                        .memoryCacheKey(shinyKey)
+                        .build()
+                ) is SuccessResult
+            ){"Falha ao armazenar arte Shiny de forma #$id"}
+
+            formKeys += normalKey
+            formKeys += shinyKey
+        }
+
+        SharedPokemonAssets(resources,formKeys).also{
+            persistSharedPokemonAssets(id,it.resources,it.formArtworkKeys)
+        }
+    }
+
+    suspend fun downloadGeneral(onProgress:(Progress)->Unit)=withContext(Dispatchers.IO){
+        val appContext=requireNotNull(context)
+        onProgress(Progress(0,1,"Mapeando jogos suportados"))
+
+        val contexts=AppGameCatalog.adventureGames
+            .flatMap{game->game.regions.mapNotNull{GameContext.fromSource(it.source)}}
+            .distinctBy{it.pokedexSlug}
+
+        val ids=linkedSetOf<Int>()
+        contexts.forEachIndexed{index,ctx->
+            onProgress(
+                Progress(
+                    index,
+                    contexts.size.coerceAtLeast(1),
+                    "Mapeando "+ctx.regionLabel
+                )
+            )
+            GameDexService.loadGameDex(ctx).forEach{ids += it.nationalId}
+        }
+
+        listOf("move","ability","item").forEach{ReferenceCatalogService.load(it)}
+        PersistentApiCache.pinAll(JourneyReadinessAudit.referenceCatalogUrls())
+
+        val sortedIds=ids.sorted()
+        prefs().edit()
+            .putStringSet("general_manifest_ids",sortedIds.map(Int::toString).toSet())
+            .putInt("general_count",sortedIds.size)
+            .putInt("general_version",PACK_VERSION)
+            .putBoolean("general_ready",false)
+            .apply()
+
+        val reusable=sortedIds.filter{sharedPokemonAssets(it)!=null}.toMutableSet()
+        var completed=reusable.size
+        prefs().edit().putInt("general_complete",completed).apply()
+
+        onProgress(
+            Progress(
+                completed,
+                sortedIds.size.coerceAtLeast(1),
+                if(reusable.isNotEmpty())
+                    reusable.size.toString()+" já disponíveis · "+(sortedIds.size-reusable.size)+" para baixar"
+                else
+                    "Iniciando biblioteca geral"
+            )
+        )
+
+        val pending=sortedIds.filterNot{it in reusable}
+        val semaphore=Semaphore(DOWNLOAD_CONCURRENCY)
+        val failed=mutableListOf<Int>()
+        val lock=Any()
+
+        coroutineScope {
+            pending.map{id->
+                async {
+                    semaphore.withPermit {
+                        val ok=runCatching{
+                            repeat(2){attempt->
+                                try{
+                                    downloadSharedPokemonAssets(id,appContext)
+                                    return@runCatching true
+                                }catch(t:Throwable){
+                                    if(attempt==1) throw t
+                                }
+                            }
+                            false
+                        }.getOrDefault(false)
+
+                        val done=synchronized(lock){
+                            if(ok){
+                                reusable += id
+                                completed=reusable.size
+                                prefs().edit().putInt("general_complete",completed).apply()
+                            }else{
+                                failed += id
+                            }
+                            completed
+                        }
+                        onProgress(Progress(done,sortedIds.size.coerceAtLeast(1),"Biblioteca geral"))
+                    }
+                }
+            }.awaitAll()
+        }
+
+        if(failed.isNotEmpty()){
+            prefs().edit()
+                .putBoolean("general_ready",false)
+                .putInt("general_complete",completed)
+                .putInt("general_version",PACK_VERSION)
+                .apply()
+            error("Falha ao salvar "+failed.size+" Pokémon da biblioteca geral.")
+        }
+
+        val generalResources=sortedIds.flatMapTo(linkedSetOf()){id->
+            prefs().getStringSet(sharedKey(id,"resource_urls"), emptySet()).orEmpty()
+        } + JourneyReadinessAudit.referenceCatalogUrls()
+
+        prefs().edit()
+            .putBoolean("general_ready",true)
+            .putInt("general_complete",sortedIds.size)
+            .putInt("general_count",sortedIds.size)
+            .putInt("general_version",PACK_VERSION)
+            .putStringSet("general_resource_urls",generalResources.toSet())
+            .apply()
+
+        onProgress(Progress(sortedIds.size,sortedIds.size,"Biblioteca geral pronta"))
+    }
+
+    fun removeGeneral(){
+        val ids=generalManifestIds()
+        val gameIds=AppGameCatalog.games.asSequence()
+            .flatMap{manifestIds(it.label).asSequence()}
+            .toSet()
+        val removable=ids-gameIds
+
+        removable.forEach{id->
+            val assets=sharedPokemonAssets(id)
+            assets?.resources?.let{PersistentApiCache.unpinAll(it,deleteFiles=true)}
+            context?.imageLoader?.diskCache?.let{disk->
+                runCatching{disk.remove("pokemon-offline-$id")}
+                assets?.formArtworkKeys.orEmpty().forEach{key->runCatching{disk.remove(key)}}
+            }
+            prefs().edit()
+                .remove(sharedKey(id,"resource_urls"))
+                .remove(sharedKey(id,"form_artwork_keys"))
+                .apply()
+        }
+
+        val generalOnlyRefs=JourneyReadinessAudit.referenceCatalogUrls().filter{url->
+            AppGameCatalog.games.none{game->url in resourceUrls(game.label)}
+        }
+        PersistentApiCache.unpinAll(generalOnlyRefs,deleteFiles=true)
+
+        prefs().edit()
+            .remove("general_ready")
+            .remove("general_count")
+            .remove("general_complete")
+            .remove("general_version")
+            .remove("general_manifest_ids")
+            .remove("general_resource_urls")
+            .apply()
     }
 
     fun status(gameLabel: String): PackStatus {
@@ -316,10 +565,33 @@ object OfflineGamePackManager {
             )
         )
 
-        suspend fun downloadPokemon(id: Int): Boolean {
-            repeat(2) { attempt ->
-                val ok = runCatching {
-                    coroutineScope {
+        suspend fun downloadPokemon(id:Int):Boolean {
+            repeat(2){attempt->
+                val assets=runCatching{
+                    downloadSharedPokemonAssets(id,appContext)
+                }.getOrNull()
+                if(assets!=null){
+                    synchronized(lock){
+                        formArtworkKeys += assets.formArtworkKeys
+                        val allResources=prefs().getStringSet(
+                            key(game.label,"resource_urls"),
+                            emptySet()
+                        ).orEmpty() + assets.resources
+                        prefs().edit()
+                            .putStringSet(key(game.label,"resource_urls"),allResources)
+                            .putStringSet(key(game.label,"form_artwork_keys"),formArtworkKeys.toSet())
+                            .apply()
+                    }
+                    return true
+                }
+                if(attempt==0){
+                    onProgress(Progress(completed,total,"Repetindo itens com falha…"))
+                }
+            }
+            return false
+        }
+
+        coroutineScope {
                         val pokemonJob = async { PokedexDataStore.pokemon(id) }
                         val speciesJob = async { PokedexDataStore.species(id) }
                         val encounterJob = async { PokedexDataStore.encounters(id) }
@@ -479,16 +751,20 @@ object OfflineGamePackManager {
         val ids = manifestIds(gameLabel)
         val visualUrls = prefs().getStringSet(key(gameLabel, "visual_urls"), emptySet()).orEmpty()
         val artworkKeys = formArtworkKeys(gameLabel)
-        val sharedUrls = AppGameCatalog.games.asSequence()
-            .map { it.label }
-            .filter { it != gameLabel }
-            .flatMap { resourceUrls(it).asSequence() }
-            .toSet()
-        val sharedIds = AppGameCatalog.games.asSequence()
-            .map { it.label }
-            .filter { it != gameLabel }
-            .flatMap { manifestIds(it).asSequence() }
-            .toSet()
+        val sharedUrls = (
+            AppGameCatalog.games.asSequence()
+                .map { it.label }
+                .filter { it != gameLabel }
+                .flatMap { resourceUrls(it).asSequence() }
+                .toSet()
+        ) + prefs().getStringSet("general_resource_urls", emptySet()).orEmpty()
+        val sharedIds = (
+            AppGameCatalog.games.asSequence()
+                .map { it.label }
+                .filter { it != gameLabel }
+                .flatMap { manifestIds(it).asSequence() }
+                .toSet()
+        ) + generalManifestIds()
         val sharedVisualUrls = AppGameCatalog.games.asSequence()
             .map { it.label }
             .filter { it != gameLabel }
