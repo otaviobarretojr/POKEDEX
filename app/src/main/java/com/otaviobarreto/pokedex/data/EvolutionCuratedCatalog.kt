@@ -80,6 +80,15 @@ object EvolutionCuratedCatalog {
                 else -> listOf(CuratedEvolutionRule(472,"Subir de nível durante a noite segurando Razor Fang"))
             }
             475 -> listOf(CuratedEvolutionRule(475,"Usar Dawn Stone em Kirlia macho"))
+            476 -> when(game){
+                "Scarlet / Violet" -> listOf(CuratedEvolutionRule(476,"Usar Thunder Stone"))
+                "Brilliant Diamond / Shining Pearl" -> listOf(CuratedEvolutionRule(476,"Subir de nível em Mt. Coronet"))
+                "Legends Arceus" -> listOf(
+                    CuratedEvolutionRule(476,"Usar Thunder Stone"),
+                    CuratedEvolutionRule(476,"Subir de nível em Coronet Highlands")
+                )
+                else -> emptyList()
+            }
             478 -> listOf(CuratedEvolutionRule(478,"Usar Dawn Stone em Snorunt fêmea"))
             745 -> when(game){
                 "Sun / Moon","Ultra Sun / Ultra Moon","Sword / Shield","Scarlet / Violet" -> listOf(
@@ -146,26 +155,37 @@ object EvolutionCuratedCatalog {
                 else -> emptyList()
             }
             462 -> when(game){
-                "Sword / Shield" -> listOf(CuratedEvolutionRule(462,"Usar Thunder Stone"))
+                "Sword / Shield","Scarlet / Violet" -> listOf(CuratedEvolutionRule(462,"Usar Thunder Stone"))
                 "Brilliant Diamond / Shining Pearl" -> listOf(
                     CuratedEvolutionRule(462,"Usar Thunder Stone"),
                     CuratedEvolutionRule(462,"Subir de nível em Mt. Coronet")
                 )
+                "Legends Arceus" -> listOf(
+                    CuratedEvolutionRule(462,"Usar Thunder Stone"),
+                    CuratedEvolutionRule(462,"Subir de nível em Coronet Highlands")
+                )
                 else -> emptyList()
             }
             470 -> when(game){
-                "Sword / Shield" -> listOf(CuratedEvolutionRule(470,"Usar Leaf Stone"))
+                "Sword / Shield","Scarlet / Violet" -> listOf(CuratedEvolutionRule(470,"Usar Leaf Stone"))
                 "Brilliant Diamond / Shining Pearl" -> listOf(
                     CuratedEvolutionRule(470,"Usar Leaf Stone"),
                     CuratedEvolutionRule(470,"Subir de nível próximo à Mossy Rock em Eterna Forest")
                 )
+                "Legends Arceus" -> listOf(
+                    CuratedEvolutionRule(470,"Usar Leaf Stone"),
+                    CuratedEvolutionRule(470,"Subir de nível próximo à Moss Rock em Obsidian Fieldlands")
+                )
                 else -> emptyList()
             }
             471 -> when(game){
-                "Sword / Shield" -> listOf(CuratedEvolutionRule(471,"Usar Ice Stone"))
+                "Sword / Shield","Scarlet / Violet" -> listOf(CuratedEvolutionRule(471,"Usar Ice Stone"))
                 "Brilliant Diamond / Shining Pearl" -> listOf(
-                    CuratedEvolutionRule(471,"Usar Ice Stone"),
                     CuratedEvolutionRule(471,"Subir de nível próximo à Icy Rock na Route 217")
+                )
+                "Legends Arceus" -> listOf(
+                    CuratedEvolutionRule(471,"Usar Ice Stone"),
+                    CuratedEvolutionRule(471,"Subir de nível próximo à Ice Rock em Alabaster Icelands")
                 )
                 else -> emptyList()
             }
