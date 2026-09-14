@@ -35,7 +35,7 @@ object ServerOfflinePackageInstaller {
 
         val root=File(context.cacheDir,"server-offline-packages").apply{mkdirs()}
         val zipFile=File(root,"general-v${remote.version}.zip")
-        downloadResumable(url,zipFile,total,onProgress)
+        downloadResumable(url,zipFile,total,"Baixando pacote geral",onProgress)
 
         onProgress(Progress(zipFile.length(),total,"Validando integridade"))
         val actualSha=sha256(zipFile)
@@ -123,6 +123,104 @@ object ServerOfflinePackageInstaller {
         runCatching{zipFile.delete()}
     }
 
+    suspend fun installGame(
+        context:Context,
+        game:AppGame,
+        remote:RemoteOfflinePackageCatalog.RemotePackage,
+        onProgress:(Progress)->Unit
+    ){
+        require(remote.packageType=="game"){"Pacote remoto de jogo inválido"}
+        require(remote.ready){"Complemento ainda não está pronto no servidor"}
+        require(OfflineGamePackManager.generalAudit()){
+            "Baixe a biblioteca geral antes do complemento deste jogo"
+        }
+
+        val url=requireNotNull(remote.downloadUrl)
+        val expectedSha=requireNotNull(remote.sha256).lowercase()
+        val total=remote.sizeBytes ?: 0L
+        val root=File(context.cacheDir,"server-offline-packages").apply{mkdirs()}
+        val safeKey=remote.packageKey.replace(Regex("[^a-zA-Z0-9._-]"),"_")
+        val zipFile=File(root,"$safeKey-v${remote.version}.zip")
+        downloadResumable(url,zipFile,total,"Baixando complemento"){p->onProgress(p)}
+
+        onProgress(Progress(zipFile.length(),total,"Validando complemento"))
+        check(sha256(zipFile).equals(expectedSha,ignoreCase=true)){
+            "SHA-256 do complemento não confere"
+        }
+
+        val extractDir=File(root,"$safeKey-v${remote.version}-extract")
+        if(extractDir.exists()) extractDir.deleteRecursively()
+        extractDir.mkdirs()
+        unzipSafe(zipFile,extractDir)
+
+        val manifestFile=File(extractDir,"manifest.json")
+        check(manifestFile.exists()){"manifest.json ausente"}
+        val manifest=JSONObject(manifestFile.readText())
+        check(manifest.optInt("schema",0)==1){"Versão de manifesto não suportada"}
+        check(manifest.optString("package_key")==remote.packageKey){"Chave do complemento inválida"}
+        check(manifest.optString("game_label")==game.label){"Complemento pertence a outro jogo"}
+
+        val ids=linkedSetOf<Int>()
+        val idArray=manifest.getJSONArray("pokemon_ids")
+        for(i in 0 until idArray.length()) ids += idArray.getInt(i)
+
+        val regionSlugs=mutableListOf<String>()
+        val resources=linkedSetOf<String>()
+        val regions=manifest.getJSONArray("regions")
+        for(i in 0 until regions.length()){
+            val item=regions.getJSONObject(i)
+            val slug=item.getString("slug")
+            val resourceUrl=item.getString("url")
+            val path=item.getString("path")
+            val file=resolveInside(extractDir,path)
+            check(file.exists()){"Pokédex regional ausente: $path"}
+            PersistentApiCache.importRaw(resourceUrl,file.readText(),pin=true)
+            regionSlugs += slug
+            resources += resourceUrl
+        }
+
+        val visualUrls=linkedSetOf<String>()
+        val visuals=manifest.optJSONArray("visuals")
+        if(visuals!=null){
+            for(i in 0 until visuals.length()){
+                val item=visuals.getJSONObject(i)
+                val visualUrl=item.getString("url")
+                val path=item.getString("path")
+                val file=resolveInside(extractDir,path)
+                check(file.exists()){"Visual ausente: $path"}
+                importImageIntoDiskCache(
+                    context,
+                    OfflineGamePackManager.journeyVisualCacheKey(visualUrl),
+                    file
+                )
+                visualUrls += visualUrl
+                onProgress(
+                    Progress(
+                        downloadedBytes=total,
+                        totalBytes=total,
+                        label="Importando complemento · ${i+1} / ${visuals.length()}"
+                    )
+                )
+            }
+        }
+
+        OfflineGamePackManager.finalizeImportedGame(
+            gameLabel=game.label,
+            ids=ids,
+            regions=regionSlugs,
+            resourceUrls=resources,
+            visualUrls=visualUrls,
+            serverVersion=remote.version
+        )
+        check(OfflineGamePackManager.audit(game.label).valid){
+            "Complemento importado falhou na auditoria"
+        }
+
+        onProgress(Progress(total,total,"Complemento pronto"))
+        runCatching{extractDir.deleteRecursively()}
+        runCatching{zipFile.delete()}
+    }
+
     @OptIn(ExperimentalCoilApi::class)
     private fun importImageIntoDiskCache(context:Context,cacheKey:String,file:File){
         val disk=requireNotNull(context.imageLoader.diskCache){"Cache de imagens indisponível"}
@@ -143,6 +241,7 @@ object ServerOfflinePackageInstaller {
         url:String,
         destination:File,
         expectedBytes:Long,
+        label:String,
         onProgress:(Progress)->Unit
     ){
         val existing=destination.takeIf{it.exists()}?.length() ?: 0L
@@ -180,7 +279,7 @@ object ServerOfflinePackageInstaller {
                     if(read==0) continue
                     out.write(buffer,0,read)
                     downloaded += read
-                    onProgress(Progress(downloaded,total,"Baixando pacote geral"))
+                    onProgress(Progress(downloaded,total,label))
                 }
             }
         }
