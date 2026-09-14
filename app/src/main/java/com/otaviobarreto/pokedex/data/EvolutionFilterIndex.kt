@@ -2,10 +2,14 @@ package com.otaviobarreto.pokedex.data
 
 object EvolutionFilterIndex {
     private val memory=mutableMapOf<String,Map<String,Set<Int>>>()
-    private val routeMemory=mutableMapOf<String,List<EvolutionRoute>>()
+    private data class RouteCacheEntry(
+        val dexIds:Set<Int>,
+        val routes:List<EvolutionRoute>
+    )
+    private val routeMemory=mutableMapOf<String,RouteCacheEntry>()
 
     fun cached(source:String):Map<String,Set<Int>>? = memory[source]
-    fun cachedRoutes(source:String):List<EvolutionRoute>? = routeMemory[source]
+    fun cachedRoutes(source:String):List<EvolutionRoute>? = routeMemory[source]?.routes
 
     fun clear(source:String?=null){
         if(source==null){
@@ -21,9 +25,10 @@ object EvolutionFilterIndex {
         source:String,
         dex:List<GameDexService.GameDexEntry>
     ):List<EvolutionRoute>{
-        routeMemory[source]?.let{return it}
         val context=GameContext.fromSource(source)
-        val dexIds=dex.mapTo(hashSetOf()){it.nationalId}
+        val dexIds=dex.mapTo(linkedSetOf()){it.nationalId}
+        routeMemory[source]?.takeIf{it.dexIds==dexIds}?.let{return it.routes}
+
         val urls=dex.mapNotNull{entry->
             runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()
         }.distinct()
@@ -31,8 +36,18 @@ object EvolutionFilterIndex {
             runCatching{EvolutionResolutionEngine.load(url,context)}.getOrElse{emptyList()}
         }.filter{route->
             route.sourcePokemonId in dexIds && route.targetPokemonId in dexIds
-        }.distinctBy{listOf(it.sourcePokemonId,it.targetPokemonId,it.summary,it.availability.name).joinToString(":")}
-        return routes.also{routeMemory[source]=it}
+        }.distinctBy{
+            listOf(
+                it.sourcePokemonId,
+                it.targetPokemonId,
+                it.summary,
+                it.availability.name,
+                it.sourceFormKey.orEmpty(),
+                it.targetFormKey.orEmpty()
+            ).joinToString(":")
+        }
+        routeMemory[source]=RouteCacheEntry(dexIds,routes)
+        return routes
     }
 
     fun buildRules(
