@@ -30,17 +30,13 @@ internal fun EvolutionFilterFullScreen(
     onPokemonClick:(Int,String?)->Unit
 ){
     BackHandler(onBack=onBack)
-
     val game=remember(gameLabel){AppGameCatalog.games.first{it.label==gameLabel}}
     var selectedSource by rememberSaveable(gameLabel,filterKey){
-        mutableStateOf(
-            game.regions.firstOrNull{it.source==initialRegionSource}?.source
-                ?: game.regions.first().source
-        )
+        mutableStateOf(game.regions.firstOrNull{it.source==initialRegionSource}?.source ?: game.regions.first().source)
     }
     val selectedRegion=game.regions.first{it.source==selectedSource}
     var dex by remember(selectedSource){mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())}
-    var rules by remember(selectedSource){mutableStateOf<List<ContextualEvolutionRule>>(emptyList())}
+    var routes by remember(selectedSource){mutableStateOf<List<EvolutionRoute>>(emptyList())}
     var loading by remember(selectedSource){mutableStateOf(true)}
     var failed by remember(selectedSource){mutableStateOf(false)}
 
@@ -51,49 +47,51 @@ internal fun EvolutionFilterFullScreen(
             withContext(Dispatchers.IO){
                 val context=requireNotNull(GameContext.fromSource(selectedSource))
                 val regionalDex=GameDexService.cached(context) ?: GameDexService.loadGameDex(context)
-                regionalDex to EvolutionFilterIndex.buildRules(selectedSource,regionalDex)
+                regionalDex to EvolutionFilterIndex.buildRoutes(selectedSource,regionalDex)
             }
         }
         failed=loaded.isFailure
-        loaded.getOrNull()?.let{(regionalDex,regionalRules)->
+        loaded.getOrNull()?.let{(regionalDex,resolvedRoutes)->
             dex=regionalDex
-            rules=regionalRules
+            routes=resolvedRoutes
         }
         loading=false
     }
 
-    val owned=CollectionStore.contextualCapturedIds[selectedSource].orEmpty()
-    val filteredRules=remember(rules,filterKey){
-        rules.filter{rule->
-            filterKey=="ALL" ||
-                EvolutionRuleCatalog.filterBucket(rule)==filterKey ||
-                rule.methods.any{it.name==filterKey}
+    val owned=CollectionStore.capturedForGame(selectedSource)
+    val filteredRoutes=remember(routes,filterKey){
+        routes.filter{route->
+            when(filterKey){
+                "ALL" -> EvolutionResolutionEngine.executable(route)
+                "TRANSFER" -> route.availability==EvolutionAvailability.TRANSFER_ONLY
+                "CONDITION" -> {
+                    val legacy=ContextualEvolutionRule(route.sourcePokemonId,route.targetPokemonId,route.methods,route.summary,route.detail)
+                    EvolutionRuleCatalog.filterBucket(legacy)=="CONDITION"
+                }
+                else -> {
+                    val legacy=ContextualEvolutionRule(route.sourcePokemonId,route.targetPokemonId,route.methods,route.summary,route.detail)
+                    EvolutionRuleCatalog.filterBucket(legacy)==filterKey || route.methods.any{it.name==filterKey}
+                }
+            }
         }
     }
-    val ruleByTarget=remember(filteredRules){
-        filteredRules.groupBy{it.targetPokemonId}
-            .mapValues{(_,values)->values.first()}
+    val routesByTarget=remember(filteredRoutes){filteredRoutes.groupBy{it.targetPokemonId}}
+    val pending=remember(dex,routesByTarget,owned){
+        dex.filter{entry->entry.nationalId in routesByTarget && entry.nationalId !in owned}
     }
-    val pending=remember(dex,ruleByTarget,owned){
-        dex.filter{entry->entry.nationalId in ruleByTarget && entry.nationalId !in owned}
-    }
+    val names=remember(dex){dex.associate{it.nationalId to it.name}}
 
     val filterLabel=when(filterKey){
         "ALL" -> "Todos que faltam"
         "LEVEL" -> "Evolução por nível"
         "CONDITION" -> "Evolução por condição"
-        else -> PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filterKey}?.label
-            ?.let{"Evolução por "+it} ?: "Evolução"
+        "TRANSFER" -> "Transferência"
+        else -> PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filterKey}?.label?.let{"Evolução por "+it} ?: "Evolução"
     }
 
     Column(Modifier.fillMaxSize().padding(horizontal=12.dp)){
-        Row(
-            Modifier.fillMaxWidth().padding(top=8.dp,bottom=4.dp),
-            verticalAlignment=Alignment.CenterVertically
-        ){
-            IconButton(onClick=onBack){
-                Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")
-            }
+        Row(Modifier.fillMaxWidth().padding(top=8.dp,bottom=4.dp),verticalAlignment=Alignment.CenterVertically){
+            IconButton(onClick=onBack){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}
             Column(Modifier.weight(1f)){
                 Text(filterLabel,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
                 Text(
@@ -111,11 +109,7 @@ internal fun EvolutionFilterFullScreen(
                 divider={}
             ){
                 game.regions.forEach{region->
-                    Tab(
-                        selected=region.source==selectedSource,
-                        onClick={selectedSource=region.source},
-                        text={Text(region.label,maxLines=1)}
-                    )
+                    Tab(selected=region.source==selectedSource,onClick={selectedSource=region.source},text={Text(region.label,maxLines=1)})
                 }
             }
         }else{
@@ -128,15 +122,20 @@ internal fun EvolutionFilterFullScreen(
         }
 
         when{
-            loading -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
-                CircularProgressIndicator()
-            }
+            loading -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
             failed -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text("Não foi possível carregar as regras de evolução desta região.")
             }
+            filteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                Text(
+                    "Nenhum Pokémon desta Pokédex usa este método no jogo atual.",
+                    style=MaterialTheme.typography.bodyMedium,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             pending.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text(
-                    "Você já possui todos os Pokémon pendentes deste filtro em ${selectedRegion.label}.",
+                    "Você já concluiu todas as pendências deste filtro em "+selectedRegion.label+".",
                     style=MaterialTheme.typography.bodyMedium,
                     color=MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -147,27 +146,20 @@ internal fun EvolutionFilterFullScreen(
                 verticalArrangement=Arrangement.spacedBy(6.dp)
             ){
                 items(pending.chunked(3),key={row->row.joinToString("-"){it.nationalId.toString()}}){row->
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement=Arrangement.spacedBy(6.dp)
-                    ){
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                         repeat(3){index->
                             val entry=row.getOrNull(index)
                             if(entry==null){
                                 Spacer(Modifier.weight(1f))
                             }else{
-                                val rule=ruleByTarget[entry.nationalId]
+                                val targetRoutes=routesByTarget[entry.nationalId].orEmpty()
+                                val route=EvolutionResolutionEngine.preferredRoute(targetRoutes)
                                 Surface(
-                                    modifier=Modifier.weight(1f).clickable{
-                                        onPokemonClick(entry.nationalId,selectedSource)
-                                    },
+                                    modifier=Modifier.weight(1f).clickable{onPokemonClick(entry.nationalId,selectedSource)},
                                     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                                     color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.62f)
                                 ){
-                                    Column(
-                                        Modifier.padding(8.dp),
-                                        horizontalAlignment=Alignment.CenterHorizontally
-                                    ){
+                                    Column(Modifier.padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally){
                                         AsyncImage(
                                             model=entry.spriteUrl,
                                             contentDescription=entry.name,
@@ -180,13 +172,29 @@ internal fun EvolutionFilterFullScreen(
                                             maxLines=1,
                                             overflow=TextOverflow.Ellipsis
                                         )
-                                        Text(
-                                            rule?.summary.orEmpty(),
-                                            style=MaterialTheme.typography.labelSmall,
-                                            color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines=2,
-                                            overflow=TextOverflow.Ellipsis
-                                        )
+                                        route?.let{resolved->
+                                            Text(
+                                                (names[resolved.sourcePokemonId] ?: "Pokémon #"+resolved.sourcePokemonId)+" → "+entry.name,
+                                                style=MaterialTheme.typography.labelSmall,
+                                                color=MaterialTheme.colorScheme.primary,
+                                                maxLines=1,
+                                                overflow=TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                resolved.summary,
+                                                style=MaterialTheme.typography.labelSmall,
+                                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines=2,
+                                                overflow=TextOverflow.Ellipsis
+                                            )
+                                            if(targetRoutes.size>1){
+                                                Text(
+                                                    "+"+(targetRoutes.size-1)+" alternativa"+if(targetRoutes.size-1==1)"" else "s",
+                                                    style=MaterialTheme.typography.labelSmall,
+                                                    color=MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
