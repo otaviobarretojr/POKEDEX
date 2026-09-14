@@ -93,7 +93,14 @@ object EvolutionCuratedCatalog {
             )
             350 -> when(game){
                 "Brilliant Diamond / Shining Pearl" -> listOf(
-                    CuratedEvolutionRule(350,"Subir de nível com a condição Beauty maximizada")
+                    CuratedEvolutionRule(350,"Subir de nível com Beauty 170 ou mais")
+                )
+                "Omega Ruby / Alpha Sapphire" -> listOf(
+                    CuratedEvolutionRule(350,"Subir de nível com Beauty 170 ou mais"),
+                    CuratedEvolutionRule(350,"Trocar Feebas segurando Prism Scale")
+                )
+                "Black / White","X / Y","Sword / Shield","Scarlet / Violet" -> listOf(
+                    CuratedEvolutionRule(350,"Trocar Feebas segurando Prism Scale")
                 )
                 else -> emptyList()
             }
