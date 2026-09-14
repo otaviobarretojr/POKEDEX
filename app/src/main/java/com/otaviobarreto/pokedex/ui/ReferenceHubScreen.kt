@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.ReferenceCatalogService
 import com.otaviobarreto.pokedex.data.ReferenceDetail
 import com.otaviobarreto.pokedex.data.ReferenceEntry
