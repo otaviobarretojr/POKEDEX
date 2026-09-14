@@ -30,4 +30,19 @@ class SwitchCatalogRegressionTest {
         assertFalse("X / Y" in labels)
         assertFalse("Omega Ruby / Alpha Sapphire" in labels)
     }
+    @Test fun everyDownloadableGameHasResolvableRegions() {
+        AppGameCatalog.adventureGames.forEach { game ->
+            assertTrue(game.label, game.regions.isNotEmpty())
+            game.regions.forEach { region ->
+                val context = GameContext.fromSource(region.source)
+                assertNotNull("${game.label} / ${region.label}", context)
+                assertTrue("${game.label} / ${region.label}", context!!.pokedexSlug.isNotBlank())
+            }
+        }
+        assertEquals(
+            AppGameCatalog.adventureGames.size,
+            AppGameCatalog.adventureGames.map { it.label }.toSet().size
+        )
+    }
+
 }
