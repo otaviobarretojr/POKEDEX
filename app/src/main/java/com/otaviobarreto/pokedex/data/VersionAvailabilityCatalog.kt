@@ -13,7 +13,7 @@ data class VersionAvailability(
 
 object VersionAvailabilityCatalog {
 
-    fun forPokemon(pokemonId:Int, context:GameContext?):VersionAvailability? {
+    fun forPokemon(pokemonId:Int, context:GameContext?, inRegionalDex:Boolean=true):VersionAvailability? {
         val label=context?.label ?: return null
         val pair=pairFor(label) ?: return null
         splitForms[label]?.get(pokemonId)?.let { note ->
@@ -26,7 +26,7 @@ object VersionAvailabilityCatalog {
             )
         }
         val exclusives=exclusiveIds[label] ?: return null
-        if(!belongsToRegionalDex(pokemonId,context)) return VersionAvailability(
+        if(!inRegionalDex) return VersionAvailability(
             kind=VersionAvailabilityKind.UNAVAILABLE,
             title="Fora desta Pokédex regional",
             subtitle="Esta espécie não pertence à Pokédex "+context.regionLabel+". Consulte outra região/DLC ou a compatibilidade por transferência.",
@@ -66,26 +66,6 @@ object VersionAvailabilityCatalog {
         "FireRed / LeafGreen" -> "FireRed" to "LeafGreen"
         else -> null
     }
-
-    private fun belongsToRegionalDex(id:Int,context:GameContext):Boolean = when(context.pokedexSlug){
-        "paldea" -> id !in scarletVioletDlcOnly
-        "kitakami" -> id !in scarletVioletPaldeaOnly && id !in scarletVioletBlueberryOnly
-        "blueberry" -> id !in scarletVioletPaldeaOnly && id !in scarletVioletKitakamiOnly
-        "galar" -> id !in swordShieldArmorOnly && id !in swordShieldCrownOnly
-        "isle-of-armor" -> id !in swordShieldGalarOnly && id !in swordShieldCrownOnly
-        "crown-tundra" -> id !in swordShieldGalarOnly && id !in swordShieldArmorOnly
-        else -> true
-    }
-
-    // Region-specific exclusive species. These guards prevent a DLC exclusive from being
-    // presented as if it belonged to the base regional Pokédex.
-    private val scarletVioletKitakamiOnly=setOf(37,38,190,207,472)
-    private val scarletVioletBlueberryOnly=setOf(408,409,410,411,1020,1021,1022,1023)
-    private val scarletVioletDlcOnly=scarletVioletKitakamiOnly+scarletVioletBlueberryOnly
-    private val scarletVioletPaldeaOnly=setOf(246,247,248,316,317,371,372,373,425,426,434,435,633,634,635,690,691,692,693,765,766,845,874,875,877,885,886,887,936,937,984,985,986,987,988,989,990,991,992,993,994,995,1005,1006,1007,1008,1009,1010)
-    private val swordShieldArmorOnly=setOf(127,214,690,691,692,693)
-    private val swordShieldCrownOnly=setOf(138,139,140,141,250,371,372,373,381,383,483,484,641,642,643,644)
-    private val swordShieldGalarOnly=setOf(83,77,78,222,246,247,248,273,274,275,302,303,337,338,380,443,444,445,453,454,554,555,574,575,576,577,578,579,629,630,633,634,635,682,683,684,685,704,705,706,716,717,765,766,776,780,782,783,784,791,792,841,842,865,874,875,888,889)
 
     private val splitForms=mapOf(
         "Scarlet / Violet" to mapOf(
