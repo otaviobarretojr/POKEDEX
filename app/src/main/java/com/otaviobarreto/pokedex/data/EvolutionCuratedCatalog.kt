@@ -65,6 +65,9 @@ object EvolutionCuratedCatalog {
                     listOf(CuratedEvolutionRule(113,"Subir de nível durante o dia segurando Oval Stone"))
                 else -> emptyList()
             }
+            266 -> listOf(CuratedEvolutionRule(266,"Wurmple sobe ao nível 7 • A evolução para Silcoon depende do valor interno de personalidade"))
+            268 -> listOf(CuratedEvolutionRule(268,"Wurmple sobe ao nível 7 • A evolução para Cascoon depende do valor interno de personalidade"))
+            292 -> listOf(CuratedEvolutionRule(292,"Nincada sobe ao nível 20 • Ter espaço vazio no time • Ter uma Poké Ball na bolsa"))
             413 -> listOf(CuratedEvolutionRule(413,"Burmy fêmea sobe ao nível 20 • A forma de Wormadam depende do Cloak atual","burmy",null))
             414 -> listOf(CuratedEvolutionRule(414,"Burmy macho sobe ao nível 20","burmy",null))
             416 -> listOf(CuratedEvolutionRule(416,"Combee fêmea sobe ao nível 21"))
@@ -193,6 +196,12 @@ object EvolutionCuratedCatalog {
                 "Pokémon Legends: Z-A" -> listOf(CuratedEvolutionRule(867,"Galarian Yamask deve perder pelo menos 49 HP sem desmaiar • Passar sob uma das pontes do Coulant Waterway","yamask-galar",null))
                 else -> emptyList()
             }
+            869 -> when(game){
+                "Sword / Shield","Scarlet / Violet" -> listOf(
+                    CuratedEvolutionRule(869,"Milcery segurando um Sweet • Girar o personagem • A forma de Alcremie depende do Sweet, direção, duração e horário")
+                )
+                else -> emptyList()
+            }
             892 -> when(game){
                 "Sword / Shield" -> listOf(
                     CuratedEvolutionRule(892,"Concluir a Tower of Darkness e interagir com o Scroll of Darkness"),
@@ -237,10 +246,18 @@ object EvolutionCuratedCatalog {
                 else -> emptyList()
             }
             923 -> listOf(CuratedEvolutionRule(923,"Caminhar 1.000 passos com Pawmo no modo Let's Go • Depois subir de nível"))
+            925 -> when(game){
+                "Scarlet / Violet" -> listOf(CuratedEvolutionRule(925,"Tandemaus evolui a partir do nível 25 após participar de uma batalha • Family of Three é rara e Family of Four é a forma comum"))
+                else -> emptyList()
+            }
             947 -> listOf(CuratedEvolutionRule(947,"Caminhar 1.000 passos com Bramblin no modo Let's Go • Depois subir de nível"))
             954 -> listOf(CuratedEvolutionRule(954,"Caminhar 1.000 passos com Rellor no modo Let's Go • Depois subir de nível"))
             964 -> listOf(CuratedEvolutionRule(964,"Subir Finizen ao nível 38 ou mais enquanto estiver em uma sessão multiplayer/Union Circle"))
             979 -> listOf(CuratedEvolutionRule(979,"Usar Rage Fist 20 vezes • Depois subir de nível"))
+            982 -> when(game){
+                "Scarlet / Violet" -> listOf(CuratedEvolutionRule(982,"Subir de nível conhecendo Hyper Drill • A forma Three-Segment é rara; a forma Two-Segment é a comum"))
+                else -> emptyList()
+            }
             983 -> listOf(CuratedEvolutionRule(983,"Bisharp segurando Leader's Crest • Derrotar 3 Bisharp líderes que também seguram Leader's Crest • Depois subir de nível"))
             1000 -> listOf(CuratedEvolutionRule(1000,"Coletar 999 Gimmighoul Coins • Depois subir Gimmighoul de nível"))
             1019 -> listOf(CuratedEvolutionRule(1019,"Dipplin evolui ao subir de nível conhecendo Dragon Cheer"))
