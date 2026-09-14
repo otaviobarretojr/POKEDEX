@@ -16,6 +16,13 @@ enum class CompletionMethodKind(val label:String){
     SPECIAL("Método especial")
 }
 
+data class CompletionAlternative(
+    val method:CompletionMethodKind,
+    val title:String,
+    val detail:String?=null,
+    val score:Int
+)
+
 data class CompletionAdvice(
     val pokemonId:Int,
     val method:CompletionMethodKind,
@@ -26,7 +33,8 @@ data class CompletionAdvice(
     val directAcquisition:Boolean=false,
     val selectedVersion:String?=null,
     val availableInSelectedVersion:Boolean?=null,
-    val score:Int=100
+    val score:Int=100,
+    val alternative:CompletionAlternative?=null
 )
 
 object CompletionAdviceResolver {
@@ -57,8 +65,12 @@ object CompletionAdviceResolver {
             val method=methodFor(route)
             val sourceOwned=route.sourcePokemonId in owned
             val sourceName=names[route.sourcePokemonId] ?: "Pokémon #"+route.sourcePokemonId
-            val baseScore=routeScore(method,route.availability)
-            val sourcePenalty=if(sourceOwned || route.availability==EvolutionAvailability.TRANSFER_ONLY) 0 else 6
+            val baseScore=routeScore(
+                method=method,
+                availability=route.availability,
+                requirement=route.summary
+            )
+            val sourcePenalty=if(sourceOwned || route.availability==EvolutionAvailability.TRANSFER_ONLY) 0 else 7
             val detail=when {
                 route.availability==EvolutionAvailability.TRANSFER_ONLY ->
                     "Obtenha no jogo compatível e transfira pelo Pokémon HOME."
@@ -128,15 +140,31 @@ object CompletionAdviceResolver {
             )
         }
 
-        val best=candidates.minBy{candidate->
-            candidate.advice.score + if(candidate.advice.availableInSelectedVersion==false) 10 else 0
-        }.advice
+        val ranked=candidates.sortedBy{candidate->
+            candidate.advice.score + if(candidate.advice.availableInSelectedVersion==false) 12 else 0
+        }
+        val best=ranked.first().advice
+        val alternative=ranked.drop(1)
+            .map{it.advice}
+            .firstOrNull{
+                it.method!=best.method || it.title!=best.title
+            }
+            ?.takeIf{it.score <= best.score+6}
+            ?.let{
+                CompletionAlternative(
+                    method=it.method,
+                    title=it.title,
+                    detail=it.detail,
+                    score=it.score
+                )
+            }
 
         return best.copy(
             detail=mergeDetails(
                 best.detail,
                 versionDetail(version,selectedVersion,versionOk)
-            )
+            ),
+            alternative=alternative
         )
     }
 
@@ -191,38 +219,60 @@ object CompletionAdviceResolver {
         CanonicalAcquisitionKind.UNAVAILABLE -> CompletionMethodKind.TRANSFER
     }
 
-    private fun routeScore(method:CompletionMethodKind,availability:EvolutionAvailability):Int {
-        if(availability==EvolutionAvailability.TRANSFER_ONLY) return 18
-        return when(method){
-            CompletionMethodKind.LEVEL -> 0
-            CompletionMethodKind.ITEM -> 2
-            CompletionMethodKind.FRIENDSHIP -> 3
-            CompletionMethodKind.TIME -> 4
-            CompletionMethodKind.MOVE -> 4
-            CompletionMethodKind.LOCATION -> 5
-            CompletionMethodKind.MULTIPLAYER -> 7
-            CompletionMethodKind.TRADE -> 8
-            CompletionMethodKind.ACTION -> 6
-            CompletionMethodKind.CONDITION -> 6
-            CompletionMethodKind.DIRECT -> 1
-            CompletionMethodKind.SPECIAL -> 9
-            CompletionMethodKind.TRANSFER -> 18
+    private fun routeScore(
+        method:CompletionMethodKind,
+        availability:EvolutionAvailability,
+        requirement:String
+    ):Int {
+        if(availability==EvolutionAvailability.TRANSFER_ONLY) return 22
+
+        val r=requirement.lowercase()
+        val level=Regex("""(?:nível|level)\s*(\d{1,3})""",RegexOption.IGNORE_CASE)
+            .find(requirement)?.groupValues?.getOrNull(1)?.toIntOrNull()
+        val levelPenalty=when{
+            level==null -> 0
+            level<=20 -> 0
+            level<=35 -> 1
+            level<=50 -> 3
+            else -> 6
         }
+        val complexityPenalty=
+            (if("1.000 passos" in r || "1000 passos" in r) 3 else 0) +
+            (if("20 vezes" in r || "3 golpes críticos" in r) 3 else 0) +
+            (if("999" in r || "union circle" in r) 4 else 0) +
+            (if("lua cheia" in r || "durante a noite" in r || "durante o dia" in r) 1 else 0)
+
+        val base=when(method){
+            CompletionMethodKind.LEVEL -> 1
+            CompletionMethodKind.DIRECT -> 2
+            CompletionMethodKind.ITEM -> 3
+            CompletionMethodKind.FRIENDSHIP -> 5
+            CompletionMethodKind.TIME -> 5
+            CompletionMethodKind.MOVE -> 5
+            CompletionMethodKind.LOCATION -> 6
+            CompletionMethodKind.ACTION -> 7
+            CompletionMethodKind.CONDITION -> 7
+            CompletionMethodKind.MULTIPLAYER -> 9
+            CompletionMethodKind.TRADE -> 10
+            CompletionMethodKind.SPECIAL -> 11
+            CompletionMethodKind.TRANSFER -> 22
+        }
+        return base+levelPenalty+complexityPenalty
     }
 
     private fun canonicalScore(kind:CanonicalAcquisitionKind,partial:Boolean):Int {
         val base=when(kind){
-            CanonicalAcquisitionKind.WILD -> 1
+            CanonicalAcquisitionKind.WILD -> 2
             CanonicalAcquisitionKind.GIFT_STARTER -> 1
-            CanonicalAcquisitionKind.RAID -> 5
-            CanonicalAcquisitionKind.EVOLUTION -> 6
-            CanonicalAcquisitionKind.TRADE -> 9
-            CanonicalAcquisitionKind.EVENT_SPECIAL -> 10
-            CanonicalAcquisitionKind.OTHER_METHOD -> 11
-            CanonicalAcquisitionKind.HOME_TRANSFER -> 18
-            CanonicalAcquisitionKind.UNAVAILABLE -> 30
+            CanonicalAcquisitionKind.RAID -> 7
+            CanonicalAcquisitionKind.EVOLUTION -> 8
+            CanonicalAcquisitionKind.TRADE -> 11
+            CanonicalAcquisitionKind.EVENT_SPECIAL -> 13
+            CanonicalAcquisitionKind.OTHER_METHOD -> 14
+            CanonicalAcquisitionKind.HOME_TRANSFER -> 22
+            CanonicalAcquisitionKind.UNAVAILABLE -> 35
         }
-        return base+if(partial)2 else 0
+        return base+if(partial)3 else 0
     }
 
     private fun versionDetail(
