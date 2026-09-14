@@ -122,6 +122,18 @@ private val qbGames=AppGameCatalog.games.map{game->
   regionalTotals.sumOf{it.second} to regionalTotals.sumOf{it.first}
  }
  val nationalCaptured=CollectionStore.capturedIds.count{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}
+
+ if(evolutionFilterName!=null){
+  EvolutionFilterFullScreen(
+   gameLabel=game.label,
+   initialRegionSource=region.source,
+   filterKey=evolutionFilterName!!,
+   onBack={evolutionFilterName=null},
+   onPokemonClick=onPokemonClick
+  )
+  return
+ }
+
  val activeEvolutionIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}.orEmpty()
  val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
@@ -212,10 +224,14 @@ private val qbGames=AppGameCatalog.games.map{game->
     }
     DropdownMenu(expanded=evolutionFilterMenu,onDismissRequest={evolutionFilterMenu=false}){
      DropdownMenuItem(text={Text("Sem filtro")},onClick={evolutionFilterName=null;evolutionFilterMenu=false})
-     DropdownMenuItem(text={Text("Todas especiais")},leadingIcon={Icon(Icons.Default.AutoAwesome,null)},onClick={evolutionFilterName="ALL";evolutionFilterMenu=false})
-     PokeApiService.EvolutionMethod.entries.forEach{method->
-      DropdownMenuItem(text={Text(method.label)},onClick={evolutionFilterName=method.name;evolutionFilterMenu=false})
-     }
+     DropdownMenuItem(text={Text("Todos que faltam")},leadingIcon={Icon(Icons.Default.AutoAwesome,null)},onClick={evolutionFilterName="ALL";evolutionFilterMenu=false})
+     DropdownMenuItem(text={Text("Nível")},onClick={evolutionFilterName="LEVEL";evolutionFilterMenu=false})
+     DropdownMenuItem(text={Text("Condição")},onClick={evolutionFilterName="CONDITION";evolutionFilterMenu=false})
+     PokeApiService.EvolutionMethod.entries
+      .filterNot{it in setOf(PokeApiService.EvolutionMethod.LEVEL,PokeApiService.EvolutionMethod.LEVEL_CONDITION)}
+      .forEach{method->
+       DropdownMenuItem(text={Text(method.label)},onClick={evolutionFilterName=method.name;evolutionFilterMenu=false})
+      }
     }
    }
    Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
