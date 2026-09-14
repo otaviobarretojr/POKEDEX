@@ -54,6 +54,17 @@ object PersistentApiCache {
 
     fun has(url: String): Boolean = fileFor(url).exists()
 
+    @Synchronized
+    fun importRaw(url:String,text:String,pin:Boolean=true){
+        memory[url]=text
+        val file=fileFor(url)
+        write(file,text)
+        if(pin){
+            pinnedUrls = pinnedUrls + url
+            persistPins()
+        }
+    }
+
     fun peek(url: String): String? {
         memory[url]?.let { return it }
         return read(fileFor(url))?.also { memory[url] = it }
