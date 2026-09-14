@@ -55,6 +55,23 @@ class CompletionAdviceResolverTest {
     }
 
     @Test
+    fun missingSourceDoesNotRepeatTheSameInstructionInDetail() {
+        val context=GameContext.fromSource("Scarlet / Violet · Paldea")!!
+        val advice=CompletionAdviceResolver.resolve(
+            pokemonId=94,
+            context=context,
+            routes=listOf(route(93,94,setOf(PokeApiService.EvolutionMethod.TRADE),"Troca")),
+            owned=emptySet(),
+            names=mapOf(93 to "Haunter")
+        )
+
+        assertEquals(CompletionMethodKind.TRADE,advice.method)
+        assertEquals("Obtenha Haunter primeiro",advice.title)
+        assertEquals("Troca",advice.detail)
+        assertFalse(advice.detail?.contains("Obtenha Haunter primeiro")==true)
+    }
+
+    @Test
     fun transferOnlyRouteBecomesHomeAdvice() {
         val context=GameContext.fromSource("Scarlet / Violet · Paldea")!!
         val advice=CompletionAdviceResolver.resolve(
