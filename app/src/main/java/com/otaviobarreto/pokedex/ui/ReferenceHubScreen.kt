@@ -47,6 +47,7 @@ fun ReferenceHubScreen(
  var detailError by remember{mutableStateOf<String?>(null)}
  var deepLinkConsumed by remember(initialKind,initialName){mutableStateOf(false)}
  val tab=referenceTabs[selected]
+ val directDetailMode=!initialKind.isNullOrBlank()&&!initialName.isNullOrBlank()
 
  LaunchedEffect(tab.key){
   val cached=ReferenceCatalogService.cached(tab.key).orEmpty()
@@ -74,6 +75,19 @@ fun ReferenceHubScreen(
  }
 
  val filtered=remember(entries,query){val q=query.trim();if(q.isBlank())entries else entries.filter{pretty(it.name).contains(q,true)||it.name.contains(q,true)}}
+
+ if(directDetailMode){
+  ReferenceDetailFullScreen(
+   title=initialName?.let(::pretty).orEmpty(),
+   detail=detail,
+   loading=detailLoading || chosen==null,
+   error=detailError,
+   onBack=onBack,
+   source=source,
+   onPokemonClick=onPokemonClick
+  )
+  return
+ }
  Scaffold(containerColor=MaterialTheme.colorScheme.background,topBar={TopAppBar(title={Text("Dados Pokémon")},navigationIcon={IconButton(onBack){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}})}){inner->
   Column(Modifier.fillMaxSize().padding(inner)){
    DexGlassSurface(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=10.dp)){
@@ -152,10 +166,109 @@ fun ReferenceHubScreen(
  }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReferenceDetailFullScreen(
+ title:String,
+ detail:ReferenceDetail?,
+ loading:Boolean,
+ error:String?,
+ onBack:()->Unit,
+ source:String?,
+ onPokemonClick:((Int,String?)->Unit)?
+){
+ Scaffold(
+  containerColor=MaterialTheme.colorScheme.background,
+  topBar={
+   TopAppBar(
+    title={Text(title.ifBlank{"Detalhes"})},
+    navigationIcon={IconButton(onBack){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}}
+   )
+  }
+ ){inner->
+  when{
+   detail!=null->ReferenceDetailPage(
+    detail=detail,
+    source=source,
+    onPokemonClick=onPokemonClick,
+    modifier=Modifier.fillMaxSize().padding(inner)
+   )
+   error!=null->DexStatusPane(
+    "Detalhes indisponíveis",
+    error,
+    Modifier.fillMaxSize().padding(inner).padding(PokedexDesignTokens.Spacing.Lg)
+   )
+   else->DexStatusPane(
+    "Carregando "+title,
+    "Buscando os detalhes completos.",
+    Modifier.fillMaxSize().padding(inner).padding(PokedexDesignTokens.Spacing.Lg),
+    loading=loading
+   )
+  }
+ }
+}
+
+@Composable
+private fun ReferenceDetailPage(
+ detail:ReferenceDetail,
+ source:String?,
+ onPokemonClick:((Int,String?)->Unit)?,
+ modifier:Modifier=Modifier
+){
+ if(detail.kind=="move"){
+  MoveReferenceDetailContent(detail,source,onPokemonClick,modifier)
+ }else{
+  GenericReferenceDetailContent(detail,source,onPokemonClick,modifier)
+ }
+}
+
+@Composable
+private fun GenericReferenceDetailContent(
+ detail:ReferenceDetail,
+ source:String?,
+ onPokemonClick:((Int,String?)->Unit)?,
+ modifier:Modifier=Modifier
+){
+ LazyColumn(
+  modifier,
+  contentPadding=PaddingValues(horizontal=20.dp,vertical=16.dp),
+  verticalArrangement=Arrangement.spacedBy(12.dp)
+ ){
+  item{
+   Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+    detail.spriteUrl?.let{AsyncImage(it,detail.name,Modifier.size(72.dp).padding(end=12.dp))}
+    Column(Modifier.weight(1f)){
+     Text(detail.name,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+     Text(if(detail.kind=="ability")"Habilidade" else "Item",style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+   }
+  }
+  if(detail.kind=="item"&&detail.category!=null)item{
+   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+    ReferenceLine("Categoria",detail.category,Modifier.padding(14.dp))
+   }
+  }
+  detail.description?.takeIf{it.isNotBlank()}?.let{description->item{
+   Text("Efeito",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+   Text(description,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  }}
+  if(detail.pokemonIds.isNotEmpty()){
+   item{
+    Text("Pokémon com esta habilidade",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+    Text("${detail.pokemonIds.size}${if(detail.pokemonIds.size>=80)"+" else ""} listados",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+   }
+   items(detail.pokemonIds.zip(detail.pokemonNames),key={it.first}){(id,name)->
+    ReferencePokemonRow(id,name,source,onPokemonClick)
+   }
+  }
+  item{Spacer(Modifier.height(24.dp))}
+ }
+}
+
 @Composable
 private fun ReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemonClick:((Int,String?)->Unit)?){
  if(detail.kind=="move"){
-  MoveReferenceDetailSheet(detail,source,onPokemonClick)
+  MoveReferenceDetailContent(detail,source,onPokemonClick,Modifier.fillMaxWidth().heightIn(max=650.dp))
   return
  }
  LazyColumn(Modifier.fillMaxWidth().heightIn(max=650.dp),contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
@@ -171,9 +284,9 @@ private fun ReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemon
 }
 
 @Composable
-private fun MoveReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemonClick:((Int,String?)->Unit)?){
+private fun MoveReferenceDetailContent(detail:ReferenceDetail,source:String?,onPokemonClick:((Int,String?)->Unit)?,modifier:Modifier=Modifier){
  LazyColumn(
-  Modifier.fillMaxWidth().heightIn(max=650.dp),
+  modifier,
   contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),
   verticalArrangement=Arrangement.spacedBy(14.dp)
  ){
@@ -262,6 +375,23 @@ private fun localizeMoveEffect(value:String):String = when(value.trim()){
  "Power is doubled if the target has already received damage this turn." -> "O poder é dobrado se o alvo já tiver sofrido dano neste turno."
  "Inflicts regular damage." -> "Causa dano normal."
  else -> value
+}
+
+@Composable
+private fun ReferencePokemonRow(id:Int,name:String,source:String?,onPokemonClick:((Int,String?)->Unit)?){
+ Card(
+  Modifier.fillMaxWidth().then(if(onPokemonClick!=null)Modifier.clickable{onPokemonClick(id,source)}else Modifier),
+  shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
+ ){
+  Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
+   AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp))
+   Column(Modifier.weight(1f).padding(start=8.dp)){
+    Text(name,fontWeight=FontWeight.SemiBold)
+    Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)
+   }
+   if(onPokemonClick!=null) Icon(Icons.Default.ChevronRight,null)
+  }
+ }
 }
 
 @Composable private fun ReferenceLine(label:String,value:String,modifier:Modifier=Modifier){Row(modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(label,style=MaterialTheme.typography.bodyMedium);Text(value,fontWeight=FontWeight.SemiBold)}}
