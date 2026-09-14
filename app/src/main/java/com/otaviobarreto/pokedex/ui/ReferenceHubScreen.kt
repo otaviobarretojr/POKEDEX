@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -153,17 +154,114 @@ fun ReferenceHubScreen(
 
 @Composable
 private fun ReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemonClick:((Int,String?)->Unit)?){
+ if(detail.kind=="move"){
+  MoveReferenceDetailSheet(detail,source,onPokemonClick)
+  return
+ }
  LazyColumn(Modifier.fillMaxWidth().heightIn(max=650.dp),contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
-  item{Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){detail.spriteUrl?.let{AsyncImage(it,detail.name,Modifier.size(72.dp).padding(end=12.dp))};Column(Modifier.weight(1f)){Text(detail.name,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text(when(detail.kind){"move"->"Golpe";"ability"->"Habilidade";else->"Item"},style=MaterialTheme.typography.labelLarge)}}}
-  if(detail.kind=="move")item{Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){Column(Modifier.padding(14.dp)){Text("Dados do golpe",fontWeight=FontWeight.Bold);Spacer(Modifier.height(6.dp));ReferenceLine("Tipo",detail.type?:"—");ReferenceLine("Classe",detail.category?:"—");ReferenceLine("Poder",detail.power?.toString()?:"—");ReferenceLine("Precisão",detail.accuracy?.let{"$it%"}?:"—");ReferenceLine("PP",detail.pp?.toString()?:"—");ReferenceLine("Prioridade",detail.priority?.toString()?:"0")}}}
+  item{Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){detail.spriteUrl?.let{AsyncImage(it,detail.name,Modifier.size(72.dp).padding(end=12.dp))};Column(Modifier.weight(1f)){Text(detail.name,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text(if(detail.kind=="ability")"Habilidade" else "Item",style=MaterialTheme.typography.labelLarge)}}}
   if(detail.kind=="item"&&detail.category!=null)item{Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){ReferenceLine("Categoria",detail.category,Modifier.padding(14.dp))}}
   detail.description?.takeIf{it.isNotBlank()}?.let{description->item{Text("Efeito",fontWeight=FontWeight.Bold);Text(description,style=MaterialTheme.typography.bodyMedium)}}
   if(detail.pokemonIds.isNotEmpty()){
-   item{Text(if(detail.kind=="move")"Pokémon que podem aprender" else "Pokémon com esta habilidade",fontWeight=FontWeight.Bold);Text("${detail.pokemonIds.size}${if(detail.pokemonIds.size>=80)"+" else ""} listados",style=MaterialTheme.typography.labelSmall)}
+   item{Text("Pokémon com esta habilidade",fontWeight=FontWeight.Bold);Text("${detail.pokemonIds.size}${if(detail.pokemonIds.size>=80)"+" else ""} listados",style=MaterialTheme.typography.labelSmall)}
    items(detail.pokemonIds.zip(detail.pokemonNames),key={it.first}){(id,name)->Card(Modifier.fillMaxWidth().then(if(onPokemonClick!=null)Modifier.clickable{onPokemonClick(id,source)}else Modifier)){Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp));Column(Modifier.weight(1f).padding(start=8.dp)){Text(name,fontWeight=FontWeight.SemiBold);Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)};if(onPokemonClick!=null)Icon(Icons.Default.ChevronRight,null)}}}
   }
   item{Spacer(Modifier.height(26.dp))}
  }
+}
+
+@Composable
+private fun MoveReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemonClick:((Int,String?)->Unit)?){
+ LazyColumn(
+  Modifier.fillMaxWidth().heightIn(max=650.dp),
+  contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),
+  verticalArrangement=Arrangement.spacedBy(14.dp)
+ ){
+  item{
+   Column{
+    Text(detail.name,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+    Row(Modifier.padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalAlignment=Alignment.CenterVertically){
+     detail.type?.let{MoveTypeBadge(it)}
+     detail.category?.let{MoveClassBadge(it)}
+    }
+   }
+  }
+  item{
+   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+    MoveStatTile("Poder",detail.power?.toString()?:"—",Modifier.weight(1f))
+    MoveStatTile("Precisão",detail.accuracy?.let{"$it%"}?:"—",Modifier.weight(1f))
+    MoveStatTile("PP",detail.pp?.toString()?:"—",Modifier.weight(1f))
+   }
+  }
+  detail.priority?.takeIf{it!=0}?.let{priority->
+   item{MoveStatTile("Prioridade",priority.toString(),Modifier.fillMaxWidth())}
+  }
+  detail.description?.takeIf{it.isNotBlank()}?.let{description->
+   item{
+    Text("Efeito",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+    Text(localizeMoveEffect(description),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))
+   }
+  }
+  if(detail.pokemonIds.isNotEmpty()){
+   item{
+    Text("Pokémon que podem aprender",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+    Text("${detail.pokemonIds.size}${if(detail.pokemonIds.size>=80)"+" else ""} listados",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+   }
+   items(detail.pokemonIds.zip(detail.pokemonNames),key={it.first}){(id,name)->
+    Card(
+     Modifier.fillMaxWidth().then(if(onPokemonClick!=null)Modifier.clickable{onPokemonClick(id,source)}else Modifier),
+     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
+    ){
+     Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){
+      AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp))
+      Column(Modifier.weight(1f).padding(start=8.dp)){
+       Text(name,fontWeight=FontWeight.SemiBold)
+       Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)
+      }
+      if(onPokemonClick!=null) Icon(Icons.Default.ChevronRight,null)
+     }
+    }
+   }
+  }
+  item{Spacer(Modifier.height(26.dp))}
+ }
+}
+
+@Composable
+private fun MoveTypeBadge(type:String){
+ val color=PokedexDesignTokens.Colors.type(type)
+ Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Pill),color=color){
+  Text(type.uppercase(),modifier=Modifier.padding(horizontal=10.dp,vertical=5.dp),style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black,color=Color.White)
+ }
+}
+
+@Composable
+private fun MoveClassBadge(category:String){
+ val label=when(category.lowercase()){
+  "physical"->"Físico"
+  "special"->"Especial"
+  "status"->"Status"
+  else->category
+ }
+ Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Pill),color=MaterialTheme.colorScheme.surfaceVariant){
+  Text(label,modifier=Modifier.padding(horizontal=10.dp,vertical=5.dp),style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold)
+ }
+}
+
+@Composable
+private fun MoveStatTile(label:String,value:String,modifier:Modifier=Modifier){
+ Surface(modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.72f)){
+  Column(Modifier.padding(horizontal=10.dp,vertical=12.dp),horizontalAlignment=Alignment.CenterHorizontally){
+   Text(value,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+   Text(label,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  }
+ }
+}
+
+private fun localizeMoveEffect(value:String):String = when(value.trim()){
+ "Power is doubled if the target has already received damage this turn." -> "O poder é dobrado se o alvo já tiver sofrido dano neste turno."
+ "Inflicts regular damage." -> "Causa dano normal."
+ else -> value
 }
 
 @Composable private fun ReferenceLine(label:String,value:String,modifier:Modifier=Modifier){Row(modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(label,style=MaterialTheme.typography.bodyMedium);Text(value,fontWeight=FontWeight.SemiBold)}}
