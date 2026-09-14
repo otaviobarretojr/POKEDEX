@@ -39,8 +39,10 @@ object PokedexDataStore {
             PokeApiService.loadSpecies(it)
         }
 
-    fun evolutions(url: String): List<PokeApiService.EvolutionStage> =
-        evolutionCache.computeIfAbsent(url) { PokeApiService.loadEvolutionChain(it) }
+    fun evolutions(url:String,context:GameContext?=null):List<PokeApiService.EvolutionStage> {
+        val key=url+"|"+(context?.label ?: "global")
+        return evolutionCache.computeIfAbsent(key){PokeApiService.loadEvolutionChain(url,context)}
+    }
 
     fun encounters(id: Int): List<PokeApiService.EncounterLocation> =
         encounterCache.computeIfAbsent(id) { PokeApiService.loadEncounters(it) }
@@ -58,7 +60,9 @@ object PokedexDataStore {
     fun cachedPokemon(id: Int) = pokemonCache[id]
     fun cachedSpecies(id: Int) = speciesCache[id]
     fun cachedEncounters(id: Int) = encounterCache[id]
-    fun cachedEvolutions(url: String?) = url?.let { evolutionCache[it] }
+    fun cachedEvolutions(url:String?,context:GameContext?=null)=url?.let{
+        evolutionCache[it+"|"+(context?.label ?: "global")]
+    }
 
     data class CacheStats(
         val pokemon:Int,
