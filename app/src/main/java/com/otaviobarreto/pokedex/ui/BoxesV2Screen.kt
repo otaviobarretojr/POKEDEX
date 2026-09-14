@@ -46,6 +46,7 @@ import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.EvolutionFilterIndex
 import com.otaviobarreto.pokedex.data.EvolutionRuleCatalog
 import com.otaviobarreto.pokedex.data.PokedexDataStore
+import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import com.otaviobarreto.pokedex.data.PokeApiService
 import com.otaviobarreto.pokedex.data.PokemonRepository
 import com.otaviobarreto.pokedex.data.PokemonFormsService
@@ -69,7 +70,7 @@ private val qbGames=AppGameCatalog.games.map{game->
  val preferredRegion=AppStatePreferences.activeRegionForGame(game.label)
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  var evolutionFilterName by rememberSaveable{mutableStateOf<String?>(null)}
  var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
@@ -77,15 +78,28 @@ private val qbGames=AppGameCatalog.games.map{game->
  LaunchedEffect(region.source,game.label){
   evolutionFilterName=null
   loading=true
+  needsComplement=false
   AppStatePreferences.activeGame=game.label
   AppStatePreferences.setActiveRegionForGame(game.label,region.source)
   page=AppStatePreferences.boxPage(region.source)
-  val ctx=GameContext.fromSource(region.source)
-  dex=if(ctx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}}.getOrElse{emptyList()}
-  val pageCount=((dex.size+29)/30).coerceAtLeast(1)
-  if(page>=pageCount) page=pageCount-1
-  AppStatePreferences.setBoxPage(region.source,page)
-  loading=false
+
+  val generalReady=withContext(Dispatchers.IO){OfflineGamePackManager.generalAudit()}
+  val gameReady=OfflineGamePackManager.status(game.label).verified
+
+  if(generalReady && !gameReady){
+   dex=emptyList()
+   needsComplement=true
+   loading=false
+  }else{
+   val ctx=GameContext.fromSource(region.source)
+   dex=if(ctx==null)emptyList()else runCatching{
+    withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}
+   }.getOrElse{emptyList()}
+   val pageCount=((dex.size+29)/30).coerceAtLeast(1)
+   if(page>=pageCount) page=pageCount-1
+   AppStatePreferences.setBoxPage(region.source,page)
+   loading=false
+  }
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
@@ -267,6 +281,21 @@ private val qbGames=AppGameCatalog.games.map{game->
   ){
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
+    needsComplement->Box(
+     Modifier.fillMaxSize().padding(24.dp),
+     contentAlignment=Alignment.Center
+    ){
+     Column(horizontalAlignment=Alignment.CenterHorizontally){
+      Icon(Icons.Default.CloudDownload,null,tint=game.accent,modifier=Modifier.size(42.dp))
+      Spacer(Modifier.height(10.dp))
+      Text("Complemento do jogo necessário",fontWeight=FontWeight.Bold)
+      Text(
+       "A biblioteca geral está instalada. Baixe o complemento de "+game.label+" em Configurações para liberar esta Box offline.",
+       style=MaterialTheme.typography.bodySmall,
+       color=MaterialTheme.colorScheme.onSurfaceVariant
+      )
+     }
+    }
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
