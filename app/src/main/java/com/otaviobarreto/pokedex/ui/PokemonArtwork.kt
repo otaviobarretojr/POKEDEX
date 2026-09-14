@@ -87,9 +87,15 @@ fun PokemonArtwork(
 ) {
     val context = LocalContext.current
     val tuning = remember(pokemonId) { ArtworkTuningCatalog.forPokemon(pokemonId) }
-    val request = remember(model) {
+    val request = remember(model,pokemonId) {
         ImageRequest.Builder(context)
             .data(model)
+            .apply {
+                pokemonId?.let { id ->
+                    diskCacheKey("pokemon-offline-$id")
+                    memoryCacheKey("pokemon-offline-$id")
+                }
+            }
             .crossfade(false)
             .transformations(TransparentBoundsCropTransformation())
             .build()
