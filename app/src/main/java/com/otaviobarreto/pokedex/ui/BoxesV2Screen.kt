@@ -282,9 +282,9 @@ private val qbGames=AppGameCatalog.games.map{game->
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
-     val activeIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}
+     val activeIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}.orEmpty()
      val visibleEntries=if(evolutionFilterName==null) entries else entries.filter{it.nationalId in activeIds}
-     QBGrid(visibleEntries,capturedIds,region.source,false,activeIds.orEmpty(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+     QBGrid(visibleEntries,capturedIds,region.source,false,activeIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
     }
    }
    if(evolutionFilterName!=null&&evolutionMethodLoading){
