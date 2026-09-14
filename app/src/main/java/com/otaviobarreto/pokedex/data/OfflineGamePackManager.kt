@@ -189,10 +189,24 @@ object OfflineGamePackManager {
         }
         val total = ids.size.coerceAtLeast(1)
         val completedKey = key(game.label, "completed_ids")
-        val alreadyCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
+        val storedCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
             .mapNotNull { it.toIntOrNull() }
             .filter { it in ids }
             .toMutableSet()
+        val previousStatus = status(game.label)
+        val previousAudit = audit(game.label)
+        val alreadyCompleted = if(previousStatus.downloaded && !previousAudit.valid){
+            // A finished pack that fails integrity must be rebuilt instead of trusting
+            // stale completion markers. Interrupted packs still resume normally.
+            prefs().edit()
+                .putStringSet(completedKey, emptySet())
+                .putInt(key(game.label, "complete"), 0)
+                .putBoolean(key(game.label, "ready"), false)
+                .apply()
+            mutableSetOf()
+        }else{
+            storedCompleted
+        }
         val pendingIds = ids.filterNot { it in alreadyCompleted }
         val semaphore = Semaphore(permits = DOWNLOAD_CONCURRENCY)
         var completed = alreadyCompleted.size
