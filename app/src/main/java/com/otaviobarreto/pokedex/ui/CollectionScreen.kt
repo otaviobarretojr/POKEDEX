@@ -1,24 +1,34 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private enum class CollectionSection(val label:String){
-    OVERVIEW("Resumo"), LIVING("Living"), SHINY("Shiny"), FORMS("Formas")
-}
+private enum class CollectionArea { HOME, LIVING, SHINY, FORMS }
 
 @Composable
 fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit){
@@ -26,8 +36,10 @@ fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->U
     val variants=VariantCollectionStore.ownedVariants
     val plan=remember(captured,variants){LivingDexPlanner.current(PokeApiService.MAX_NATIONAL_DEX_ID)}
     val insights=remember(captured,variants,CollectionStore.boxes){CollectionInsightsService.current()}
-    var section by rememberSaveable{mutableStateOf(CollectionSection.OVERVIEW)}
+    var areaName by rememberSaveable{mutableStateOf(CollectionArea.HOME.name)}
+    var generation by rememberSaveable{mutableStateOf<Int?>(null)}
     var advisorReady by remember{mutableStateOf(CollectionAdvisor.isWarm())}
+    val area=CollectionArea.valueOf(areaName)
 
     LaunchedEffect(Unit){
         if(!advisorReady){
@@ -36,184 +48,261 @@ fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->U
         }
     }
 
+    BackHandler(enabled=area!=CollectionArea.HOME || generation!=null){
+        if(generation!=null) generation=null else areaName=CollectionArea.HOME.name
+    }
+
     DexAppBackground{
-        LazyColumn(
-            Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
-            contentPadding=PaddingValues(top=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xxl),
-            verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Lg)
-        ){
-            item{
-                Column{
-                    DexSectionEyebrow("Seu progresso")
-                    Text("Coleção",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                    Text("Living Dex, Shinies, formas e progresso de coleção ficam exclusivamente aqui.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        when{
+            area==CollectionArea.HOME -> CollectionHome(plan,insights,advisorReady,{areaName=it.name},onOpenBoxes,onPokemonClick)
+            area==CollectionArea.FORMS -> FormsAlbum(variants,{areaName=CollectionArea.HOME.name},onPokemonClick)
+            generation==null -> GenerationShelf(
+                if(area==CollectionArea.LIVING)"Living Dex" else "Shiny Dex",
+                if(area==CollectionArea.LIVING)"Complete cada geração da National Dex." else "Sua coleção Shiny organizada por geração.",
+                plan,
+                area==CollectionArea.SHINY,
+                {areaName=CollectionArea.HOME.name},
+                {generation=it}
+            )
+            else -> PokemonAlbumGrid(generation!!,area==CollectionArea.SHINY,captured,variants,{generation=null},onPokemonClick)
+        }
+    }
+}
+
+@Composable
+private fun CollectionHome(
+    plan:LivingDexPlan,
+    insights:CollectionInsights,
+    advisorReady:Boolean,
+    onOpenArea:(CollectionArea)->Unit,
+    onOpenBoxes:(String?,String?)->Unit,
+    onPokemonClick:(Int)->Unit
+){
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+        contentPadding=PaddingValues(top=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xxl),
+        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Lg)
+    ){
+        item{
+            Column{
+                DexSectionEyebrow("Sua coleção")
+                Text("Coleção",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+                Text("Seu álbum Pokémon: espécies, Shinies e formas em um só lugar.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        item{CollectionHero(plan)}
+        item{AlbumPortalCard("Living Dex","${plan.capturedSpecies} de ${plan.totalSpecies} espécies",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
+        item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome){onOpenArea(CollectionArea.SHINY)}}
+        item{AlbumPortalCard("Form Dex","${plan.formRegistrations} formas alternativas registradas",null,listOf(26,157,724),false,Icons.Default.Extension){onOpenArea(CollectionArea.FORMS)}}
+        item{
+            val action=if(advisorReady) CollectionAdvisor.nextAction(plan.missingSpecies) else null
+            DexGlassSurface(Modifier.fillMaxWidth()){
+                DexSectionEyebrow("Próxima captura")
+                Text(action?.title ?: "Preparando recomendação…",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+                Text(action?.subtitle ?: "Organizando a melhor rota com os jogos disponíveis.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))
+                if(action?.game!=null){
+                    Button(onClick={onOpenBoxes(action.game,action.source)},modifier=Modifier.fillMaxWidth().padding(top=12.dp)){Text("Abrir ${action.game}")}
+                }else if(action!=null && action.targetIds.isNotEmpty()){
+                    TextButton(onClick={onPokemonClick(action.targetIds.first())},modifier=Modifier.fillMaxWidth()){Text("Ver sugestão")}
                 }
             }
-            item{
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()){
-                    CollectionSection.entries.forEachIndexed{index,item->
-                        SegmentedButton(selected=section==item,onClick={section=item},shape=SegmentedButtonDefaults.itemShape(index,CollectionSection.entries.size),label={Text(item.label,maxLines=1)})
+        }
+        item{Text("${insights.gamesWithProgress} jogo(s) com coleção registrada",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+    }
+}
+
+@Composable
+private fun CollectionHero(plan:LivingDexPlan){
+    DexGlassSurface(Modifier.fillMaxWidth()){
+        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
+            Column(Modifier.weight(1f)){
+                DexSectionEyebrow("National Dex")
+                Text("${(plan.speciesRatio*100).toInt()}%",style=MaterialTheme.typography.displaySmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+                Text("${plan.capturedSpecies} / ${plan.totalSpecies}",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
+                Text("Faltam ${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            AsyncImage(model=artwork(25,false),contentDescription="Pikachu",modifier=Modifier.size(112.dp),contentScale=ContentScale.Fit)
+        }
+        LinearProgressIndicator(progress={plan.speciesRatio},modifier=Modifier.fillMaxWidth().padding(top=12.dp))
+    }
+}
+
+@Composable
+private fun AlbumPortalCard(
+    title:String,subtitle:String,progress:Float?,ids:List<Int>,shiny:Boolean,
+    icon:androidx.compose.ui.graphics.vector.ImageVector,onClick:()->Unit
+){
+    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
+        Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                Icon(icon,null,tint=MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)){
+                    Text(title,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+                    Text(subtitle,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(Icons.Default.ChevronRight,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Row(Modifier.fillMaxWidth().padding(top=10.dp),horizontalArrangement=Arrangement.SpaceEvenly){
+                ids.forEach{id->AsyncImage(model=artwork(id,shiny),contentDescription=null,modifier=Modifier.size(72.dp),contentScale=ContentScale.Fit)}
+            }
+            if(progress!=null) LinearProgressIndicator(progress={progress.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=8.dp))
+        }
+    }
+}
+
+@Composable
+private fun GenerationShelf(
+    title:String,subtitle:String,plan:LivingDexPlan,shiny:Boolean,onBack:()->Unit,onGeneration:(Int)->Unit
+){
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+        contentPadding=PaddingValues(top=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xxl),
+        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Md)
+    ){
+        item{CollectionPageHeader(title,subtitle,onBack)}
+        items(plan.byGeneration,key={it.generation}){gen->
+            val value=if(shiny)gen.shiny else gen.captured
+            val ratio=if(gen.total==0)0f else value.toFloat()/gen.total
+            val list=NationalDexCatalog.all.filter{it.generation==gen.generation}
+            val representatives=if(list.size<3) list.map{it.id} else listOf(list.first().id,list[list.size/2].id,list.last().id)
+            Card(Modifier.fillMaxWidth().clickable{onGeneration(gen.generation)},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
+                Column(Modifier.fillMaxWidth().padding(16.dp)){
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Column(Modifier.weight(1f)){
+                            DexSectionEyebrow("Geração ${roman(gen.generation)}")
+                            Text(generationRegion(gen.generation),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+                            Text("$value / ${gen.total}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Row(horizontalArrangement=Arrangement.spacedBy(2.dp)){
+                            representatives.forEach{id->AsyncImage(model=artwork(id,shiny),contentDescription=null,modifier=Modifier.size(46.dp),contentScale=ContentScale.Fit)}
+                        }
+                    }
+                    LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(top=10.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PokemonAlbumGrid(
+    generation:Int,shiny:Boolean,captured:Set<Int>,variants:List<OwnedPokemonVariant>,
+    onBack:()->Unit,onPokemonClick:(Int)->Unit
+){
+    val ids=remember(generation){NationalDexCatalog.all.filter{it.generation==generation}}
+    val shinyIds=remember(variants){variants.asSequence().filter{it.shiny}.map{it.speciesId}.toSet()}
+    val ownedCount=ids.count{if(shiny)it.id in shinyIds else it.id in captured}
+    Column(Modifier.fillMaxSize()){
+        CollectionPageHeader(
+            if(shiny)"${generationRegion(generation)} Shiny" else generationRegion(generation),
+            "$ownedCount / ${ids.size} registrados",
+            onBack,
+            Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md)
+        )
+        LazyVerticalGrid(
+            columns=GridCells.Fixed(4),
+            modifier=Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Md),
+            contentPadding=PaddingValues(bottom=PokedexDesignTokens.Spacing.Xxl),
+            verticalArrangement=Arrangement.spacedBy(8.dp),
+            horizontalArrangement=Arrangement.spacedBy(8.dp)
+        ){
+            gridItems(ids,key={it.id}){species->
+                val owned=if(shiny)species.id in shinyIds else species.id in captured
+                PokemonAlbumTile(species.id,species.displayName,owned,shiny){onPokemonClick(species.id)}
+            }
+        }
+    }
+}
+
+@Composable
+private fun PokemonAlbumTile(id:Int,name:String,owned:Boolean,shiny:Boolean,onClick:()->Unit){
+    val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}
+    Card(Modifier.aspectRatio(.82f).clickable(onClick=onClick),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+        Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+            AsyncImage(
+                model=artwork(id,shiny),
+                contentDescription=name,
+                modifier=Modifier.weight(1f).fillMaxWidth().alpha(if(owned)1f else .20f),
+                contentScale=ContentScale.Fit,
+                colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale)
+            )
+            Text("#"+id.toString().padStart(4,'0'),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if(owned)name else "???",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun FormsAlbum(variants:List<OwnedPokemonVariant>,onBack:()->Unit,onPokemonClick:(Int)->Unit){
+    val forms=variants.filter{it.countsForFormDex()}.distinctBy{listOf(it.speciesId,it.formPokemonId,it.formKey.lowercase())}
+    val groups=remember(forms){forms.groupBy(::formCategory)}
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+        contentPadding=PaddingValues(top=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xxl),
+        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Lg)
+    ){
+        item{CollectionPageHeader("Form Dex","Formas alternativas organizadas por tipo.",onBack)}
+        if(forms.isEmpty()){
+            item{DexGlassSurface(Modifier.fillMaxWidth()){Text("Nenhuma forma alternativa registrada",fontWeight=FontWeight.Black);Text("Registre formas regionais e especiais para montar este álbum.",color=MaterialTheme.colorScheme.onSurfaceVariant)}}
+        }else{
+            formCategoryOrder.forEach{category->
+                val entries=groups[category].orEmpty()
+                if(entries.isNotEmpty()){
+                    item{
+                        Column{
+                            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                                Text(category,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+                                Text("${entries.size}",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)
+                            }
+                            Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                                entries.take(4).forEach{form->
+                                    Card(Modifier.weight(1f).aspectRatio(.82f).clickable{onPokemonClick(form.speciesId)}){
+                                        Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally){
+                                            AsyncImage(model=form.artworkUrl,contentDescription=form.formName,modifier=Modifier.weight(1f).fillMaxWidth(),contentScale=ContentScale.Fit)
+                                            Text(form.formName,style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis)
+                                        }
+                                    }
+                                }
+                                repeat((4-entries.take(4).size).coerceAtLeast(0)){Spacer(Modifier.weight(1f))}
+                            }
+                        }
                     }
                 }
             }
-            when(section){
-                CollectionSection.OVERVIEW -> overviewItems(plan,insights,advisorReady,onPokemonClick,onOpenBoxes){section=it}
-                CollectionSection.LIVING -> livingItems(plan,onPokemonClick)
-                CollectionSection.SHINY -> shinyItems(plan,variants,onPokemonClick)
-                CollectionSection.FORMS -> formItems(plan,variants,onPokemonClick)
-            }
-        }
-    }
-}
-
-private fun androidx.compose.foundation.lazy.LazyListScope.overviewItems(
-    plan:LivingDexPlan,insights:CollectionInsights,advisorReady:Boolean,
-    onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit,openSection:(CollectionSection)->Unit
-){
-    item{
-        DexGlassSurface(Modifier.fillMaxWidth().clickable{openSection(CollectionSection.LIVING)}){
-            Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-                    Column{Text("Living Dex",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black);Text("National Dex",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-                    Text("${(plan.speciesRatio*100).toInt()}%",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
-                }
-                Text("${plan.capturedSpecies} / ${plan.totalSpecies}",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black,modifier=Modifier.padding(top=8.dp))
-                LinearProgressIndicator(progress={plan.speciesRatio},modifier=Modifier.fillMaxWidth().padding(vertical=10.dp))
-                Text("Faltam ${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies",color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-    item{
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-            CollectionMetricCard("Shiny Dex",plan.shinySpecies.toString(),"${percent(plan.shinySpecies,plan.totalSpecies)}%",Icons.Default.AutoAwesome,Modifier.weight(1f)){openSection(CollectionSection.SHINY)}
-            CollectionMetricCard("Form Dex",plan.formRegistrations.toString(),"registros",Icons.Default.Extension,Modifier.weight(1f)){openSection(CollectionSection.FORMS)}
-        }
-    }
-    item{
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-            CollectionMetricCard("Jogos",insights.gamesWithProgress.toString(),"com coleção",Icons.Default.SportsEsports,Modifier.weight(1f),null)
-            CollectionMetricCard("Espécies",plan.capturedSpecies.toString(),"únicas",Icons.Default.CatchingPokemon,Modifier.weight(1f),null)
-        }
-    }
-    item{
-        val action=if(advisorReady) CollectionAdvisor.nextAction(plan.missingSpecies) else null
-        Card(shape=MaterialTheme.shapes.large){
-            Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-                DexSectionEyebrow("Próxima captura")
-                Text(action?.title ?: "Preparando recomendações…",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                Text(action?.subtitle ?: "Analisando os jogos e regiões disponíveis na sua base.",color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))
-                if(action?.game!=null){
-                    Button(onClick={onOpenBoxes(action.game,action.source)},modifier=Modifier.fillMaxWidth().padding(top=12.dp)){Text("Abrir "+action.game)}
-                }
-                if(action!=null && action.targetIds.isNotEmpty()){
-                    TextButton(onClick={onPokemonClick(action.targetIds.first())},modifier=Modifier.fillMaxWidth()){Text("Ver primeiro Pokémon sugerido")}
-                }
-            }
-        }
-    }
-    item{Text("Por geração",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)}
-    items(plan.byGeneration,key={it.generation}){gen->
-        val ratio=if(gen.total==0)0f else gen.captured.toFloat()/gen.total
-        Card{
-            Column(Modifier.fillMaxWidth().padding(14.dp)){
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-                    Text("Geração "+roman(gen.generation),fontWeight=FontWeight.Bold)
-                    Text("${gen.captured}/${gen.total}")
-                }
-                LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(vertical=8.dp))
-                Text("${gen.shiny} Shiny · ${percent(gen.shiny,gen.total)}%",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-    item{Text("Por jogo",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)}
-    items(insights.byGame,key={it.game}){game->
-        Card(Modifier.fillMaxWidth().clickable{onOpenBoxes(game.game,null)}){
-            Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
-                Column(Modifier.weight(1f)){
-                    Text(game.game,fontWeight=FontWeight.Bold)
-                    Text("${game.regionsWithProgress}/${game.totalRegions} região(ões) com coleção",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Text(game.captured.toString(),fontWeight=FontWeight.Black)
-            }
-        }
-    }
-}
-
-private fun androidx.compose.foundation.lazy.LazyListScope.livingItems(plan:LivingDexPlan,onPokemonClick:(Int)->Unit){
-    item{CollectionSectionHeader("Living Dex","${plan.capturedSpecies}/${plan.totalSpecies}","${(plan.speciesRatio*100).toInt()}% completo")}
-    if(plan.missingSpecies.isEmpty()){
-        item{CollectionEmptyState("Living Dex completa","Todas as espécies da National Dex estão registradas na sua coleção.")}
-    }else{
-        item{Text("Espécies que faltam",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)}
-        items(plan.missingSpecies,key={it}){id->
-            Card(Modifier.fillMaxWidth().clickable{onPokemonClick(id)}){
-                Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
-                    Text("#"+id.toString().padStart(4,'0'),fontWeight=FontWeight.Bold)
-                    Text("Ver Pokémon",color=MaterialTheme.colorScheme.primary)
-                }
-            }
-        }
-    }
-}
-
-private fun androidx.compose.foundation.lazy.LazyListScope.shinyItems(plan:LivingDexPlan,variants:List<OwnedPokemonVariant>,onPokemonClick:(Int)->Unit){
-    val shinySpecies=variants.asSequence().filter{it.shiny}.map{it.speciesId}.distinct().sorted().toList()
-    item{CollectionSectionHeader("Shiny Dex","${plan.shinySpecies}/${plan.totalSpecies}","${percent(plan.shinySpecies,plan.totalSpecies)}% da National Dex em Shiny")}
-    if(shinySpecies.isEmpty()){
-        item{CollectionEmptyState("Nenhum Shiny registrado","Quando você registrar uma variante Shiny, ela aparecerá aqui.")}
-    }else items(shinySpecies,key={it}){id->
-        Card(Modifier.fillMaxWidth().clickable{onPokemonClick(id)}){
-            Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
-                Text("#"+id.toString().padStart(4,'0'),fontWeight=FontWeight.Bold)
-                Text("Shiny registrado",color=MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
-
-private fun androidx.compose.foundation.lazy.LazyListScope.formItems(plan:LivingDexPlan,variants:List<OwnedPokemonVariant>,onPokemonClick:(Int)->Unit){
-    val forms=variants.filter{it.countsForFormDex()}.distinctBy{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}
-    item{CollectionSectionHeader("Form Dex",plan.formRegistrations.toString(),"formas alternativas registradas")}
-    if(forms.isEmpty()){
-        item{CollectionEmptyState("Nenhuma forma alternativa registrada","Formas regionais e especiais registradas aparecerão aqui.")}
-    }else items(forms,key={it.key}){form->
-        Card(Modifier.fillMaxWidth().clickable{onPokemonClick(form.speciesId)}){
-            Column(Modifier.fillMaxWidth().padding(14.dp)){
-                Text(form.formName,fontWeight=FontWeight.Bold)
-                Text("#"+form.speciesId.toString().padStart(4,'0')+" · "+form.source,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
         }
     }
 }
 
 @Composable
-private fun CollectionMetricCard(title:String,value:String,subtitle:String,icon:androidx.compose.ui.graphics.vector.ImageVector,modifier:Modifier,onClick:(()->Unit)?){
-    Card(modifier.then(if(onClick!=null)Modifier.clickable(onClick=onClick) else Modifier)){
-        Column(Modifier.fillMaxWidth().padding(14.dp)){
-            Icon(icon,null,tint=MaterialTheme.colorScheme.primary)
-            Text(value,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,modifier=Modifier.padding(top=8.dp))
-            Text(title,fontWeight=FontWeight.Bold)
-            Text(subtitle,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun CollectionSectionHeader(title:String,value:String,subtitle:String){
-    DexGlassSurface(Modifier.fillMaxWidth()){
-        Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-            DexSectionEyebrow("Coleção")
+private fun CollectionPageHeader(title:String,subtitle:String,onBack:()->Unit,modifier:Modifier=Modifier){
+    Row(modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+        IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null)}
+        Column(Modifier.weight(1f)){
             Text(title,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-            Text(value,style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
-            Text(subtitle,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(subtitle,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
-@Composable
-private fun CollectionEmptyState(title:String,subtitle:String){
-    Card{Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){Text(title,fontWeight=FontWeight.Black);Text(subtitle,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))}}
+private fun artwork(id:Int,shiny:Boolean)=
+    "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+(if(shiny)"shiny/" else "")+id+".png"
+
+private fun generationRegion(generation:Int)=when(generation){
+    1->"Kanto";2->"Johto";3->"Hoenn";4->"Sinnoh";5->"Unova";6->"Kalos";7->"Alola";8->"Galar";9->"Paldea";else->"Geração $generation"
 }
 
-private fun percent(value:Int,total:Int):Int=if(total<=0)0 else ((value.toFloat()/total)*100).toInt().coerceIn(0,100)
+private val formCategoryOrder=listOf("Formas regionais","Mega / batalha","Formas especiais","Cosméticas / gênero","Outras formas")
+
+private fun formCategory(form:OwnedPokemonVariant):String{
+    val n=(form.formName+" "+form.formKey).lowercase()
+    return when{
+        listOf("alola","galar","hisui","paldea").any{it in n}->"Formas regionais"
+        listOf("mega","gmax","gigantamax","primal","eternamax").any{it in n}->"Mega / batalha"
+        listOf("female","male","cap","cosplay","pattern","trim","cream","sweet","unown").any{it in n}->"Cosméticas / gênero"
+        listOf("origin","sky","therian","black","white","crowned","hero","dusk","midnight","midday","mask","bloodmoon","roaming","chest").any{it in n}->"Formas especiais"
+        else->"Outras formas"
+    }
+}
+
 private fun roman(value:Int)=when(value){1->"I";2->"II";3->"III";4->"IV";5->"V";6->"VI";7->"VII";8->"VIII";9->"IX";else->value.toString()}
