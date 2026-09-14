@@ -61,8 +61,8 @@ class CanonicalAvailabilityResolverTest {
         assertEquals(AvailabilityConfidence.CONFIRMED,record.confidence)
     }
 
-    @Test fun everyRegionalMemberAlwaysGetsAnExplicitAcquisitionState() {
-        for(id in listOf(1,25,133,906,1025)){
+    @Test fun unknownRegionalAcquisitionStaysBlank() {
+        for(id in listOf(1,25,133,1025)){
             val record=CanonicalAvailabilityResolver.resolve(
                 pokemonId=id,
                 context=paldea,
@@ -70,8 +70,10 @@ class CanonicalAvailabilityResolverTest {
                 dex=listOf(GameDexService.GameDexEntry(id,id,"Pokemon $id"))
             )
             assertTrue(record.inRegionalDex)
-            assertNotEquals(CanonicalAcquisitionKind.UNAVAILABLE,record.acquisitionKind)
-            assertTrue(record.acquisitionLabel.isNotBlank())
+            assertEquals(CanonicalAcquisitionKind.OTHER_METHOD,record.acquisitionKind)
+            assertTrue(record.acquisitionLabel.isBlank())
+            assertNull(record.requirement)
+            assertEquals(AvailabilityConfidence.PARTIAL,record.confidence)
         }
     }
 }
