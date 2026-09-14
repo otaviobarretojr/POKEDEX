@@ -3,6 +3,7 @@ package com.otaviobarreto.pokedex
 object PokedexRoutes {
     const val HOME = "home"
     const val POKEDEX = "pokedex"
+    const val COLLECTION = "collection"
     const val BOXES = "boxes"
     const val CENTRAL = "central"
 
