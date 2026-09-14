@@ -99,7 +99,7 @@ private val qbGames=AppGameCatalog.games.map{game->
     val result=mutableMapOf<String,MutableSet<Int>>()
     val byChain=entries.groupBy{entry->runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()}
     byChain.keys.filterNotNull().forEach{url->
-     runCatching{PokeApiService.loadEvolutionSourceMethods(url)}.getOrElse{emptyList()}.forEach{info->
+     runCatching{PokeApiService.loadEvolutionSourceMethods(url,GameContext.fromSource(region.source))}.getOrElse{emptyList()}.forEach{info->
       if(entries.any{it.nationalId==info.sourcePokemonId}){
        result.getOrPut("ALL"){mutableSetOf()}.add(info.sourcePokemonId)
        result.getOrPut(info.method.name){mutableSetOf()}.add(info.sourcePokemonId)
@@ -194,7 +194,10 @@ private val qbGames=AppGameCatalog.games.map{game->
      fontWeight=FontWeight.Black,
      color=MaterialTheme.colorScheme.onSurface
     )
-
+    evolutionFilterName?.let{filter->
+     val label=if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter
+     Text("Filtro: "+label,fontSize=8.5.sp,fontWeight=FontWeight.Bold,color=game.accent,maxLines=1)
+    }
    }
    Box{
     IconButton(
@@ -274,7 +277,13 @@ private val qbGames=AppGameCatalog.games.map{game->
     else->{
      val activeIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}.orEmpty()
      val visibleEntries=if(evolutionFilterName==null) entries else entries.filter{it.nationalId in activeIds}
-     QBGrid(visibleEntries,capturedIds,region.source,false,activeIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+     if(evolutionFilterName!=null && !evolutionMethodLoading && visibleEntries.isEmpty()){
+      Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+       Text("Nenhum Pokémon desta Box usa este método de evolução.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+      }
+     }else{
+      QBGrid(visibleEntries,capturedIds,region.source,false,activeIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+     }
     }
    }
    if(evolutionFilterName!=null&&evolutionMethodLoading){
