@@ -426,22 +426,32 @@ internal fun EvolutionFilterFullScreen(
                                                     color=MaterialTheme.colorScheme.primary,
                                                     maxLines=1
                                                 )
-                                                Text(
-                                                    advice.title,
-                                                    style=MaterialTheme.typography.labelSmall,
-                                                    color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines=2,
-                                                    overflow=TextOverflow.Ellipsis
-                                                )
-                                                advice.detail?.let{detail->
-                                                    Text(
-                                                        detail,
-                                                        style=MaterialTheme.typography.labelSmall,
-                                                        color=MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        maxLines=3,
-                                                        overflow=TextOverflow.Ellipsis
-                                                    )
-                                                }
+                                                advice.title
+                                                    .takeUnless{it.equals(advice.method.label,ignoreCase=true)}
+                                                    ?.let{title->
+                                                        Text(
+                                                            title,
+                                                            style=MaterialTheme.typography.labelSmall,
+                                                            color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            maxLines=2,
+                                                            overflow=TextOverflow.Ellipsis
+                                                        )
+                                                    }
+                                                advice.detail
+                                                    ?.takeIf{it.isNotBlank()}
+                                                    ?.takeUnless{detail->
+                                                        detail.equals(advice.method.label,ignoreCase=true) ||
+                                                            detail.equals(advice.title,ignoreCase=true)
+                                                    }
+                                                    ?.let{detail->
+                                                        Text(
+                                                            detail,
+                                                            style=MaterialTheme.typography.labelSmall,
+                                                            color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            maxLines=3,
+                                                            overflow=TextOverflow.Ellipsis
+                                                        )
+                                                    }
                                                 advice.alternative?.let{alternative->
                                                     Text(
                                                         "Alternativa: "+alternative.title,
