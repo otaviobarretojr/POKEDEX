@@ -11,6 +11,38 @@ object EvolutionCuratedCatalog {
     fun rulesFor(targetPokemonId:Int,context:GameContext?):List<CuratedEvolutionRule> {
         val game=context?.label.orEmpty()
         return when(targetPokemonId){
+            113 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(113,"Usar Oval Stone em Happiny durante o dia"))
+                "Brilliant Diamond / Shining Pearl","Sword / Shield","Scarlet / Violet" ->
+                    listOf(CuratedEvolutionRule(113,"Subir de nível durante o dia segurando Oval Stone"))
+                else -> emptyList()
+            }
+            413 -> listOf(CuratedEvolutionRule(413,"Burmy fêmea sobe ao nível 20 • A forma de Wormadam depende do Cloak atual","burmy",null))
+            414 -> listOf(CuratedEvolutionRule(414,"Burmy macho sobe ao nível 20","burmy",null))
+            416 -> listOf(CuratedEvolutionRule(416,"Combee fêmea sobe ao nível 21"))
+            461 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(461,"Usar Razor Claw em Sneasel durante a noite"))
+                else -> listOf(CuratedEvolutionRule(461,"Subir de nível durante a noite segurando Razor Claw"))
+            }
+            472 -> when(game){
+                "Legends Arceus" -> listOf(CuratedEvolutionRule(472,"Usar Razor Fang em Gligar durante a noite"))
+                else -> listOf(CuratedEvolutionRule(472,"Subir de nível durante a noite segurando Razor Fang"))
+            }
+            475 -> listOf(CuratedEvolutionRule(475,"Usar Dawn Stone em Kirlia macho"))
+            478 -> listOf(CuratedEvolutionRule(478,"Usar Dawn Stone em Snorunt fêmea"))
+            745 -> when(game){
+                "Sun / Moon","Ultra Sun / Ultra Moon","Sword / Shield","Scarlet / Violet" -> listOf(
+                    CuratedEvolutionRule(745,"Rockruff sobe ao nível 25 ou mais durante o dia",targetFormKey="lycanroc-midday"),
+                    CuratedEvolutionRule(745,"Rockruff sobe ao nível 25 ou mais durante a noite",targetFormKey="lycanroc-midnight"),
+                    CuratedEvolutionRule(745,"Rockruff com Own Tempo sobe ao nível 25 ou mais ao entardecer",sourceFormKey="rockruff-own-tempo",targetFormKey="lycanroc-dusk")
+                )
+                else -> emptyList()
+            }
+            758 -> listOf(CuratedEvolutionRule(758,"Salandit fêmea sobe ao nível 33"))
+            849 -> listOf(
+                CuratedEvolutionRule(849,"Toxel sobe ao nível 30 • Nature compatível com Amped Form",targetFormKey="toxtricity-amped"),
+                CuratedEvolutionRule(849,"Toxel sobe ao nível 30 • Nature compatível com Low Key Form",targetFormKey="toxtricity-low-key")
+            )
             350 -> when(game){
                 "Brilliant Diamond / Shining Pearl" -> listOf(
                     CuratedEvolutionRule(350,"Subir de nível com a condição Beauty maximizada")
