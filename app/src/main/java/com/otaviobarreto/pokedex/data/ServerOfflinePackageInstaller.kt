@@ -38,11 +38,17 @@ object ServerOfflinePackageInstaller {
         OfflineGamePackManager.beginServerGeneralInstall()
         val root=File(context.cacheDir,"server-offline-packages").apply{mkdirs()}
         val zipFile=File(root,"general-v${remote.version}.zip")
-        downloadResumable(url,zipFile,total,"Baixando pacote geral",onProgress)
+        ensureLocalPackage(
+            url=url,
+            destination=zipFile,
+            expectedBytes=total,
+            expectedSha=expectedSha,
+            label="Baixando pacote geral",
+            onProgress=onProgress
+        )
 
         onProgress(Progress(zipFile.length(),total,"Validando integridade"))
-        val actualSha=sha256(zipFile)
-        check(actualSha.equals(expectedSha,ignoreCase=true)){
+        check(sha256(zipFile).equals(expectedSha,ignoreCase=true)){
             "SHA-256 do pacote geral não confere"
         }
 
@@ -154,7 +160,14 @@ object ServerOfflinePackageInstaller {
         val root=File(context.cacheDir,"server-offline-packages").apply{mkdirs()}
         val safeKey=remote.packageKey.replace(Regex("[^a-zA-Z0-9._-]"),"_")
         val zipFile=File(root,"$safeKey-v${remote.version}.zip")
-        downloadResumable(url,zipFile,total,"Baixando complemento"){p->onProgress(p)}
+        ensureLocalPackage(
+            url=url,
+            destination=zipFile,
+            expectedBytes=total,
+            expectedSha=expectedSha,
+            label="Baixando complemento",
+            onProgress=onProgress
+        )
 
         onProgress(Progress(zipFile.length(),total,"Validando complemento"))
         check(sha256(zipFile).equals(expectedSha,ignoreCase=true)){
@@ -251,6 +264,50 @@ object ServerOfflinePackageInstaller {
         }
     }
 
+    private fun ensureLocalPackage(
+        url:String,
+        destination:File,
+        expectedBytes:Long,
+        expectedSha:String,
+        label:String,
+        onProgress:(Progress)->Unit
+    ){
+        if(destination.exists()){
+            val length=destination.length()
+            when{
+                expectedBytes>0L && length==expectedBytes -> {
+                    onProgress(Progress(length,expectedBytes,"Pacote já baixado · verificando"))
+                    if(sha256(destination).equals(expectedSha,ignoreCase=true)){
+                        onProgress(Progress(length,expectedBytes,"Download concluído · instalando"))
+                        return
+                    }
+                    destination.delete()
+                }
+                expectedBytes>0L && length>expectedBytes -> {
+                    destination.delete()
+                }
+            }
+        }
+
+        downloadResumable(url,destination,expectedBytes,label,onProgress)
+
+        if(expectedBytes>0L && destination.length()!=expectedBytes){
+            destination.delete()
+            error("Download incompleto: tamanho do pacote não confere")
+        }
+        if(!sha256(destination).equals(expectedSha,ignoreCase=true)){
+            destination.delete()
+            error("Download corrompido: SHA-256 não confere")
+        }
+        onProgress(
+            Progress(
+                destination.length(),
+                expectedBytes.coerceAtLeast(destination.length()),
+                "Download concluído · instalando"
+            )
+        )
+    }
+
     private fun humanBytes(bytes:Long):String =
         if(bytes>=1024L*1024L*1024L)
             String.format("%.2f GB",bytes/1024.0/1024.0/1024.0)
@@ -268,6 +325,10 @@ object ServerOfflinePackageInstaller {
         onProgress:(Progress)->Unit
     ){
         val existing=destination.takeIf{it.exists()}?.length() ?: 0L
+        if(expectedBytes>0L && existing==expectedBytes){
+            onProgress(Progress(existing,expectedBytes,"Download concluído · preparando instalação"))
+            return
+        }
         val connection=(URL(url).openConnection() as HttpURLConnection).apply{
             connectTimeout=15_000
             readTimeout=30_000
@@ -278,6 +339,15 @@ object ServerOfflinePackageInstaller {
 
         connection.connect()
         val response=connection.responseCode
+        if(response==HttpURLConnection.HTTP_REQUESTED_RANGE_NOT_SATISFIABLE &&
+            expectedBytes>0L &&
+            destination.exists() &&
+            destination.length()==expectedBytes
+        ){
+            connection.disconnect()
+            onProgress(Progress(expectedBytes,expectedBytes,"Download concluído · preparando instalação"))
+            return
+        }
         val append=existing>0L && response==HttpURLConnection.HTTP_PARTIAL
         if(response !in 200..299){
             connection.disconnect()
