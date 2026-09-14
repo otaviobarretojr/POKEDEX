@@ -130,6 +130,8 @@ fun CompanionCenterScreen(
             val generalEstimate=OfflineGamePackManager.estimateGeneral()
             val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
             val installedServerVersion=OfflineGamePackManager.generalServerVersion()
+            val serverInstallInProgress=OfflineGamePackManager.isServerGeneralInstalling()
+            val serverPackageAvailable=remoteGeneral?.ready==true && installedServerVersion==0
             val serverUpdateAvailable=remoteGeneral?.ready==true &&
                 remoteGeneral.version>installedServerVersion &&
                 installedServerVersion>0
@@ -151,11 +153,15 @@ fun CompanionCenterScreen(
                             Text(
                                 when{
                                     activeDownload=="__general__" -> serverProgress?.label ?: progress?.label ?: "Preparando biblioteca geral…"
+                                    serverInstallInProgress ->
+                                        "Instalação do pacote do servidor pendente"
                                     generalValid && serverUpdateAvailable ->
                                         "Atualização disponível · servidor v"+remoteGeneral?.version
                                     generalValid -> "Biblioteca compartilhada pronta · "+general.total+" Pokémon"
+                                    serverPackageAvailable ->
+                                        "Pacote do servidor disponível · pronto para instalar"
                                     general.complete>0 && general.total>0 ->
-                                        "Download parcial · "+general.complete+" / "+general.total+" Pokémon"
+                                        "Download parcial legado · "+general.complete+" / "+general.total+" Pokémon"
                                     else -> "Biblioteca comum para todos os jogos"
                                 },
                                 style=MaterialTheme.typography.bodySmall,
@@ -217,6 +223,9 @@ fun CompanionCenterScreen(
                                             OfflineGamePackManager.downloadGeneral{p->progress=p}
                                         }
                                     }
+                                    if(result.isFailure){
+                                        OfflineGamePackManager.markServerGeneralInstallFailed()
+                                    }
                                     statusText=when{
                                         result.isSuccess && remoteGeneral?.ready==true ->
                                             "Biblioteca geral: pacote do servidor instalado."
@@ -239,6 +248,7 @@ fun CompanionCenterScreen(
                                 when{
                                     general.ready && !generalValid -> "Reparar"
                                     generalValid -> "Atualizar"
+                                    remoteGeneral?.ready==true -> "Baixar geral"
                                     general.complete>0 -> "Continuar"
                                     else -> "Baixar geral"
                                 }
