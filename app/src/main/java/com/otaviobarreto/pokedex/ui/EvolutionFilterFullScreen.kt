@@ -52,8 +52,9 @@ internal fun EvolutionFilterFullScreen(
                     val regionDex=GameDexService.cached(regionContext) ?: GameDexService.loadGameDex(regionContext)
                     region.source to regionDex
                 }
+                val fullSelectedDex=entriesBySource[selectedSource].orEmpty()
                 val layeredDex=RegionalDexLayering.exclusiveEntriesForRegion(game,selectedSource,entriesBySource)
-                layeredDex to EvolutionFilterIndex.buildRoutes(selectedSource,layeredDex)
+                layeredDex to EvolutionFilterIndex.buildRoutes(selectedSource,fullSelectedDex)
             }
         }
         failed=loaded.isFailure
