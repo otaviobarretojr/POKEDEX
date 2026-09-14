@@ -40,8 +40,8 @@ class VersionAvailabilityCatalogTest {
     @Test fun dlcExclusiveIsNotMislabelledInPaldea() {
         val paldea=GameContext.fromSource("Scarlet / Violet · Paldea")
         val kitakami=GameContext.fromSource("Scarlet / Violet · Kitakami")
-        assertEquals(VersionAvailabilityKind.UNAVAILABLE,VersionAvailabilityCatalog.forPokemon(37,paldea)?.kind)
-        assertEquals("Scarlet",VersionAvailabilityCatalog.forPokemon(37,kitakami)?.exclusiveVersion)
+        assertEquals(VersionAvailabilityKind.UNAVAILABLE,VersionAvailabilityCatalog.forPokemon(37,paldea,false)?.kind)
+        assertEquals("Scarlet",VersionAvailabilityCatalog.forPokemon(37,kitakami,true)?.exclusiveVersion)
     }
 
     @Test fun fireRedLeafGreenIncludesMarillLine() {
