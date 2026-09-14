@@ -281,21 +281,7 @@ private val qbGames=AppGameCatalog.games.map{game->
   ){
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
-    needsComplement->Box(
-     Modifier.fillMaxSize().padding(24.dp),
-     contentAlignment=Alignment.Center
-    ){
-     Column(horizontalAlignment=Alignment.CenterHorizontally){
-      Icon(Icons.Default.CloudDownload,null,tint=game.accent,modifier=Modifier.size(42.dp))
-      Spacer(Modifier.height(10.dp))
-      Text("Complemento do jogo necessário",fontWeight=FontWeight.Bold)
-      Text(
-       "A biblioteca geral está instalada. Baixe o complemento de "+game.label+" em Configurações para liberar esta Box offline.",
-       style=MaterialTheme.typography.bodySmall,
-       color=MaterialTheme.colorScheme.onSurfaceVariant
-      )
-     }
-    }
+    needsComplement->BoxOfflineComplementRequired(game.label,game.accent)
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
