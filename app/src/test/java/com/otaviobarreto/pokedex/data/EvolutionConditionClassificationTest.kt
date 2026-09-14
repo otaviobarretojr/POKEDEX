@@ -77,4 +77,15 @@ class EvolutionConditionClassificationTest {
         val action=PokeApiService.auditFallbackMethods("Caminhar 1.000 passos com Pawmo no modo Let's Go • Depois subir de nível")
         assertTrue(PokeApiService.EvolutionMethod.ACTION in action)
     }
+    @Test
+    fun curatedBoxFiltersAreUniqueAndAvoidGenericDuplicates() {
+        val options=EvolutionRuleCatalog.filterOptions
+        assertEquals(options.size,options.map{it.key}.toSet().size)
+        assertTrue(options.any{it.key=="ALL"})
+        assertTrue(options.any{it.key=="TRANSFER"})
+        assertTrue(options.any{it.key=="CONDITION"})
+        assertFalse(options.any{it.key=="OTHER"})
+        assertFalse(options.any{it.key=="LEVEL_CONDITION"})
+    }
+
 }
