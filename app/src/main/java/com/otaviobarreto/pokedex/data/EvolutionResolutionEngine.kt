@@ -31,6 +31,7 @@ object EvolutionResolutionEngine {
             .map{(key,items)->
                 val detail=key.third
                 val methods=items.mapTo(linkedSetOf()){it.method}
+                val formKeys=EvolutionCuratedCatalog.formKeysFor(key.second,context)
                 EvolutionRoute(
                     sourcePokemonId=key.first,
                     targetPokemonId=key.second,
@@ -39,7 +40,9 @@ object EvolutionResolutionEngine {
                     detail=detail,
                     availability=availabilityFor(detail,methods),
                     contextLabel=context?.label,
-                    regionLabel=context?.regionLabel
+                    regionLabel=context?.regionLabel,
+                    sourceFormKey=formKeys.first,
+                    targetFormKey=formKeys.second
                 )
             }
             .sortedWith(
