@@ -115,6 +115,116 @@ fun CompanionCenterScreen(
             )
         }
 
+        item(key="general_offline_library"){
+            val general=OfflineGamePackManager.generalStatus()
+            val generalValid=OfflineGamePackManager.generalAudit()
+            Card(
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+                colors=CardDefaults.cardColors(
+                    containerColor=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.28f)
+                )
+            ){
+                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        Icon(
+                            if(generalValid) Icons.Default.CloudDone else Icons.Default.CloudDownload,
+                            null,
+                            tint=if(generalValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){
+                            Text("Download geral",fontWeight=FontWeight.Bold)
+                            Text(
+                                when{
+                                    activeDownload=="__general__" -> progress?.label ?: "Preparando biblioteca geral…"
+                                    generalValid -> "Biblioteca compartilhada pronta · "+general.total+" Pokémon"
+                                    general.complete>0 && general.total>0 ->
+                                        "Download parcial · "+general.complete+" / "+general.total+" Pokémon"
+                                    else -> "Biblioteca comum para todos os jogos"
+                                },
+                                style=MaterialTheme.typography.bodySmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Text(
+                        "Baixa os dados e artes comuns uma única vez. Depois, cada jogo baixa apenas seu conteúdo específico.",
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm)
+                    )
+
+                    if(activeDownload=="__general__"){
+                        LinearProgressIndicator(
+                            progress={progress?.fraction ?: 0f},
+                            modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
+                        )
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth().padding(top=10.dp),
+                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+                    ){
+                        Button(
+                            enabled=activeDownload==null,
+                            onClick={
+                                activeDownload="__general__"
+                                progress=null
+                                scope.launch{
+                                    val result=runCatching{
+                                        OfflineGamePackManager.downloadGeneral{p->progress=p}
+                                    }
+                                    statusText=if(result.isSuccess)
+                                        "Biblioteca geral: download concluído."
+                                    else
+                                        "Biblioteca geral: falha no download. O progresso salvo pode ser retomado."
+                                    activeDownload=null
+                                    progress=null
+                                }
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){
+                            Icon(Icons.Default.Download,null)
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                when{
+                                    general.ready && !generalValid -> "Reparar"
+                                    generalValid -> "Atualizar"
+                                    general.complete>0 -> "Continuar"
+                                    else -> "Baixar geral"
+                                }
+                            )
+                        }
+                        FilledTonalButton(
+                            enabled=activeDownload==null && (general.ready || general.complete>0 || general.total>0),
+                            onClick={
+                                OfflineGamePackManager.removeGeneral()
+                                statusText="Biblioteca geral removida. Pacotes individuais instalados foram preservados."
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){
+                            Icon(Icons.Default.DeleteOutline,null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Remover")
+                        }
+                    }
+                }
+            }
+        }
+
+        item{
+            Text(
+                "Pacotes individuais",
+                style=MaterialTheme.typography.titleMedium,
+                fontWeight=FontWeight.Bold
+            )
+            Text(
+                "Cada jogo complementa a biblioteca geral com regiões, DLCs, Jornada e recursos próprios.",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
         AppGameCatalog.adventureGames.forEach{game->
             item(key=game.label){
                 val pack=OfflineGamePackManager.status(game.label)
