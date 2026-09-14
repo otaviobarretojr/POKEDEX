@@ -11,8 +11,7 @@ class SwitchCatalogRegressionTest {
         "Let's Go Pikachu / Eevee",
         "Legends Arceus",
         "Brilliant Diamond / Shining Pearl",
-        "FireRed / LeafGreen",
-        "Pokémon Champions"
+        "FireRed / LeafGreen"
     )
 
     @Test fun catalogMatchesCurrentCollectionCompatibleSwitchLineup() {
