@@ -26,6 +26,7 @@ object PokeApiService {
         MOVE("Golpe / movimento"),
         LOCATION("Local / clima"),
         ACTION("Ação especial"),
+        MULTIPLAYER("Multiplayer"),
         OTHER("Outro método")
     }
     data class EvolutionSourceMethod(val sourcePokemonId:Int,val targetPokemonId:Int,val method:EvolutionMethod,val requirement:String)
@@ -50,7 +51,7 @@ object PokeApiService {
         return SpeciesInfo(json.optInt("capture_rate"),json.optInt("base_happiness"),json.optJSONObject("habitat")?.optString("name")?.toDisplayName(),json.optJSONObject("growth_rate")?.optString("name")?.toDisplayName(),json.getJSONArray("egg_groups").namesFromNamedResources(),flavor,json.optJSONObject("evolution_chain")?.optString("url"),genus)
     }
 
-    fun loadEvolutionChain(url:String):List<EvolutionStage>{
+    fun loadEvolutionChain(url:String,context:GameContext?=null):List<EvolutionStage>{
         val root=getJson(url).getJSONObject("chain")
         val result=mutableListOf<EvolutionStage>()
         fun walk(node:JSONObject){
@@ -60,13 +61,14 @@ object PokeApiService {
             val apiRequirements=buildList{
                 if(details!=null){
                     for(i in 0 until details.length()){
-                        details.optJSONObject(i)?.let(::evolutionRequirement)?.takeIf{it.isNotBlank()}?.let(::add)
+                        details.optJSONObject(i)?.takeIf{detailAppliesToContext(it,context)}?.let(::evolutionRequirement)?.takeIf{it.isNotBlank()}?.let(::add)
                     }
                 }
             }.distinct()
             val requirement=mergeEvolutionRequirements(
                 pokemonId=pokemonId,
-                apiRequirements=apiRequirements
+                apiRequirements=apiRequirements,
+                special=specialRequirementFor(pokemonId,context)
             )
             result+=EvolutionStage(
                 pokemonId,
@@ -79,24 +81,9 @@ object PokeApiService {
         walk(root)
         return result
     }
-    fun loadEvolutionSourceMethods(url:String):List<EvolutionSourceMethod>{
+    fun loadEvolutionSourceMethods(url:String,context:GameContext?=null):List<EvolutionSourceMethod>{
         val root=getJson(url).getJSONObject("chain")
         val result=mutableListOf<EvolutionSourceMethod>()
-        fun classify(requirement:String):Set<EvolutionMethod>{
-            val r=requirement.lowercase()
-            val methods=linkedSetOf<EvolutionMethod>()
-            if("troca" in r || "trocar por" in r) methods+=EvolutionMethod.TRADE
-            if("usar " in r || "segurando " in r || "sweet" in r || "peat block" in r || "leader's crest" in r || "scroll of " in r) methods+=EvolutionMethod.ITEM
-            if("amizade" in r || "afeição" in r || "beleza" in r) methods+=EvolutionMethod.FRIENDSHIP
-            if("durante o dia" in r || "durante a noite" in r || "entardecer" in r || "horário" in r || "lua cheia" in r) methods+=EvolutionMethod.TIME
-            if("conhecendo " in r || "golpe do tipo" in r || "rage fist" in r || "hyper drill" in r || "dragon cheer" in r) methods+=EvolutionMethod.MOVE
-            if(" em " in " $r " || "chuva" in r || "dusty bowl" in r) methods+=EvolutionMethod.LOCATION
-            val plainLevel=Regex("^subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(requirement.trim())
-            if(!plainLevel && ("nível" in r || "subir " in r) && methods.isEmpty()) methods+=EvolutionMethod.LEVEL_CONDITION
-            if(listOf("passos","girar","virar o console","golpes críticos","dano","recoil","batalha","union circle","multiplayer","coins","vezes","tower of").any{it in r}) methods+=EvolutionMethod.ACTION
-            if(methods.isEmpty() && isSpecialEvolutionRequirement(requirement)) methods+=EvolutionMethod.OTHER
-            return methods
-        }
         fun walk(node:JSONObject){
             val parentId=idFromUrl(node.getJSONObject("species").getString("url"))
             val children=node.getJSONArray("evolves_to")
@@ -104,15 +91,24 @@ object PokeApiService {
                 val child=children.getJSONObject(i)
                 val childId=idFromUrl(child.getJSONObject("species").getString("url"))
                 val details=child.optJSONArray("evolution_details")
-                val requirements=buildList{
-                    if(details!=null) for(j in 0 until details.length()){
-                        details.optJSONObject(j)?.let(::evolutionRequirement)?.takeIf{it.isNotBlank()}?.let(::add)
+                var matched=false
+                if(details!=null){
+                    for(j in 0 until details.length()){
+                        val detail=details.optJSONObject(j)?:continue
+                        if(!detailAppliesToContext(detail,context)) continue
+                        matched=true
+                        val requirement=evolutionRequirement(detail)
+                        if(isSpecialEvolutionRequirement(requirement)){
+                            evolutionMethods(detail,requirement).forEach{method->
+                                result+=EvolutionSourceMethod(parentId,childId,method,requirement)
+                            }
+                        }
                     }
-                }.distinct()
-                val merged=mergeEvolutionRequirements(childId,requirements)
-                if(!merged.isNullOrBlank() && isSpecialEvolutionRequirement(merged)){
-                    classify(merged).forEach{method->
-                        result+=EvolutionSourceMethod(parentId,childId,method,merged)
+                }
+                val special=specialRequirementFor(childId,context)
+                if(!special.isNullOrBlank() && (!matched || result.none{it.sourcePokemonId==parentId && it.targetPokemonId==childId && it.requirement==special})){
+                    fallbackMethods(special).forEach{method->
+                        result+=EvolutionSourceMethod(parentId,childId,method,special)
                     }
                 }
                 walk(child)
@@ -137,7 +133,7 @@ object PokeApiService {
                         details.optJSONObject(j)?.let(::evolutionRequirement)?.takeIf{it.isNotBlank()}?.let(::add)
                     }
                 }.distinct()
-                val merged=mergeEvolutionRequirements(childId,requirements)
+                val merged=mergeEvolutionRequirements(childId,requirements,specialRequirementFor(childId,null))
                 if(isSpecialEvolutionRequirement(merged)) result+=parentId
                 walk(child)
             }
@@ -204,6 +200,17 @@ object PokeApiService {
             }
         }
         if(detail.optBoolean("needs_overworld_rain",false)) pieces+="Com chuva no mundo"
+        if(detail.optBoolean("near_special_rock",false)) pieces+="Próximo a uma pedra especial"
+        if(detail.optBoolean("needs_multiplayer",false)) pieces+="Em modo multiplayer"
+        detail.optJSONObject("region")?.optString("name")?.takeIf{it.isNotBlank()}?.let{pieces+="Na região de ${it.toDisplayName()}"}
+        detail.optJSONObject("base_form")?.optString("name")?.takeIf{it.isNotBlank()}?.let{pieces+="Forma base: ${it.toDisplayName()}"}
+        detail.optJSONObject("evolved_form")?.optString("name")?.takeIf{it.isNotBlank()}?.let{pieces+="Evolui para: ${it.toDisplayName()}"}
+        detail.optJSONObject("used_move")?.optString("name")?.takeIf{it.isNotBlank()}?.let{move->
+            val count=detail.optInt("min_move_count").takeIf{it>0}
+            pieces+="Usar ${move.toDisplayName()}"+(count?.let{" ${it} vezes"}?:"")
+        }
+        detail.optInt("min_steps").takeIf{it>0}?.let{pieces+="Caminhar ${it} passos"}
+        detail.optInt("min_damage_taken").takeIf{it>0}?.let{pieces+="Receber pelo menos ${it} de dano sem desmaiar"}
         if(detail.optBoolean("turn_upside_down",false)) pieces+="Com o console virado de cabeça para baixo"
 
         detail.optInt("gender").takeIf{it>0}?.let{
@@ -233,16 +240,74 @@ object PokeApiService {
 
     private fun mergeEvolutionRequirements(
         pokemonId:Int,
-        apiRequirements:List<String>
+        apiRequirements:List<String>,
+        special:String?
     ):String?{
-        if(apiRequirements.isEmpty() && pokemonId !in specialEvolutionRequirements) return null
+        if(apiRequirements.isEmpty() && special.isNullOrBlank()) return null
         val api=apiRequirements.filterNot{it=="Método especial"}
-        val special=specialEvolutionRequirements[pokemonId]
         val alternatives=buildList{
             if(api.isNotEmpty()) addAll(api)
             if(!special.isNullOrBlank() && special !in api) add(special)
         }.distinct()
         return alternatives.takeIf{it.isNotEmpty()}?.joinToString("  OU  ")
+    }
+
+    private fun detailAppliesToContext(detail:JSONObject,context:GameContext?):Boolean{
+        if(context==null) return true
+        val vg=detail.optJSONObject("version_group_id")?.optString("name")
+            ?: detail.optJSONObject("version_group")?.optString("name")
+        return vg.isNullOrBlank() || context.matchesVersionGroup(vg)
+    }
+
+    private fun evolutionMethods(detail:JSONObject,requirement:String):Set<EvolutionMethod>{
+        val result=linkedSetOf<EvolutionMethod>()
+        val trigger=detail.optJSONObject("trigger")?.optString("name").orEmpty()
+        if(trigger=="trade" || detail.optJSONObject("trade_species")!=null) result+=EvolutionMethod.TRADE
+        if(trigger=="use-item" || detail.optJSONObject("item")!=null || detail.optJSONObject("held_item")!=null) result+=EvolutionMethod.ITEM
+        if(detail.optInt("min_happiness")>0 || detail.optInt("min_affection")>0 || detail.optInt("min_beauty")>0) result+=EvolutionMethod.FRIENDSHIP
+        if(detail.optString("time_of_day").isNotBlank()) result+=EvolutionMethod.TIME
+        if(detail.optJSONObject("known_move")!=null || detail.optJSONObject("known_move_type")!=null || detail.optJSONObject("used_move")!=null) result+=EvolutionMethod.MOVE
+        if(detail.optJSONObject("location")!=null || detail.optJSONObject("region")!=null || detail.optBoolean("needs_overworld_rain",false) || detail.optBoolean("near_special_rock",false)) result+=EvolutionMethod.LOCATION
+        if(detail.optBoolean("needs_multiplayer",false)) result+=EvolutionMethod.MULTIPLAYER
+        if(detail.optInt("min_steps")>0 || detail.optInt("min_damage_taken")>0 || detail.optInt("min_move_count")>0 || detail.optBoolean("turn_upside_down",false) || trigger in setOf("shed","spin","tower-of-darkness","tower-of-waters","three-critical-hits","take-damage","other")) result+=EvolutionMethod.ACTION
+        val plainLevel=Regex("^Subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(requirement.trim())
+        if(!plainLevel && (trigger=="level-up" || detail.optInt("min_level")>0) && result.isEmpty()) result+=EvolutionMethod.LEVEL_CONDITION
+        if(result.isEmpty() && isSpecialEvolutionRequirement(requirement)) result+=EvolutionMethod.OTHER
+        return result
+    }
+
+    private fun fallbackMethods(requirement:String):Set<EvolutionMethod>{
+        val r=requirement.lowercase()
+        val result=linkedSetOf<EvolutionMethod>()
+        if("troca" in r) result+=EvolutionMethod.TRADE
+        if(listOf("segurando","peat block","leader's crest","scroll of darkness","scroll of waters","sweet").any{it in r}) result+=EvolutionMethod.ITEM
+        if("amizade" in r || "afeição" in r || "beleza" in r) result+=EvolutionMethod.FRIENDSHIP
+        if(listOf("durante o dia","durante a noite","entardecer","horário","lua cheia").any{it in r}) result+=EvolutionMethod.TIME
+        if(listOf("rage fist","psyshield bash","barb barrage","hyper drill","dragon cheer","conhecendo").any{it in r}) result+=EvolutionMethod.MOVE
+        if(listOf("dusty bowl","chuva","região de").any{it in r}) result+=EvolutionMethod.LOCATION
+        if("union circle" in r || "multiplayer" in r) result+=EvolutionMethod.MULTIPLAYER
+        if(listOf("passos","girar","virar o console","golpes críticos","dano","recoil","batalha","coins","vezes","tower of").any{it in r}) result+=EvolutionMethod.ACTION
+        if(result.isEmpty() && ("nível" in r || "subir " in r)) result+=EvolutionMethod.LEVEL_CONDITION
+        if(result.isEmpty()) result+=EvolutionMethod.OTHER
+        return result
+    }
+
+    private fun specialRequirementFor(pokemonId:Int,context:GameContext?):String?{
+        val game=context?.label.orEmpty()
+        return when(pokemonId){
+            899 -> if(game=="Legends Arceus") "Usar Psyshield Bash em Agile Style 20 vezes • Depois subir de nível" else null
+            904 -> when(game){
+                "Legends Arceus" -> "Usar Barb Barrage em Strong Style 20 vezes • Depois subir de nível"
+                "Scarlet / Violet" -> "Subir de nível conhecendo Barb Barrage"
+                else -> null
+            }
+            892 -> when(game){
+                "Sword / Shield" -> "Concluir a torre correspondente e interagir com o Scroll of Darkness ou Scroll of Waters"
+                "Scarlet / Violet" -> "Usar Scroll of Darkness ou Scroll of Waters"
+                else -> null
+            }
+            else -> specialEvolutionRequirements[pokemonId]
+        }
     }
 
     /**
