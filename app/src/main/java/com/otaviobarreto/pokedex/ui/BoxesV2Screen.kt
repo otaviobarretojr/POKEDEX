@@ -44,6 +44,7 @@ import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.EvolutionFilterIndex
+import com.otaviobarreto.pokedex.data.EvolutionRuleCatalog
 import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.PokeApiService
 import com.otaviobarreto.pokedex.data.PokemonRepository
@@ -218,15 +219,13 @@ private val qbGames=AppGameCatalog.games.map{game->
     }
     DropdownMenu(expanded=evolutionFilterMenu,onDismissRequest={evolutionFilterMenu=false}){
      DropdownMenuItem(text={Text("Sem filtro")},onClick={evolutionFilterName=null;evolutionFilterMenu=false})
-     DropdownMenuItem(text={Text("Todos que faltam")},leadingIcon={Icon(Icons.Default.AutoAwesome,null)},onClick={evolutionFilterName="ALL";evolutionFilterMenu=false})
-     DropdownMenuItem(text={Text("Nível")},onClick={evolutionFilterName="LEVEL";evolutionFilterMenu=false})
-     DropdownMenuItem(text={Text("Condição")},onClick={evolutionFilterName="CONDITION";evolutionFilterMenu=false})
-     DropdownMenuItem(text={Text("Transferência")},onClick={evolutionFilterName="TRANSFER";evolutionFilterMenu=false})
-     PokeApiService.EvolutionMethod.entries
-      .filterNot{it in setOf(PokeApiService.EvolutionMethod.LEVEL,PokeApiService.EvolutionMethod.LEVEL_CONDITION)}
-      .forEach{method->
-       DropdownMenuItem(text={Text(method.label)},onClick={evolutionFilterName=method.name;evolutionFilterMenu=false})
-      }
+     EvolutionRuleCatalog.filterOptions.forEach{option->
+      DropdownMenuItem(
+       text={Text(option.label)},
+       leadingIcon=if(option.key=="ALL"){{Icon(Icons.Default.AutoAwesome,null)}}else null,
+       onClick={evolutionFilterName=option.key;evolutionFilterMenu=false}
+      )
+     }
     }
    }
    Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
