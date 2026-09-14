@@ -48,6 +48,7 @@ fun ReferenceHubScreen(
  var deepLinkConsumed by remember(initialKind,initialName){mutableStateOf(false)}
  val tab=referenceTabs[selected]
  val directDetailMode=!initialKind.isNullOrBlank()&&!initialName.isNullOrBlank()
+ val detailContext=remember(source){GameContext.fromSource(source)}
 
  LaunchedEffect(tab.key){
   val cached=ReferenceCatalogService.cached(tab.key).orEmpty()
@@ -66,9 +67,9 @@ fun ReferenceHubScreen(
  }
  LaunchedEffect(chosen,tab.key){
   val entry=chosen?:return@LaunchedEffect
-  detail=ReferenceCatalogService.cachedDetail(tab.key,entry)
+  detail=ReferenceCatalogService.cachedDetail(tab.key,entry,detailContext)
   detailLoading=detail==null;detailError=null
-  val loaded=runCatching{withContext(Dispatchers.IO){ReferenceCatalogService.loadDetail(tab.key,entry)}}
+  val loaded=runCatching{withContext(Dispatchers.IO){ReferenceCatalogService.loadDetail(tab.key,entry,detailContext)}}
    .onFailure{if(detail==null) detailError="Não foi possível carregar os detalhes."}.getOrNull()
   if(loaded!=null) detail=loaded
   detailLoading=false
@@ -78,7 +79,7 @@ fun ReferenceHubScreen(
 
  if(directDetailMode){
   ReferenceDetailFullScreen(
-   title=initialName?.let(::pretty).orEmpty(),
+   title=when(initialKind){"move"->"Detalhes do golpe";"ability"->"Detalhes da habilidade";"item"->"Detalhes do item";else->"Detalhes"},
    detail=detail,
    loading=detailLoading || chosen==null,
    error=detailError,
