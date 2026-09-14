@@ -128,15 +128,18 @@ internal fun EvolutionFilterFullScreen(
     }
     val pending=remember(
         dex,
+        routes,
         routesByTarget,
         owned,
         novelFormIdentities,
         selectedSource,
+        filterKey,
         VariantCollectionStore.ownedVariants
     ){
-        dex.filter{entry->
+        val orderedDex=EvolutionFamilyProgress.orderEntries(dex,routes)
+
+        orderedDex.filter{entry->
             val targetRoutes=routesByTarget[entry.nationalId].orEmpty()
-            if(targetRoutes.isEmpty()) return@filter false
 
             val novelFormRoutes=targetRoutes.filter{route->
                 route.targetFormKey?.let{route.targetPokemonId to it} in novelFormIdentities
@@ -150,10 +153,19 @@ internal fun EvolutionFilterFullScreen(
                 )
             }
 
-            hasPendingNovelForm || (
-                entry.nationalId in exclusiveSpeciesIds &&
-                    entry.nationalId !in owned
-            )
+            if(filterKey=="ALL"){
+                hasPendingNovelForm || (
+                    entry.nationalId in exclusiveSpeciesIds &&
+                        entry.nationalId !in owned
+                )
+            }else{
+                targetRoutes.isNotEmpty() && (
+                    hasPendingNovelForm || (
+                        entry.nationalId in exclusiveSpeciesIds &&
+                            entry.nationalId !in owned
+                    )
+                )
+            }
         }
     }
     val names=remember(fullDex){fullDex.associate{it.nationalId to it.name}}
@@ -203,14 +215,14 @@ internal fun EvolutionFilterFullScreen(
             failed -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text("Não foi possível carregar as regras de evolução desta região.")
             }
-            filteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+            filterKey!="ALL" && filteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text(
                     "Nenhum Pokémon desta Pokédex usa este método no jogo atual.",
                     style=MaterialTheme.typography.bodyMedium,
                     color=MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            visibleFilteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+            filterKey!="ALL" && visibleFilteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text(
                     if(game.regions.first().source==selectedSource)
                         "Nenhum Pokémon desta Pokédex usa este método."
@@ -259,6 +271,15 @@ internal fun EvolutionFilterFullScreen(
                                             maxLines=1,
                                             overflow=TextOverflow.Ellipsis
                                         )
+                                        if(route==null && filterKey=="ALL"){
+                                            Text(
+                                                "Forma inicial pendente",
+                                                style=MaterialTheme.typography.labelSmall,
+                                                color=MaterialTheme.colorScheme.primary,
+                                                maxLines=1,
+                                                overflow=TextOverflow.Ellipsis
+                                            )
+                                        }
                                         route?.let{resolved->
                                             Text(
                                                 (names[resolved.sourcePokemonId] ?: "Pokémon #"+resolved.sourcePokemonId)+" → "+entry.name,
