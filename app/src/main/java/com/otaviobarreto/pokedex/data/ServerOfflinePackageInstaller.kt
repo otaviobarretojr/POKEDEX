@@ -10,6 +10,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 import java.util.zip.ZipInputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object ServerOfflinePackageInstaller {
     data class Progress(
@@ -26,7 +28,7 @@ object ServerOfflinePackageInstaller {
         context:Context,
         remote:RemoteOfflinePackageCatalog.RemotePackage,
         onProgress:(Progress)->Unit
-    ){
+    ) = withContext(Dispatchers.IO){
         require(remote.packageKey=="general"){"Pacote remoto inválido"}
         require(remote.ready){"Pacote geral ainda não está pronto no servidor"}
         val url=requireNotNull(remote.downloadUrl)
@@ -128,7 +130,7 @@ object ServerOfflinePackageInstaller {
         game:AppGame,
         remote:RemoteOfflinePackageCatalog.RemotePackage,
         onProgress:(Progress)->Unit
-    ){
+    ) = withContext(Dispatchers.IO){
         require(remote.packageType=="game"){"Pacote remoto de jogo inválido"}
         require(remote.ready){"Complemento ainda não está pronto no servidor"}
         require(OfflineGamePackManager.generalAudit()){
@@ -270,9 +272,9 @@ object ServerOfflinePackageInstaller {
             else -> serverLength
         }
 
-        FileOutputStream(destination,append).use{out->
-            connection.inputStream.use{input->
-                val buffer=ByteArray(128*1024)
+        FileOutputStream(destination,append).buffered(1024*1024).use{out->
+            connection.inputStream.buffered(1024*1024).use{input->
+                val buffer=ByteArray(1024*1024)
                 var downloaded=start
                 var read:Int
                 while(input.read(buffer).also{read=it}>=0){
@@ -314,8 +316,8 @@ object ServerOfflinePackageInstaller {
 
     private fun sha256(file:File):String{
         val digest=MessageDigest.getInstance("SHA-256")
-        file.inputStream().buffered().use{input->
-            val buffer=ByteArray(128*1024)
+        file.inputStream().buffered(1024*1024).use{input->
+            val buffer=ByteArray(1024*1024)
             var read:Int
             while(input.read(buffer).also{read=it}>=0){
                 if(read>0) digest.update(buffer,0,read)
