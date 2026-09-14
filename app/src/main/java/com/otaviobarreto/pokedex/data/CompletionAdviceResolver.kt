@@ -155,17 +155,19 @@ object CompletionAdviceResolver {
         }
 
         if(candidates.isEmpty()){
+            // No confirmed acquisition/evolution/location data: keep the Box card intentionally blank.
+            // This avoids presenting absence of data as if it were an acquisition method.
             candidates+=Candidate(
                 CompletionAdvice(
                     pokemonId=pokemonId,
                     method=CompletionMethodKind.DIRECT,
-                    title="Método de obtenção a confirmar",
-                    detail=versionDetail(version,selectedVersion,versionOk),
-                    versionAvailability=version,
-                    directAcquisition=true,
+                    title="",
+                    detail=null,
+                    versionAvailability=null,
+                    directAcquisition=false,
                     selectedVersion=selectedVersion,
-                    availableInSelectedVersion=versionOk,
-                    score=20
+                    availableInSelectedVersion=null,
+                    score=Int.MAX_VALUE
                 )
             )
         }
