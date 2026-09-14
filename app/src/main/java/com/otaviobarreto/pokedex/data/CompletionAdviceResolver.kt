@@ -83,11 +83,11 @@ object CompletionAdviceResolver {
             val sourcePenalty=if(sourceOwned || route.availability==EvolutionAvailability.TRANSFER_ONLY) 0 else 7
             val detail=when {
                 route.availability==EvolutionAvailability.TRANSFER_ONLY ->
-                    "Obtenha no jogo compatível e transfira pelo Pokémon HOME."
+                    "Transfira pelo Pokémon HOME."
                 !sourceOwned ->
-                    "Obtenha "+sourceName+" primeiro. Depois: "+route.summary+"."
+                    route.summary
                 else ->
-                    "Você já possui "+sourceName+"."
+                    null
             }
             candidates+=Candidate(
                 CompletionAdvice(
@@ -217,6 +217,10 @@ object CompletionAdviceResolver {
         versionOk:Boolean?
     ):CompletionAdvice? {
         if(availability.acquisitionKind==CanonicalAcquisitionKind.UNAVAILABLE) return null
+        if(
+            availability.acquisitionKind==CanonicalAcquisitionKind.OTHER_METHOD &&
+            availability.confidence==AvailabilityConfidence.PARTIAL
+        ) return null
         return CompletionAdvice(
             pokemonId=availability.pokemonId,
             method=kindForCanonical(availability.acquisitionKind),
@@ -358,7 +362,7 @@ object CompletionAdviceResolver {
     ):String? = when {
         version?.kind==VersionAvailabilityKind.SPLIT_FORMS -> version.subtitle
         version?.kind==VersionAvailabilityKind.EXCLUSIVE && selectedVersion==null ->
-            "Exclusivo de "+version.exclusiveVersion+". Se você joga a outra versão, use troca, multiplayer ou HOME quando compatível."
+            null
         version?.kind==VersionAvailabilityKind.EXCLUSIVE && available==true ->
             "Disponível na sua versão ("+selectedVersion+")."
         version?.kind==VersionAvailabilityKind.EXCLUSIVE && available==false ->
