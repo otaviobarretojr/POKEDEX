@@ -317,6 +317,28 @@ object OfflineGamePackManager {
 
     fun journeyVisualCacheKey(url:String):String = journeyVisualKey(url)
 
+    fun auditImportedGameFast(gameLabel:String):Boolean {
+        val p=prefs()
+        val expected=p.getInt(key(gameLabel,"count"),0)
+        val completed=p.getInt(key(gameLabel,"complete"),0)
+        val current=p.getInt(key(gameLabel,"version"),0)==PACK_VERSION
+        val regions=!p.getString(key(gameLabel,"regions"),null).isNullOrBlank()
+        val ids=manifestIds(gameLabel)
+        val resources=p.getStringSet(key(gameLabel,"resource_urls"),emptySet()).orEmpty()
+        val visualUrls=p.getStringSet(key(gameLabel,"visual_urls"),emptySet()).orEmpty()
+        val resourcesOk=resources.isNotEmpty() && resources.all{
+            PersistentApiCache.has(it) && PersistentApiCache.isPinned(it)
+        }
+        val visualsOk=visualUrls.all(::hasOfflineVisual)
+        return expected>0 &&
+            completed==expected &&
+            ids.size==expected &&
+            current &&
+            regions &&
+            resourcesOk &&
+            visualsOk
+    }
+
     private fun formArtworkKey(
         speciesId: Int,
         formPokemonId: Int,
