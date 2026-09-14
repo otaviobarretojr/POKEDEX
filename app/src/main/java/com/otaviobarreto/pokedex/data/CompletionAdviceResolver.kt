@@ -193,6 +193,15 @@ object CompletionAdviceResolver {
                 )
             }
 
+        if(best.title.isBlank()){
+            return best.copy(
+                detail=null,
+                versionAvailability=null,
+                availableInSelectedVersion=null,
+                alternative=null
+            )
+        }
+
         return best.copy(
             detail=mergeDetails(
                 best.detail,
