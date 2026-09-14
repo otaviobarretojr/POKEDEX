@@ -35,9 +35,21 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
-private data class DetailV2Bundle(val pokemon:PokeApiService.RemotePokemonDetail,val species:PokeApiService.SpeciesInfo,val evolutions:List<PokeApiService.EvolutionStage>,val encounters:List<PokeApiService.EncounterLocation>)
+private data class DetailV2Bundle(
+    val pokemon:PokeApiService.RemotePokemonDetail,
+    val species:PokeApiService.SpeciesInfo,
+    val evolutions:List<PokeApiService.EvolutionStage>,
+    val evolutionRoutes:List<EvolutionRoute>,
+    val encounters:List<PokeApiService.EncounterLocation>
+)
 
-private fun cachedDetailBundle(id:Int):DetailV2Bundle?{val p=PokedexDataStore.cachedPokemon(id)?:return null;val s=PokedexDataStore.cachedSpecies(id)?:return null;val e=s.evolutionChainUrl?.let{PokedexDataStore.cachedEvolutions(it)}?:emptyList();val l=PokedexDataStore.cachedEncounters(id).orEmpty();return DetailV2Bundle(p,s,e,l)}
+private fun cachedDetailBundle(id:Int):DetailV2Bundle?{
+    val p=PokedexDataStore.cachedPokemon(id)?:return null
+    val s=PokedexDataStore.cachedSpecies(id)?:return null
+    val e=s.evolutionChainUrl?.let{PokedexDataStore.cachedEvolutions(it)}?:emptyList()
+    val l=PokedexDataStore.cachedEncounters(id).orEmpty()
+    return DetailV2Bundle(p,s,e,emptyList(),l)
+}
 
 @Composable
 fun PokemonDetailV2Screen(
@@ -83,6 +95,7 @@ fun PokemonDetailV2Screen(
             pokemon,
             species,
             PokedexDataStore.cachedEvolutions(species.evolutionChainUrl,context).orEmpty(),
+            emptyList(),
             PokedexDataStore.cachedEncounters(id).orEmpty()
         )
 
@@ -90,14 +103,16 @@ fun PokemonDetailV2Screen(
             withContext(Dispatchers.IO) {
                 coroutineScope {
                     val eJob=async {
-                        species.evolutionChainUrl?.let { PokedexDataStore.evolutions(it,context) } ?: emptyList()
+                        species.evolutionChainUrl?.let { chainUrl->
+                            PokedexDataStore.evolutions(chainUrl,context) to EvolutionResolutionEngine.load(chainUrl,context)
+                        } ?: (emptyList<PokeApiService.EvolutionStage>() to emptyList<EvolutionRoute>())
                     }
                     val lJob=async { PokedexDataStore.encounters(id) }
                     eJob.await() to lJob.await()
                 }
             }
-        }.onSuccess { (evolutions,encounters) ->
-            bundle=DetailV2Bundle(pokemon,species,evolutions,encounters)
+        }.onSuccess { (evolutionBundle,encounters) ->
+            bundle=DetailV2Bundle(pokemon,species,evolutionBundle.first,evolutionBundle.second,encounters)
         }
     }
 
@@ -167,7 +182,7 @@ fun PokemonDetailV2Screen(
             when(activeTab){
                 0->InfoTab(b,accent,context,collectionSource,openRef)
                 1->V2Stats(b.pokemon.stats)
-                2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
+                2->V2Evolution(b.evolutions,b.evolutionRoutes,b.pokemon.id,openPokemon)
                 3->PokemonMovesTab(b.pokemon.moves,context,openRef)
                 else->V2Locations(b.pokemon.id,b.encounters,context,source)
             }
@@ -546,7 +561,12 @@ private fun PokemonFormsSummaryCard(
         item{InfoMini("Total",rows.sumOf{it.second}.toString(),Modifier.fillMaxWidth())}
     }
 }
-@Composable private fun V2Evolution(e:List<PokeApiService.EvolutionStage>,currentId:Int,openPokemon:((Int)->Unit)?){
+@Composable private fun V2Evolution(
+    e:List<PokeApiService.EvolutionStage>,
+    routes:List<EvolutionRoute>,
+    currentId:Int,
+    openPokemon:((Int)->Unit)?
+){
     LazyColumn(Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
         item{DexSectionEyebrow("Família evolutiva")}
         if(e.isEmpty()) item{Text("Nenhuma evolução encontrada.")}
@@ -566,8 +586,11 @@ private fun PokemonFormsSummaryCard(
                     )
                     Column(Modifier.weight(1f).padding(start=10.dp)){
                         Text(stage.name,style=MaterialTheme.typography.titleSmall)
-                        val summary=EvolutionRuleCatalog.simplify(stage.requirement)
-                        val special=PokeApiService.isSpecialEvolutionRequirement(stage.requirement)
+                        val targetRoutes=EvolutionResolutionEngine.routesForTarget(routes,stage.pokemonId)
+                        val resolved=EvolutionResolutionEngine.preferredRoute(targetRoutes)
+                        val summary=resolved?.summary ?: EvolutionRuleCatalog.simplify(stage.requirement)
+                        val special=resolved?.availability!=EvolutionAvailability.AVAILABLE &&
+                            (resolved!=null || PokeApiService.isSpecialEvolutionRequirement(stage.requirement))
                         Text(
                             summary,
                             style=MaterialTheme.typography.bodySmall,
@@ -576,6 +599,18 @@ private fun PokemonFormsSummaryCard(
                             maxLines=2,
                             overflow=TextOverflow.Ellipsis
                         )
+                        if(targetRoutes.size>1){
+                            Text(
+                                targetRoutes.drop(1).joinToString(" ou "){it.summary},
+                                style=MaterialTheme.typography.labelSmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines=2,
+                                overflow=TextOverflow.Ellipsis
+                            )
+                        }
+                        if(resolved?.availability==EvolutionAvailability.TRANSFER_ONLY){
+                            Text("Somente via transferência",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+                        }
                         if(active)Text("Pokémon atual",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                     }
                     if(openPokemon!=null&&!active)Icon(Icons.Default.ChevronRight,null)
