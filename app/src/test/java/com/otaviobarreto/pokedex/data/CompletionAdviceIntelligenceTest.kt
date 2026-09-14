@@ -51,7 +51,7 @@ class CompletionAdviceIntelligenceTest {
 
         assertEquals(906,advice.sourcePokemonId)
         assertTrue(advice.title.contains("Sprigatito"))
-        assertTrue(advice.detail?.contains("Obtenha Sprigatito primeiro")==true)
+        assertEquals("Nível 16",advice.detail)
     }
 
     @Test
@@ -67,7 +67,7 @@ class CompletionAdviceIntelligenceTest {
 
         assertEquals(CompletionMethodKind.LEVEL,advice.method)
         assertEquals("Nível 16",advice.title)
-        assertTrue(advice.detail?.contains("Você já possui Sprigatito")==true)
+        assertNull(advice.detail)
     }
 
     @Test
