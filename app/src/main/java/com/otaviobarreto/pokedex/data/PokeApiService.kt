@@ -307,7 +307,12 @@ object PokeApiService {
         val r=requirement.lowercase()
         val result=linkedSetOf<EvolutionMethod>()
         if("troca" in r) result+=EvolutionMethod.TRADE
-        if(listOf("segurando","usar oval stone","usar razor claw","usar razor fang","usar dawn stone","usar leaf stone","usar ice stone","usar thunder stone","prism scale","peat block","leader's crest","scroll of darkness","scroll of waters","sweet").any{it in r}) result+=EvolutionMethod.ITEM
+        if(listOf(
+            "segurando","usar oval stone","usar razor claw","usar razor fang","usar dawn stone",
+            "usar leaf stone","usar ice stone","usar thunder stone","prism scale","linking cord",
+            "metal coat","upgrade","dubious disc","protector","electirizer","magmarizer","reaper cloth",
+            "peat block","leader's crest","scroll of darkness","scroll of waters","sweet"
+        ).any{it in r}) result+=EvolutionMethod.ITEM
         if(listOf("amizade","afeição","affection","pokémon-amie","beleza","beauty").any{it in r}) result+=EvolutionMethod.FRIENDSHIP
         if(listOf("somente fêmea","somente macho","fêmea","macho").any{it in r}) result+=EvolutionMethod.GENDER
         if(listOf("durante o dia","durante a noite","entardecer","horário","lua cheia").any{it in r}) result+=EvolutionMethod.TIME
