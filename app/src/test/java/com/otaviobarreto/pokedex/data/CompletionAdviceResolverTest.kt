@@ -28,7 +28,9 @@ class CompletionAdviceResolverTest {
         val advice=CompletionAdviceResolver.resolve(
             pokemonId=907,
             context=context,
-            routes=listOf(route(906,907,setOf(PokeApiService.EvolutionMethod.LEVEL),"Nível 16"))
+            routes=listOf(route(906,907,setOf(PokeApiService.EvolutionMethod.LEVEL),"Nível 16")),
+            owned=setOf(906),
+            names=mapOf(906 to "Sprigatito")
         )
 
         assertEquals(CompletionMethodKind.LEVEL,advice.method)
