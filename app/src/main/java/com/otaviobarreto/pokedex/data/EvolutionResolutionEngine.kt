@@ -27,14 +27,13 @@ data class EvolutionRoute(
 object EvolutionResolutionEngine {
     fun load(chainUrl:String,context:GameContext?):List<EvolutionRoute> =
         PokeApiService.loadEvolutionSourceMethods(chainUrl,context)
-            .groupBy{it.sourcePokemonId to it.targetPokemonId}
-            .map{(pair,items)->
-                val details=items.map{it.requirement}.distinct()
-                val detail=details.joinToString(" OU ")
+            .groupBy{Triple(it.sourcePokemonId,it.targetPokemonId,it.requirement)}
+            .map{(key,items)->
+                val detail=key.third
                 val methods=items.mapTo(linkedSetOf()){it.method}
                 EvolutionRoute(
-                    sourcePokemonId=pair.first,
-                    targetPokemonId=pair.second,
+                    sourcePokemonId=key.first,
+                    targetPokemonId=key.second,
                     methods=methods,
                     summary=EvolutionRuleCatalog.simplify(detail),
                     detail=detail,
@@ -43,7 +42,11 @@ object EvolutionResolutionEngine {
                     regionLabel=context?.regionLabel
                 )
             }
-            .sortedWith(compareBy<EvolutionRoute>{it.sourcePokemonId}.thenBy{it.targetPokemonId})
+            .sortedWith(
+                compareBy<EvolutionRoute>{it.sourcePokemonId}
+                    .thenBy{it.targetPokemonId}
+                    .thenBy{it.summary}
+            )
 
     fun availabilityFor(
         requirement:String,
