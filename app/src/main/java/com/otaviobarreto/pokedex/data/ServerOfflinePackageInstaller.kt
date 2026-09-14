@@ -214,7 +214,7 @@ object ServerOfflinePackageInstaller {
             visualUrls=visualUrls,
             serverVersion=remote.version
         )
-        check(OfflineGamePackManager.audit(game.label).valid){
+        check(OfflineGamePackManager.auditImportedGameFast(game.label)){
             "Complemento importado falhou na auditoria"
         }
 
