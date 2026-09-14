@@ -44,6 +44,7 @@ import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
+import com.otaviobarreto.pokedex.data.EvolutionFilterIndex
 import com.otaviobarreto.pokedex.data.PokedexDataStore
 import com.otaviobarreto.pokedex.data.PokeApiService
 import com.otaviobarreto.pokedex.data.PokemonRepository
@@ -77,6 +78,7 @@ private val qbGames=AppGameCatalog.games.map{game->
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
  var evolutionMethodLoading by remember(region.source){mutableStateOf(false)}
  LaunchedEffect(region.source,game.label){
+  evolutionFilterName=null
   loading=true
   AppStatePreferences.activeGame=game.label
   AppStatePreferences.setActiveRegionForGame(game.label,region.source)
@@ -91,25 +93,14 @@ private val qbGames=AppGameCatalog.games.map{game->
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
  val entries=dex.drop(current*30).take(30)
- LaunchedEffect(evolutionFilterName,region.source,dex){
-  if(evolutionFilterName==null){evolutionMethodIds=emptyMap();evolutionMethodLoading=false}
+ LaunchedEffect(region.source,dex){
+  if(dex.isEmpty()){evolutionMethodIds=emptyMap();evolutionMethodLoading=false}
   else{
-   evolutionMethodLoading=true
-   evolutionMethodIds=withContext(Dispatchers.IO){
-    val result=mutableMapOf<String,MutableSet<Int>>()
-    val dexIds=dex.mapTo(hashSetOf()){it.nationalId}
-    val byChain=dex.groupBy{entry->runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()}
-    byChain.keys.filterNotNull().forEach{url->
-     runCatching{PokeApiService.loadEvolutionSourceMethods(url,GameContext.fromSource(region.source))}.getOrElse{emptyList()}.forEach{info->
-      if(info.sourcePokemonId in dexIds){
-       result.getOrPut("ALL"){mutableSetOf()}.add(info.sourcePokemonId)
-       result.getOrPut(info.method.name){mutableSetOf()}.add(info.sourcePokemonId)
-      }
-     }
-    }
-    result.mapValues{it.value.toSet()}
+   EvolutionFilterIndex.cached(region.source)?.let{evolutionMethodIds=it;evolutionMethodLoading=false} ?: run{
+    evolutionMethodLoading=true
+    evolutionMethodIds=withContext(Dispatchers.IO){EvolutionFilterIndex.build(region.source,dex)}
+    evolutionMethodLoading=false
    }
-   evolutionMethodLoading=false
   }
  }
  LaunchedEffect(region.source,current,dex){
@@ -228,31 +219,15 @@ private val qbGames=AppGameCatalog.games.map{game->
     }
    }
    Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
-    CircularProgressIndicator(
-     progress={progress.coerceIn(0f,1f)},
-     modifier=Modifier.fillMaxSize(),
-     strokeWidth=4.dp,
-     color=game.accent,
-     trackColor=game.accent.copy(alpha=.12f)
-    )
-    Column(
-     horizontalAlignment=Alignment.CenterHorizontally,
-     verticalArrangement=Arrangement.Center
-    ){
-     Text(
-      ((progress*100).toInt()).toString()+"%",
-      fontSize=9.sp,
-      lineHeight=10.sp,
-      fontWeight=FontWeight.Black,
-      color=game.accent
-     )
-     Spacer(Modifier.height(1.dp))
-     Text(
-      caught.toString()+"/"+dex.size,
-      fontSize=7.sp,
-      lineHeight=8.sp,
-      color=MaterialTheme.colorScheme.onSurfaceVariant
-     )
+    if(evolutionFilterName!=null){
+     EvolutionModeCounter(filteredEvolutionEntries.size,evolutionMethodLoading,game.accent)
+    }else{
+     CircularProgressIndicator(progress={progress.coerceIn(0f,1f)},modifier=Modifier.fillMaxSize(),strokeWidth=4.dp,color=game.accent,trackColor=game.accent.copy(alpha=.12f))
+     Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+      Text(((progress*100).toInt()).toString()+"%",fontSize=9.sp,lineHeight=10.sp,fontWeight=FontWeight.Black,color=game.accent)
+      Spacer(Modifier.height(1.dp))
+      Text(caught.toString()+"/"+dex.size,fontSize=7.sp,lineHeight=8.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+     }
     }
    }
   }
@@ -286,17 +261,10 @@ private val qbGames=AppGameCatalog.games.map{game->
     else->{
      if(evolutionFilterName==null){
       QBGrid(entries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
-     }else if(!evolutionMethodLoading && filteredEvolutionEntries.isEmpty()){
-      Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
-       Text("Nenhum Pokémon desta região usa este método de evolução.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-      }
      }else{
-      QBVirtualEvolutionGrid(filteredEvolutionEntries,capturedIds,region.source,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+      EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
      }
     }
-   }
-   if(evolutionFilterName!=null&&evolutionMethodLoading){
-    LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter),color=game.accent)
    }
   }
   Row(
@@ -354,46 +322,6 @@ private val qbGames=AppGameCatalog.games.map{game->
 }
 
 @Composable
-private fun QBVirtualEvolutionGrid(
-    entries:List<GameDexService.GameDexEntry>,
-    captured:Set<Int>,
-    source:String,
-    open:(GameDexService.GameDexEntry)->Unit,
-    hold:(GameDexService.GameDexEntry)->Unit
-){
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding=PaddingValues(vertical=4.dp),
-        verticalArrangement=Arrangement.spacedBy(3.dp)
-    ){
-        items(entries.chunked(6)){rowEntries->
-            Row(
-                Modifier.fillMaxWidth().height(92.dp),
-                horizontalArrangement=Arrangement.spacedBy(2.dp)
-            ){
-                repeat(6){col->
-                    val pk=rowEntries.getOrNull(col)
-                    if(pk==null){
-                        Spacer(Modifier.weight(1f).fillMaxHeight())
-                    }else{
-                        QBSlot(
-                            pk=pk,
-                            captured=pk.nationalId in captured,
-                            source=source,
-                            specialEvolution=true,
-                            specialFilter=false,
-                            open={open(pk)},
-                            hold={hold(pk)},
-                            modifier=Modifier.weight(1f).fillMaxHeight()
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun QBGrid(
     entries:List<GameDexService.GameDexEntry>,
     captured:Set<Int>,
@@ -430,7 +358,7 @@ private fun QBGrid(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun QBSlot(
+internal fun QBSlot(
     pk:GameDexService.GameDexEntry,
     captured:Boolean,
     source:String,
