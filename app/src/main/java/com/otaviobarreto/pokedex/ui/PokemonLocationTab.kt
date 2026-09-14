@@ -101,12 +101,13 @@ private fun VersionAvailabilityCard(a:VersionAvailability){
         return
     }
     val special=a.kind==VersionAvailabilityKind.SPLIT_FORMS
-    val container=if(special)MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer
-    val content=if(special)MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+    val unavailable=a.kind==VersionAvailabilityKind.UNAVAILABLE
+    val container=when{special->MaterialTheme.colorScheme.tertiaryContainer;unavailable->MaterialTheme.colorScheme.errorContainer;else->MaterialTheme.colorScheme.primaryContainer}
+    val content=when{special->MaterialTheme.colorScheme.onTertiaryContainer;unavailable->MaterialTheme.colorScheme.onErrorContainer;else->MaterialTheme.colorScheme.onPrimaryContainer}
     Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),color=container){
         Column(Modifier.padding(horizontal=16.dp,vertical=14.dp)){
             Row(verticalAlignment=Alignment.CenterVertically){
-                Icon(if(special)Icons.Default.CompareArrows else Icons.Default.Lock,null,tint=content,modifier=Modifier.size(20.dp))
+                Icon(if(special)Icons.Default.CompareArrows else if(unavailable)Icons.Default.Block else Icons.Default.Lock,null,tint=content,modifier=Modifier.size(20.dp))
                 Text(a.title,Modifier.padding(start=8.dp),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black,color=content)
             }
             Text(a.subtitle,Modifier.padding(top=5.dp),style=MaterialTheme.typography.bodySmall,color=content.copy(alpha=.86f))
