@@ -168,7 +168,7 @@ if "PokemonFormVariant" not in forms or "varieties" not in forms:
     violations.append("Pokemon Forms service missing")
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("Pesquisar Pokémon", "Modifier.weight(1f).fillMaxHeight()", "Deslize para navegar entre as Boxes", "CircularProgressIndicator"):
+for required in ("Pesquisar Pokémon", "Modifier.weight(1f).fillMaxHeight()", "Filtrar por método de evolução", "CircularProgressIndicator"):
     if required not in boxes:
         violations.append(f"Compact swipe Box UI missing {required}")
 
@@ -276,7 +276,7 @@ if violations:
 
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("detectHorizontalDragGestures", "Deslize para navegar entre as Boxes", "CircularProgressIndicator", "ContentScale.Fit"):
+for required in ("detectHorizontalDragGestures", "Filtrar por método de evolução", "CircularProgressIndicator", "ContentScale.Fit"):
     if required not in boxes:
         violations.append(f"Box swipe/header polish missing {required}")
 for forbidden in ("ChevronLeft", "ChevronRight", 'Text("BOX"'):
