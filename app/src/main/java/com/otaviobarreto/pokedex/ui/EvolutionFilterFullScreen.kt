@@ -1,0 +1,200 @@
+package com.otaviobarreto.pokedex.ui
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.otaviobarreto.pokedex.data.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+@Composable
+internal fun EvolutionFilterFullScreen(
+    gameLabel:String,
+    initialRegionSource:String,
+    filterKey:String,
+    onBack:()->Unit,
+    onPokemonClick:(Int,String?)->Unit
+){
+    BackHandler(onBack=onBack)
+
+    val game=remember(gameLabel){AppGameCatalog.games.first{it.label==gameLabel}}
+    var selectedSource by rememberSaveable(gameLabel,filterKey){
+        mutableStateOf(
+            game.regions.firstOrNull{it.source==initialRegionSource}?.source
+                ?: game.regions.first().source
+        )
+    }
+    val selectedRegion=game.regions.first{it.source==selectedSource}
+    var dex by remember(selectedSource){mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())}
+    var rules by remember(selectedSource){mutableStateOf<List<ContextualEvolutionRule>>(emptyList())}
+    var loading by remember(selectedSource){mutableStateOf(true)}
+    var failed by remember(selectedSource){mutableStateOf(false)}
+
+    LaunchedEffect(selectedSource){
+        loading=true
+        failed=false
+        val loaded=runCatching{
+            withContext(Dispatchers.IO){
+                val context=requireNotNull(GameContext.fromSource(selectedSource))
+                val regionalDex=GameDexService.cached(context) ?: GameDexService.loadGameDex(context)
+                regionalDex to EvolutionFilterIndex.buildRules(selectedSource,regionalDex)
+            }
+        }
+        failed=loaded.isFailure
+        loaded.getOrNull()?.let{(regionalDex,regionalRules)->
+            dex=regionalDex
+            rules=regionalRules
+        }
+        loading=false
+    }
+
+    val owned=CollectionStore.contextualCapturedIds[selectedSource].orEmpty()
+    val filteredRules=remember(rules,filterKey){
+        rules.filter{rule->
+            filterKey=="ALL" ||
+                EvolutionRuleCatalog.filterBucket(rule)==filterKey ||
+                rule.methods.any{it.name==filterKey}
+        }
+    }
+    val ruleByTarget=remember(filteredRules){
+        filteredRules.groupBy{it.targetPokemonId}
+            .mapValues{(_,values)->values.first()}
+    }
+    val pending=remember(dex,ruleByTarget,owned){
+        dex.filter{entry->entry.nationalId in ruleByTarget && entry.nationalId !in owned}
+    }
+
+    val filterLabel=when(filterKey){
+        "ALL" -> "Todos que faltam"
+        "LEVEL" -> "Evolução por nível"
+        "CONDITION" -> "Evolução por condição"
+        else -> PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filterKey}?.label
+            ?.let{"Evolução por "+it} ?: "Evolução"
+    }
+
+    Column(Modifier.fillMaxSize().padding(horizontal=12.dp)){
+        Row(
+            Modifier.fillMaxWidth().padding(top=8.dp,bottom=4.dp),
+            verticalAlignment=Alignment.CenterVertically
+        ){
+            IconButton(onClick=onBack){
+                Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")
+            }
+            Column(Modifier.weight(1f)){
+                Text(filterLabel,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+                Text(
+                    game.label+" · "+pending.size+" pendente"+if(pending.size==1)"" else "s",
+                    style=MaterialTheme.typography.labelMedium,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        if(game.regions.size>1){
+            ScrollableTabRow(
+                selectedTabIndex=game.regions.indexOfFirst{it.source==selectedSource}.coerceAtLeast(0),
+                edgePadding=0.dp,
+                divider={}
+            ){
+                game.regions.forEach{region->
+                    Tab(
+                        selected=region.source==selectedSource,
+                        onClick={selectedSource=region.source},
+                        text={Text(region.label,maxLines=1)}
+                    )
+                }
+            }
+        }else{
+            Text(
+                selectedRegion.label,
+                style=MaterialTheme.typography.labelLarge,
+                color=MaterialTheme.colorScheme.primary,
+                modifier=Modifier.padding(horizontal=8.dp,vertical=8.dp)
+            )
+        }
+
+        when{
+            loading -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                CircularProgressIndicator()
+            }
+            failed -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                Text("Não foi possível carregar as regras de evolução desta região.")
+            }
+            pending.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                Text(
+                    "Você já possui todos os Pokémon pendentes deste filtro em ${selectedRegion.label}.",
+                    style=MaterialTheme.typography.bodyMedium,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            else -> LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding=PaddingValues(vertical=8.dp),
+                verticalArrangement=Arrangement.spacedBy(6.dp)
+            ){
+                items(pending.chunked(3),key={row->row.joinToString("-"){it.nationalId.toString()}}){row->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(6.dp)
+                    ){
+                        repeat(3){index->
+                            val entry=row.getOrNull(index)
+                            if(entry==null){
+                                Spacer(Modifier.weight(1f))
+                            }else{
+                                val rule=ruleByTarget[entry.nationalId]
+                                Surface(
+                                    modifier=Modifier.weight(1f).clickable{
+                                        onPokemonClick(entry.nationalId,selectedSource)
+                                    },
+                                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+                                    color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.62f)
+                                ){
+                                    Column(
+                                        Modifier.padding(8.dp),
+                                        horizontalAlignment=Alignment.CenterHorizontally
+                                    ){
+                                        AsyncImage(
+                                            model=entry.spriteUrl,
+                                            contentDescription=entry.name,
+                                            modifier=Modifier.fillMaxWidth().aspectRatio(1f)
+                                        )
+                                        Text(
+                                            entry.name,
+                                            style=MaterialTheme.typography.labelLarge,
+                                            fontWeight=FontWeight.Black,
+                                            maxLines=1,
+                                            overflow=TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            rule?.summary.orEmpty(),
+                                            style=MaterialTheme.typography.labelSmall,
+                                            color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines=2,
+                                            overflow=TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                item{Spacer(Modifier.height(10.dp))}
+            }
+        }
+    }
+}
