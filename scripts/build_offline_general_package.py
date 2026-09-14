@@ -146,6 +146,13 @@ def image_entry(cache_key: str, url: str) -> dict[str, str]:
     return {"cache_key": cache_key, "path": write_image(url), "source_url": url}
 
 
+def optional_image_entry(cache_key: str, url: str) -> dict[str, str] | None:
+    try:
+        return image_entry(cache_key, url)
+    except requests.RequestException:
+        return None
+
+
 def build_pokemon(species_id: int) -> dict[str, Any]:
     pokemon_url = f"{API}/pokemon/{species_id}"
     species_url = f"{API}/pokemon-species/{species_id}"
@@ -191,14 +198,18 @@ def build_pokemon(species_id: int) -> dict[str, Any]:
             normal_url = official.get("front_default") or f"{RAW_ART}/{pid}.png"
             shiny_url = official.get("front_shiny") or f"{RAW_ART}/shiny/{pid}.png"
             key = safe_form_key(raw_name) or str(pid)
-            images.append(image_entry(
+            normal_entry = optional_image_entry(
                 f"pokemon-form-offline-{species_id}-{pid}-{key}-normal",
                 normal_url,
-            ))
-            images.append(image_entry(
+            )
+            shiny_entry = optional_image_entry(
                 f"pokemon-form-offline-{species_id}-{pid}-{key}-shiny",
                 shiny_url,
-            ))
+            )
+            if normal_entry:
+                images.append(normal_entry)
+            if shiny_entry:
+                images.append(shiny_entry)
             continue
 
         for form_ref in forms:
@@ -220,15 +231,19 @@ def build_pokemon(species_id: int) -> dict[str, Any]:
             key = safe_form_key(raw_name) or str(pid)
 
             if normal_url:
-                images.append(image_entry(
+                normal_entry = optional_image_entry(
                     f"pokemon-form-offline-{species_id}-{pid}-{key}-normal",
                     normal_url,
-                ))
+                )
+                if normal_entry:
+                    images.append(normal_entry)
             if shiny_url:
-                images.append(image_entry(
+                shiny_entry = optional_image_entry(
                     f"pokemon-form-offline-{species_id}-{pid}-{key}-shiny",
                     shiny_url,
-                ))
+                )
+                if shiny_entry:
+                    images.append(shiny_entry)
 
     dedup_images = []
     seen_keys = set()
