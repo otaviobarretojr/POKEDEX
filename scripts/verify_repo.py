@@ -1501,6 +1501,7 @@ if violations:
 
 # Compatibility guard — Evolution methods audit
 pokeapi_v105 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokeApiService.kt").read_text(encoding="utf-8")
+evolution_catalog_v105 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/EvolutionCuratedCatalog.kt").read_text(encoding="utf-8")
 for required in (
     "known_move",
     "known_move_type",
@@ -1518,20 +1519,20 @@ for required in (
     "gender",
     "held_item",
     "mergeEvolutionRequirements",
-    "specialEvolutionRequirements",
+    "EvolutionCuratedCatalog.ruleFor",
     'joinToString("  OU  ")',
 ):
     if required not in pokeapi_v105:
         violations.append(f"Evolution audit missing {required}")
 
 for special_id in (
-    "266 to", "268 to", "292 to", "687 to", "745 to", "849 to",
-    "865 to", "867 to", "869 to", "892 to", "899 to", "901 to",
-    "902 to", "904 to", "923 to", "947 to", "954 to", "964 to",
-    "979 to", "983 to", "1000 to"
+    "266 ->", "268 ->", "292 ->", "687 ->", "745 ->", "849 ->",
+    "865 ->", "867 ->", "869 ->", "892 ->", "899 ->", "901 ->",
+    "902 ->", "904 ->", "923 ->", "947 ->", "954 ->", "964 ->",
+    "979 ->", "983 ->", "1000 ->", "1019 ->"
 ):
-    if special_id not in pokeapi_v105:
-        violations.append(f"Special evolution rule missing {special_id}")
+    if special_id not in evolution_catalog_v105:
+        violations.append(f"Curated evolution rule missing {special_id}")
 
 if "getJSONObject(0)?.let(::evolutionRequirement)" in pokeapi_v105:
     violations.append("Evolution parser must not keep only the first evolution_details entry")
@@ -1559,9 +1560,13 @@ if "PokemonFormsService.collectible" not in boxes_v11:
     violations.append("v11 Box does not use normalized collectible forms")
 
 pokeapi_v11 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/PokeApiService.kt").read_text(encoding="utf-8")
-for required in ('925 to', '982 to', '1019 to', "mergeEvolutionRequirements", "specialEvolutionRequirements"):
+evolution_catalog_v11 = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/EvolutionCuratedCatalog.kt").read_text(encoding="utf-8")
+for required in ("mergeEvolutionRequirements", "EvolutionCuratedCatalog.ruleFor"):
     if required not in pokeapi_v11:
-        violations.append(f"v11 evolution curation missing {required}")
+        violations.append(f"v11 evolution engine wiring missing {required}")
+for required in ("925 ->", "982 ->", "1019 ->"):
+    if required not in evolution_catalog_v11:
+        violations.append(f"v11 curated evolution missing {required}")
 
 if violations:
     print("Source verification failed:")
