@@ -566,12 +566,15 @@ private fun PokemonFormsSummaryCard(
                     )
                     Column(Modifier.weight(1f).padding(start=10.dp)){
                         Text(stage.name,style=MaterialTheme.typography.titleSmall)
+                        val summary=EvolutionRuleCatalog.simplify(stage.requirement)
                         val special=PokeApiService.isSpecialEvolutionRequirement(stage.requirement)
                         Text(
-                            stage.requirement?:"Forma inicial",
+                            summary,
                             style=MaterialTheme.typography.bodySmall,
                             fontWeight=if(special)FontWeight.Bold else FontWeight.Normal,
-                            color=if(special)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            color=if(special)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines=2,
+                            overflow=TextOverflow.Ellipsis
                         )
                         if(active)Text("Pokémon atual",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                     }
