@@ -123,7 +123,7 @@ object ServerOfflinePackageInstaller {
             }
         }
 
-        OfflineGamePackManager.finalizeImportedGeneral(ids)
+        OfflineGamePackManager.finalizeImportedGeneral(ids,remote.version)
         check(OfflineGamePackManager.generalAudit()){"Biblioteca importada falhou na auditoria"}
         onProgress(Progress(total,total,"Biblioteca geral pronta"))
 
