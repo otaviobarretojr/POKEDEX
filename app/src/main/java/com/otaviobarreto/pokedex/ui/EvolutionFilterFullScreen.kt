@@ -237,12 +237,10 @@ internal fun EvolutionFilterFullScreen(
         )
     }
 
-    val filterLabel=when(filterKey){
-        "ALL" -> "Todos que faltam"
-        "LEVEL" -> "Evolução por nível"
-        "CONDITION" -> "Evolução por condição"
-        "TRANSFER" -> "Transferência"
-        else -> PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filterKey}?.label?.let{"Evolução por "+it} ?: "Evolução"
+    val filterLabel=if(filterKey=="ALL"){
+        EvolutionRuleCatalog.filterLabel(filterKey)
+    }else{
+        "Evolução por "+EvolutionRuleCatalog.filterLabel(filterKey).lowercase()
     }
 
     Column(Modifier.fillMaxSize().padding(horizontal=12.dp)){
@@ -304,7 +302,7 @@ internal fun EvolutionFilterFullScreen(
             }
             filterKey!="ALL" && filteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text(
-                    "Nenhum Pokémon desta Pokédex usa este método no jogo atual.",
+                    "Nenhum Pokémon faltando usa este método no jogo atual.",
                     style=MaterialTheme.typography.bodyMedium,
                     color=MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -312,9 +310,9 @@ internal fun EvolutionFilterFullScreen(
             filterKey!="ALL" && visibleFilteredRoutes.isEmpty() -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                 Text(
                     if(game.regions.first().source==selectedSource)
-                        "Nenhum Pokémon desta Pokédex usa este método."
+                        "Nenhum Pokémon faltando usa este método."
                     else
-                        "Nenhum Pokémon novo desta expansão usa este método.",
+                        "Nenhum Pokémon faltando desta expansão usa este método.",
                     style=MaterialTheme.typography.bodyMedium,
                     color=MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -331,7 +329,7 @@ internal fun EvolutionFilterFullScreen(
                 contentPadding=PaddingValues(vertical=8.dp),
                 verticalArrangement=Arrangement.spacedBy(6.dp)
             ){
-                val columns=if(filterKey=="ALL") 2 else 3
+                val columns=2
                 items(displayedPending.chunked(columns),key={row->row.joinToString("-"){it.nationalId.toString()}}){row->
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                         repeat(columns){index->
