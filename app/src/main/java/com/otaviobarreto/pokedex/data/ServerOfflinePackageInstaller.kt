@@ -35,6 +35,7 @@ object ServerOfflinePackageInstaller {
         val expectedSha=requireNotNull(remote.sha256).lowercase()
         val total=remote.sizeBytes ?: 0L
 
+        OfflineGamePackManager.beginServerGeneralInstall()
         val root=File(context.cacheDir,"server-offline-packages").apply{mkdirs()}
         val zipFile=File(root,"general-v${remote.version}.zip")
         downloadResumable(url,zipFile,total,"Baixando pacote geral",onProgress)
@@ -48,6 +49,7 @@ object ServerOfflinePackageInstaller {
         val extractDir=File(root,"general-v${remote.version}-extract")
         if(extractDir.exists()) extractDir.deleteRecursively()
         extractDir.mkdirs()
+        onProgress(Progress(total,total,"Extraindo pacote"))
         unzipSafe(zipFile,extractDir)
 
         val manifestFile=File(extractDir,"manifest.json")
@@ -58,6 +60,7 @@ object ServerOfflinePackageInstaller {
 
         val pokemon=manifest.getJSONArray("pokemon")
         val ids=linkedSetOf<Int>()
+        onProgress(Progress(total,total,"Instalando biblioteca · 0 / ${pokemon.length()}"))
         for(i in 0 until pokemon.length()){
             val item=pokemon.getJSONObject(i)
             val id=item.getInt("id")
@@ -86,8 +89,14 @@ object ServerOfflinePackageInstaller {
                     val path=image.getString("path")
                     val file=resolveInside(extractDir,path)
                     check(file.exists()){"Imagem ausente: $path"}
-                    importImageIntoDiskCache(context,cacheKey,file)
-                    if(cacheKey.startsWith("pokemon-form-offline-")) formKeys += cacheKey
+                    val imported=runCatching{
+                        importImageIntoDiskCache(context,cacheKey,file)
+                    }.isSuccess
+                    if(cacheKey=="pokemon-offline-$id"){
+                        check(imported){"Falha ao importar arte principal #$id"}
+                    }else if(imported && cacheKey.startsWith("pokemon-form-offline-")){
+                        formKeys += cacheKey
+                    }
                 }
             }
 
