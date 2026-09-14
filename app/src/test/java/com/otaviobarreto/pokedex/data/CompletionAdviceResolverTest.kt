@@ -39,7 +39,7 @@ class CompletionAdviceResolverTest {
     }
 
     @Test
-    fun exclusiveVersionIsExposedOnDirectAcquisitionAdvice() {
+    fun unknownAcquisitionStaysBlankInsteadOfInventingFallbackCopy() {
         val context=GameContext.fromSource("Scarlet / Violet · Paldea")!!
         val advice=CompletionAdviceResolver.resolve(
             pokemonId=936,
@@ -47,9 +47,11 @@ class CompletionAdviceResolverTest {
             routes=emptyList()
         )
 
-        assertEquals(VersionAvailabilityKind.EXCLUSIVE,advice.versionAvailability?.kind)
-        assertEquals("Scarlet",advice.versionAvailability?.exclusiveVersion)
-        assertTrue(advice.detail?.contains("Troca")==true || advice.detail?.contains("HOME")==true)
+        assertTrue(advice.title.isBlank())
+        assertNull(advice.detail)
+        assertNull(advice.versionAvailability)
+        assertFalse(advice.directAcquisition)
+        assertEquals(Int.MAX_VALUE,advice.score)
     }
 
     @Test
