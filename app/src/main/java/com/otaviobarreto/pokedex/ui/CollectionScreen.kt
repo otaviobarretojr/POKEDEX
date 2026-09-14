@@ -172,7 +172,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.shinyItems(plan:Livin
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.formItems(plan:LivingDexPlan,variants:List<OwnedPokemonVariant>,onPokemonClick:(Int)->Unit){
-    val forms=variants.filterNot{it.shiny}.distinctBy{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey)}
+    val forms=variants.filter{!it.shiny && !it.isDefault}.distinctBy{listOf(it.source,it.speciesId.toString(),it.formPokemonId.toString(),it.formKey.lowercase())}
     item{CollectionSectionHeader("Form Dex",plan.formRegistrations.toString(),"formas alternativas registradas")}
     if(forms.isEmpty()){
         item{CollectionEmptyState("Nenhuma forma alternativa registrada","Formas regionais e especiais registradas aparecerão aqui.")}
