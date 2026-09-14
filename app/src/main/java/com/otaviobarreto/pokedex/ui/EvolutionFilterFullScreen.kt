@@ -286,9 +286,10 @@ internal fun EvolutionFilterFullScreen(
                 contentPadding=PaddingValues(vertical=8.dp),
                 verticalArrangement=Arrangement.spacedBy(6.dp)
             ){
-                items(displayedPending.chunked(3),key={row->row.joinToString("-"){it.nationalId.toString()}}){row->
+                val columns=if(filterKey=="ALL") 2 else 3
+                items(displayedPending.chunked(columns),key={row->row.joinToString("-"){it.nationalId.toString()}}){row->
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                        repeat(3){index->
+                        repeat(columns){index->
                             val entry=row.getOrNull(index)
                             if(entry==null){
                                 Spacer(Modifier.weight(1f))
