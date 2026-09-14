@@ -10,7 +10,17 @@ data class JourneyPreparation(
 )
 
 object JourneyPreparationCatalog {
-    fun forStep(stepId:String):JourneyPreparation? = items[stepId]
+    fun forStep(stepId:String):JourneyPreparation? =
+        items[stepId] ?: JourneyCatalog.findStep(stepId)?.second?.let{step->
+            JourneyPreparation(
+                stepId=step.id,
+                recommendedLevel=step.levelLabel,
+                counters=listOf("Cobertura geral"),
+                pokemonIds=emptyList(),
+                items=listOf("Itens de cura"),
+                tip=step.note.ifBlank{"Siga o objetivo em "+step.location+" e mantenha o time próximo da faixa de nível indicada."}
+            )
+        }
 
     private val items=mapOf(
         "frlg-g1" to JourneyPreparation("frlg-g1","12–14",listOf("Água","Planta","Lutador"),listOf(7,1,56),listOf("Potion"),"Brock usa Pedra/Terra. Bulbasaur e Squirtle têm vantagem direta; Charmander se beneficia muito de Mankey."),
