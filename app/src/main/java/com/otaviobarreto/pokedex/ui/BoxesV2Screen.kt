@@ -59,9 +59,7 @@ import kotlinx.coroutines.withContext
 private data class QBRegion(val label:String,val source:String,val badge:String)
 private data class QBGame(val label:String,val accent:Color,val regions:List<QBRegion>)
 private fun qbAccent(game:String):Color=PokedexDesignTokens.Colors.game(game)
-private val qbGames=AppGameCatalog.games.map{game->
- QBGame(game.label,qbAccent(game.label),game.regions.map{QBRegion(it.label,it.source,it.subtitle)})
-}
+private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(game.label),game.regions.map{QBRegion(it.label,it.source,it.subtitle)})}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun BoxesV2Screen(onPokemonClick:(Int,String?)->Unit){
  val preferredGame=AppStatePreferences.activeGame.takeIf{g->qbGames.any{it.label==g}} ?: qbGames.first().label
@@ -788,16 +786,8 @@ private fun QBSearch(
                 placeholder={Text("Nome ou número")}
             )
             Spacer(Modifier.height(8.dp))
-            LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                items(listOf("Todos","Capturados","Faltantes","Normal","Shiny","Formas")){option->
-                    FilterChip(selected=status==option,onClick={status=option},label={Text(option,style=MaterialTheme.typography.labelSmall)})
-                }
-            }
-            LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                items(listOf("Regional","Nacional","Nome")){option->
-                    FilterChip(selected=order==option,onClick={order=option},label={Text(option,style=MaterialTheme.typography.labelSmall)})
-                }
-            }
+            LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){items(listOf("Todos","Capturados","Faltantes","Normal","Shiny","Formas")){option->FilterChip(selected=status==option,onClick={status=option},label={Text(option,style=MaterialTheme.typography.labelSmall)})}}
+            LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){items(listOf("Regional","Nacional","Nome")){option->FilterChip(selected=order==option,onClick={order=option},label={Text(option,style=MaterialTheme.typography.labelSmall)})}}
             Spacer(Modifier.height(6.dp))
             Text(results.size.toString()+" resultado(s)",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             LazyColumn(Modifier.heightIn(max=360.dp)){
@@ -824,6 +814,4 @@ private fun QBSearch(
         dismissButton={TextButton(dismiss){Text("Fechar")}}
     )
 }
-private fun pretty(name:String)=name.split("-"," ").joinToString(" "){
-    it.replaceFirstChar{c->if(c.isLowerCase())c.titlecase()else c.toString()}
-}
+private fun pretty(name:String)=name.split("-"," ").joinToString(" "){it.replaceFirstChar{c->if(c.isLowerCase())c.titlecase()else c.toString()}}
