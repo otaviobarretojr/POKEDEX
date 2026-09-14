@@ -25,7 +25,8 @@ fun CampaignTeamGuideScreen(
     onBackToMyTeams:()->Unit,
     onPokemonClick:(Int,String?)->Unit,
     initialGame:String?=null,
-    initialPhase:String?=null
+    initialPhase:String?=null,
+    initialStepId:String?=null
 ){
     val journeyContext=initialGame?.takeIf{it in TeamCampaignCatalog.switchGames}
     val initial=journeyContext
@@ -39,8 +40,10 @@ fun CampaignTeamGuideScreen(
                 ?: TeamCampaignCatalog.starters(game).first().second
         )
     }
-    val journeySmartContext=remember(game,JourneyProgressStore.revision){
-        if(journeyContext!=null) JourneySmartProgress.context(game) else null
+    val journeySmartContext=remember(game,initialStepId,JourneyProgressStore.revision){
+        if(journeyContext!=null){
+            initialStepId?.let{JourneySmartProgress.contextForStep(game,it)} ?: JourneySmartProgress.context(game)
+        }else null
     }
     val automaticPhase=remember(game,journeySmartContext,initialPhase){
         journeySmartContext?.phase
@@ -56,9 +59,9 @@ fun CampaignTeamGuideScreen(
     var showHelp by remember { mutableStateOf(false) }
     var createdMessage by remember { mutableStateOf<String?>(null) }
     val preset=remember(game,starterId,phase){TeamCampaignCatalog.preset(game,starterId,phase)}
-    val dynamic=remember(game,starterId,journeyContext,JourneyProgressStore.revision){
+    val dynamic=remember(game,starterId,journeyContext,initialStepId,JourneyProgressStore.revision){
         if(journeyContext!=null && JourneyCatalog.steps(game).isNotEmpty()){
-            JourneyDynamicTeamCatalog.suggestion(game,starterId)
+            JourneyDynamicTeamCatalog.suggestion(game,starterId,initialStepId)
         }else null
     }
     val displaySlots=if(dynamic!=null && phase==dynamic.preset?.phase)dynamic.adjustedSlots else preset?.slots.orEmpty()
