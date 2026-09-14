@@ -44,7 +44,6 @@ fun PokemonDetailV2Screen(
     id:Int,
     source:String?=null,
     onBack:()->Unit,
-    onOpenLocation:(()->Unit)?=null,
     onOpenReference:((String,String)->Unit)?=null,
     onOpenPokemon:((Int)->Unit)?=null
 ){
@@ -103,7 +102,7 @@ fun PokemonDetailV2Screen(
 
     when{
         bundle!=null -> DetailV2Content(
-            bundle!!,tab,{tab=it},context,source,collectionSource,onBack,onOpenLocation,onOpenReference,onOpenPokemon
+            bundle!!,tab,{tab=it},context,source,collectionSource,onBack,onOpenReference,onOpenPokemon
         )
         error!=null -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
             Column(horizontalAlignment=Alignment.CenterHorizontally){
@@ -143,7 +142,6 @@ fun PokemonDetailV2Screen(
     source:String?,
     collectionSource:String?,
     back:()->Unit,
-    openLocation:(()->Unit)?,
     openRef:((String,String)->Unit)?,
     openPokemon:((Int)->Unit)?
 ){
@@ -170,7 +168,7 @@ fun PokemonDetailV2Screen(
                 1->V2Stats(b.pokemon.stats)
                 2->V2Evolution(b.evolutions,b.pokemon.id,openPokemon)
                 3->PokemonMovesTab(b.pokemon.moves,context,openRef)
-                else->V2Locations(b.encounters,b.species,context,source,openLocation)
+                else->V2Locations(b.encounters,context,source)
             }
         }
       }
@@ -574,38 +572,73 @@ private fun PokemonFormsSummaryCard(
 }
 @Composable private fun V2Locations(
     encounters:List<PokeApiService.EncounterLocation>,
-    species:PokeApiService.SpeciesInfo,
     context:GameContext?,
-    source:String?,
-    openLocation:(()->Unit)?
+    source:String?
 ){
     val visible=if(context==null)encounters else encounters.mapNotNull{e->
         val versions=e.versions.filter(context::matchesVersion)
         val details=e.details.filter{context.matchesVersion(it.version)}
         if(versions.isEmpty()&&details.isEmpty())null else e.copy(versions=versions,details=details)
-    }
-    LazyColumn(Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
+    }.distinctBy{it.location}.sortedBy{it.location}
+
+    LazyColumn(
+        Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg),
+        verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+    ){
         item{
             Text("Localização",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
-            if(context!=null)Text(context.label+" · "+context.regionLabel,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            species.habitat?.takeIf{it.isNotBlank()}?.let{
-                Text("Habitat: "+it,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
-            }
-            if(openLocation!=null)Button(openLocation,Modifier.fillMaxWidth().padding(top=8.dp)){
-                Icon(Icons.Default.LocationOn,null);Spacer(Modifier.width(8.dp));Text("Ver localizações detalhadas")
-            }
+            Text(
+                context?.let{it.label+" · "+it.regionLabel} ?: "Encontros registrados",
+                style=MaterialTheme.typography.labelMedium,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier=Modifier.padding(top=2.dp)
+            )
         }
-        if(visible.isEmpty())item{
-            Text(if(source.isNullOrBlank())"Nenhum encontro detalhado disponível." else "Sem encontro selvagem detalhado neste contexto. O Pokémon pode ser obtido por evolução, troca, evento ou outro método.")
-        }else items(visible,key={it.location}){e->
-            Card(Modifier.fillMaxWidth()){
-                Column(Modifier.padding(10.dp)){
-                    Text(e.location,fontWeight=FontWeight.Bold)
-                    e.details.take(4).forEach{d->
-                        Text(listOfNotNull(d.method,d.minLevel.takeIf{it>0}?.let{"Nv. $it"}).joinToString(" · "),style=MaterialTheme.typography.bodySmall)
+        if(visible.isEmpty()){
+            item{
+                DexGlassSurface(Modifier.fillMaxWidth()){
+                    Text(
+                        if(source.isNullOrBlank())"Nenhum encontro selvagem registrado."
+                        else "Este Pokémon não possui encontro selvagem registrado neste jogo. Ele pode ser obtido por evolução, troca, evento ou outro método.",
+                        style=MaterialTheme.typography.bodyMedium,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }else{
+            item{
+                Text(
+                    visible.size.toString()+" local"+if(visible.size==1)"" else "izações",
+                    style=MaterialTheme.typography.labelMedium,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            items(visible,key={it.location}){e->
+                Surface(
+                    Modifier.fillMaxWidth(),
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+                    color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.55f)
+                ){
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=13.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        Icon(
+                            Icons.Default.LocationOn,
+                            contentDescription=null,
+                            tint=MaterialTheme.colorScheme.primary,
+                            modifier=Modifier.size(20.dp)
+                        )
+                        Text(
+                            e.location,
+                            modifier=Modifier.padding(start=10.dp).weight(1f),
+                            style=MaterialTheme.typography.bodyLarge,
+                            fontWeight=FontWeight.SemiBold
+                        )
                     }
                 }
             }
         }
+        item{Spacer(Modifier.height(18.dp))}
     }
 }
