@@ -128,6 +128,40 @@ object EvolutionCuratedCatalog {
 
     fun formKeysFor(targetPokemonId:Int,context:GameContext?):Pair<String?,String?> {
         val rule=ruleFor(targetPokemonId,context)
-        return rule?.sourceFormKey to rule?.targetFormKey
+        if(rule?.sourceFormKey!=null || rule?.targetFormKey!=null){
+            return rule.sourceFormKey to rule.targetFormKey
+        }
+        return contextualFormKeys(targetPokemonId,context)
+    }
+
+    private fun contextualFormKeys(targetPokemonId:Int,context:GameContext?):Pair<String?,String?> {
+        return when(context?.label){
+            "Sword / Shield" -> when(targetPokemonId){
+                78 -> "ponyta-galar" to "rapidash-galar"
+                80 -> "slowpoke-galar" to "slowbro-galar"
+                110 -> null to "weezing-galar"
+                122 -> "mime-jr" to "mr-mime-galar"
+                199 -> "slowpoke-galar" to "slowking-galar"
+                264 -> "zigzagoon-galar" to "linoone-galar"
+                555 -> "darumaka-galar" to "darmanitan-galar"
+                862 -> "linoone-galar" to null
+                863 -> "meowth-galar" to null
+                864 -> "corsola-galar" to null
+                866 -> "mr-mime-galar" to null
+                else -> null to null
+            }
+            "Legends Arceus" -> when(targetPokemonId){
+                157 -> null to "typhlosion-hisui"
+                503 -> null to "samurott-hisui"
+                549 -> null to "lilligant-hisui"
+                628 -> null to "braviary-hisui"
+                705 -> "goomy" to "sliggoo-hisui"
+                706 -> "sliggoo-hisui" to "goodra-hisui"
+                713 -> "bergmite" to "avalugg-hisui"
+                724 -> null to "decidueye-hisui"
+                else -> null to null
+            }
+            else -> null to null
+        }
     }
 }
