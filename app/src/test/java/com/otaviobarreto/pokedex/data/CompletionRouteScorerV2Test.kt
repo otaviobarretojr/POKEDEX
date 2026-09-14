@@ -52,8 +52,8 @@ class CompletionRouteScorerV2Test {
         )
 
         assertEquals(CompletionMethodKind.DIRECT,advice.method)
-        assertNotNull(advice.alternative)
-        assertEquals(CompletionMethodKind.LEVEL,advice.alternative?.method)
+        assertEquals(CompletionDifficulty.VERY_EASY,advice.difficulty)
+        assertNull(advice.alternative)
     }
 
     @Test
@@ -69,7 +69,9 @@ class CompletionRouteScorerV2Test {
         )
 
         assertEquals(CompletionMethodKind.LEVEL,advice.method)
+        assertEquals(CompletionDifficulty.VERY_EASY,advice.difficulty)
         assertEquals(CompletionMethodKind.DIRECT,advice.alternative?.method)
+        assertEquals(advice.difficulty,advice.alternative?.difficulty)
     }
 
     @Test
@@ -107,6 +109,15 @@ class CompletionRouteScorerV2Test {
         )
 
         assertTrue(CompletionAdviceResolver.priority(item) < CompletionAdviceResolver.priority(action))
+    }
+
+    @Test
+    fun difficultyBandsAreHumanReadableAndStable() {
+        assertEquals(CompletionDifficulty.VERY_EASY,CompletionAdviceResolver.difficultyFor(1))
+        assertEquals(CompletionDifficulty.EASY,CompletionAdviceResolver.difficultyFor(4))
+        assertEquals(CompletionDifficulty.MODERATE,CompletionAdviceResolver.difficultyFor(8))
+        assertEquals(CompletionDifficulty.HARD,CompletionAdviceResolver.difficultyFor(12))
+        assertEquals(CompletionDifficulty.EXTERNAL,CompletionAdviceResolver.difficultyFor(22))
     }
 
     @Test
