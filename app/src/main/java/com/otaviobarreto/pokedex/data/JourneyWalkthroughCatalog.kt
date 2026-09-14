@@ -7,7 +7,23 @@ data class JourneyWalkthrough(
 )
 
 object JourneyWalkthroughCatalog {
-    fun forStep(stepId:String):JourneyWalkthrough? = walkthroughs[stepId]
+    fun forStep(stepId:String):JourneyWalkthrough? =
+        walkthroughs[stepId] ?: JourneyCatalog.findStep(stepId)?.second?.let{step->
+            val prep=JourneyPreparationCatalog.forStep(step.id)
+            JourneyWalkthrough(
+                title=step.title,
+                steps=listOf(
+                    "Siga para "+step.location+".",
+                    "Prepare o time para a faixa "+step.levelLabel+".",
+                    "Conclua o objetivo: "+step.subtitle+".",
+                    "Após concluir, marque esta etapa para avançar automaticamente ao próximo objetivo."
+                ),
+                tips=listOfNotNull(
+                    prep?.tip?.takeIf{it.isNotBlank()},
+                    "Use a preparação recomendada como referência; não é necessário copiar o time exatamente."
+                )
+            )
+        }
 
     private fun w(title:String, vararg steps:String, tips:List<String> = emptyList()) =
         JourneyWalkthrough(title, steps.toList(), tips)
