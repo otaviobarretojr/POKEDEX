@@ -27,19 +27,15 @@ object EvolutionRuleCatalog {
     )
 
     fun load(chainUrl:String,context:GameContext?):List<ContextualEvolutionRule> =
-        PokeApiService.loadEvolutionSourceMethods(chainUrl,context)
-            .groupBy{it.sourcePokemonId to it.targetPokemonId}
-            .map{(pair,items)->
-                val raw=items.map{it.requirement}.distinct().joinToString(" OU ")
-                ContextualEvolutionRule(
-                    sourcePokemonId=pair.first,
-                    targetPokemonId=pair.second,
-                    methods=items.mapTo(linkedSetOf()){it.method},
-                    summary=simplify(raw),
-                    rawRequirement=raw
-                )
-            }
-            .sortedWith(compareBy<ContextualEvolutionRule>{it.sourcePokemonId}.thenBy{it.targetPokemonId})
+        EvolutionResolutionEngine.load(chainUrl,context).map{route->
+            ContextualEvolutionRule(
+                sourcePokemonId=route.sourcePokemonId,
+                targetPokemonId=route.targetPokemonId,
+                methods=route.methods,
+                summary=route.summary,
+                rawRequirement=route.detail
+            )
+        }
 
     fun primaryMethod(methods:Set<PokeApiService.EvolutionMethod>):PokeApiService.EvolutionMethod =
         priority.firstOrNull{it in methods} ?: PokeApiService.EvolutionMethod.OTHER
