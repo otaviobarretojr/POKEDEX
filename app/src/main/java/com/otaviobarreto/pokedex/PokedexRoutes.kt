@@ -15,7 +15,7 @@ object PokedexRoutes {
     const val CAMPAIGN_GUIDE = "campaignGuide?game={game}&phase={phase}&step={step}"
 
     val secondary = setOf(POKEMON, FORM_DETAIL, LOCATION, REGION_MAP, REFERENCE, CAMPAIGN_GUIDE)
-    val main = setOf(HOME, POKEDEX, BOXES, CENTRAL)
+    val main = setOf(HOME, POKEDEX, COLLECTION, BOXES, CENTRAL)
 
     fun isSecondary(route:String?):Boolean = route in secondary
 }
