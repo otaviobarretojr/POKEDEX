@@ -280,11 +280,26 @@ object OfflineGamePackManager {
             .putInt("general_version",PACK_VERSION)
             .putStringSet("general_manifest_ids",ids.map(Int::toString).toSet())
         serverVersion?.let{edit.putInt("general_server_version",it)}
+        edit.putBoolean("general_server_installing",false)
         edit.apply()
     }
 
     fun generalServerVersion():Int =
         prefs().getInt("general_server_version",0)
+
+    fun beginServerGeneralInstall(){
+        prefs().edit()
+            .putBoolean("general_ready",false)
+            .putInt("general_count",0)
+            .putInt("general_complete",0)
+            .remove("general_manifest_ids")
+            .remove("general_resource_urls")
+            .putBoolean("general_server_installing",true)
+            .apply()
+    }
+
+    fun isServerGeneralInstalling():Boolean =
+        prefs().getBoolean("general_server_installing",false)
 
     fun finalizeImportedGame(
         gameLabel:String,
@@ -575,6 +590,7 @@ object OfflineGamePackManager {
             .remove("general_manifest_ids")
             .remove("general_resource_urls")
             .remove("general_server_version")
+            .remove("general_server_installing")
             .apply()
     }
 
