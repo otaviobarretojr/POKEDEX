@@ -17,6 +17,18 @@ object PokeApiService {
     data class RemotePokemonDetail(val id:Int,val name:String,val heightDecimeters:Int,val weightHectograms:Int,val types:List<String>,val stats:PokemonStats,val abilities:List<String>,val moves:List<RemoteMove>){val spriteUrl:String get()="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"}
     data class SpeciesInfo(val captureRate:Int,val baseHappiness:Int,val habitat:String?,val growthRate:String?,val eggGroups:List<String>,val flavorText:String?,val evolutionChainUrl:String?,val genus:String?=null)
     data class EvolutionStage(val pokemonId:Int,val name:String,val requirement:String?)
+    enum class EvolutionMethod(val label:String){
+        TRADE("Troca"),
+        ITEM("Item"),
+        FRIENDSHIP("Amizade"),
+        TIME("Horário"),
+        LEVEL_CONDITION("Nível + condição"),
+        MOVE("Golpe / movimento"),
+        LOCATION("Local / clima"),
+        ACTION("Ação especial"),
+        OTHER("Outro método")
+    }
+    data class EvolutionSourceMethod(val sourcePokemonId:Int,val targetPokemonId:Int,val method:EvolutionMethod,val requirement:String)
     data class EncounterDetail(val version:String,val method:String,val minLevel:Int,val maxLevel:Int,val chance:Int,val conditions:List<String>)
     data class EncounterLocation(val location:String,val versions:List<String>,val details:List<EncounterDetail> = emptyList())
 
@@ -67,6 +79,49 @@ object PokeApiService {
         walk(root)
         return result
     }
+    fun loadEvolutionSourceMethods(url:String):List<EvolutionSourceMethod>{
+        val root=getJson(url).getJSONObject("chain")
+        val result=mutableListOf<EvolutionSourceMethod>()
+        fun classify(requirement:String):Set<EvolutionMethod>{
+            val r=requirement.lowercase()
+            val methods=linkedSetOf<EvolutionMethod>()
+            if("troca" in r || "trocar por" in r) methods+=EvolutionMethod.TRADE
+            if("usar " in r || "segurando " in r || "sweet" in r || "peat block" in r || "leader's crest" in r || "scroll of " in r) methods+=EvolutionMethod.ITEM
+            if("amizade" in r || "afeição" in r || "beleza" in r) methods+=EvolutionMethod.FRIENDSHIP
+            if("durante o dia" in r || "durante a noite" in r || "entardecer" in r || "horário" in r || "lua cheia" in r) methods+=EvolutionMethod.TIME
+            if("conhecendo " in r || "golpe do tipo" in r || "rage fist" in r || "hyper drill" in r || "dragon cheer" in r) methods+=EvolutionMethod.MOVE
+            if(" em " in " $r " || "chuva" in r || "dusty bowl" in r) methods+=EvolutionMethod.LOCATION
+            val plainLevel=Regex("^subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(requirement.trim())
+            if(!plainLevel && ("nível" in r || "subir " in r) && methods.isEmpty()) methods+=EvolutionMethod.LEVEL_CONDITION
+            if(listOf("passos","girar","virar o console","golpes críticos","dano","recoil","batalha","union circle","multiplayer","coins","vezes","tower of").any{it in r}) methods+=EvolutionMethod.ACTION
+            if(methods.isEmpty() && isSpecialEvolutionRequirement(requirement)) methods+=EvolutionMethod.OTHER
+            return methods
+        }
+        fun walk(node:JSONObject){
+            val parentId=idFromUrl(node.getJSONObject("species").getString("url"))
+            val children=node.getJSONArray("evolves_to")
+            for(i in 0 until children.length()){
+                val child=children.getJSONObject(i)
+                val childId=idFromUrl(child.getJSONObject("species").getString("url"))
+                val details=child.optJSONArray("evolution_details")
+                val requirements=buildList{
+                    if(details!=null) for(j in 0 until details.length()){
+                        details.optJSONObject(j)?.let(::evolutionRequirement)?.takeIf{it.isNotBlank()}?.let(::add)
+                    }
+                }.distinct()
+                val merged=mergeEvolutionRequirements(childId,requirements)
+                if(!merged.isNullOrBlank() && isSpecialEvolutionRequirement(merged)){
+                    classify(merged).forEach{method->
+                        result+=EvolutionSourceMethod(parentId,childId,method,merged)
+                    }
+                }
+                walk(child)
+            }
+        }
+        walk(root)
+        return result.distinct()
+    }
+
     fun loadSpecialEvolutionSourceIds(url:String):Set<Int>{
         val root=getJson(url).getJSONObject("chain")
         val result=mutableSetOf<Int>()
