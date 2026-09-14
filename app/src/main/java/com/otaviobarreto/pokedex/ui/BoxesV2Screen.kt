@@ -595,7 +595,9 @@ private fun QBVariantManager(
                                                         source,pk.nationalId,formId,form.name,false,
                                                         formKey=form.formKey,
                                                         normalArtworkUrl=form.spriteUrl,
-                                                        shinyArtworkUrl=form.shinySpriteUrl
+                                                        shinyArtworkUrl=form.shinySpriteUrl,
+                                                        isDefault=form.isDefault,
+                                                        isDefault=form.isDefault
                                                     )
                                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                     dismiss()
