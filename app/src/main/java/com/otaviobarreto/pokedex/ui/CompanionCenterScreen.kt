@@ -32,6 +32,7 @@ fun CompanionCenterScreen(
     var statusText by remember{mutableStateOf<String?>(null)}
     var activeDownload by remember{mutableStateOf<String?>(null)}
     var progress by remember{mutableStateOf<OfflineGamePackManager.Progress?>(null)}
+    var serverProgress by remember{mutableStateOf<ServerOfflinePackageInstaller.Progress?>(null)}
     var audioEnabled by remember{mutableStateOf(HomeAudioManager.enabled)}
     var audioVolume by remember{mutableFloatStateOf(HomeAudioManager.volume)}
     var storageRevision by remember{mutableIntStateOf(0)}
@@ -145,7 +146,7 @@ fun CompanionCenterScreen(
                             Text("Download geral",fontWeight=FontWeight.Bold)
                             Text(
                                 when{
-                                    activeDownload=="__general__" -> progress?.label ?: "Preparando biblioteca geral…"
+                                    activeDownload=="__general__" -> serverProgress?.label ?: progress?.label ?: "Preparando biblioteca geral…"
                                     generalValid -> "Biblioteca compartilhada pronta · "+general.total+" Pokémon"
                                     general.complete>0 && general.total>0 ->
                                         "Download parcial · "+general.complete+" / "+general.total+" Pokémon"
@@ -181,7 +182,7 @@ fun CompanionCenterScreen(
 
                     if(activeDownload=="__general__"){
                         LinearProgressIndicator(
-                            progress={progress?.fraction ?: 0f},
+                            progress={serverProgress?.fraction ?: progress?.fraction ?: 0f},
                             modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
                         )
                     }
@@ -195,16 +196,29 @@ fun CompanionCenterScreen(
                             onClick={
                                 activeDownload="__general__"
                                 progress=null
+                                serverProgress=null
                                 scope.launch{
                                     val result=runCatching{
-                                        OfflineGamePackManager.downloadGeneral{p->progress=p}
+                                        if(remoteGeneral?.ready==true){
+                                            ServerOfflinePackageInstaller.installGeneral(
+                                                context=context,
+                                                remote=remoteGeneral
+                                            ){p->serverProgress=p}
+                                        }else{
+                                            OfflineGamePackManager.downloadGeneral{p->progress=p}
+                                        }
                                     }
-                                    statusText=if(result.isSuccess)
-                                        "Biblioteca geral: download concluído."
-                                    else
-                                        "Biblioteca geral: falha no download. O progresso salvo pode ser retomado."
+                                    statusText=when{
+                                        result.isSuccess && remoteGeneral?.ready==true ->
+                                            "Biblioteca geral: pacote do servidor instalado."
+                                        result.isSuccess ->
+                                            "Biblioteca geral: download concluído."
+                                        else ->
+                                            "Biblioteca geral: falha no download. O progresso salvo pode ser retomado."
+                                    }
                                     activeDownload=null
                                     progress=null
+                                    serverProgress=null
                                 }
                             },
                             modifier=Modifier.weight(1f)
