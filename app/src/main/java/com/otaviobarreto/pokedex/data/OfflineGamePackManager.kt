@@ -272,15 +272,19 @@ object OfflineGamePackManager {
         persistSharedPokemonAssets(id,resources,formKeys)
     }
 
-    fun finalizeImportedGeneral(ids:Set<Int>){
-        prefs().edit()
+    fun finalizeImportedGeneral(ids:Set<Int>,serverVersion:Int?=null){
+        val edit=prefs().edit()
             .putBoolean("general_ready",true)
             .putInt("general_count",ids.size)
             .putInt("general_complete",ids.size)
             .putInt("general_version",PACK_VERSION)
             .putStringSet("general_manifest_ids",ids.map(Int::toString).toSet())
-            .apply()
+        serverVersion?.let{edit.putInt("general_server_version",it)}
+        edit.apply()
     }
+
+    fun generalServerVersion():Int =
+        prefs().getInt("general_server_version",0)
 
     private fun formArtworkKey(
         speciesId: Int,
@@ -517,6 +521,7 @@ object OfflineGamePackManager {
             .remove("general_version")
             .remove("general_manifest_ids")
             .remove("general_resource_urls")
+            .remove("general_server_version")
             .apply()
     }
 
