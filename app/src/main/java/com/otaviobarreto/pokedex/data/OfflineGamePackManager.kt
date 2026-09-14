@@ -73,6 +73,13 @@ object OfflineGamePackManager {
         this.context = context.applicationContext
     }
 
+    fun requiredBaseResourceUrls(game: AppGame): Set<String> {
+        val regionUrls=game.regions.mapNotNull { region ->
+            GameContext.fromSource(region.source)?.let(GameDexService::cacheUrl)
+        }
+        return (regionUrls + JourneyReadinessAudit.referenceCatalogUrls()).toSet()
+    }
+
     fun audit(gameLabel: String): PackAudit {
         val p = prefs()
         val expected = p.getInt(key(gameLabel, "count"), 0)
@@ -158,15 +165,23 @@ object OfflineGamePackManager {
 
         onProgress(Progress(0, 1, "Preparando biblioteca offline"))
         listOf("move", "ability", "item").forEach { kind ->
-            runCatching { ReferenceCatalogService.load(kind) }
+            ReferenceCatalogService.load(kind)
         }
-        PersistentApiCache.pinAll(JourneyReadinessAudit.referenceCatalogUrls())
 
         onProgress(Progress(0, 1, "Preparando ${game.label}"))
         val regionalDexes = contexts.mapIndexed { index, ctx ->
             onProgress(Progress(index, contexts.size.coerceAtLeast(1), "Baixando ${ctx.regionLabel}"))
-            GameDexService.loadGameDex(ctx).also { PersistentApiCache.pin(GameDexService.cacheUrl(ctx)) }
+            GameDexService.loadGameDex(ctx)
         }
+
+        val baseResources=requiredBaseResourceUrls(game)
+        PersistentApiCache.pinAll(baseResources)
+        prefs().edit()
+            .putStringSet(
+                key(game.label, "resource_urls"),
+                prefs().getStringSet(key(game.label, "resource_urls"), emptySet()).orEmpty() + baseResources
+            )
+            .apply()
 
         val ids = regionalDexes.flatten().map { it.nationalId }.distinct().sorted()
         val visualUrls = JourneyReadinessAudit.journeyVisualUrls(game.label)
