@@ -307,12 +307,12 @@ object PokeApiService {
         val r=requirement.lowercase()
         val result=linkedSetOf<EvolutionMethod>()
         if("troca" in r) result+=EvolutionMethod.TRADE
-        if(listOf("segurando","peat block","leader's crest","scroll of darkness","scroll of waters","sweet").any{it in r}) result+=EvolutionMethod.ITEM
-        if("amizade" in r || "afeição" in r || "beleza" in r) result+=EvolutionMethod.FRIENDSHIP
+        if(listOf("segurando","usar oval stone","usar razor claw","usar razor fang","usar dawn stone","usar leaf stone","usar ice stone","usar thunder stone","prism scale","peat block","leader's crest","scroll of darkness","scroll of waters","sweet").any{it in r}) result+=EvolutionMethod.ITEM
+        if(listOf("amizade","afeição","affection","pokémon-amie","beleza","beauty").any{it in r}) result+=EvolutionMethod.FRIENDSHIP
         if(listOf("somente fêmea","somente macho","fêmea","macho").any{it in r}) result+=EvolutionMethod.GENDER
         if(listOf("durante o dia","durante a noite","entardecer","horário","lua cheia").any{it in r}) result+=EvolutionMethod.TIME
         if(listOf("rage fist","psyshield bash","barb barrage","hyper drill","dragon cheer","conhecendo").any{it in r}) result+=EvolutionMethod.MOVE
-        if(listOf("dusty bowl","chuva","região de").any{it in r}) result+=EvolutionMethod.LOCATION
+        if(listOf("dusty bowl","coulant waterway","mt. coronet","mossy rock","icy rock","eterna forest","route 217","chuva","região de","próximo","perto de").any{it in r}) result+=EvolutionMethod.LOCATION
         if("union circle" in r || "multiplayer" in r) result+=EvolutionMethod.MULTIPLAYER
         if(listOf("passos","girar","virar o console","golpes críticos","dano","recoil","batalha","coins","vezes","tower of").any{it in r}) result+=EvolutionMethod.ACTION
         val plainLevel=Regex("^subir (ao nível \\d+|de nível)$",RegexOption.IGNORE_CASE).matches(requirement.trim())
