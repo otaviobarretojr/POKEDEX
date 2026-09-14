@@ -432,9 +432,10 @@ internal fun QBSlot(
         color=slotColor
     ){
         Box(Modifier.fillMaxSize()){
-            AsyncImage(
+            PokemonArtwork(
                 model=imageModel,
                 contentDescription=pk.name,
+                pokemonId=pk.nationalId,
                 modifier=Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(.78f)
@@ -792,7 +793,7 @@ private fun QBSearch(
                         Modifier.fillMaxWidth().clickable{select(pk)}.padding(vertical=5.dp),
                         verticalAlignment=Alignment.CenterVertically
                     ){
-                        AsyncImage(pk.spriteUrl,pk.name,Modifier.size(48.dp))
+                        PokemonArtwork(pk.spriteUrl,pk.name,Modifier.size(48.dp),pokemonId=pk.nationalId)
                         Column(Modifier.weight(1f)){
                             Text(pretty(pk.name),fontWeight=FontWeight.SemiBold)
                             Text(
