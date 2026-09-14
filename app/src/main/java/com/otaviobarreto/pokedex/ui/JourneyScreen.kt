@@ -40,7 +40,7 @@ private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 @Composable
 fun JourneyScreen(
     onPokemonClick:(Int,String?)->Unit,
-    onOpenTeamGuide:(String,String?)->Unit,
+    onOpenTeamGuide:(String,String?,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit
 ){
     var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
@@ -82,14 +82,14 @@ fun JourneyScreen(
             game=game,
             onBack={view=JourneyView.GAMES},
             onRoute={view=JourneyView.ROUTE},
-            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},
             onBoxes={onOpenBoxes(game.label,AppStatePreferences.activeRegionForGame(game.label) ?: game.regions.firstOrNull()?.source)},
             onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
             game=game,
             onBack={view=JourneyView.GAME_MENU},
-            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},
             listState=routeListState,
             onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL}
         ) else { view=JourneyView.GAMES }
@@ -99,7 +99,7 @@ fun JourneyScreen(
                 game=game,
                 step=step,
                 onBack={selectedStepId=null;view=detailReturnView},
-                onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name)},
+                onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.contextForStep(game.label,step.id).phase.name,step.id)},
                 onPokemonClick=onPokemonClick
             ) else view=JourneyView.ROUTE
         } else { view=JourneyView.GAMES }
