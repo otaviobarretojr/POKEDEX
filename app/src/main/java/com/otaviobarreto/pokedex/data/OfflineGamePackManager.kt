@@ -264,6 +264,24 @@ object OfflineGamePackManager {
             .apply()
     }
 
+    fun registerImportedGeneralPokemon(
+        id:Int,
+        resources:Set<String>,
+        formKeys:Set<String>
+    ){
+        persistSharedPokemonAssets(id,resources,formKeys)
+    }
+
+    fun finalizeImportedGeneral(ids:Set<Int>){
+        prefs().edit()
+            .putBoolean("general_ready",true)
+            .putInt("general_count",ids.size)
+            .putInt("general_complete",ids.size)
+            .putInt("general_version",PACK_VERSION)
+            .putStringSet("general_manifest_ids",ids.map(Int::toString).toSet())
+            .apply()
+    }
+
     private fun formArtworkKey(
         speciesId: Int,
         formPokemonId: Int,
