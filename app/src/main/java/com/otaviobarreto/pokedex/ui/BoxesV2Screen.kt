@@ -72,9 +72,10 @@ private val qbGames=AppGameCatalog.games.map{game->
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
  var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
- var specialEvolutionFilter by rememberSaveable{mutableStateOf(false)}
- var specialEvolutionIds by remember(region.source){mutableStateOf<Set<Int>>(emptySet())}
- var specialEvolutionLoading by remember(region.source){mutableStateOf(false)}
+ var evolutionFilterName by rememberSaveable{mutableStateOf<String?>(null)}
+ var evolutionFilterMenu by remember{mutableStateOf(false)}
+ var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
+ var evolutionMethodLoading by remember(region.source){mutableStateOf(false)}
  LaunchedEffect(region.source,game.label){
   loading=true
   AppStatePreferences.activeGame=game.label
@@ -90,21 +91,24 @@ private val qbGames=AppGameCatalog.games.map{game->
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
  val entries=dex.drop(current*30).take(30)
- LaunchedEffect(specialEvolutionFilter,current,region.source,entries){
-  if(!specialEvolutionFilter){specialEvolutionIds=emptySet();specialEvolutionLoading=false}
+ LaunchedEffect(evolutionFilterName,current,region.source,entries){
+  if(evolutionFilterName==null){evolutionMethodIds=emptyMap();evolutionMethodLoading=false}
   else{
-   specialEvolutionLoading=true
-   specialEvolutionIds=withContext(Dispatchers.IO){
+   evolutionMethodLoading=true
+   evolutionMethodIds=withContext(Dispatchers.IO){
+    val result=mutableMapOf<String,MutableSet<Int>>()
     val byChain=entries.groupBy{entry->runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()}
-    val specialByChain=byChain.keys.filterNotNull().associateWith{url->
-     runCatching{PokeApiService.loadSpecialEvolutionSourceIds(url)}.getOrElse{emptySet()}
+    byChain.keys.filterNotNull().forEach{url->
+     runCatching{PokeApiService.loadEvolutionSourceMethods(url)}.getOrElse{emptyList()}.forEach{info->
+      if(entries.any{it.nationalId==info.sourcePokemonId}){
+       result.getOrPut("ALL"){mutableSetOf()}.add(info.sourcePokemonId)
+       result.getOrPut(info.method.name){mutableSetOf()}.add(info.sourcePokemonId)
+      }
+     }
     }
-    entries.mapNotNull{entry->
-     val url=runCatching{PokedexDataStore.species(entry.nationalId).evolutionChainUrl}.getOrNull()
-     entry.nationalId.takeIf{url!=null && entry.nationalId in specialByChain[url].orEmpty()}
-    }.toSet()
+    result.mapValues{it.value.toSet()}
    }
-   specialEvolutionLoading=false
+   evolutionMethodLoading=false
   }
  }
  LaunchedEffect(region.source,current,dex){
@@ -190,23 +194,36 @@ private val qbGames=AppGameCatalog.games.map{game->
      fontWeight=FontWeight.Black,
      color=MaterialTheme.colorScheme.onSurface
     )
-    Text(
-     "Deslize para navegar entre as Boxes · Jogo "+gameProgress.first+"/"+gameProgress.second+
-      " · Nacional "+nationalCaptured+"/"+PokeApiService.MAX_NATIONAL_DEX_ID+
-      " · ★"+shinyCaptured+" · Formas "+formCaptured,
-     fontSize=8.5.sp,
-     color=MaterialTheme.colorScheme.onSurfaceVariant
-    )
+
    }
-   IconButton(
-    onClick={specialEvolutionFilter=!specialEvolutionFilter},
-    modifier=Modifier.size(40.dp)
-   ){
-    Icon(
-     Icons.Default.AutoAwesome,
-     contentDescription="Evolução especial",
-     tint=if(specialEvolutionFilter)game.accent else MaterialTheme.colorScheme.onSurfaceVariant
-    )
+   Box{
+    IconButton(
+     onClick={evolutionFilterMenu=true},
+     modifier=Modifier.size(40.dp)
+    ){
+     Icon(
+      Icons.Default.AutoAwesome,
+      contentDescription="Filtrar por método de evolução",
+      tint=if(evolutionFilterName!=null)game.accent else MaterialTheme.colorScheme.onSurfaceVariant
+     )
+    }
+    DropdownMenu(expanded=evolutionFilterMenu,onDismissRequest={evolutionFilterMenu=false}){
+     DropdownMenuItem(
+      text={Text("Sem filtro")},
+      onClick={evolutionFilterName=null;evolutionFilterMenu=false}
+     )
+     DropdownMenuItem(
+      text={Text("Todas especiais")},
+      leadingIcon={Icon(Icons.Default.AutoAwesome,null)},
+      onClick={evolutionFilterName="ALL";evolutionFilterMenu=false}
+     )
+     PokeApiService.EvolutionMethod.entries.forEach{method->
+      DropdownMenuItem(
+       text={Text(method.label)},
+       onClick={evolutionFilterName=method.name;evolutionFilterMenu=false}
+      )
+     }
+    }
    }
    Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
     CircularProgressIndicator(
@@ -264,9 +281,13 @@ private val qbGames=AppGameCatalog.games.map{game->
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
-    else->QBGrid(entries,capturedIds,region.source,specialEvolutionFilter&&!specialEvolutionLoading,specialEvolutionIds,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+    else->{
+     val activeIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}
+     val visibleEntries=if(evolutionFilterName==null) entries else entries.filter{it.nationalId in activeIds}
+     QBGrid(visibleEntries,capturedIds,region.source,false,activeIds.orEmpty(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+    }
    }
-   if(specialEvolutionFilter&&specialEvolutionLoading){
+   if(evolutionFilterName!=null&&evolutionMethodLoading){
     LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter),color=game.accent)
    }
   }
