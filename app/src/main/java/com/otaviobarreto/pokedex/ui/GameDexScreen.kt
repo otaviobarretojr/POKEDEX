@@ -80,7 +80,21 @@ private enum class GameDexFilter(val label:String){
         TopAppBar(title={Text("Pokédex do jogo")},navigationIcon={IconButton(onBack){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}})
     }){pad->
         Column(Modifier.fillMaxSize().padding(pad)){
-            Text(game,Modifier.padding(horizontal=16.dp),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+            CompanionContextHeader(
+                title=game,
+                eyebrow="Pokédex do jogo",
+                subtitle=source?.let{active->regions.firstOrNull{it.source==active}?.label} ?: "Região ativa",
+                modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+                progress={
+                    val total=dex.size
+                    val done=dex.count{it.nationalId in captured}
+                    Text(
+                        if(total>0) "$done de $total registrados" else "Preparando progresso da região",
+                        style=MaterialTheme.typography.labelLarge,
+                        fontWeight=FontWeight.Bold
+                    )
+                }
+            )
             if(regions.size>1) ScrollableTabRow(selectedTabIndex=regions.indexOfFirst{it.source==source}.coerceAtLeast(0),edgePadding=12.dp){
                 regions.forEach{r->Tab(selected=r.source==source,onClick={source=r.source;AppStatePreferences.setActiveRegionForGame(game,r.source)},text={Text(r.label)})}
             }
