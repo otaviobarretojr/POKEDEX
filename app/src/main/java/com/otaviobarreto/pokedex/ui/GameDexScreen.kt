@@ -113,21 +113,18 @@ private enum class GameDexFilter(val label:String){
                 routeMode && routeGroups.isEmpty()->DexStatusPane("Rota concluída","Não há Pokémon faltantes nesta região.",Modifier.fillMaxSize().padding(16.dp),false)
                 routeMode->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(12.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
                     item(key="route_intro",contentType="route_intro"){
-                        Text("Prioridade prática: capture por local, depois evolua e deixe transferências ou métodos especiais para o final.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(start=4.dp,end=4.dp,bottom=4.dp))
+                        CompanionSectionHeader(title="Melhor rota",supporting="Capture por local primeiro, depois evolua. Trocas, transferências e métodos especiais ficam por último.",modifier=Modifier.padding(horizontal=4.dp,bottom=4.dp))
                     }
                     routeGroups.forEach{group->
                         item(key="route_${group.key}",contentType="route_header"){
-                            Column(Modifier.fillMaxWidth().padding(top=4.dp)){
-                                Text(group.key,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                                Text("${group.value.size} Pokémon",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                            CompanionSectionHeader(title=group.key,supporting="${group.value.size} Pokémon",modifier=Modifier.padding(top=4.dp))
                         }
                         items(group.value,key={it.pokemonId},contentType={"route_item"}){p->
-                            Card(Modifier.fillMaxWidth().clickable{onPokemonClick(p.pokemonId,source)}){
-                                Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically){
-                                    PokemonArtwork(PokemonRepository.byId(p.pokemonId)?.spriteUrl,null,Modifier.size(54.dp),pokemonId=p.pokemonId)
-                                    Column(Modifier.weight(1f).padding(start=10.dp)){Text(p.name,fontWeight=FontWeight.Bold);Text(p.summary,style=MaterialTheme.typography.bodySmall)}
-                                    if(p.method==ObtainMethod.CAPTURE) Icon(Icons.Default.LocationOn,null)
+                            Surface(modifier=Modifier.fillMaxWidth().clickable{onPokemonClick(p.pokemonId,source)},shape=androidx.compose.foundation.shape.RoundedCornerShape(PokedexDesignTokens.Radius.Lg),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.34f)){
+                                Row(Modifier.padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
+                                    PokemonArtwork(PokemonRepository.byId(p.pokemonId)?.spriteUrl,null,Modifier.size(58.dp),pokemonId=p.pokemonId)
+                                    Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){Text(p.name,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleSmall);Text(p.summary,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                                    if(p.method==ObtainMethod.CAPTURE) Icon(Icons.Default.LocationOn,"Captura direta",tint=MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
