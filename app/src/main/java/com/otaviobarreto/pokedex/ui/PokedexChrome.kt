@@ -37,8 +37,9 @@ fun DexAppBackground(content:@Composable BoxScope.()->Unit){
         Modifier.fillMaxSize().background(
             Brush.verticalGradient(
                 listOf(
+                    scheme.primaryContainer.copy(alpha=.18f),
                     scheme.background,
-                    scheme.primaryContainer.copy(alpha=.11f),
+                    scheme.tertiaryContainer.copy(alpha=.08f),
                     scheme.background
                 )
             )
@@ -79,15 +80,15 @@ fun DexBottomBar(
                 val selected=currentRoute==item.route
                 val interaction=remember{MutableInteractionSource()}
                 val pressed by interaction.collectIsPressedAsState()
-                val scale by animateFloatAsState(if(pressed).95f else 1f,tween(PokedexDesignTokens.Motion.Fast),label="navScale")
+                val scale by animateFloatAsState(if(pressed).975f else 1f,tween(90),label="navScale")
                 val background by animateColorAsState(
                     if(selected)MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                    tween(PokedexDesignTokens.Motion.Standard),
+                    tween(PokedexDesignTokens.Motion.Fast),
                     label="navBackground"
                 )
                 val tint by animateColorAsState(
                     if(selected)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    tween(PokedexDesignTokens.Motion.Standard),
+                    tween(PokedexDesignTokens.Motion.Fast),
                     label="navTint"
                 )
                 val haptic=LocalHapticFeedback.current
@@ -219,9 +220,9 @@ fun DexAnimatedContentVisibility(
 ){
     AnimatedVisibility(
         visible=visible,
-        enter=fadeIn(tween(PokedexDesignTokens.Motion.Standard))+scaleIn(
+        enter=fadeIn(tween(PokedexDesignTokens.Motion.Fast))+scaleIn(
             initialScale=.985f,
-            animationSpec=tween(PokedexDesignTokens.Motion.Standard)
+            animationSpec=tween(PokedexDesignTokens.Motion.Fast)
         ),
         exit=fadeOut(tween(PokedexDesignTokens.Motion.Fast))+scaleOut(
             targetScale=.99f,
