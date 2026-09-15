@@ -36,8 +36,9 @@ object ServerOfflinePackageInstaller {
         val total=remote.sizeBytes ?: 0L
 
         OfflineGamePackManager.beginServerGeneralInstall()
-        val root=File(context.cacheDir,"server-offline-packages").apply{mkdirs()}
-        val zipFile=File(root,"general-v${remote.version}.zip")
+        val root=OfflinePackageInstallState.packageRoot(context)
+        val zipFile=OfflinePackageInstallState.generalZip(context,remote.version)
+        OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.DOWNLOADING,remote.version,zipFile.takeIf{it.exists()}?.length() ?: 0L,total)
         ensureLocalPackage(
             url=url,
             destination=zipFile,
@@ -47,14 +48,17 @@ object ServerOfflinePackageInstaller {
             onProgress=onProgress
         )
 
+        OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.DOWNLOADED,remote.version,zipFile.length(),total)
+        OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.VALIDATING,remote.version,zipFile.length(),total)
         onProgress(Progress(zipFile.length(),total,"Validando integridade"))
         check(sha256(zipFile).equals(expectedSha,ignoreCase=true)){
             "SHA-256 do pacote geral não confere"
         }
 
-        val extractDir=File(root,"general-v${remote.version}-extract")
+        val extractDir=OfflinePackageInstallState.generalExtract(context,remote.version)
         if(extractDir.exists()) extractDir.deleteRecursively()
         extractDir.mkdirs()
+        OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.EXTRACTING,remote.version,total,total)
         onProgress(Progress(total,total,"Extraindo pacote"))
         unzipSafe(zipFile,extractDir)
 
@@ -66,6 +70,7 @@ object ServerOfflinePackageInstaller {
 
         val pokemon=manifest.getJSONArray("pokemon")
         val ids=linkedSetOf<Int>()
+        OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLING,remote.version,0L,pokemon.length().toLong())
         onProgress(Progress(total,total,"Instalando biblioteca · 0 / ${pokemon.length()}"))
         for(i in 0 until pokemon.length()){
             val item=pokemon.getJSONObject(i)
@@ -113,10 +118,11 @@ object ServerOfflinePackageInstaller {
                 resources=resources,
                 formKeys=formKeys
             )
+            OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLING,remote.version,(i+1).toLong(),pokemon.length().toLong())
             onProgress(
                 Progress(
-                    downloadedBytes=total,
-                    totalBytes=total,
+                    downloadedBytes=(i+1).toLong(),
+                    totalBytes=pokemon.length().toLong(),
                     label="Importando biblioteca · ${i+1} / ${pokemon.length()}"
                 )
             )
@@ -134,12 +140,37 @@ object ServerOfflinePackageInstaller {
             }
         }
 
+        OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.AUDITING,remote.version,ids.size.toLong(),ids.size.toLong())
         OfflineGamePackManager.finalizeImportedGeneral(ids,remote.version)
         check(OfflineGamePackManager.generalAudit()){"Biblioteca importada falhou na auditoria"}
-        onProgress(Progress(total,total,"Biblioteca geral pronta"))
+        OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLED,remote.version,ids.size.toLong(),ids.size.toLong())
+        onProgress(Progress(ids.size.toLong(),ids.size.toLong(),"Biblioteca geral pronta"))
 
         runCatching{extractDir.deleteRecursively()}
         runCatching{zipFile.delete()}
+    }
+
+    suspend fun recoverGeneralIfNeeded(
+        context:Context,
+        remote:RemoteOfflinePackageCatalog.RemotePackage,
+        onProgress:(Progress)->Unit
+    ):Boolean {
+        val state=OfflinePackageInstallState.read(context)
+        if(state.stage==OfflinePackageInstallState.Stage.INSTALLED &&
+            state.version==remote.version &&
+            OfflineGamePackManager.generalAudit()) return true
+        if(!state.active && state.stage!=OfflinePackageInstallState.Stage.FAILED) return false
+        return runCatching{
+            installGeneral(context,remote,onProgress)
+            true
+        }.getOrElse{error->
+            OfflineGamePackManager.markServerGeneralInstallFailed()
+            OfflinePackageInstallState.write(
+                context,OfflinePackageInstallState.Stage.FAILED,remote.version,
+                state.done,state.total,error.message ?: error.javaClass.simpleName
+            )
+            false
+        }
     }
 
     suspend fun installGame(
