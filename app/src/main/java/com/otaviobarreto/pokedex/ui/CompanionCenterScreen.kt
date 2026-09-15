@@ -48,14 +48,20 @@ fun CompanionCenterScreen(
         remoteManifestRevision++
         val remote=RemoteOfflinePackageCatalog.general()
         val state=OfflinePackageInstallState.read(context)
-        if(remote?.ready==true && state.active){
+        val zipRecoverable=remote?.ready==true &&
+            OfflinePackageInstallState.generalZip(context,remote.version).let{zip->
+                zip.exists() && zip.length()==(remote.sizeBytes ?: -1L)
+            }
+        if(remote?.ready==true && (state.active || state.stage==OfflinePackageInstallState.Stage.FAILED || zipRecoverable)){
             activeDownload="__general__"
             statusText="Retomando instalação da biblioteca…"
             val recovered=withContext(Dispatchers.IO){
                 ServerOfflinePackageInstaller.recoverGeneralIfNeeded(context,remote){p->serverProgress=p}
             }
             statusText=if(recovered) "Biblioteca geral recuperada e instalada." else
-                "A instalação anterior não pôde ser concluída. Toque em Reparar."
+                "Instalação não concluída · "+OfflinePackageInstallState.diagnose(
+                    context,remote.version,remote.sizeBytes ?: 0L
+                )
             activeDownload=null
             serverProgress=null
             installStateRevision++
