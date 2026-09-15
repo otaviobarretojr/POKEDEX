@@ -594,11 +594,11 @@ private fun QBVariantManager(
                                             Modifier.fillMaxSize().padding(4.dp),
                                             contentAlignment=Alignment.Center
                                         ){
-                                            AsyncImage(
+                                            PokemonArtwork(
                                                 model=form.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+formId+".png",
                                                 contentDescription=form.name,
-                                                modifier=Modifier.fillMaxSize(),
-                                                contentScale=ContentScale.Fit
+                                                pokemonId=formId,
+                                                modifier=Modifier.fillMaxSize()
                                             )
                                         }
                                     }
