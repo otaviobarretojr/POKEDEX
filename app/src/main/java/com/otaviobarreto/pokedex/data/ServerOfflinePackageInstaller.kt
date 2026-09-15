@@ -96,6 +96,7 @@ object ServerOfflinePackageInstaller {
                     val path=resource.getString("path")
                     val file=resolveInside(extractDir,path)
                     check(file.exists()){"Recurso ausente: $path"}
+                    OfflineLibraryManager.installResource(extractDir,path,resourceUrl)
                     PersistentApiCache.importRaw(resourceUrl,file.readText(),pin=true)
                     resources += resourceUrl
                 }
@@ -148,6 +149,7 @@ object ServerOfflinePackageInstaller {
                 val path=resource.getString("path")
                 val file=resolveInside(extractDir,path)
                 check(file.exists()){"Referência ausente: $path"}
+                OfflineLibraryManager.installResource(extractDir,path,resourceUrl)
                 PersistentApiCache.importRaw(resourceUrl,file.readText(),pin=true)
             }
         }
@@ -161,7 +163,7 @@ object ServerOfflinePackageInstaller {
         runCatching{zipFile.delete()}
     }
 
-    suspend fun cleanRepairGeneral(
+    suspend fun installOrUpdateGeneral(
         context:Context,
         remote:RemoteOfflinePackageCatalog.RemotePackage,
         onProgress:(Progress)->Unit
@@ -170,23 +172,23 @@ object ServerOfflinePackageInstaller {
         val expectedSha=requireNotNull(remote.sha256).lowercase()
         val zip=OfflinePackageInstallState.generalZip(context,remote.version)
         val extract=OfflinePackageInstallState.generalStaging(context,remote.version)
-        onProgress(Progress(0L,1L,"Preparando reparo limpo"))
+        onProgress(Progress(0L,1L,"Preparando biblioteca"))
 
         val keepZip=zip.exists() &&
             (remote.sizeBytes ?: 0L)>0L &&
             zip.length()==remote.sizeBytes &&
             runCatching{sha256(zip).equals(expectedSha,ignoreCase=true)}.getOrDefault(false)
 
-        OfflineGamePackManager.resetGeneralForCleanRepair()
-        OfflineLibraryManager.removeGeneral(context)
+        // Preserve a valid active library until the replacement has been fully
+        // downloaded, validated and atomically activated.
         runCatching{extract.deleteRecursively()}
         OfflinePackageInstallState.clear(context)
 
         if(!keepZip){
             runCatching{zip.delete()}
-            onProgress(Progress(0L,remote.sizeBytes ?: 0L,"Pacote inválido · baixando novamente"))
+            onProgress(Progress(0L,remote.sizeBytes ?: 0L,"Baixando biblioteca atualizada"))
         }else{
-            onProgress(Progress(zip.length(),zip.length(),"Pacote íntegro · reinstalando do zero"))
+            onProgress(Progress(zip.length(),zip.length(),"Pacote íntegro · preparando atualização"))
         }
 
         runCatching{
@@ -290,6 +292,7 @@ object ServerOfflinePackageInstaller {
             val path=item.getString("path")
             val file=resolveInside(extractDir,path)
             check(file.exists()){"Pokédex regional ausente: $path"}
+            OfflineLibraryManager.installGameResource(context,remote.packageKey,file,resourceUrl)
             PersistentApiCache.importRaw(resourceUrl,file.readText(),pin=true)
             regionSlugs += slug
             resources += resourceUrl
@@ -330,8 +333,8 @@ object ServerOfflinePackageInstaller {
             visualUrls=visualUrls,
             serverVersion=remote.version
         )
-        check(OfflineGamePackManager.auditImportedGameFast(game.label)){
-            "Complemento importado falhou na auditoria"
+        check(OfflineLibraryManager.auditGame(context,remote.packageKey,resources,visualUrls)){
+            "Complemento permanente falhou na auditoria"
         }
 
         onProgress(Progress(total,total,"Complemento pronto"))
