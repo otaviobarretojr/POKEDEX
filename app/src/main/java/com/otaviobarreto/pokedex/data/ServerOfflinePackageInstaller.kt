@@ -155,8 +155,7 @@ object ServerOfflinePackageInstaller {
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.AUDITING,remote.version,ids.size.toLong(),ids.size.toLong())
         OfflineLibraryManager.activateGeneral(context,extractDir,remote.version,ids)
         OfflineGamePackManager.finalizeImportedGeneral(ids,remote.version)
-        check(OfflineGamePackManager.generalAudit()){"Biblioteca importada falhou na auditoria"}
-        check(OfflineLibraryManager.auditGeneral(context,remote.version,ids)){"Biblioteca local falhou na auditoria"}
+        check(OfflineLibraryManager.auditGeneral(context,remote.version,ids)){"Biblioteca permanente falhou na auditoria"}
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLED,remote.version,ids.size.toLong(),ids.size.toLong())
         onProgress(Progress(ids.size.toLong(),ids.size.toLong(),"Biblioteca geral pronta"))
         runCatching{zipFile.delete()}
@@ -192,7 +191,7 @@ object ServerOfflinePackageInstaller {
 
         runCatching{
             installGeneral(context,remote,onProgress)
-            OfflineGamePackManager.generalAudit()
+            OfflineLibraryManager.auditGeneral(context,remote.version,OfflineGamePackManager.generalManifestIds())
         }.getOrElse{error->
             OfflineGamePackManager.markServerGeneralInstallFailed()
             val current=OfflinePackageInstallState.read(context)
@@ -213,7 +212,7 @@ object ServerOfflinePackageInstaller {
         val state=OfflinePackageInstallState.read(context)
         if(state.stage==OfflinePackageInstallState.Stage.INSTALLED &&
             state.version==remote.version &&
-            OfflineGamePackManager.generalAudit()) return true
+            OfflineLibraryManager.auditGeneral(context,remote.version,OfflineGamePackManager.generalManifestIds())) return true
         val zip=OfflinePackageInstallState.generalZip(context,remote.version)
         val recoverableState=state.version==remote.version &&
             (state.active || state.stage==OfflinePackageInstallState.Stage.FAILED)
@@ -243,8 +242,8 @@ object ServerOfflinePackageInstaller {
     ) = withContext(Dispatchers.IO){
         require(remote.packageType=="game"){"Pacote remoto de jogo inválido"}
         require(remote.ready){"Complemento ainda não está pronto no servidor"}
-        require(OfflineGamePackManager.generalAudit()){
-            "Baixe a biblioteca geral antes do complemento deste jogo"
+        require(OfflineLibraryManager.auditGeneral(context,OfflineGamePackManager.generalServerVersion(),OfflineGamePackManager.generalManifestIds())){
+            "Biblioteca permanente principal ainda não está pronta"
         }
 
         val url=requireNotNull(remote.downloadUrl)
