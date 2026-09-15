@@ -1,6 +1,6 @@
 package com.otaviobarreto.pokedex.data
 
-enum class ObtainMethod { CAPTURE, EVOLUTION, TRANSFER_OR_TRADE, UNKNOWN }
+enum class ObtainMethod { CAPTURE, EVOLUTION, TRANSFER, TRADE_OR_SPECIAL, UNKNOWN }
 
 data class CapturePlanEntry(
     val pokemonId:Int,
@@ -12,8 +12,9 @@ data class CapturePlanEntry(
     val routeGroup:String get() = when(method){
         ObtainMethod.CAPTURE -> locations.firstOrNull()?.let{"Capturar · $it"} ?: "Capturar"
         ObtainMethod.EVOLUTION -> "Evoluir"
-        ObtainMethod.TRANSFER_OR_TRADE -> "Troca / transferência"
-        ObtainMethod.UNKNOWN -> "Método especial"
+        ObtainMethod.TRANSFER -> "Transferir pelo Pokémon HOME"
+        ObtainMethod.TRADE_OR_SPECIAL -> "Troca / método especial"
+        ObtainMethod.UNKNOWN -> "Método não confirmado"
     }
 }
 
@@ -35,14 +36,19 @@ object CapturePlanner {
         val entries=missing.map{entry->
             val encounters=runCatching{PokeApiService.loadEncounters(entry.nationalId)}.getOrDefault(emptyList())
             val filtered=LocationIntelligence.filter(encounters,context)
-            val evolution=routes.firstOrNull{it.targetPokemonId==entry.nationalId && EvolutionResolutionEngine.executable(it)}
+            val targetRoutes=EvolutionResolutionEngine.routesForTarget(routes,entry.nationalId)
+            val evolution=targetRoutes.firstOrNull(EvolutionResolutionEngine::executable)
+            val transferOnly=targetRoutes.firstOrNull{it.availability==EvolutionAvailability.TRANSFER_ONLY}
             when{
                 filtered.isNotEmpty()->{
                     val locations=filtered.map{LocationIntelligence.displayName(it.location)}.filter{it.isNotBlank()}.distinct().take(4)
                     CapturePlanEntry(entry.nationalId,entry.name,ObtainMethod.CAPTURE,locations.firstOrNull()?.let{"Capturar em $it"} ?: "Captura disponível neste contexto.",locations)
                 }
                 evolution!=null->CapturePlanEntry(entry.nationalId,entry.name,ObtainMethod.EVOLUTION,evolution.summary)
-                else->CapturePlanEntry(entry.nationalId,entry.name,ObtainMethod.TRANSFER_OR_TRADE,"Sem encontro direto confirmado neste contexto. Verifique troca, transferência ou requisito especial.")
+                transferOnly!=null->CapturePlanEntry(entry.nationalId,entry.name,ObtainMethod.TRANSFER,"Evolução indisponível neste jogo. Obtenha em um jogo compatível e transfira pelo Pokémon HOME.")
+                encounters.isNotEmpty() && LocationIntelligence.coverage(context)==LocationIntelligence.Coverage.PARTIAL->
+                    CapturePlanEntry(entry.nationalId,entry.name,ObtainMethod.UNKNOWN,"A fonte possui encontros, mas nenhum foi confirmado para esta região. Abra os detalhes antes de planejar a obtenção.")
+                else->CapturePlanEntry(entry.nationalId,entry.name,ObtainMethod.TRADE_OR_SPECIAL,"Sem captura ou evolução confirmada neste contexto. Verifique troca, requisito especial ou disponibilidade específica da versão.")
             }
         }
         memory[source]=PlanCache(dexIds,captured,entries)
