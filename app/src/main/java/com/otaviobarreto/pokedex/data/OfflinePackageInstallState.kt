@@ -61,7 +61,10 @@ object OfflinePackageInstallState {
     }
 
     fun packageRoot(context:Context)=File(context.filesDir,"offline-packages").apply{mkdirs()}
-    fun generalZip(context:Context,version:Int)=File(packageRoot(context),"general-v$version.zip")
+    fun downloadRoot(context:Context)=File(OfflineLibraryManager.root(context),"downloads").apply{mkdirs()}
+    fun generalZip(context:Context,version:Int)=File(downloadRoot(context),"general-v$version.zip")
+    fun gameZip(context:Context,key:String,version:Int)=File(downloadRoot(context),key.replace(Regex("[^a-zA-Z0-9._-]"),"_")+"-v"+version+".zip")
+    fun gameStaging(context:Context,key:String,version:Int)=File(OfflineLibraryManager.root(context),key.replace(Regex("[^a-zA-Z0-9._-]"),"_")+"-v"+version+".staging")
     fun generalStaging(context:Context,version:Int)=File(OfflineLibraryManager.root(context),"general-v$version.staging")
     fun generalExtract(context:Context,version:Int)=generalStaging(context,version)
 
