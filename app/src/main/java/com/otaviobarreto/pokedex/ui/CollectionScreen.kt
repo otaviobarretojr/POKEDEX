@@ -126,7 +126,11 @@ private fun AlbumPortalCard(
     title:String,subtitle:String,progress:Float?,ids:List<Int>,shiny:Boolean,
     icon:androidx.compose.ui.graphics.vector.ImageVector,onClick:()->Unit
 ){
-    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
+    Surface(
+        modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+        color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.30f)
+    ){
         Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                 Icon(icon,null,tint=MaterialTheme.colorScheme.primary)
@@ -137,8 +141,19 @@ private fun AlbumPortalCard(
                 }
                 Icon(Icons.Default.ChevronRight,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Row(Modifier.fillMaxWidth().padding(top=10.dp),horizontalArrangement=Arrangement.SpaceEvenly){
-                ids.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(72.dp))}
+            Row(
+                Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md),
+                horizontalArrangement=Arrangement.SpaceEvenly,
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                ids.forEach{id->
+                    PokemonArtwork(
+                        model=artwork(id,shiny),
+                        contentDescription=null,
+                        pokemonId=id,
+                        modifier=Modifier.size(76.dp)
+                    )
+                }
             }
             if(progress!=null) LinearProgressIndicator(progress={progress.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=8.dp))
         }
