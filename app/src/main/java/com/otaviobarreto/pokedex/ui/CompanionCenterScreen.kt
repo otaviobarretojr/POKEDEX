@@ -272,7 +272,7 @@ fun CompanionCenterScreen(
         }
 
         item{
-            CompanionSectionHeader(title="Áudio")
+            SettingsSectionTitle("Áudio")
             Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(16.dp)){
                     Row(verticalAlignment=Alignment.CenterVertically){
@@ -305,7 +305,7 @@ fun CompanionCenterScreen(
         }
 
         item{
-            CompanionSectionHeader(title="Informações da versão")
+            SettingsSectionTitle("Informações da versão")
             val versionName=remember(context){
                 runCatching{
                     context.packageManager.getPackageInfo(context.packageName,0).versionName ?: "—"
@@ -429,3 +429,6 @@ fun CompanionCenterScreen(
     }
 }
 
+
+@Composable
+private fun SettingsSectionTitle(text:String)=CompanionSectionHeader(title=text)
