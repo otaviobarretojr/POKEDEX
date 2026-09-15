@@ -142,9 +142,23 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val activeEvolutionIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}.orEmpty()
  val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
- Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=6.dp)){
+ Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
+  CompanionContextHeader(
+   title="Box",
+   eyebrow="Coleção por jogo",
+   subtitle=game.label+" · "+region.label,
+   modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm,bottom=PokedexDesignTokens.Spacing.Xs),
+   progress={
+    Text(
+     caught.toString()+" de "+dex.size,
+     style=MaterialTheme.typography.labelLarge,
+     fontWeight=FontWeight.Bold,
+     color=game.accent
+    )
+   }
+  )
   Row(
-   Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
+   Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Xs),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
   ){
    ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.18f)){
