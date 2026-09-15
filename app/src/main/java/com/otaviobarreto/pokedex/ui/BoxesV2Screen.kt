@@ -399,8 +399,8 @@ internal fun QBSlot(
         label="boxSlotScale"
     )
     val slotColor by animateColorAsState(
-        if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.78f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.82f),
+        if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.62f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f),
         tween(PokedexDesignTokens.Motion.Standard),
         label="boxSlotColor"
     )
@@ -444,10 +444,10 @@ internal fun QBSlot(
                 pokemonId=pk.nationalId,
                 modifier=Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(.78f)
+                    .fillMaxHeight(.80f)
                     .align(Alignment.TopCenter)
                     .padding(horizontal=2.dp,vertical=2.dp)
-                    .alpha(if(captured)1f else .22f),
+                    .alpha(if(captured)1f else .16f),
                 contentScale=ContentScale.Fit,
                 colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)})
             )
@@ -460,7 +460,7 @@ internal fun QBSlot(
             }
             Surface(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                color=MaterialTheme.colorScheme.surface.copy(alpha=.92f)
+                color=MaterialTheme.colorScheme.surface.copy(alpha=if(captured).94f else .82f)
             ){
                 Column(
                     Modifier.padding(vertical=2.dp,horizontal=1.dp),
