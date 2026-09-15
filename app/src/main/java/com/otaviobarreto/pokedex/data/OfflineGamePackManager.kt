@@ -597,6 +597,36 @@ object OfflineGamePackManager {
             .apply()
     }
 
+    fun resetGeneralForCleanRepair(){
+        val ids=generalManifestIds()
+        ids.forEach{id->
+            val assets=sharedPokemonAssets(id)
+            assets?.resources?.let{PersistentApiCache.unpinAll(it,deleteFiles=true)}
+            context?.imageLoader?.diskCache?.let{disk->
+                runCatching{disk.remove("pokemon-offline-$id")}
+                assets?.formArtworkKeys.orEmpty().forEach{key->runCatching{disk.remove(key)}}
+            }
+            prefs().edit()
+                .remove(sharedKey(id,"resource_urls"))
+                .remove(sharedKey(id,"form_artwork_keys"))
+                .apply()
+        }
+        val generalRefs=JourneyReadinessAudit.referenceCatalogUrls()
+        PersistentApiCache.unpinAll(generalRefs,deleteFiles=true)
+        check(
+            prefs().edit()
+                .remove("general_ready")
+                .remove("general_count")
+                .remove("general_complete")
+                .remove("general_version")
+                .remove("general_manifest_ids")
+                .remove("general_resource_urls")
+                .remove("general_server_version")
+                .remove("general_server_installing")
+                .commit()
+        ){"Falha ao zerar biblioteca geral para reparo"}
+    }
+
     fun status(gameLabel: String): PackStatus {
         val prefs = prefs()
         return PackStatus(
