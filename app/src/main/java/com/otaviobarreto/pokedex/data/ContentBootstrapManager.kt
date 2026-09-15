@@ -40,7 +40,10 @@ object ContentBootstrapManager {
                     val current=p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
                     onProgress(Progress((current.toDouble()/total).toFloat().coerceIn(0f,.99f),"Biblioteca principal · "+p.label,current,total))
                 }
-                check(ok){"Biblioteca principal não passou na auditoria"}
+                if(!ok){
+                    val state=OfflinePackageInstallState.read(context)
+                    error(state.error.ifBlank{"Biblioteca principal não passou na auditoria"})
+                }
             }
             completed=general.sizeBytes ?: 0L
             val gameBase=completed
@@ -67,7 +70,8 @@ object ContentBootstrapManager {
             }
             completed=gameBase+gamePackages.sumOf{it.sizeBytes ?: 0L}
             onProgress(Progress((completed.toDouble()/total).toFloat().coerceIn(0f,.99f),"Validando biblioteca completa",completed,total))
-            check(OfflineLibraryManager.auditGeneral(context,general.version,OfflineGamePackManager.generalManifestIds())){"Auditoria final da biblioteca principal falhou"}
+            val finalGeneralAudit=OfflineLibraryManager.auditGeneralDetailed(context,general.version)
+            check(finalGeneralAudit.ok){"Auditoria final: "+finalGeneralAudit.message}
             val missing=gamePackages.filterNot{p->OfflineGamePackManager.status(p.displayName).downloaded}
             check(missing.isEmpty()){"Pacotes de jogos ainda pendentes"}
             context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putString(KEY_READY,signature).commit()
