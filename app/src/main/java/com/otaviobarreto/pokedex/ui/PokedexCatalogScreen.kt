@@ -177,10 +177,11 @@ fun PokedexCatalogScreen(
                                     color=accent
                                 )
                             }
-                            ArtworkWithFallback(
+                            PokemonArtwork(
                                 model=pk.spriteUrl,
                                 contentDescription=pk.name,
-                                modifier=Modifier.size(90.dp)
+                                pokemonId=pk.id,
+                                modifier=Modifier.size(94.dp)
                             )
                             Text(
                                 pk.name,
