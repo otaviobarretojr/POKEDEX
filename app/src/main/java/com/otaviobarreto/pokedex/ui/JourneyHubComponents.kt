@@ -264,7 +264,7 @@ private fun CompanionProgressSection(
     Surface(modifier=modifier,shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.38f)){
         Column(Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=12.dp)){
             CompanionSectionHeader(
-                title="Seu progresso",
+                title="SEU PROGRESSO",
                 supporting="Jornada e Pokédex deste jogo"
             )
             Row(Modifier.fillMaxWidth().padding(top=8.dp),verticalAlignment=Alignment.CenterVertically){
