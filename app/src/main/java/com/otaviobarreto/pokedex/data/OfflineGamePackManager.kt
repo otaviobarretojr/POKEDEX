@@ -334,6 +334,12 @@ object OfflineGamePackManager {
     fun gameServerVersion(gameLabel:String):Int =
         prefs().getInt(key(gameLabel,"server_version"),0)
 
+    fun gameResourceUrls(gameLabel:String):Set<String> =
+        prefs().getStringSet(key(gameLabel,"resource_urls"),emptySet()).orEmpty()
+
+    fun gameVisualUrls(gameLabel:String):Set<String> =
+        prefs().getStringSet(key(gameLabel,"visual_urls"),emptySet()).orEmpty()
+
     fun journeyVisualCacheKey(url:String):String = journeyVisualKey(url)
 
     fun auditImportedGameFast(gameLabel:String):Boolean {
