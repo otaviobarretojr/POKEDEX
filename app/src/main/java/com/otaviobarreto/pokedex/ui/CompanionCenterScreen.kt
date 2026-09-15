@@ -125,7 +125,7 @@ fun CompanionCenterScreen(
                         DexSectionEyebrow("Sistema")
                         Text("Configurações",style=MaterialTheme.typography.headlineMedium)
                         Text(
-                            "Downloads, armazenamento, backup e manutenção.",
+                            "Conteúdo offline, armazenamento, backup e manutenção.",
                             style=MaterialTheme.typography.bodySmall,
                             color=MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -134,369 +134,84 @@ fun CompanionCenterScreen(
             }
         }
 
-        item{
-            SettingsSectionTitle("Downloads dos jogos")
-            Text(
-                "Baixe dados, formas, artes e informações necessárias para usar cada jogo com menos dependência da internet.",
-                style=MaterialTheme.typography.bodyMedium,
-                color=MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        item(key="general_offline_library"){
-            val general=remember(storageRevision,activeDownload){OfflineGamePackManager.generalStatus()}
+        item(key="offline_content_summary"){
             val generalValid=remember(storageRevision,activeDownload){OfflineGamePackManager.generalAudit()}
-            val generalEstimate=remember(storageRevision){OfflineGamePackManager.estimateGeneral()}
             val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
             val installedServerVersion=OfflineGamePackManager.generalServerVersion()
-            val persistentInstallState=remember(installStateRevision,activeDownload){OfflinePackageInstallState.read(context)}
-            val serverInstallInProgress=persistentInstallState.active
-            val serverPackageAvailable=remoteGeneral?.ready==true && installedServerVersion==0
-            val serverUpdateAvailable=remoteGeneral?.ready==true &&
-                remoteGeneral.version>installedServerVersion &&
-                installedServerVersion>0
+            val installedGames=remember(storageRevision){
+                AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
+            }
+            val updateAvailable=remoteGeneral?.ready==true && remoteGeneral.version>installedServerVersion && installedServerVersion>0
+            SettingsSectionTitle("Conteúdo offline")
             Card(
                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
-                colors=CardDefaults.cardColors(
-                    containerColor=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.28f)
-                )
+                colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.22f))
             ){
                 Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Icon(
-                            if(generalValid) Icons.Default.CloudDone else Icons.Default.CloudDownload,
+                            if(generalValid) Icons.Default.CloudDone else Icons.Default.Warning,
                             null,
-                            tint=if(generalValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint=if(generalValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                         )
                         Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){
-                            Text("Download geral",fontWeight=FontWeight.Bold)
+                            Text(if(generalValid)"Biblioteca instalada" else "Biblioteca requer atenção",fontWeight=FontWeight.Bold)
                             Text(
-                                when{
-                                    activeDownload=="__general__" -> serverProgress?.label ?: progress?.label ?: "Preparando biblioteca geral…"
-                                    serverInstallInProgress ->
-                                        when(persistentInstallState.stage){
-                                            OfflinePackageInstallState.Stage.DOWNLOADING -> "Download em andamento"
-                                            OfflinePackageInstallState.Stage.DOWNLOADED -> "Download concluído · preparando instalação"
-                                            OfflinePackageInstallState.Stage.VALIDATING -> "Validando pacote"
-                                            OfflinePackageInstallState.Stage.EXTRACTING -> "Extraindo pacote"
-                                            OfflinePackageInstallState.Stage.INSTALLING -> "Instalando biblioteca"
-                                            OfflinePackageInstallState.Stage.AUDITING -> "Verificando instalação"
-                                            else -> "Retomando instalação"
-                                        }
-                                    persistentInstallState.stage==OfflinePackageInstallState.Stage.FAILED ->
-                                        "Instalação interrompida · Reparar" 
-                                    generalValid && serverUpdateAvailable ->
-                                        "Atualização disponível · servidor v"+remoteGeneral?.version
-                                    generalValid -> "Concluído · "+general.total+" Pokémon · v"+installedServerVersion
-                                    serverPackageAvailable ->
-                                        "Pacote do servidor disponível · pronto para instalar"
-                                    general.complete>0 && general.total>0 ->
-                                        "Download parcial legado · "+general.complete+" / "+general.total+" Pokémon"
-                                    else -> "Biblioteca comum para todos os jogos"
-                                },
+                                if(generalValid) "v"+installedServerVersion+" · "+installedGames+" complementos de jogos"
+                                else "Use Reparar biblioteca para restaurar o conteúdo necessário.",
                                 style=MaterialTheme.typography.bodySmall,
                                 color=MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-
-                    Text(
-                        "Baixa os dados e artes comuns uma única vez. Depois, cada jogo baixa apenas seu conteúdo específico.",
-                        style=MaterialTheme.typography.bodySmall,
-                        color=MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm)
-                    )
-                    Text(
-                        when{
-                            remoteGeneral?.sizeBytes!=null && remoteGeneral.sizeBytes>0L ->
-                                "Servidor: "+OfflineGamePackManager.formatBytes(remoteGeneral.sizeBytes)+
-                                    if(remoteGeneral.ready) " · pacote pronto" else " · em preparação"
-                            generalValid && serverUpdateAvailable && remoteGeneral?.sizeBytes!=null ->
-                                "Atualização: "+OfflineGamePackManager.formatBytes(remoteGeneral.sizeBytes)
-                            generalValid -> "Armazenado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.totalBytes)
-                            generalEstimate.remainingBytes>0 ->
-                                "Estimado: ~"+OfflineGamePackManager.formatBytes(generalEstimate.remainingBytes)+
-                                    " restantes · total ~"+OfflineGamePackManager.formatBytes(generalEstimate.totalBytes)
-                            else -> "Estimativa de tamanho indisponível"
-                        },
-                        style=MaterialTheme.typography.labelMedium,
-                        color=MaterialTheme.colorScheme.primary,
-                        modifier=Modifier.padding(top=4.dp)
-                    )
-
-                    if(activeDownload=="__general__"){
-                        LinearProgressIndicator(
-                            progress={serverProgress?.fraction ?: progress?.fraction ?: 0f},
-                            modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
-                        )
-                    }
-
-                    Row(
-                        Modifier.fillMaxWidth().padding(top=10.dp),
-                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
-                    ){
-                        if(!generalValid || serverUpdateAvailable){
-                            Button(
-                                enabled=activeDownload==null,
-                                onClick={
-                                    activeDownload="__general__"
-                                    progress=null
-                                    serverProgress=null
-                                    statusText=if(serverUpdateAvailable) "Iniciando atualização da biblioteca…" else "Iniciando Download Geral…"
-                                    scope.launch{
-                                        val result=runCatching{
-                                            if(remoteGeneral?.ready==true){
-                                                if(persistentInstallState.stage==OfflinePackageInstallState.Stage.FAILED){
-                                                    val repaired=ServerOfflinePackageInstaller.installOrUpdateGeneral(
-                                                        context=context,
-                                                        remote=remoteGeneral
-                                                    ){p->serverProgress=p}
-                                                    check(repaired){"Reparo limpo não concluiu a auditoria"}
-                                                }else{
-                                                    ServerOfflinePackageInstaller.installGeneral(
-                                                        context=context,
-                                                        remote=remoteGeneral
-                                                    ){p->serverProgress=p}
-                                                }
-                                            }else{
-                                                OfflineGamePackManager.downloadGeneral{p->progress=p}
-                                            }
-                                        }
-                                        if(result.isFailure){
-                                            OfflineGamePackManager.markServerGeneralInstallFailed()
-                                            val old=OfflinePackageInstallState.read(context)
-                                            OfflinePackageInstallState.write(
-                                                context,OfflinePackageInstallState.Stage.FAILED,
-                                                remoteGeneral?.version ?: old.version,old.done,old.total,
-                                                result.exceptionOrNull()?.message ?: "Falha desconhecida"
-                                            )
-                                        }
-                                        statusText=when{
-                                            result.isSuccess && remoteGeneral?.ready==true ->
-                                                "Biblioteca geral concluída · versão "+remoteGeneral.version
-                                            result.isSuccess ->
-                                                "Biblioteca geral concluída."
-                                            else ->
-                                                "Biblioteca geral: falha · "+
-                                                    (result.exceptionOrNull()?.message ?: "tente novamente")
-                                        }
-                                        activeDownload=null
-                                        progress=null
-                                        serverProgress=null
-                                        installStateRevision++
-                                    }
-                                },
-                                modifier=Modifier.weight(1f)
-                            ){
-                                Icon(
-                                    if(serverUpdateAvailable) Icons.Default.SystemUpdate else Icons.Default.Download,
-                                    null
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    when{
-                                        persistentInstallState.stage==OfflinePackageInstallState.Stage.FAILED -> "Reparar"
-                                        serverUpdateAvailable -> "Atualizar"
-                                        else -> "Baixar geral"
-                                    }
-                                )
-                            }
-                        }else{
-                            FilledTonalButton(
-                                enabled=false,
-                                onClick={},
-                                modifier=Modifier.weight(1f)
-                            ){
-                                Icon(Icons.Default.CheckCircle,null)
-                                Spacer(Modifier.width(6.dp))
-                                Text("Atualizado")
-                            }
-                        }
-                        FilledTonalButton(
-                            enabled=activeDownload==null && (general.ready || general.complete>0 || general.total>0),
+                    if(updateAvailable){
+                        Button(
+                            enabled=activeDownload==null,
                             onClick={
-                                OfflineGamePackManager.removeGeneral()
-                                statusText="Biblioteca geral removida. Pacotes individuais instalados foram preservados."
+                                val remote=remoteGeneral ?: return@Button
+                                activeDownload="__general__"
+                                scope.launch{
+                                    val result=runCatching{
+                                        ServerOfflinePackageInstaller.installOrUpdateGeneral(context,remote){p->serverProgress=p}
+                                    }
+                                    statusText=if(result.isSuccess)"Biblioteca atualizada." else "Atualização falhou · "+(result.exceptionOrNull()?.message ?: "tente novamente")
+                                    activeDownload=null
+                                    serverProgress=null
+                                    storageRevision++
+                                    installStateRevision++
+                                }
                             },
-                            modifier=Modifier.weight(1f)
+                            modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
                         ){
-                            Icon(Icons.Default.DeleteOutline,null)
+                            Icon(Icons.Default.SystemUpdate,null)
                             Spacer(Modifier.width(6.dp))
-                            Text("Remover")
+                            Text("Atualizar conteúdo")
                         }
                     }
-                }
-            }
-        }
-
-        item{
-            Text(
-                "Pacotes individuais",
-                style=MaterialTheme.typography.titleMedium,
-                fontWeight=FontWeight.Bold
-            )
-            Text(
-                "Cada jogo complementa a biblioteca geral com regiões, DLCs, Jornada e recursos próprios.",
-                style=MaterialTheme.typography.bodySmall,
-                color=MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        AppGameCatalog.adventureGames.forEach{game->
-            item(key=game.label){
-                val pack=remember(storageRevision,activeDownload,game.label){OfflineGamePackManager.status(game.label)}
-                val audit=remember(storageRevision,activeDownload,game.label){OfflineGamePackManager.audit(game.label)}
-                val gameEstimate=remember(storageRevision,game.label){OfflineGamePackManager.estimateGame(game.label)}
-                val generalReadyForReuse=remember(storageRevision,activeDownload){OfflineGamePackManager.generalAudit()}
-                val remotePackage=remember(remoteManifestRevision,game.label){
-                    RemoteOfflinePackageCatalog.forGameLabel(game.label)
-                }
-                val installedGameServerVersion=OfflineGamePackManager.gameServerVersion(game.label)
-                val gameServerUpdateAvailable=remotePackage?.ready==true &&
-                    remotePackage.version>installedGameServerVersion &&
-                    installedGameServerVersion>0
-                Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
-                    Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-                        Row(verticalAlignment=Alignment.CenterVertically){
-                            Icon(
-                                if(audit.valid) Icons.Default.CloudDone else Icons.Default.CloudDownload,
-                                null,
-                                tint=if(audit.valid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){
-                                Text(game.label,fontWeight=FontWeight.Bold)
-                                Text(
-                                    when{
-                                        activeDownload==game.label -> serverProgress?.label ?: progress?.label ?: "Preparando download…"
-                                        audit.valid -> buildString {
-                                            append("Offline pronto · ")
-                                            append(pack.pokemonCount)
-                                            append(" Pokémon")
-                                            if(pack.reusedCount>0){
-                                                append(" · ")
-                                                append(pack.reusedCount)
-                                                append(" reaproveitados")
-                                            }
-                                        }
-                                        pack.downloaded -> audit.summary
-                                        audit.expectedCount>0 && audit.completedIds>0 ->
-                                            "Download parcial · "+audit.completedIds+" / "+audit.expectedCount+" Pokémon"
-                                        else -> "Ainda não baixado"
-                                    },
-                                    style=MaterialTheme.typography.bodySmall,
-                                    color=MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    when{
-                                        audit.valid && gameServerUpdateAvailable && remotePackage?.sizeBytes!=null ->
-                                            "Atualização disponível · "+OfflineGamePackManager.formatBytes(remotePackage.sizeBytes)
-                                        audit.valid -> "Pacote complementar concluído"
-                                        remotePackage?.sizeBytes!=null && remotePackage.sizeBytes>0L ->
-                                            "Servidor: "+OfflineGamePackManager.formatBytes(remotePackage.sizeBytes)+
-                                                if(remotePackage.ready) " · pronto para CDN" else " · em preparação"
-                                        gameEstimate.remainingBytes>0 && (generalReadyForReuse || audit.expectedCount>0) ->
-                                            "Falta baixar ~"+OfflineGamePackManager.formatBytes(gameEstimate.remainingBytes)+
-                                                if(gameEstimate.reusedPokemon>0)
-                                                    " · "+gameEstimate.reusedPokemon+" Pokémon já reaproveitados"
-                                                else ""
-                                        generalReadyForReuse ->
-                                            "Complemento estimado: ~"+OfflineGamePackManager.formatBytes(gameEstimate.remainingBytes)
-                                        else ->
-                                            "Tamanho complementar será refinado após mapear este jogo"
-                                    },
-                                    style=MaterialTheme.typography.labelSmall,
-                                    color=MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        if(activeDownload==game.label){
-                            LinearProgressIndicator(
-                                progress={serverProgress?.fraction ?: progress?.fraction ?: 0f},
-                                modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
-                            )
-                        }
-
-                        Row(
-                            Modifier.fillMaxWidth().padding(top=10.dp),
-                            horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
-                        ){
-                            if(!audit.valid || gameServerUpdateAvailable){
-                            Button(
-                                enabled=activeDownload==null &&
-                                    !(remotePackage?.ready==true && !generalReadyForReuse),
-                                onClick={
-                                    activeDownload=game.label
-                                    progress=null
-                                    serverProgress=null
-                                    statusText=game.label+": iniciando download…"
-                                    scope.launch{
-                                        val result=runCatching{
-                                            if(remotePackage?.ready==true && generalReadyForReuse){
-                                                ServerOfflinePackageInstaller.installGame(
-                                                    context=context,
-                                                    game=game,
-                                                    remote=remotePackage
-                                                ){p->serverProgress=p}
-                                            }else{
-                                                OfflineGamePackManager.download(game){p->progress=p}
-                                            }
-                                        }
-                                        statusText=when{
-                                            result.isSuccess && remotePackage?.ready==true && generalReadyForReuse ->
-                                                game.label+": complemento do servidor instalado."
-                                            result.isSuccess ->
-                                                game.label+": pacote offline atualizado."
-                                            else ->
-                                                game.label+": falha no download · "+
-                                                    (result.exceptionOrNull()?.message ?: "tente novamente")
-                                        }
-                                        activeDownload=null
-                                        progress=null
-                                        serverProgress=null
+                    FilledTonalButton(
+                        enabled=activeDownload==null,
+                        onClick={
+                            activeDownload="__repair__"
+                            scope.launch{
+                                statusText="Verificando biblioteca…"
+                                val result=runCatching{
+                                    withContext(Dispatchers.IO){
+                                        val remote=RemoteOfflinePackageCatalog.general() ?: error("Catálogo indisponível")
+                                        check(ServerOfflinePackageInstaller.installOrUpdateGeneral(context,remote){p->serverProgress=p})
                                     }
-                                },
-                                modifier=Modifier.weight(1f)
-                            ){
-                                Icon(
-                                    if(gameServerUpdateAvailable) Icons.Default.SystemUpdate else Icons.Default.Download,
-                                    null
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    when{
-                                        gameServerUpdateAvailable -> "Atualizar"
-                                        pack.downloaded && !audit.valid -> "Reparar"
-                                        remotePackage?.ready==true && !generalReadyForReuse -> "Baixe geral primeiro"
-                                        audit.expectedCount>0 && audit.completedIds>0 -> "Continuar"
-                                        else -> "Baixar"
-                                    }
-                                )
-                            }
-                            }else{
-                                FilledTonalButton(
-                                    enabled=false,
-                                    onClick={},
-                                    modifier=Modifier.weight(1f)
-                                ){
-                                    Icon(Icons.Default.CheckCircle,null)
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Atualizado")
                                 }
+                                statusText=if(result.isSuccess)"Biblioteca verificada e reparada." else "Reparo falhou · "+(result.exceptionOrNull()?.message ?: "tente novamente")
+                                activeDownload=null
+                                serverProgress=null
+                                storageRevision++
+                                installStateRevision++
                             }
-                            FilledTonalButton(
-                                enabled=activeDownload==null && (pack.downloaded || audit.expectedCount>0 || audit.completedIds>0),
-                                onClick={
-                                    OfflineGamePackManager.remove(game.label)
-                                    statusText=game.label+": pacote offline removido."
-                                },
-                                modifier=Modifier.weight(1f)
-                            ){
-                                Icon(Icons.Default.DeleteOutline,null)
-                                Spacer(Modifier.width(6.dp))
-                                Text("Remover")
-                            }
-                        }
+                        },
+                        modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Sm)
+                    ){
+                        Icon(Icons.Default.Build,null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Reparar biblioteca")
                     }
                 }
             }
