@@ -113,7 +113,7 @@ private enum class GameDexFilter(val label:String){
                 routeMode && routeGroups.isEmpty()->DexStatusPane("Rota concluída","Não há Pokémon faltantes nesta região.",Modifier.fillMaxSize().padding(16.dp),false)
                 routeMode->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(12.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
                     item(key="route_intro",contentType="route_intro"){
-                        CompanionSectionHeader(title="Melhor rota",supporting="Capture por local primeiro, depois evolua. Trocas, transferências e métodos especiais ficam por último.",modifier=Modifier.padding(horizontal=4.dp,bottom=4.dp))
+                        CompanionSectionHeader(title="Melhor rota",supporting="Capture por local primeiro, depois evolua. Trocas, transferências e métodos especiais ficam por último.",modifier=Modifier.padding(start=4.dp,end=4.dp,bottom=4.dp))
                     }
                     routeGroups.forEach{group->
                         item(key="route_${group.key}",contentType="route_header"){
