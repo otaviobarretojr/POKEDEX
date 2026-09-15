@@ -247,7 +247,7 @@ fun CompanionCenterScreen(
                                         val result=runCatching{
                                             if(remoteGeneral?.ready==true){
                                                 if(persistentInstallState.stage==OfflinePackageInstallState.Stage.FAILED){
-                                                    val repaired=ServerOfflinePackageInstaller.cleanRepairGeneral(
+                                                    val repaired=ServerOfflinePackageInstaller.installOrUpdateGeneral(
                                                         context=context,
                                                         remote=remoteGeneral
                                                     ){p->serverProgress=p}
