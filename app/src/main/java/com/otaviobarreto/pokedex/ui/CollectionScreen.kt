@@ -208,7 +208,7 @@ private fun PokemonAlbumGrid(
 ){
     val ids=remember(generation){NationalDexCatalog.all.filter{it.generation==generation}}
     val shinyIds=remember(variants){variants.asSequence().filter{it.shiny}.map{it.speciesId}.toSet()}
-    val ownedCount=ids.count{if(shiny)it.id in shinyIds else it.id in captured}
+    val ownedCount=remember(ids,shiny,shinyIds,captured){ids.count{if(shiny)it.id in shinyIds else it.id in captured}}
     Column(Modifier.fillMaxSize()){
         CollectionPageHeader(
             if(shiny)"${generationRegion(generation)} Shiny" else generationRegion(generation),
@@ -255,7 +255,7 @@ private fun PokemonAlbumTile(id:Int,name:String,owned:Boolean,shiny:Boolean,onCl
 
 @Composable
 private fun FormsAlbum(variants:List<OwnedPokemonVariant>,onBack:()->Unit,onPokemonClick:(Int)->Unit){
-    val forms=variants.filter{it.countsForFormDex()}.distinctBy{listOf(it.speciesId,it.formPokemonId,it.formKey.lowercase())}
+    val forms=remember(variants){variants.filter{it.countsForFormDex()}.distinctBy{listOf(it.speciesId,it.formPokemonId,it.formKey.lowercase())}}
     val groups=remember(forms){forms.groupBy(::formCategory)}
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
