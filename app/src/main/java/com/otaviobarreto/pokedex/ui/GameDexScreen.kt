@@ -58,7 +58,7 @@ import kotlinx.coroutines.withContext
      items(plan,key={it.pokemonId}){p->Card(Modifier.fillMaxWidth().clickable{onPokemonClick(p.pokemonId,source)}){Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically){PokemonArtwork(PokemonRepository.byId(p.pokemonId)?.spriteUrl,null,Modifier.size(54.dp),pokemonId=p.pokemonId);Column(Modifier.weight(1f).padding(start=10.dp)){Text(p.name,fontWeight=FontWeight.Bold);Text(p.summary,style=MaterialTheme.typography.bodySmall)};Icon(Icons.Default.LocationOn,null)}}}
     }
     else->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
-     items(shown,key={it.nationalId}){p->val caught=source?.let{CollectionStore.isCapturedIn(it,p.nationalId)}==true;ListItem(headlineContent={Text(p.name,fontWeight=FontWeight.Bold)},supportingContent={Text("#"+p.localNumber.toString().padStart(3,'0')+" · National #"+p.nationalId)},leadingContent={PokemonArtwork(PokemonRepository.byId(p.nationalId)?.spriteUrl,null,Modifier.size(52.dp),pokemonId=p.nationalId)},trailingContent={Text(if(caught)"✓" else "—")},modifier=Modifier.clickable{onPokemonClick(p.nationalId,source)})}
+     items(shown,key={it.nationalId}){p->val caught=source?.let{CollectionStore.isCapturedIn(it,p.nationalId)}==true;ListItem(headlineContent={Text(p.name,fontWeight=FontWeight.Bold)},supportingContent={Text("#"+p.gameNumber.toString().padStart(3,'0')+" · National #"+p.nationalId)},leadingContent={PokemonArtwork(PokemonRepository.byId(p.nationalId)?.spriteUrl,null,Modifier.size(52.dp),pokemonId=p.nationalId)},trailingContent={Text(if(caught)"✓" else "—")},modifier=Modifier.clickable{onPokemonClick(p.nationalId,source)})}
     }
    }
   }
