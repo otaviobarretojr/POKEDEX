@@ -105,8 +105,7 @@ fun PokedexCatalogScreen(
     var query by remember{mutableStateOf("")}
     var selectedId by remember{mutableStateOf<Int?>(null)}
     val all=remember{PokemonRepository.all()}
-    val collectionRevision by CollectionStore.revision.collectAsState()
-    val ownedIds=remember(collectionRevision){CollectionStore.caughtIds()}
+    val ownedIds=CollectionStore.capturedIds
     val filtered=remember(query){
         val q=query.trim().removePrefix("#")
         if(q.isBlank()) all
