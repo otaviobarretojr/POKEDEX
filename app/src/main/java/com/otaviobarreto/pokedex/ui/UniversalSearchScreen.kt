@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 private data class UniversalResult(val kind:String,val title:String,val subtitle:String,val pokemonId:Int?=null,val rawName:String?=null)
@@ -22,6 +23,8 @@ private data class UniversalResult(val kind:String,val title:String,val subtitle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun UniversalSearchScreen(onBack:()->Unit,onPokemonClick:(Int)->Unit,onOpenReference:(String,String)->Unit){
  var query by remember{mutableStateOf("")}
+ var settledQuery by remember{mutableStateOf("")}
+ LaunchedEffect(query){ delay(180); settledQuery=query }
  val pokemon=remember{PokemonRepository.all()}
  var refs by remember{mutableStateOf<Map<String,List<ReferenceEntry>>>(emptyMap())}
  LaunchedEffect(Unit){
@@ -29,8 +32,8 @@ private data class UniversalResult(val kind:String,val title:String,val subtitle
    listOf("move","ability","item").associateWith{kind->runCatching{ReferenceCatalogService.load(kind)}.getOrDefault(emptyList())}
   }
  }
- val results=remember(query,refs){
-  val q=query.trim()
+ val results=remember(settledQuery,refs){
+  val q=settledQuery.trim()
   if(q.length<2) emptyList() else buildList{
    pokemon.asSequence().filter{it.name.contains(q,true)||it.id.toString()==q||it.types.any{t->t.contains(q,true)}}.take(20).forEach{
     add(UniversalResult("Pokémon",it.name,"#"+it.id.toString().padStart(4,'0')+" · "+it.types.joinToString(" / "),it.id))
