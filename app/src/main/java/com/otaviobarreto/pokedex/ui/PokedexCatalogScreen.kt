@@ -130,32 +130,35 @@ fun PokedexCatalogScreen(
                 )
             }
         )
+        PremiumSearchBar(
+            query=query,
+            onQueryChange={query=it},
+            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+            placeholder="Nome, número ou tipo"
+        )
         Row(
-            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
             horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
         ){
-            FilledTonalButton(onClick=onOpenSearch,modifier=Modifier.weight(1f)){
-                Icon(Icons.Default.Search,null);Spacer(Modifier.width(6.dp));Text("Busca universal")
-            }
-            FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){
-                Icon(Icons.Default.AutoAwesome,null);Spacer(Modifier.width(6.dp));Text("Evoluções")
-            }
+            AssistChip(
+                onClick=onOpenSearch,
+                label={Text("Busca universal")},
+                leadingIcon={Icon(Icons.Default.Search,null,Modifier.size(18.dp))}
+            )
+            AssistChip(
+                onClick=onOpenEvolutionCenter,
+                label={Text("Evoluções")},
+                leadingIcon={Icon(Icons.Default.AutoAwesome,null,Modifier.size(18.dp))}
+            )
         }
-        FilledTonalButton(
+        TextButton(
             onClick=onOpenGameDex,
-            modifier=Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg)
+            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg)
         ){
-            Icon(Icons.Default.Map,null);Spacer(Modifier.width(6.dp));Text("Pokédex do jogo · "+AppStatePreferences.activeGame)
+            Icon(Icons.Default.Map,null,Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Pokédex do jogo · "+AppStatePreferences.activeGame)
         }
-        Spacer(Modifier.height(PokedexDesignTokens.Spacing.Sm))
-        OutlinedTextField(
-            value=query,
-            onValueChange={query=it},
-            modifier=Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
-            singleLine=true,
-            leadingIcon={Icon(Icons.Default.Search,null)},
-            placeholder={Text("Nome ou número da National Dex")}
-        )
         LazyVerticalGrid(
             columns=GridCells.Adaptive(112.dp),
             modifier=Modifier.fillMaxSize().padding(top=PokedexDesignTokens.Spacing.Sm),
