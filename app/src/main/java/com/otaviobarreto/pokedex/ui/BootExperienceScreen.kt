@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CatchingPokemon
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,19 +39,31 @@ fun BootExperienceScreen(onReady: () -> Unit) {
     }
     var state by remember { mutableStateOf(BootState(.04f, "Preparando sua Pokédex")) }
     var finished by remember { mutableStateOf(false) }
+    var bootstrapError by remember { mutableStateOf<String?>(null) }
+    var retryToken by remember { mutableIntStateOf(0) }
     val animatedProgress by animateFloatAsState(state.progress, tween(420), label = "bootProgress")
     val infinite = rememberInfiniteTransition(label = "bootMotion")
     val rotation by infinite.animateFloat(0f, 360f, infiniteRepeatable(tween(14000, easing = LinearEasing)), label = "orbit")
     val pulse by infinite.animateFloat(.96f, 1.04f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
     val glow by infinite.animateFloat(.18f, .42f, infiniteRepeatable(tween(1900), RepeatMode.Reverse), label = "glow")
 
-    LaunchedEffect(Unit) {
-        StartupPreloader.warm(context) { progress ->
-            state = BootState(progress.fraction, progress.label)
+    LaunchedEffect(retryToken) {
+        bootstrapError=null
+        state=BootState(.01f,"Preparando biblioteca POKEDEX")
+        val result=ContentBootstrapManager.ensureReady(context){progress->
+            state=BootState(progress.fraction,progress.label)
         }
-        finished = true
-        StartupPreloader.launchExtendedWarm(context)
-        onReady()
+        if(result.ready){
+            StartupPreloader.warm(context){progress->
+                state=BootState(.96f+progress.fraction*.04f,progress.label)
+            }
+            finished=true
+            StartupPreloader.launchExtendedWarm(context)
+            onReady()
+        }else{
+            bootstrapError=result.error ?: "Não foi possível preparar a biblioteca."
+            state=BootState(state.progress,"Download interrompido")
+        }
     }
 
     val scheme = MaterialTheme.colorScheme
@@ -100,6 +113,12 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             LinearProgressIndicator(progress={animatedProgress}, Modifier.fillMaxWidth().height(6.dp), color=teal, trackColor=teal.copy(alpha=.12f), strokeCap=StrokeCap.Round)
             Spacer(Modifier.height(9.dp))
             Text("${(animatedProgress*100).toInt().coerceIn(0,100)}%", style=MaterialTheme.typography.labelMedium, color=teal.copy(alpha=.75f))
+            bootstrapError?.let{error->
+                Spacer(Modifier.height(18.dp))
+                Text(error,style=MaterialTheme.typography.bodySmall,color=scheme.error,textAlign=TextAlign.Center)
+                Spacer(Modifier.height(12.dp))
+                Button(onClick={retryToken++}){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(8.dp));Text("Tentar novamente")}
+            }
             Spacer(Modifier.height(38.dp))
             Text("POKEDEX  ·  v"+versionName, style=MaterialTheme.typography.labelSmall, color=scheme.onSurfaceVariant.copy(alpha=.72f), letterSpacing=1.sp)
             Spacer(Modifier.height(24.dp))
