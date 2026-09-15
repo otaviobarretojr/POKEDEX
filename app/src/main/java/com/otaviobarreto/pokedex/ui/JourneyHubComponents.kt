@@ -6,6 +6,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +20,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -54,9 +57,6 @@ internal fun JourneyGamePicker(
             ?.takeIf{it in activeSources}
             ?: game.regions.firstOrNull()?.source
     }
-    val officialPokedexTotal=activeGame?.let{game->
-        game.pokedexTotal ?: dexIdsBySource[game.regions.firstOrNull()?.source].orEmpty().size.takeIf{it>0}
-    }
     val journeyRevision=JourneyProgressStore.revision
     val activeSteps=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyCatalog.steps(it.label)}.orEmpty()}
     val activeCompleted=remember(activeGame?.label,journeyRevision){activeGame?.let{JourneyProgressStore.completed(it.label)}.orEmpty()}
@@ -64,6 +64,13 @@ internal fun JourneyGamePicker(
     val journeyDone=remember(activeSteps,activeCompleted){DataIntegrityRules.completedCount(activeSteps.map{it.id},activeCompleted)}
     val journeyRatio=if(activeSteps.isEmpty())0f else journeyDone.toFloat()/activeSteps.size
     val animatedJourneyRatio by animateFloatAsState(targetValue=journeyRatio,label="companionJourney")
+    val capturedBySource=CollectionStore.contextualCapturedIds
+    val gameDexIds=remember(activeGame?.label,dexIdsBySource){activeGame?.regions.orEmpty().flatMap{dexIdsBySource[it.source].orEmpty()}.toSet()}
+    val gameCapturedIds=remember(activeGame?.label,capturedBySource){activeGame?.regions.orEmpty().flatMap{capturedBySource[it.source].orEmpty()}.toSet()}
+    val gameDexTotal=gameDexIds.size
+    val gameDexCaptured=remember(gameDexIds,gameCapturedIds){gameDexIds.count{it in gameCapturedIds}}
+    val gameDexRatio=if(gameDexTotal<=0)0f else gameDexCaptured.toFloat()/gameDexTotal
+    val animatedDexRatio by animateFloatAsState(targetValue=gameDexRatio,label="companionDex")
 
     Box(
         Modifier.fillMaxSize().background(
@@ -197,21 +204,15 @@ internal fun JourneyGamePicker(
                                 journeyRatio=animatedJourneyRatio,
                                 journeyDone=journeyDone,
                                 journeyTotal=activeSteps.size,
-                                pokedexTotal=officialPokedexTotal,
                                 modifier=Modifier.fillMaxWidth().padding(top=12.dp)
                             )
-                            Row(Modifier.fillMaxWidth().padding(top=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                                Button(onClick={onSelect(game.label)},modifier=Modifier.weight(1.55f)){
-                                    Icon(Icons.Default.Explore,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Continuar")
-                                }
-                                FilledTonalButton(onClick={onOpenBoxes(game.label,activeRegionSource)},modifier=Modifier.weight(1f)){
-                                    Icon(Icons.Default.GridView,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Box")
-                                }
-                            }
-                            Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                                FilledTonalButton(onClick=onOpenGameDex,modifier=Modifier.weight(1f)){Icon(Icons.Default.MenuBook,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));Text("Dex do jogo")}
-                                FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){Icon(Icons.Default.AutoAwesome,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));Text("Evoluções")}
-                                IconButton(onClick=onOpenSearch){Icon(Icons.Default.Search,"Busca universal")}
+                            CompanionDexProgress(
+                                game=game,dexIdsBySource=dexIdsBySource,capturedBySource=capturedBySource,
+                                ratio=animatedDexRatio,captured=gameDexCaptured,total=gameDexTotal,accent=accent,
+                                modifier=Modifier.fillMaxWidth().padding(top=10.dp)
+                            )
+                            Button(onClick={onSelect(game.label)},modifier=Modifier.fillMaxWidth().padding(top=14.dp).heightIn(min=50.dp)){
+                                Icon(Icons.Default.Explore,null,Modifier.size(18.dp));Spacer(Modifier.width(7.dp));Text("Continuar Jornada")
                             }
                         }
                     }
@@ -243,48 +244,53 @@ internal fun JourneyGamePicker(
 }
 
 @Composable
-private fun JourneyCompactStatus(
-    journeyRatio:Float,
-    journeyDone:Int,
-    journeyTotal:Int,
-    pokedexTotal:Int?,
-    modifier:Modifier=Modifier
-){
-    Surface(
-        modifier=modifier,
-        shape=RoundedCornerShape(16.dp),
-        color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.45f)
-    ){
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
-            verticalAlignment=Alignment.CenterVertically
-        ){
-            Column(Modifier.weight(1f)){
-                Row(verticalAlignment=Alignment.CenterVertically){
-                    Text("Jornada",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        (journeyRatio*100).toInt().toString()+"% · "+journeyDone+"/"+journeyTotal,
-                        style=MaterialTheme.typography.labelMedium,
-                        fontWeight=FontWeight.Black
-                    )
-                }
-                LinearProgressIndicator(
-                    progress={journeyRatio.coerceIn(0f,1f)},
-                    modifier=Modifier.fillMaxWidth().padding(top=6.dp).height(6.dp),
-                    strokeCap=androidx.compose.ui.graphics.StrokeCap.Round
-                )
+private fun JourneyCompactStatus(journeyRatio:Float,journeyDone:Int,journeyTotal:Int,modifier:Modifier=Modifier){
+    Surface(modifier=modifier,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.45f)){
+        Column(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp)){
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                Text("Jornada",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.weight(1f))
+                Text((journeyRatio*100).toInt().toString()+"% · "+journeyDone+"/"+journeyTotal,style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black)
             }
-            Spacer(Modifier.width(12.dp))
-            VerticalDivider(Modifier.height(34.dp))
-            Spacer(Modifier.width(12.dp))
-            Column(horizontalAlignment=Alignment.CenterHorizontally){
-                Text("Pokédex",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    pokedexTotal?.toString() ?: "—",
-                    style=MaterialTheme.typography.titleMedium,
-                    fontWeight=FontWeight.Black
-                )
+            LinearProgressIndicator(progress={journeyRatio.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=6.dp).height(6.dp),strokeCap=StrokeCap.Round)
+        }
+    }
+}
+
+@Composable
+private fun CompanionDexProgress(game:AppGame,dexIdsBySource:Map<String,Set<Int>>,capturedBySource:Map<String,Set<Int>>,ratio:Float,captured:Int,total:Int,accent:Color,modifier:Modifier=Modifier){
+    Surface(modifier=modifier,shape=RoundedCornerShape(18.dp),color=accent.copy(alpha=.07f)){
+        Column(Modifier.fillMaxWidth().padding(14.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Box(Modifier.size(76.dp),contentAlignment=Alignment.Center){
+                    Canvas(Modifier.fillMaxSize()){
+                        val stroke=9.dp.toPx()
+                        drawArc(color=accent.copy(alpha=.16f),startAngle=-90f,sweepAngle=360f,useCenter=false,style=Stroke(stroke,cap=StrokeCap.Round))
+                        drawArc(color=accent,startAngle=-90f,sweepAngle=360f*ratio.coerceIn(0f,1f),useCenter=false,style=Stroke(stroke,cap=StrokeCap.Round))
+                    }
+                    Text((ratio*100).toInt().toString()+"%",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+                }
+                Column(Modifier.weight(1f).padding(start=14.dp)){
+                    Text("Progresso da Pokédex",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+                    Text(if(total>0) captured.toString()+" de "+total+" registrados" else "Carregando Pokédex do jogo…",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(game.label,style=MaterialTheme.typography.labelSmall,color=accent,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=3.dp))
+                }
+            }
+            if(game.regions.size>1 && total>0){
+                Column(Modifier.fillMaxWidth().padding(top=12.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+                    game.regions.forEach{region->
+                        val regionalIds=dexIdsBySource[region.source].orEmpty()
+                        if(regionalIds.isNotEmpty()){
+                            val caught=regionalIds.count{it in capturedBySource[region.source].orEmpty()}
+                            val regionalRatio=caught.toFloat()/regionalIds.size
+                            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                                Text(region.label,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,modifier=Modifier.widthIn(min=72.dp))
+                                LinearProgressIndicator(progress={regionalRatio},modifier=Modifier.weight(1f).height(5.dp),strokeCap=StrokeCap.Round)
+                                Text(caught.toString()+"/"+regionalIds.size,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(start=8.dp))
+                            }
+                        }
+                    }
+                }
             }
         }
     }
