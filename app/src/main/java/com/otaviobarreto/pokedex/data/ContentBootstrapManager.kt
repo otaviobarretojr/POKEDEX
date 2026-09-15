@@ -32,7 +32,7 @@ object ContentBootstrapManager {
             var completed=0L
             if(!generalReady){
                 val ok=ServerOfflinePackageInstaller.cleanRepairGeneral(context,general){p->
-                    val current=p.done.coerceAtMost(p.total.coerceAtLeast(0L))
+                    val current=p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
                     onProgress(Progress((current.toDouble()/total).toFloat().coerceIn(0f,.99f),"Biblioteca principal · "+p.label,current,total))
                 }
                 check(ok){"Biblioteca principal não passou na auditoria"}
@@ -40,8 +40,10 @@ object ContentBootstrapManager {
             completed=general.sizeBytes ?: 0L
             gamePackages.forEachIndexed{index,pkg->
                 if(!OfflineGamePackManager.status(pkg.displayName).downloaded){
-                    ServerOfflinePackageInstaller.installGame(context,pkg){p->
-                        val current=completed+p.done.coerceAtMost(p.total.coerceAtLeast(0L))
+                    val game=AppGameCatalog.games.firstOrNull{g->RemoteOfflinePackageCatalog.packageKeyForGame(g.label)==pkg.packageKey}
+                        ?: error("Jogo sem mapeamento local: "+pkg.packageKey)
+                    ServerOfflinePackageInstaller.installGame(context,game,pkg){p->
+                        val current=completed+p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
                         onProgress(Progress((current.toDouble()/total).toFloat().coerceIn(0f,.99f),pkg.displayName+" · "+p.label,current,total))
                     }
                 }
