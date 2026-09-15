@@ -15,7 +15,7 @@ object CapturePlanner {
   val missing=dex.filterNot{CollectionStore.isCapturedIn(source,it.nationalId)}
   val routes=runCatching{EvolutionFilterIndex.buildRoutes(source,dex)}.getOrDefault(emptyList())
   return missing.map{entry->
-   val encounters=runCatching{PokeApiService.encounters(entry.nationalId)}.getOrDefault(emptyList())
+   val encounters=runCatching{PokeApiService.loadEncounters(entry.nationalId)}.getOrDefault(emptyList())
    val filtered=LocationIntelligence.filter(encounters,context)
    val evolution=routes.firstOrNull{it.targetPokemonId==entry.nationalId && EvolutionResolutionEngine.executable(it)}
    when{
