@@ -175,19 +175,23 @@ private fun GenerationShelf(
             val ratio=if(gen.total==0)0f else value.toFloat()/gen.total
             val list=NationalDexCatalog.all.filter{it.generation==gen.generation}
             val representatives=if(list.size<3) list.map{it.id} else listOf(list.first().id,list[list.size/2].id,list.last().id)
-            Card(Modifier.fillMaxWidth().clickable{onGeneration(gen.generation)},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
-                Column(Modifier.fillMaxWidth().padding(16.dp)){
+            Surface(
+                modifier=Modifier.fillMaxWidth().clickable{onGeneration(gen.generation)},
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+                color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.28f)
+            ){
+                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                         Column(Modifier.weight(1f)){
                             DexSectionEyebrow("Geração ${roman(gen.generation)}")
                             Text(generationRegion(gen.generation),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-                            Text("$value / ${gen.total}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("$value de ${gen.total} registrados",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Row(horizontalArrangement=Arrangement.spacedBy(2.dp)){
-                            representatives.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(46.dp))}
+                            representatives.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(50.dp))}
                         }
                     }
-                    LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(top=10.dp))
+                    LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md))
                 }
             }
         }
