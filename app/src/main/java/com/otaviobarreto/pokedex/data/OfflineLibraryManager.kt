@@ -77,6 +77,22 @@ object OfflineLibraryManager {
         return target.takeIf{it.exists()}
     }
 
+    fun installGameVisual(context:Context,gameKey:String,source:File,sourceUrl:String,cacheKey:String):File {
+        val dir=File(root(context),"games/"+safe(gameKey)).apply{mkdirs()}
+        val target=File(dir,safe(sourceUrl)+".img")
+        source.copyTo(target,overwrite=true)
+        val index=File(root(context),"game-index").apply{mkdirs()}
+        File(index,safe(sourceUrl)+".path").writeText(target.absolutePath)
+        File(index,safe(cacheKey)+".path").writeText(target.absolutePath)
+        return target
+    }
+
+    fun resolveAny(context:Context,key:String):File? {
+        resolve(context,key)?.let{return it}
+        val pointer=File(File(root(context),"game-index"),safe(key)+".path")
+        return pointer.takeIf{it.exists()}?.readText()?.let{File(it)}?.takeIf{it.exists()}
+    }
+
     fun removeGeneral(context:Context){
         runCatching{general(context).deleteRecursively()}
         runCatching{previous(context).deleteRecursively()}
