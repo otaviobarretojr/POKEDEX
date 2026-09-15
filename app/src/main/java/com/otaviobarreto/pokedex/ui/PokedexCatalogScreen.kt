@@ -116,23 +116,20 @@ fun PokedexCatalogScreen(
 
     DexAppBackground {
     Column(Modifier.fillMaxSize()){
-        Surface(
-            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
-            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
-            color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),
-            tonalElevation=PokedexDesignTokens.Elevation.Low
-        ){
-            Row(Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
-                Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
-                    Icon(Icons.Default.MenuBook,null,Modifier.padding(PokedexDesignTokens.Spacing.Md).size(26.dp),tint=MaterialTheme.colorScheme.primary)
-                }
-                Column(Modifier.padding(start=PokedexDesignTokens.Spacing.Md)){
-                    DexSectionEyebrow("National Dex")
-                    Text("Pokédex",style=MaterialTheme.typography.headlineMedium)
-                    Text("#0001–#1025 · formas e Shiny",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+        CompanionContextHeader(
+            title="Pokédex",
+            eyebrow="National Dex",
+            subtitle="#0001–#1025 · formas e Shiny",
+            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+            artwork={
+                Icon(
+                    Icons.Default.MenuBook,
+                    contentDescription=null,
+                    modifier=Modifier.align(Alignment.CenterEnd).padding(end=PokedexDesignTokens.Spacing.Xl).size(54.dp),
+                    tint=MaterialTheme.colorScheme.primary.copy(alpha=.28f)
+                )
             }
-        }
+        )
         Row(
             Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
             horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
