@@ -182,9 +182,11 @@ object ServerOfflinePackageInstaller {
             true
         }.getOrElse{error->
             OfflineGamePackManager.markServerGeneralInstallFailed()
+            val current=OfflinePackageInstallState.read(context)
             OfflinePackageInstallState.write(
                 context,OfflinePackageInstallState.Stage.FAILED,remote.version,
-                state.done,state.total,error.message ?: error.javaClass.simpleName
+                current.done,current.total,
+                current.stage.name+": "+(error.message ?: error.javaClass.simpleName)
             )
             false
         }
@@ -299,7 +301,12 @@ object ServerOfflinePackageInstaller {
     @OptIn(ExperimentalCoilApi::class)
     private fun importImageIntoDiskCache(context:Context,cacheKey:String,file:File){
         val disk=requireNotNull(context.imageLoader.diskCache){"Cache de imagens indisponível"}
-        val editor=requireNotNull(disk.openEditor(cacheKey)){"Não foi possível abrir o cache $cacheKey"}
+        disk.openSnapshot(cacheKey)?.use{return}
+        val editor=disk.openEditor(cacheKey)
+        if(editor==null){
+            disk.openSnapshot(cacheKey)?.use{return}
+            error("Não foi possível abrir o cache $cacheKey")
+        }
         try{
             val bytes=file.readBytes()
             disk.fileSystem.write(editor.data){
