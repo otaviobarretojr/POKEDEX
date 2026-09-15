@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -97,7 +98,8 @@ fun PokedexCatalogScreen(
     onPokemonClick:(Int)->Unit,
     onOpenFormDetail:(Int,String,Boolean)->Unit,
     onOpenSearch:()->Unit={},
-    onOpenEvolutionCenter:()->Unit={}
+    onOpenEvolutionCenter:()->Unit={},
+    onOpenGameDex:()->Unit={}
 ){
     val haptic=LocalHapticFeedback.current
     var query by remember{mutableStateOf("")}
@@ -141,6 +143,12 @@ fun PokedexCatalogScreen(
             FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){
                 Icon(Icons.Default.AutoAwesome,null);Spacer(Modifier.width(6.dp));Text("Evoluções")
             }
+        }
+        FilledTonalButton(
+            onClick=onOpenGameDex,
+            modifier=Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg)
+        ){
+            Icon(Icons.Default.Map,null);Spacer(Modifier.width(6.dp));Text("Pokédex do jogo · "+AppStatePreferences.activeGame)
         }
         Spacer(Modifier.height(PokedexDesignTokens.Spacing.Sm))
         OutlinedTextField(
