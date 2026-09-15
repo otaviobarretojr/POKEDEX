@@ -62,6 +62,21 @@ object OfflinePackageInstallState {
     fun generalZip(context:Context,version:Int)=File(packageRoot(context),"general-v$version.zip")
     fun generalExtract(context:Context,version:Int)=File(packageRoot(context),"general-v$version-extract")
 
+    fun diagnose(context:Context,remoteVersion:Int,remoteBytes:Long):String {
+        val state=read(context)
+        val zip=generalZip(context,remoteVersion)
+        val extract=generalExtract(context,remoteVersion)
+        return buildString {
+            append("stage=");append(state.stage.name)
+            append(" · stateV=");append(state.version)
+            append(" · serverV=");append(remoteVersion)
+            append(" · zip=");append(if(zip.exists()) zip.length() else 0L)
+            append("/");append(remoteBytes)
+            append(" · extract=");append(extract.exists())
+            state.error?.takeIf{it.isNotBlank()}?.let{append(" · erro=");append(it)}
+        }
+    }
+
     fun clear(context:Context){
         context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().clear().commit()
     }
