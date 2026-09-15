@@ -292,16 +292,16 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      Modifier.weight(1f).fillMaxHeight(),
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     ){
-     Icon(Icons.Default.Search,null,Modifier.size(17.dp))
+     Icon(Icons.Default.Search,"Pesquisar Pokémon",Modifier.size(17.dp))
      Spacer(Modifier.width(5.dp))
-     Text("Pesquisar",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
+     Text("Buscar Pokémon",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
     }
     FilledTonalButton(
      {allBoxes=true},
      Modifier.weight(1f).fillMaxHeight(),
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     ){
-     Icon(Icons.Default.GridView,null,Modifier.size(17.dp))
+     Icon(Icons.Default.GridView,"Ver todas as Boxes",Modifier.size(17.dp))
      Spacer(Modifier.width(5.dp))
      Text("Todas as Boxes",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
     }
@@ -311,7 +311,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      Modifier.fillMaxWidth().fillMaxHeight(),
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     ){
-     Icon(Icons.Default.Close,null,Modifier.size(17.dp))
+     Icon(Icons.Default.Close,"Limpar filtro de evolução",Modifier.size(17.dp))
      Spacer(Modifier.width(5.dp))
      Text("Limpar filtro e voltar às Boxes",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
     }
