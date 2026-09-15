@@ -77,6 +77,45 @@ object OfflineLibraryManager {
         return target.takeIf{it.exists()}
     }
 
+    fun installResource(stagingRoot:File,relativePath:String,url:String):File {
+        val source=File(stagingRoot,relativePath).canonicalFile
+        check(source.exists()){"Recurso ausente: $relativePath"}
+        val indexDir=File(stagingRoot,"resource-index").apply{mkdirs()}
+        File(indexDir,safe(url)+".path").writeText(relativePath)
+        return source
+    }
+
+    fun resolveResource(context:Context,url:String):File? {
+        val active=general(context)
+        val pointer=File(File(active,"resource-index"),safe(url)+".path")
+        if(!pointer.exists()) return null
+        val relative=runCatching{pointer.readText()}.getOrNull()?.takeIf{it.isNotBlank()} ?: return null
+        val root=active.canonicalFile
+        val target=File(active,relative).canonicalFile
+        if(!(target.path.startsWith(root.path+File.separator) || target==root)) return null
+        return target.takeIf{it.exists()}
+    }
+
+    fun installGameResource(context:Context,gameKey:String,source:File,sourceUrl:String):File {
+        val dir=File(root(context),"games/"+safe(gameKey)+"/resources").apply{mkdirs()}
+        val target=File(dir,safe(sourceUrl)+".json")
+        source.copyTo(target,overwrite=true)
+        val index=File(root(context),"game-resource-index").apply{mkdirs()}
+        File(index,safe(sourceUrl)+".path").writeText(target.absolutePath)
+        return target
+    }
+
+    fun resolveAnyResource(context:Context,url:String):File? {
+        resolveResource(context,url)?.let{return it}
+        val pointer=File(File(root(context),"game-resource-index"),safe(url)+".path")
+        return pointer.takeIf{it.exists()}?.readText()?.let{File(it)}?.takeIf{it.exists()}
+    }
+
+    fun auditGame(context:Context,gameKey:String,resourceUrls:Set<String>,visualUrls:Set<String>):Boolean {
+        return resourceUrls.all{resolveAnyResource(context,it)?.exists()==true} &&
+            visualUrls.all{resolveAny(context,it)?.exists()==true}
+    }
+
     fun installGameVisual(context:Context,gameKey:String,source:File,sourceUrl:String,cacheKey:String):File {
         val dir=File(root(context),"games/"+safe(gameKey)).apply{mkdirs()}
         val target=File(dir,safe(sourceUrl)+".img")
