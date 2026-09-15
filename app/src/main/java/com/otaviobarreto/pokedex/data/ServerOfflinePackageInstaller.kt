@@ -155,9 +155,13 @@ object ServerOfflinePackageInstaller {
         }
 
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.AUDITING,remote.version,ids.size.toLong(),ids.size.toLong())
+        val preAudit=OfflineLibraryManager.auditStaging(extractDir,remote.version)
+        check(preAudit.ok){"Pré-auditoria: "+preAudit.message}
+        onProgress(Progress(ids.size.toLong(),ids.size.toLong(),"Validado · "+preAudit.message))
         OfflineLibraryManager.activateGeneral(context,extractDir,remote.version,ids)
         OfflineGamePackManager.finalizeImportedGeneral(ids,remote.version)
-        check(OfflineLibraryManager.auditGeneral(context,remote.version,ids)){"Biblioteca permanente falhou na auditoria"}
+        val finalAudit=OfflineLibraryManager.auditGeneralDetailed(context,remote.version)
+        check(finalAudit.ok){"Auditoria ativa: "+finalAudit.message}
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLED,remote.version,ids.size.toLong(),ids.size.toLong())
         onProgress(Progress(ids.size.toLong(),ids.size.toLong(),"Biblioteca geral pronta"))
         runCatching{zipFile.delete()}
