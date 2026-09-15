@@ -3,6 +3,12 @@ package com.otaviobarreto.pokedex.data
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import java.util.concurrent.atomic.AtomicLong
 
 object ContentBootstrapManager {
     data class Progress(val fraction:Float,val label:String,val downloadedBytes:Long=0,val totalBytes:Long=0)
@@ -38,18 +44,30 @@ object ContentBootstrapManager {
                 check(ok){"Biblioteca principal não passou na auditoria"}
             }
             completed=general.sizeBytes ?: 0L
-            gamePackages.forEachIndexed{index,pkg->
-                if(!OfflineGamePackManager.status(pkg.displayName).downloaded){
-                    val game=AppGameCatalog.games.firstOrNull{g->RemoteOfflinePackageCatalog.packageKeyForGame(g.label)==pkg.packageKey}
-                        ?: error("Jogo sem mapeamento local: "+pkg.packageKey)
-                    ServerOfflinePackageInstaller.installGame(context,game,pkg){p->
-                        val current=completed+p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
-                        onProgress(Progress((current.toDouble()/total).toFloat().coerceIn(0f,.99f),pkg.displayName+" · "+p.label,current,total))
+            val gameBase=completed
+            val perGame=java.util.concurrent.ConcurrentHashMap<String,Long>()
+            val semaphore=Semaphore(3)
+            coroutineScope{
+                gamePackages.map{pkg->
+                    async{
+                        semaphore.withPermit{
+                            if(!OfflineGamePackManager.status(pkg.displayName).downloaded){
+                                val game=AppGameCatalog.games.firstOrNull{g->RemoteOfflinePackageCatalog.packageKeyForGame(g.label)==pkg.packageKey}
+                                    ?: error("Jogo sem mapeamento local: "+pkg.packageKey)
+                                ServerOfflinePackageInstaller.installGame(context,game,pkg){p->
+                                    perGame[pkg.packageKey]=p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
+                                    val current=gameBase+perGame.values.sum()
+                                    onProgress(Progress((current.toDouble()/total).toFloat().coerceIn(0f,.99f),pkg.displayName+" · "+p.label,current,total))
+                                }
+                            }else{
+                                perGame[pkg.packageKey]=pkg.sizeBytes ?: 0L
+                            }
+                        }
                     }
-                }
-                completed+=(pkg.sizeBytes ?: 0L)
-                onProgress(Progress((completed.toDouble()/total).toFloat().coerceIn(0f,.99f),"Validando jogos "+(index+1)+"/"+gamePackages.size,completed,total))
+                }.awaitAll()
             }
+            completed=gameBase+gamePackages.sumOf{it.sizeBytes ?: 0L}
+            onProgress(Progress((completed.toDouble()/total).toFloat().coerceIn(0f,.99f),"Validando biblioteca completa",completed,total))
             check(OfflineLibraryManager.auditGeneral(context,general.version,OfflineGamePackManager.generalManifestIds())){"Auditoria final da biblioteca principal falhou"}
             val missing=gamePackages.filterNot{p->OfflineGamePackManager.status(p.displayName).downloaded}
             check(missing.isEmpty()){"Pacotes de jogos ainda pendentes"}
