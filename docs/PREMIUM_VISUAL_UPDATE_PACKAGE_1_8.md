@@ -198,3 +198,18 @@ O pacote 1–8 só é considerado concluído quando a Etapa 8 estiver verde. Nen
 | 6 | AUDITADA | pacote 3–8 | — | Rotas estáveis preservadas |
 | 7 | AUDITADA | pacote 3–8 | — | Consistência transversal revisada |
 | 8 | EM VALIDAÇÃO | pacote 3–8 | próximo CI | Gate final único |
+
+
+## Pós-pacote — Evolução 4–8
+
+Base validada: `2e9651af32248589e2df674b65456bc4807fc48b` · Android Build #1614 SUCCESS.
+
+Execução autorizada em sequência:
+
+- 4 — Motion & feedback: microinterações curtas, feedback háptico consistente e transições sem comprometer performance/acessibilidade.
+- 5 — Pokémon Detail 2.0: consolidar identidade, formas, evolução, golpes e localização sem duplicar conteúdo.
+- 6 — Jornada inteligente: priorizar automaticamente o próximo objetivo e contexto útil, preservando progresso existente.
+- 7 — Coleção inteligente: transformar lacunas da coleção em atalhos acionáveis sem criar dashboard duplicado.
+- 8 — Release Candidate: instalação/atualização, auditorias, testes, lint, APK e artefato final.
+
+Regra: implementar apenas mudanças sustentadas pela auditoria do código atual; módulos já adequados devem ser preservados. O RC só fecha com pipeline integral verde.
