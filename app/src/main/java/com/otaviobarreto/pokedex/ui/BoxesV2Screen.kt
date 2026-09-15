@@ -342,11 +342,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   )
  }
 }
-@Composable private fun BoxCompanionHeader(game:String,region:String,caught:Int,total:Int,accent:Color)=CompanionContextHeader(
- title="Box",eyebrow="Coleção por jogo",subtitle=game+" · "+region,
- modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm,bottom=PokedexDesignTokens.Spacing.Xs),
- progress={Text(caught.toString()+" de "+total,style=MaterialTheme.typography.labelLarge,fontWeight=FontWeight.Bold,color=accent)}
-)
+@Composable private fun BoxCompanionHeader(game:String,region:String,caught:Int,total:Int,accent:Color)=CompanionContextHeader(title="Box",eyebrow="Coleção por jogo",subtitle=game+" · "+region,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm,bottom=PokedexDesignTokens.Spacing.Xs),progress={Text(caught.toString()+" de "+total,style=MaterialTheme.typography.labelLarge,fontWeight=FontWeight.Bold,color=accent)})
 @Composable
 private fun QBGrid(
     entries:List<GameDexService.GameDexEntry>,
