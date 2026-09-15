@@ -42,7 +42,7 @@ import kotlinx.coroutines.withContext
     items(routes,key={it.sourcePokemonId.toString()+":"+it.targetPokemonId+":"+it.summary}){r->
      Card(Modifier.fillMaxWidth().clickable{onPokemonClick(r.sourcePokemonId,source)}){
       Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
-       PokemonArtwork(PokemonRepository.byId(r.sourcePokemonId)?.spriteUrl,null,r.sourcePokemonId,Modifier.size(54.dp))
+       PokemonArtwork(model=PokemonRepository.byId(r.sourcePokemonId)?.spriteUrl,contentDescription=null,modifier=Modifier.size(54.dp),pokemonId=r.sourcePokemonId)
        Column(Modifier.weight(1f).padding(horizontal=10.dp)){Text((PokemonRepository.byId(r.sourcePokemonId)?.name?:"#"+r.sourcePokemonId)+" → "+(PokemonRepository.byId(r.targetPokemonId)?.name?:"#"+r.targetPokemonId),fontWeight=FontWeight.Bold);Text(r.summary,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
        Icon(Icons.Default.AutoAwesome,null,tint=MaterialTheme.colorScheme.primary)
       }
