@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -94,7 +95,9 @@ private fun ArtworkWithFallback(
 @Composable
 fun PokedexCatalogScreen(
     onPokemonClick:(Int)->Unit,
-    onOpenFormDetail:(Int,String,Boolean)->Unit
+    onOpenFormDetail:(Int,String,Boolean)->Unit,
+    onOpenSearch:()->Unit={},
+    onOpenEvolutionCenter:()->Unit={}
 ){
     val haptic=LocalHapticFeedback.current
     var query by remember{mutableStateOf("")}
@@ -128,6 +131,18 @@ fun PokedexCatalogScreen(
                 }
             }
         }
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+            horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+        ){
+            FilledTonalButton(onClick=onOpenSearch,modifier=Modifier.weight(1f)){
+                Icon(Icons.Default.Search,null);Spacer(Modifier.width(6.dp));Text("Busca universal")
+            }
+            FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){
+                Icon(Icons.Default.AutoAwesome,null);Spacer(Modifier.width(6.dp));Text("Evoluções")
+            }
+        }
+        Spacer(Modifier.height(PokedexDesignTokens.Spacing.Sm))
         OutlinedTextField(
             value=query,
             onValueChange={query=it},
