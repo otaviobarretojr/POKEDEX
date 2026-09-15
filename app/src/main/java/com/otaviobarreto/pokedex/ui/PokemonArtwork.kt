@@ -92,8 +92,8 @@ fun PokemonArtwork(
     val context = LocalContext.current
     val tuning = remember(pokemonId) { ArtworkTuningCatalog.forPokemon(pokemonId) }
     val localModel = remember(model,pokemonId) {
-        pokemonId?.let{OfflineLibraryManager.resolve(context,"pokemon-offline-$it")}
-            ?: (model as? String)?.let{OfflineLibraryManager.resolve(context,it)}
+        pokemonId?.let{OfflineLibraryManager.resolveAny(context,"pokemon-offline-$it")}
+            ?: (model as? String)?.let{OfflineLibraryManager.resolveAny(context,it)}
             ?: model
     }
     val request = remember(localModel,pokemonId) {
