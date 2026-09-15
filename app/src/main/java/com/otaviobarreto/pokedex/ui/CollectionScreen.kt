@@ -84,11 +84,18 @@ private fun CollectionHome(
         verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Lg)
     ){
         item{
-            Column{
-                DexSectionEyebrow("Sua coleção")
-                Text("Coleção",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                Text("Seu álbum Pokémon: espécies, Shinies e formas em um só lugar.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            CompanionContextHeader(
+                title="Coleção",
+                eyebrow="Sua coleção",
+                subtitle="Espécies, Shinies e formas que você já registrou.",
+                progress={
+                    Text(
+                        "${plan.capturedSpecies} de ${plan.totalSpecies} espécies",
+                        style=MaterialTheme.typography.labelLarge,
+                        fontWeight=FontWeight.Bold
+                    )
+                }
+            )
         }
         item{CollectionHero(plan)}
         item{AlbumPortalCard("Living Dex","${plan.capturedSpecies} de ${plan.totalSpecies} espécies",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
