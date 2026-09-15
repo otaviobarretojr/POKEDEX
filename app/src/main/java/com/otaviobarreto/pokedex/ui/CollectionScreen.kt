@@ -108,7 +108,7 @@ private fun CollectionHero(plan:LivingDexPlan){
                 Text("${plan.capturedSpecies} / ${plan.totalSpecies}",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
                 Text("Faltam ${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            AsyncImage(model=artwork(25,false),contentDescription="Pikachu",modifier=Modifier.size(112.dp),contentScale=ContentScale.Fit)
+            PokemonArtwork(model=artwork(25,false),contentDescription="Pikachu",pokemonId=25,modifier=Modifier.size(112.dp))
         }
         LinearProgressIndicator(progress={plan.speciesRatio},modifier=Modifier.fillMaxWidth().padding(top=12.dp))
     }
@@ -131,7 +131,7 @@ private fun AlbumPortalCard(
                 Icon(Icons.Default.ChevronRight,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Row(Modifier.fillMaxWidth().padding(top=10.dp),horizontalArrangement=Arrangement.SpaceEvenly){
-                ids.forEach{id->AsyncImage(model=artwork(id,shiny),contentDescription=null,modifier=Modifier.size(72.dp),contentScale=ContentScale.Fit)}
+                ids.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(72.dp))}
             }
             if(progress!=null) LinearProgressIndicator(progress={progress.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=8.dp))
         }
@@ -162,7 +162,7 @@ private fun GenerationShelf(
                             Text("$value / ${gen.total}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Row(horizontalArrangement=Arrangement.spacedBy(2.dp)){
-                            representatives.forEach{id->AsyncImage(model=artwork(id,shiny),contentDescription=null,modifier=Modifier.size(46.dp),contentScale=ContentScale.Fit)}
+                            representatives.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(46.dp))}
                         }
                     }
                     LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(top=10.dp))
@@ -207,11 +207,11 @@ private fun PokemonAlbumTile(id:Int,name:String,owned:Boolean,shiny:Boolean,onCl
     val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}
     Card(Modifier.aspectRatio(.82f).clickable(onClick=onClick),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
         Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
-            AsyncImage(
+            PokemonArtwork(
                 model=artwork(id,shiny),
                 contentDescription=name,
+                pokemonId=id,
                 modifier=Modifier.weight(1f).fillMaxWidth().alpha(if(owned)1f else .20f),
-                contentScale=ContentScale.Fit,
                 colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale)
             )
             Text("#"+id.toString().padStart(4,'0'),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -246,7 +246,7 @@ private fun FormsAlbum(variants:List<OwnedPokemonVariant>,onBack:()->Unit,onPoke
                                 entries.take(4).forEach{form->
                                     Card(Modifier.weight(1f).aspectRatio(.82f).clickable{onPokemonClick(form.speciesId)}){
                                         Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally){
-                                            AsyncImage(model=form.artworkUrl,contentDescription=form.formName,modifier=Modifier.weight(1f).fillMaxWidth(),contentScale=ContentScale.Fit)
+                                            PokemonArtwork(model=form.artworkUrl,contentDescription=form.formName,pokemonId=form.formPokemonId.takeIf{it>0} ?: form.speciesId,modifier=Modifier.weight(1f).fillMaxWidth())
                                             Text(form.formName,style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis)
                                         }
                                     }
