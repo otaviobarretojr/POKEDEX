@@ -130,11 +130,21 @@ fun PokedexCatalogScreen(
                 )
             }
         )
-        PremiumSearchBar(
-            query=query,
-            onQueryChange={query=it},
-            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg),
-            placeholder="Nome, número ou tipo"
+        OutlinedTextField(
+            value=query,
+            onValueChange={value:String->query=value},
+            modifier=Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
+            singleLine=true,
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Pill),
+            leadingIcon={Icon(Icons.Default.Search,null)},
+            trailingIcon={
+                if(query.isNotEmpty()){
+                    IconButton(onClick={query=""}){
+                        Icon(Icons.Default.Close,contentDescription="Limpar busca")
+                    }
+                }
+            },
+            placeholder={Text("Nome, número ou tipo")}
         )
         Row(
             Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
