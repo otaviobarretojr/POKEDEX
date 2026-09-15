@@ -35,9 +35,21 @@ object ServerOfflinePackageInstaller {
         val expectedSha=requireNotNull(remote.sha256).lowercase()
         val total=remote.sizeBytes ?: 0L
 
-        OfflineGamePackManager.beginServerGeneralInstall()
-        val root=OfflinePackageInstallState.packageRoot(context)
         val zipFile=OfflinePackageInstallState.generalZip(context,remote.version)
+        val existingState=OfflinePackageInstallState.read(context)
+        val canResume=existingState.version==remote.version &&
+            existingState.stage in setOf(
+                OfflinePackageInstallState.Stage.DOWNLOADING,
+                OfflinePackageInstallState.Stage.DOWNLOADED,
+                OfflinePackageInstallState.Stage.VALIDATING,
+                OfflinePackageInstallState.Stage.EXTRACTING,
+                OfflinePackageInstallState.Stage.INSTALLING,
+                OfflinePackageInstallState.Stage.AUDITING,
+                OfflinePackageInstallState.Stage.FAILED
+            )
+        if(!canResume){
+            OfflineGamePackManager.beginServerGeneralInstall()
+        }
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.DOWNLOADING,remote.version,zipFile.takeIf{it.exists()}?.length() ?: 0L,total)
         ensureLocalPackage(
             url=url,
@@ -159,7 +171,12 @@ object ServerOfflinePackageInstaller {
         if(state.stage==OfflinePackageInstallState.Stage.INSTALLED &&
             state.version==remote.version &&
             OfflineGamePackManager.generalAudit()) return true
-        if(!state.active && state.stage!=OfflinePackageInstallState.Stage.FAILED) return false
+        val zip=OfflinePackageInstallState.generalZip(context,remote.version)
+        val recoverableState=state.version==remote.version &&
+            (state.active || state.stage==OfflinePackageInstallState.Stage.FAILED)
+        val recoverableZip=zip.exists() && (remote.sizeBytes ?: 0L)>0L &&
+            zip.length()==remote.sizeBytes
+        if(!recoverableState && !recoverableZip) return false
         return runCatching{
             installGeneral(context,remote,onProgress)
             true
