@@ -307,12 +307,13 @@ object ServerOfflinePackageInstaller {
                 val path=item.getString("path")
                 val file=resolveInside(extractDir,path)
                 check(file.exists()){"Visual ausente: $path"}
-                importImageIntoDiskCache(
-                    context,
-                    OfflineGamePackManager.journeyVisualCacheKey(visualUrl),
-                    file
+                OfflineLibraryManager.installGameVisual(
+                    context=context,
+                    gameKey=remote.packageKey,
+                    source=file,
+                    sourceUrl=visualUrl,
+                    cacheKey=OfflineGamePackManager.journeyVisualCacheKey(visualUrl)
                 )
-                importImageIntoDiskCache(context,visualUrl,file)
                 visualUrls += visualUrl
                 onProgress(
                     Progress(
