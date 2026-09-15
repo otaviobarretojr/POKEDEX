@@ -42,7 +42,7 @@ object ContentBootstrapManager {
                 }
                 if(!ok){
                     val state=OfflinePackageInstallState.read(context)
-                    error(state.error.ifBlank{"Biblioteca principal não passou na auditoria"})
+                    error(state.error?.takeIf{it.isNotBlank()} ?: "Biblioteca principal não passou na auditoria")
                 }
             }
             completed=general.sizeBytes ?: 0L
