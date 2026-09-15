@@ -69,7 +69,7 @@ object ServerOfflinePackageInstaller {
         if(extractDir.exists()) extractDir.deleteRecursively()
         extractDir.mkdirs()
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.EXTRACTING,remote.version,total,total)
-        onProgress(Progress(total,total,"Extraindo pacote"))
+        onProgress(Progress(0L,1L,"Extraindo pacote"))
         unzipSafe(zipFile,extractDir)
 
         val manifestFile=File(extractDir,"manifest.json")
