@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -93,6 +94,8 @@ private val mainDestinations=listOf(
  }
  fun openCampaignGuide(game:String,phase:String?=null,step:String?=null){navController.navigate("campaignGuide?game=${Uri.encode(game)}"+(phase?.let{"&phase=${Uri.encode(it)}"}?:"")+(step?.let{"&step=${Uri.encode(it)}"}?:""))}
  fun openReference(kind:String?=null,name:String?=null,source:String?=null){navController.navigate(if(kind.isNullOrBlank()||name.isNullOrBlank())"reference" else "reference?kind=${Uri.encode(kind)}&name=${Uri.encode(name)}"+(source?.let{"&source=${Uri.encode(it)}"}?:""))}
+ fun openUniversalSearch(){navController.navigate("search")}
+ fun openEvolutionCenter(){navController.navigate("evolutionCenter")}
  LaunchedEffect(currentRoute){
   currentRoute?.let(RecentActivityStore::recordRoute)
  }
@@ -129,7 +132,9 @@ private val mainDestinations=listOf(
     val shiny=entry.arguments?.getBoolean("shiny")?:false
     PokemonFormDetailScreen(id,name,shiny){navController.popBackStack()}
    }
-   composable(PokedexRoutes.POKEDEX){PokedexCatalogScreen(onPokemonClick={id->openPokemon(id,null)},onOpenFormDetail=::openFormDetail)}
+   composable("search"){UniversalSearchScreen(onBack={navController.popBackStack()},onPokemonClick={id->openPokemon(id,null)},onOpenReference={kind,name->openReference(kind,name,AppStatePreferences.activeRegionForGame(AppStatePreferences.activeGame))})}
+   composable("evolutionCenter"){EvolutionCenterScreen(onBack={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)})}
+   composable(PokedexRoutes.POKEDEX){PokedexCatalogScreen(onPokemonClick={id->openPokemon(id,null)},onOpenFormDetail=::openFormDetail,onOpenSearch=::openUniversalSearch,onOpenEvolutionCenter=::openEvolutionCenter)}
    composable(PokedexRoutes.COLLECTION){CollectionScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes)}
    composable(PokedexRoutes.BOXES){BoxesV2Screen(onPokemonClick={id,source->openPokemon(id,source)})}
    composable(PokedexRoutes.CENTRAL){CompanionCenterScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes)}
