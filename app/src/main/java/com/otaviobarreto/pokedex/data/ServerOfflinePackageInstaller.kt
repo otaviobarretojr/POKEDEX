@@ -441,32 +441,32 @@ object ServerOfflinePackageInstaller {
 
         val transferStartedAt=System.nanoTime()
         val transferStartBytes=start
-        FileOutputStream(destination,append).buffered(1024*1024).use{out->
-            connection.inputStream.buffered(1024*1024).use{input->
-                val buffer=ByteArray(1024*1024)
+        FileOutputStream(destination,append).buffered(2*1024*1024).use{out->
+            connection.inputStream.buffered(2*1024*1024).use{input->
+                val buffer=ByteArray(2*1024*1024)
                 var downloaded=start
                 var read:Int
+                var lastUiAt=0L
                 while(input.read(buffer).also{read=it}>=0){
                     if(read==0) continue
                     out.write(buffer,0,read)
                     downloaded += read
-                    val elapsed=((System.nanoTime()-transferStartedAt)/1_000_000_000.0).coerceAtLeast(.05)
-                    val speed=((downloaded-transferStartBytes)/elapsed).toLong().coerceAtLeast(0L)
-                    val progressLabel=buildString{
-                        append(label)
-                        append(" · ")
-                        append(humanBytes(downloaded))
-                        if(total>0L){
-                            append(" / ")
-                            append(humanBytes(total))
-                        }
-                        if(speed>0L){
+                    val now=System.nanoTime()
+                    if(now-lastUiAt>=150_000_000L || (total>0L && downloaded>=total)){
+                        lastUiAt=now
+                        val elapsed=((now-transferStartedAt)/1_000_000_000.0).coerceAtLeast(.05)
+                        val speed=((downloaded-transferStartBytes)/elapsed).toLong().coerceAtLeast(0L)
+                        val progressLabel=buildString{
+                            append(label)
                             append(" · ")
-                            append(humanSpeed(speed))
+                            append(humanBytes(downloaded))
+                            if(total>0L){append(" / ");append(humanBytes(total))}
+                            if(speed>0L){append(" · ");append(humanSpeed(speed))}
                         }
+                        onProgress(Progress(downloaded,total,progressLabel))
                     }
-                    onProgress(Progress(downloaded,total,progressLabel))
                 }
+                out.flush()
             }
         }
         connection.disconnect()
