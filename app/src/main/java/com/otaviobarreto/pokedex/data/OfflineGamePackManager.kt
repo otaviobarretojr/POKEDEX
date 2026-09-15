@@ -154,14 +154,15 @@ object OfflineGamePackManager {
         prefs().getStringSet("general_manifest_ids", emptySet()).orEmpty()
             .mapNotNull{it.toIntOrNull()}.toSet()
 
+    /**
+     * Legacy metadata audit kept only for compatibility with diagnostics.
+     * Runtime readiness is owned by OfflineLibraryManager.auditGeneral().
+     * Never gate startup or game packages on PersistentApiCache.
+     */
     fun generalAudit():Boolean {
         val status=generalStatus()
         val ids=generalManifestIds()
-        if(!status.verified || ids.size!=status.total) return false
-        if(JourneyReadinessAudit.referenceCatalogUrls().any{
-            !PersistentApiCache.has(it) || !PersistentApiCache.isPinned(it)
-        }) return false
-        return ids.all{sharedPokemonAssets(it)!=null}
+        return status.verified && ids.isNotEmpty() && ids.size==status.total
     }
 
     fun initialize(context: Context) {
