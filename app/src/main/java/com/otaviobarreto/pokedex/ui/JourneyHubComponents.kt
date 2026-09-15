@@ -185,10 +185,15 @@ internal fun JourneyGamePicker(
                                 overflow=TextOverflow.Ellipsis
                             )
                             nextStep?.let{step->
+                                CompanionSectionHeader(
+                                    title="Próximo objetivo",
+                                    supporting="O que fazer agora",
+                                    modifier=Modifier.padding(top=10.dp,bottom=2.dp)
+                                )
                                 JourneyObjectivePreviewCard(
                                     step=step,
                                     accent=accent,
-                                    modifier=Modifier.fillMaxWidth().padding(top=8.dp)
+                                    modifier=Modifier.fillMaxWidth()
                                 )
                             } ?: Text(
                                 "Jornada principal concluída",
@@ -258,7 +263,10 @@ private fun CompanionProgressSection(
 ){
     Surface(modifier=modifier,shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.38f)){
         Column(Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=12.dp)){
-            Text("SEU PROGRESSO",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            CompanionSectionHeader(
+                title="Seu progresso",
+                supporting="Jornada e Pokédex deste jogo"
+            )
             Row(Modifier.fillMaxWidth().padding(top=8.dp),verticalAlignment=Alignment.CenterVertically){
                 Column(Modifier.weight(1f)){
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
