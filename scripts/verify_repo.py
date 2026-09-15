@@ -107,7 +107,7 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
 if "21100" not in workflow or "20.11.0" not in workflow:
-    violations.append("CI v20.11.0 version validation missing")
+    violations.append("CI v20.12.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
@@ -1170,7 +1170,7 @@ local_v2071 = 'versionName = "20.7.1"' in local_gradle and "versionCode = 20701"
 local_v2080 = 'versionName = "20.8.0"' in local_gradle and "versionCode = 20800" in local_gradle
 local_v2090 = 'versionName = "20.9.0"' in local_gradle and "versionCode = 20900" in local_gradle
 local_v2100 = 'versionName = "20.10.0"' in local_gradle and "versionCode = 21000" in local_gradle
-local_v2110 = 'versionName = "20.11.0"' in local_gradle and "versionCode = 21100" in local_gradle
+local_v2110 = 'versionName = "20.12.0"' in local_gradle and "versionCode = 21200" in local_gradle
 if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110):
     violations.append("Local build version is not aligned with supported releases")
 
