@@ -8,7 +8,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import java.util.concurrent.atomic.AtomicLong
 
 object ContentBootstrapManager {
     data class Progress(val fraction:Float,val label:String,val downloadedBytes:Long=0,val totalBytes:Long=0)
@@ -37,7 +36,7 @@ object ContentBootstrapManager {
             val total=packages.sumOf{p->p.sizeBytes ?: 0L}.coerceAtLeast(1L)
             var completed=0L
             if(!generalReady){
-                val ok=ServerOfflinePackageInstaller.cleanRepairGeneral(context,general){p->
+                val ok=ServerOfflinePackageInstaller.installOrUpdateGeneral(context,general){p->
                     val current=p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
                     onProgress(Progress((current.toDouble()/total).toFloat().coerceIn(0f,.99f),"Biblioteca principal · "+p.label,current,total))
                 }
