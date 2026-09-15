@@ -97,7 +97,6 @@ object ServerOfflinePackageInstaller {
                     val file=resolveInside(extractDir,path)
                     check(file.exists()){"Recurso ausente: $path"}
                     OfflineLibraryManager.installResource(extractDir,path,resourceUrl)
-                    PersistentApiCache.importRaw(resourceUrl,file.readText(),pin=true)
                     resources += resourceUrl
                 }
             }
@@ -131,7 +130,7 @@ object ServerOfflinePackageInstaller {
                 resources=resources,
                 formKeys=formKeys
             )
-            OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLING,remote.version,(i+1).toLong(),pokemon.length().toLong())
+            if((i+1)%25==0 || i+1==pokemon.length()) OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLING,remote.version,(i+1).toLong(),pokemon.length().toLong())
             onProgress(
                 Progress(
                     downloadedBytes=(i+1).toLong(),
@@ -150,7 +149,6 @@ object ServerOfflinePackageInstaller {
                 val file=resolveInside(extractDir,path)
                 check(file.exists()){"Referência ausente: $path"}
                 OfflineLibraryManager.installResource(extractDir,path,resourceUrl)
-                PersistentApiCache.importRaw(resourceUrl,file.readText(),pin=true)
             }
         }
 
