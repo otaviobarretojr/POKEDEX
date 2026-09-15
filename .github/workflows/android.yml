@@ -32,10 +32,10 @@ jobs:
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
       - name: Apply release metadata
         run: python3 scripts/apply_release_version.py
-      - name: Validate v20.11.0 Journey Evolution Intelligence
+      - name: Validate v20.12.0 Trainer Companion
         run: |
-          grep -q 'versionCode = 21100' app/build.gradle.kts
-          grep -q 'versionName = "20.11.0"' app/build.gradle.kts
+          grep -q 'versionCode = 21200' app/build.gradle.kts
+          grep -q 'versionName = "20.12.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
@@ -75,5 +75,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: POKEDEX-v20.11.0-Journey-Evolution-Intelligence
+          name: POKEDEX-v20.12.0-Trainer-Companion
           path: app/build/outputs/apk/debug/app-debug.apk
