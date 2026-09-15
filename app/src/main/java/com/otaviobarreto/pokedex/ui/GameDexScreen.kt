@@ -134,13 +134,20 @@ private enum class GameDexFilter(val label:String){
                 else->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
                     items(shown,key={it.nationalId},contentType={"dex_item"}){p->
                         val caught=p.nationalId in captured
-                        ListItem(
-                            headlineContent={Text(p.name,fontWeight=FontWeight.Bold)},
-                            supportingContent={Text("#"+p.gameNumber.toString().padStart(3,'0')+" · National #"+p.nationalId)},
-                            leadingContent={PokemonArtwork(PokemonRepository.byId(p.nationalId)?.spriteUrl,null,Modifier.size(52.dp),pokemonId=p.nationalId)},
-                            trailingContent={Text(if(caught)"✓" else "—")},
-                            modifier=Modifier.clickable{onPokemonClick(p.nationalId,source)}
-                        )
+                        Surface(
+                            modifier=Modifier.fillMaxWidth().clickable{onPokemonClick(p.nationalId,source)},
+                            shape=androidx.compose.foundation.shape.RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+                            color=if(caught) MaterialTheme.colorScheme.primaryContainer.copy(alpha=.34f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.26f)
+                        ){
+                            Row(Modifier.padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
+                                PokemonArtwork(PokemonRepository.byId(p.nationalId)?.spriteUrl,null,Modifier.size(58.dp),pokemonId=p.nationalId)
+                                Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){
+                                    Text(p.name,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleSmall)
+                                    Text("#"+p.gameNumber.toString().padStart(3,'0')+" · National #"+p.nationalId,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Text(if(caught)"Registrado" else "Faltando",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold,color=if(caught) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }
