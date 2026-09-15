@@ -105,6 +105,8 @@ fun PokedexCatalogScreen(
     var query by remember{mutableStateOf("")}
     var selectedId by remember{mutableStateOf<Int?>(null)}
     val all=remember{PokemonRepository.all()}
+    val collectionRevision by CollectionStore.revision.collectAsState()
+    val ownedIds=remember(collectionRevision){CollectionStore.caughtIds()}
     val filtered=remember(query){
         val q=query.trim().removePrefix("#")
         if(q.isBlank()) all
@@ -178,59 +180,22 @@ fun PokedexCatalogScreen(
         ){
             items(filtered,key={it.id}){pk->
                 val accent=PokedexDesignTokens.Colors.type(pk.types.firstOrNull())
-                Card(
-                    modifier=Modifier,
+                PokemonGridCard(
+                    number=pk.id,
+                    name=pk.name,
+                    owned=pk.id in ownedIds,
                     onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedId=pk.id},
-                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
-                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
-                    elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
-                ){
-                    Box(Modifier.fillMaxWidth()){
-                        Box(
-                            Modifier.fillMaxWidth().height(84.dp)
-                                .background(
-                                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                                        listOf(accent.copy(alpha=.18f),Color.Transparent)
-                                    )
-                                )
+                    types=pk.types.map{it.uppercase()},
+                    accent=accent,
+                    artwork={
+                        PokemonArtwork(
+                            model=pk.spriteUrl,
+                            contentDescription=pk.name,
+                            pokemonId=pk.id,
+                            modifier=Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Sm)
                         )
-                        Column(
-                            Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Sm),
-                            horizontalAlignment=Alignment.CenterHorizontally
-                        ){
-                            Surface(
-                                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
-                                color=accent.copy(alpha=.12f),
-                                modifier=Modifier.align(Alignment.Start)
-                            ){
-                                Text(
-                                    "#"+pk.id.toString().padStart(4,'0'),
-                                    Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Sm,vertical=PokedexDesignTokens.Spacing.Xs),
-                                    style=MaterialTheme.typography.labelSmall,
-                                    color=accent
-                                )
-                            }
-                            PokemonArtwork(
-                                model=pk.spriteUrl,
-                                contentDescription=pk.name,
-                                pokemonId=pk.id,
-                                modifier=Modifier.size(94.dp)
-                            )
-                            Text(
-                                pk.name,
-                                style=MaterialTheme.typography.titleSmall,
-                                maxLines=1,
-                                overflow=TextOverflow.Ellipsis
-                            )
-                            Text(
-                                pk.types.take(2).joinToString(" · "){it.uppercase()},
-                                style=MaterialTheme.typography.labelSmall,
-                                color=accent,
-                                maxLines=1
-                            )
-                        }
                     }
-                }
+                )
             }
         }
     }
