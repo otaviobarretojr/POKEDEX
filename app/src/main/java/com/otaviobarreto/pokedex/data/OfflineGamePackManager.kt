@@ -288,14 +288,11 @@ object OfflineGamePackManager {
         prefs().getInt("general_server_version",0)
 
     fun beginServerGeneralInstall(){
+        // Do not invalidate a previously working library before the replacement
+        // package has been completely imported and audited.
         prefs().edit()
-            .putBoolean("general_ready",false)
-            .putInt("general_count",0)
-            .putInt("general_complete",0)
-            .remove("general_manifest_ids")
-            .remove("general_resource_urls")
             .putBoolean("general_server_installing",true)
-            .apply()
+            .commit()
     }
 
     fun isServerGeneralInstalling():Boolean =
