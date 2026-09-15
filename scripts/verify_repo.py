@@ -265,7 +265,7 @@ if "migrateCapturedToBox" in boxes or "migrateLegacyGameBox" in boxes:
     violations.append("Box screen must not mutate fixed game ordering")
 if "sortBox(" in boxes or "moveMany(" in boxes:
     violations.append("Box screen must stay search/browse focused")
-if "padding(horizontal=6.dp)" not in boxes or "height(40.dp)" not in boxes:
+if ("padding(horizontal=6.dp)" not in boxes and "padding(horizontal=PokedexDesignTokens.Spacing.Sm)" not in boxes) or "height(40.dp)" not in boxes:
     violations.append("Compact Box chrome regression")
 
 if violations:
