@@ -18,7 +18,7 @@ object GameDexIntelligence {
    val ctx=GameContext.fromSource(region.source)
    val dex=ctx?.let{runCatching{GameDexService.cached(it) ?: GameDexService.loadGameDex(it)}.getOrNull()}.orEmpty()
    val ids=dex.map{it.nationalId}.toSet()
-   val caught=ids.count{PokemonCollectionStore.isCaught(it)}
+   val caught=ids.count{CollectionStore.isCapturedIn(region.source,it)}
    RegionDexOverview(region,ids.size,caught,(ids.size-caught).coerceAtLeast(0))
   }
   return GameDexOverview(gameLabel,regions)
