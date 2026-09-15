@@ -27,7 +27,17 @@ object ContentBootstrapManager {
             val signature=packages.sortedBy{it.packageKey}.joinToString("|"){p->p.packageKey+":"+p.version+":"+p.sha256}
             val generalIds=OfflineGamePackManager.generalManifestIds()
             val generalReady=OfflineLibraryManager.auditGeneral(context,general.version,generalIds)
-            val installedGames=gamePackages.count{p->OfflineGamePackManager.status(p.displayName).downloaded}
+            fun localGameFor(p:RemoteOfflinePackageCatalog.RemotePackage)=
+                AppGameCatalog.games.firstOrNull{g->RemoteOfflinePackageCatalog.packageKeyForGame(g.label)==p.packageKey}
+            fun gameReady(p:RemoteOfflinePackageCatalog.RemotePackage):Boolean {
+                val game=localGameFor(p) ?: return false
+                val status=OfflineGamePackManager.status(game.label)
+                if(!status.downloaded || OfflineGamePackManager.gameServerVersion(game.label)!=p.version) return false
+                val resources=OfflineGamePackManager.gameResourceUrls(game.label)
+                val visuals=OfflineGamePackManager.gameVisualUrls(game.label)
+                return OfflineLibraryManager.auditGame(context,p.packageKey,resources,visuals)
+            }
+            val installedGames=gamePackages.count(::gameReady)
             if(generalReady && installedGames==gamePackages.size){
                 context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putString(KEY_READY,signature).commit()
                 onProgress(Progress(1f,"Biblioteca pronta"))
@@ -61,8 +71,8 @@ object ContentBootstrapManager {
                 gamePackages.map{pkg->
                     async{
                         semaphore.withPermit{
-                            if(!OfflineGamePackManager.status(pkg.displayName).downloaded){
-                                val game=AppGameCatalog.games.firstOrNull{g->RemoteOfflinePackageCatalog.packageKeyForGame(g.label)==pkg.packageKey}
+                            if(!gameReady(pkg)){
+                                val game=localGameFor(pkg)
                                     ?: error("Jogo sem mapeamento local: "+pkg.packageKey)
                                 ServerOfflinePackageInstaller.installGame(context,game,pkg){p->
                                     perGame[pkg.packageKey]=p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
@@ -80,8 +90,12 @@ object ContentBootstrapManager {
             onProgress(Progress((completed.toDouble()/total).toFloat().coerceIn(0f,.99f),"Validando biblioteca completa",completed,total))
             val finalGeneralAudit=OfflineLibraryManager.auditGeneralDetailed(context,general.version)
             check(finalGeneralAudit.ok){"Auditoria final: "+finalGeneralAudit.message}
-            val missing=gamePackages.filterNot{p->OfflineGamePackManager.status(p.displayName).downloaded}
-            check(missing.isEmpty()){"Pacotes de jogos ainda pendentes"}
+            val missing=gamePackages.filterNot(::gameReady)
+            check(missing.isEmpty()){
+                "Complementos pendentes: "+missing.joinToString(", "){p->
+                    localGameFor(p)?.label ?: p.packageKey
+                }
+            }
             context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putString(KEY_READY,signature).commit()
             onProgress(Progress(1f,"POKEDEX pronto",total,total))
             Result(true)
