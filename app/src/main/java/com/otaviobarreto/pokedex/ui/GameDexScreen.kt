@@ -62,7 +62,15 @@ private enum class GameDexFilter(val label:String){
     val routeGroups=remember(plan){
         plan.groupBy{it.routeGroup}.entries.sortedWith(
             compareBy<Map.Entry<String,List<CapturePlanEntry>>>(
-                {if(it.key.startsWith("Capturar"))0 else if(it.key=="Evoluir")1 else 2},
+                {group->
+                    when(group.value.firstOrNull()?.method){
+                        ObtainMethod.CAPTURE -> 0
+                        ObtainMethod.EVOLUTION -> 1
+                        ObtainMethod.TRANSFER -> 2
+                        ObtainMethod.TRADE_OR_SPECIAL -> 3
+                        ObtainMethod.UNKNOWN, null -> 4
+                    }
+                },
                 {it.key}
             )
         )
@@ -90,6 +98,9 @@ private enum class GameDexFilter(val label:String){
                 loading->DexStatusPane("Carregando Pokédex","Preparando dados da região selecionada.",Modifier.fillMaxSize().padding(16.dp),true)
                 routeMode && routeGroups.isEmpty()->DexStatusPane("Rota concluída","Não há Pokémon faltantes nesta região.",Modifier.fillMaxSize().padding(16.dp),false)
                 routeMode->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(12.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                    item(key="route_intro",contentType="route_intro"){
+                        Text("Prioridade prática: capture por local, depois evolua e deixe transferências ou métodos especiais para o final.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=4.dp,bottom=4.dp))
+                    }
                     routeGroups.forEach{group->
                         item(key="route_${group.key}",contentType="route_header"){
                             Column(Modifier.fillMaxWidth().padding(top=4.dp)){
