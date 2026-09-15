@@ -41,10 +41,7 @@ import kotlinx.coroutines.withContext
 internal fun JourneyGamePicker(
     onSelect:(String)->Unit,
     onPokemonClick:(Int,String?)->Unit,
-    onOpenBoxes:(String,String?)->Unit,
-    onOpenGameDex:()->Unit={},
-    onOpenEvolutionCenter:()->Unit={},
-    onOpenSearch:()->Unit={}
+    onOpenBoxes:(String,String?)->Unit
 ){
     val activeGamePreview=AppGameCatalog.adventureGames
         .firstOrNull{it.label==AppStatePreferences.activeGame}
