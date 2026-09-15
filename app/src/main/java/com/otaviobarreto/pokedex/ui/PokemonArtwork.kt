@@ -87,7 +87,8 @@ fun PokemonArtwork(
     alignment: Alignment = Alignment.Center,
     pokemonId: Int? = null,
     contentScale: ContentScale = ContentScale.Fit,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
+    cropTransparentBounds: Boolean = false
 ) {
     val context = LocalContext.current
     val tuning = remember(pokemonId) { ArtworkTuningCatalog.forPokemon(pokemonId) }
@@ -96,7 +97,7 @@ fun PokemonArtwork(
             ?: (model as? String)?.let{OfflineLibraryManager.resolveAny(context,it)}
             ?: model
     }
-    val request = remember(localModel,pokemonId) {
+    val request = remember(localModel,pokemonId,cropTransparentBounds) {
         ImageRequest.Builder(context)
             .data(localModel)
             .apply {
@@ -106,7 +107,9 @@ fun PokemonArtwork(
                 }
             }
             .crossfade(false)
-            .transformations(TransparentBoundsCropTransformation())
+            .apply {
+                if (cropTransparentBounds) transformations(TransparentBoundsCropTransformation())
+            }
             .build()
     }
 
