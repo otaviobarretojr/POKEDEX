@@ -78,6 +78,8 @@ object OfflinePackageInstallState {
     }
 
     fun clear(context:Context){
-        context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().clear().commit()
+        check(context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().clear().commit()){
+            "Falha ao limpar estado transitório da instalação"
+        }
     }
 }
