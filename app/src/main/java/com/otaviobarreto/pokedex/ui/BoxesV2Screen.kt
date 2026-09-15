@@ -192,16 +192,9 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    verticalAlignment=Alignment.CenterVertically
   ){
    Column(Modifier.weight(1f)){
+    Text("BOX "+(current+1)+" DE "+pages,fontSize=8.sp,lineHeight=9.sp,fontWeight=FontWeight.Black,letterSpacing=.7.sp,color=game.accent)
     Text(
-     region.label.uppercase(),
-     fontSize=8.sp,
-     lineHeight=9.sp,
-     fontWeight=FontWeight.Black,
-     letterSpacing=.7.sp,
-     color=game.accent
-    )
-    Text(
-     if(evolutionFilterName==null)"Box "+(current+1)+" / "+pages else "EVOLUÇÃO · "+evolutionFilterLabel.orEmpty().uppercase(),
+     if(evolutionFilterName==null)region.label else "EVOLUÇÃO · "+evolutionFilterLabel.orEmpty().uppercase(),
      fontSize=16.sp,
      lineHeight=17.sp,
      fontWeight=FontWeight.Black,
@@ -247,7 +240,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
       Text(((progress*100).toInt()).toString()+"%",fontSize=9.sp,lineHeight=10.sp,fontWeight=FontWeight.Black,color=game.accent)
       Spacer(Modifier.height(1.dp))
-      Text(caught.toString()+"/"+dex.size,fontSize=7.sp,lineHeight=8.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+      Text(caught.toString()+" de "+dex.size,fontSize=7.sp,lineHeight=8.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
      }
     }
    }
