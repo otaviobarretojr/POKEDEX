@@ -281,7 +281,7 @@ object OfflineGamePackManager {
             .putStringSet("general_manifest_ids",ids.map(Int::toString).toSet())
         serverVersion?.let{edit.putInt("general_server_version",it)}
         edit.putBoolean("general_server_installing",false)
-        edit.apply()
+        check(edit.commit()){"Falha ao persistir biblioteca geral instalada"}
     }
 
     fun generalServerVersion():Int =
