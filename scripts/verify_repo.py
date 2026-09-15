@@ -998,7 +998,6 @@ legacy_ui_files = (
     "PokedexV2Screen.kt",
     "PokedexScreens.kt",
     "TeamBuilderScreen.kt",
-    "GameDexScreen.kt",
     "RegionExplorerScreen.kt",
     "HomeDashboardScreen.kt",
 )
