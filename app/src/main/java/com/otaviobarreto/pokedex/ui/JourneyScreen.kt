@@ -41,7 +41,10 @@ private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 fun JourneyScreen(
     onPokemonClick:(Int,String?)->Unit,
     onOpenTeamGuide:(String,String?,String?)->Unit,
-    onOpenBoxes:(String,String?)->Unit
+    onOpenBoxes:(String,String?)->Unit,
+    onOpenGameDex:()->Unit={},
+    onOpenEvolutionCenter:()->Unit={},
+    onOpenSearch:()->Unit={}
 ){
     var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
     var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
@@ -76,7 +79,10 @@ fun JourneyScreen(
                 view=JourneyView.GAME_MENU
             },
             onPokemonClick=onPokemonClick,
-            onOpenBoxes=onOpenBoxes
+            onOpenBoxes=onOpenBoxes,
+            onOpenGameDex=onOpenGameDex,
+            onOpenEvolutionCenter=onOpenEvolutionCenter,
+            onOpenSearch=onOpenSearch
         )
         JourneyView.GAME_MENU -> if(game!=null) JourneyGameMenu(
             game=game,
