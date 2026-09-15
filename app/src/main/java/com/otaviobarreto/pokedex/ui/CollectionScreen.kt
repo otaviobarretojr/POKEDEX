@@ -268,16 +268,20 @@ private fun FormsAlbum(variants:List<OwnedPokemonVariant>,onBack:()->Unit,onPoke
                 if(entries.isNotEmpty()){
                     item{
                         Column{
-                            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-                                Text(category,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-                                Text("${entries.size}",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)
-                            }
+                            CompanionSectionHeader(
+                                title=category,
+                                supporting="${entries.size} forma${if(entries.size==1) "" else "s"} registrada${if(entries.size==1) "" else "s"}"
+                            )
                             Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                                 entries.take(4).forEach{form->
-                                    Card(Modifier.weight(1f).aspectRatio(.82f).clickable{onPokemonClick(form.speciesId)}){
+                                    Surface(
+                                        modifier=Modifier.weight(1f).aspectRatio(.82f).clickable{onPokemonClick(form.speciesId)},
+                                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+                                        color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.30f)
+                                    ){
                                         Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally){
                                             PokemonArtwork(model=form.artworkUrl,contentDescription=form.formName,pokemonId=form.formPokemonId.takeIf{it>0} ?: form.speciesId,modifier=Modifier.weight(1f).fillMaxWidth())
-                                            Text(form.formName,style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis)
+                                            Text(form.formName,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
