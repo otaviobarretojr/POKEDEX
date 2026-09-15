@@ -15,6 +15,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.size.Size
 import coil.transform.Transformation
+import com.otaviobarreto.pokedex.data.OfflineLibraryManager
 import kotlin.math.max
 import kotlin.math.min
 
@@ -90,9 +91,14 @@ fun PokemonArtwork(
 ) {
     val context = LocalContext.current
     val tuning = remember(pokemonId) { ArtworkTuningCatalog.forPokemon(pokemonId) }
-    val request = remember(model,pokemonId) {
+    val localModel = remember(model,pokemonId) {
+        pokemonId?.let{OfflineLibraryManager.resolve(context,"pokemon-offline-$it")}
+            ?: (model as? String)?.let{OfflineLibraryManager.resolve(context,it)}
+            ?: model
+    }
+    val request = remember(localModel,pokemonId) {
         ImageRequest.Builder(context)
-            .data(model)
+            .data(localModel)
             .apply {
                 pokemonId?.let { id ->
                     diskCacheKey("pokemon-offline-$id")
