@@ -37,16 +37,29 @@ fun CompanionCenterScreen(
     var audioVolume by remember{mutableFloatStateOf(HomeAudioManager.volume)}
     var storageRevision by remember{mutableIntStateOf(0)}
     var remoteManifestRevision by remember{mutableIntStateOf(0)}
+    var installStateRevision by remember{mutableIntStateOf(0)}
 
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
 
     LaunchedEffect(Unit){
-        withContext(Dispatchers.IO){
-            runCatching{RemoteOfflinePackageCatalog.refresh()}
-        }
+        withContext(Dispatchers.IO){runCatching{RemoteOfflinePackageCatalog.refresh()}}
         remoteManifestRevision++
+        val remote=RemoteOfflinePackageCatalog.general()
+        val state=OfflinePackageInstallState.read(context)
+        if(remote?.ready==true && state.active){
+            activeDownload="__general__"
+            statusText="Retomando instalação da biblioteca…"
+            val recovered=withContext(Dispatchers.IO){
+                ServerOfflinePackageInstaller.recoverGeneralIfNeeded(context,remote){p->serverProgress=p}
+            }
+            statusText=if(recovered) "Biblioteca geral recuperada e instalada." else
+                "A instalação anterior não pôde ser concluída. Toque em Reparar."
+            activeDownload=null
+            serverProgress=null
+            installStateRevision++
+        }
     }
 
     val createBackup=rememberLauncherForActivityResult(
@@ -130,7 +143,8 @@ fun CompanionCenterScreen(
             val generalEstimate=OfflineGamePackManager.estimateGeneral()
             val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
             val installedServerVersion=OfflineGamePackManager.generalServerVersion()
-            val serverInstallInProgress=OfflineGamePackManager.isServerGeneralInstalling()
+            val persistentInstallState=remember(installStateRevision,activeDownload){OfflinePackageInstallState.read(context)}
+            val serverInstallInProgress=persistentInstallState.active
             val serverPackageAvailable=remoteGeneral?.ready==true && installedServerVersion==0
             val serverUpdateAvailable=remoteGeneral?.ready==true &&
                 remoteGeneral.version>installedServerVersion &&
@@ -154,7 +168,17 @@ fun CompanionCenterScreen(
                                 when{
                                     activeDownload=="__general__" -> serverProgress?.label ?: progress?.label ?: "Preparando biblioteca geral…"
                                     serverInstallInProgress ->
-                                        "Instalação do pacote do servidor pendente"
+                                        when(persistentInstallState.stage){
+                                            OfflinePackageInstallState.Stage.DOWNLOADING -> "Download em andamento"
+                                            OfflinePackageInstallState.Stage.DOWNLOADED -> "Download concluído · preparando instalação"
+                                            OfflinePackageInstallState.Stage.VALIDATING -> "Validando pacote"
+                                            OfflinePackageInstallState.Stage.EXTRACTING -> "Extraindo pacote"
+                                            OfflinePackageInstallState.Stage.INSTALLING -> "Instalando biblioteca"
+                                            OfflinePackageInstallState.Stage.AUDITING -> "Verificando instalação"
+                                            else -> "Retomando instalação"
+                                        }
+                                    persistentInstallState.stage==OfflinePackageInstallState.Stage.FAILED ->
+                                        "Instalação interrompida · Reparar" 
                                     generalValid && serverUpdateAvailable ->
                                         "Atualização disponível · servidor v"+remoteGeneral?.version
                                     generalValid -> "Concluído · "+general.total+" Pokémon · v"+installedServerVersion
@@ -226,6 +250,12 @@ fun CompanionCenterScreen(
                                         }
                                         if(result.isFailure){
                                             OfflineGamePackManager.markServerGeneralInstallFailed()
+                                            val old=OfflinePackageInstallState.read(context)
+                                            OfflinePackageInstallState.write(
+                                                context,OfflinePackageInstallState.Stage.FAILED,
+                                                remoteGeneral?.version ?: old.version,old.done,old.total,
+                                                result.exceptionOrNull()?.message ?: "Falha desconhecida"
+                                            )
                                         }
                                         statusText=when{
                                             result.isSuccess && remoteGeneral?.ready==true ->
@@ -239,6 +269,7 @@ fun CompanionCenterScreen(
                                         activeDownload=null
                                         progress=null
                                         serverProgress=null
+                                        installStateRevision++
                                     }
                                 },
                                 modifier=Modifier.weight(1f)
@@ -248,7 +279,13 @@ fun CompanionCenterScreen(
                                     null
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text(if(serverUpdateAvailable) "Atualizar" else "Baixar geral")
+                                Text(
+                                    when{
+                                        persistentInstallState.stage==OfflinePackageInstallState.Stage.FAILED -> "Reparar"
+                                        serverUpdateAvailable -> "Atualizar"
+                                        else -> "Baixar geral"
+                                    }
+                                )
                             }
                         }else{
                             FilledTonalButton(
