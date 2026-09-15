@@ -48,14 +48,16 @@ object OfflinePackageInstallState {
     }
 
     fun write(context:Context,stage:Stage,version:Int,done:Long=0L,total:Long=0L,error:String?=null){
-        context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit()
-            .putString(KEY_STAGE,stage.name)
-            .putInt(KEY_VERSION,version)
-            .putLong(KEY_DONE,done)
-            .putLong(KEY_TOTAL,total)
-            .putString(KEY_ERROR,error)
-            .putLong(KEY_UPDATED,System.currentTimeMillis())
-            .commit()
+        check(
+            context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit()
+                .putString(KEY_STAGE,stage.name)
+                .putInt(KEY_VERSION,version)
+                .putLong(KEY_DONE,done)
+                .putLong(KEY_TOTAL,total)
+                .putString(KEY_ERROR,error)
+                .putLong(KEY_UPDATED,System.currentTimeMillis())
+                .commit()
+        ){"Falha ao persistir etapa $stage da instalação"}
     }
 
     fun packageRoot(context:Context)=File(context.filesDir,"offline-packages").apply{mkdirs()}
