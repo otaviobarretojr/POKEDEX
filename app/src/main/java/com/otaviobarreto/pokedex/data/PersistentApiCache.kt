@@ -35,6 +35,13 @@ object PersistentApiCache {
         fetch: () -> String
     ): String {
         memory[url]?.let { return it }
+        directory?.parentFile?.let{filesDir->
+            val contextDir=filesDir
+            val offlineRoot=File(contextDir,"offline-library")
+            resolveOfflineResource(offlineRoot,url)?.let{local->
+                runCatching{local.readText()}.getOrNull()?.let{value->memory[url]=value; return value}
+            }
+        }
         val file = fileFor(url)
         val now = System.currentTimeMillis()
         if (file.exists() && (url in pinnedUrls || now - file.lastModified() <= maxAgeMs)) {
@@ -157,6 +164,21 @@ object PersistentApiCache {
 
     private fun persistPins() {
         runCatching { pinsFile?.writeText(pinnedUrls.sorted().joinToString("\n")) }
+    }
+
+    private fun resolveOfflineResource(root:File,url:String):File? {
+        val hash=sha256(url)
+        val candidates=listOf(
+            File(root,"general/resource-index/$hash.path"),
+            File(root,"game-resource-index/$hash.path")
+        )
+        for(pointer in candidates){
+            if(!pointer.exists()) continue
+            val raw=runCatching{pointer.readText()}.getOrNull()?.takeIf{it.isNotBlank()} ?: continue
+            val target=if(File(raw).isAbsolute) File(raw) else File(root,"general/$raw")
+            if(target.exists()) return target
+        }
+        return null
     }
 
     private fun sha256(value: String): String {
