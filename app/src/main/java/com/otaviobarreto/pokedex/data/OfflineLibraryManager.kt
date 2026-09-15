@@ -53,18 +53,69 @@ object OfflineLibraryManager {
         if(old.exists()) old.deleteRecursively()
     }
 
-    fun auditGeneral(context:Context,version:Int,ids:Set<Int>):Boolean {
+    data class AuditResult(
+        val ok:Boolean,
+        val message:String,
+        val pokemonCount:Int=0,
+        val resourcesChecked:Int=0,
+        val imagesChecked:Int=0
+    )
+
+    fun auditStaging(staging:File,version:Int):AuditResult {
+        if(!staging.isDirectory) return AuditResult(false,"staging ausente")
+        val manifestFile=File(staging,"manifest.json")
+        if(!manifestFile.exists()) return AuditResult(false,"manifest.json ausente")
+        val manifest=runCatching{JSONObject(manifestFile.readText())}.getOrElse{
+            return AuditResult(false,"manifest.json inválido: "+(it.message ?: "erro"))
+        }
+        if(manifest.optString("package_key")!="general") return AuditResult(false,"package_key inválido")
+        val pokemon=manifest.optJSONArray("pokemon") ?: return AuditResult(false,"lista pokemon ausente")
+        var resources=0
+        var images=0
+        for(i in 0 until pokemon.length()){
+            val item=pokemon.optJSONObject(i) ?: return AuditResult(false,"pokemon["+i+"] inválido",i,resources,images)
+            item.optJSONArray("resources")?.let{array->
+                for(j in 0 until array.length()){
+                    val entry=array.optJSONObject(j) ?: return AuditResult(false,"resource inválido em pokemon["+i+"]",i,resources,images)
+                    val path=entry.optString("path")
+                    if(path.isBlank() || !File(staging,path).exists()) return AuditResult(false,"recurso ausente: "+path,i,resources,images)
+                    resources++
+                }
+            }
+            item.optJSONArray("images")?.let{array->
+                for(j in 0 until array.length()){
+                    val entry=array.optJSONObject(j) ?: return AuditResult(false,"imagem inválida em pokemon["+i+"]",i,resources,images)
+                    val path=entry.optString("path")
+                    if(path.isBlank() || !File(staging,path).exists()) return AuditResult(false,"imagem ausente: "+path,i,resources,images)
+                    images++
+                }
+            }
+        }
+        manifest.optJSONArray("reference_resources")?.let{array->
+            for(i in 0 until array.length()){
+                val entry=array.optJSONObject(i) ?: return AuditResult(false,"reference_resource["+i+"] inválido",pokemon.length(),resources,images)
+                val path=entry.optString("path")
+                if(path.isBlank() || !File(staging,path).exists()) return AuditResult(false,"referência ausente: "+path,pokemon.length(),resources,images)
+                resources++
+            }
+        }
+        return AuditResult(true,pokemon.length().toString()+" Pokémon · "+resources+" recursos · "+images+" imagens",pokemon.length(),resources,images)
+    }
+
+    fun auditGeneralDetailed(context:Context,version:Int):AuditResult {
         val active=general(context)
         val state=File(active,"library-state.json")
-        val manifest=File(active,"manifest.json")
-        if(!active.isDirectory || !state.exists() || !manifest.exists()) return false
-        val json=runCatching{JSONObject(state.readText())}.getOrNull() ?: return false
-        if(json.optInt("version",-1)!=version || json.optInt("pokemon_count",-1)!=ids.size) return false
-        val index=File(active,"local-index")
-        return index.isDirectory && ids.all{id->
-            File(index,safe("pokemon-offline-$id")+".path").exists()
-        }
+        if(!state.exists()) return AuditResult(false,"library-state.json ausente")
+        val json=runCatching{JSONObject(state.readText())}.getOrElse{return AuditResult(false,"library-state.json inválido")}
+        if(json.optInt("version",-1)!=version) return AuditResult(false,"versão local "+json.optInt("version",-1)+" != "+version)
+        val content=auditStaging(active,version)
+        if(!content.ok) return content
+        if(json.optInt("pokemon_count",-1)!=content.pokemonCount) return AuditResult(false,"contagem gravada "+json.optInt("pokemon_count",-1)+" != "+content.pokemonCount)
+        return content
     }
+
+    fun auditGeneral(context:Context,version:Int,ids:Set<Int>):Boolean =
+        auditGeneralDetailed(context,version).ok
 
     fun resolve(context:Context,key:String):File? {
         val active=general(context)
