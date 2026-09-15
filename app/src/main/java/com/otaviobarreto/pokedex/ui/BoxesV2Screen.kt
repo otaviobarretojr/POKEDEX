@@ -143,20 +143,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
  Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
-  CompanionContextHeader(
-   title="Box",
-   eyebrow="Coleção por jogo",
-   subtitle=game.label+" · "+region.label,
-   modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm,bottom=PokedexDesignTokens.Spacing.Xs),
-   progress={
-    Text(
-     caught.toString()+" de "+dex.size,
-     style=MaterialTheme.typography.labelLarge,
-     fontWeight=FontWeight.Bold,
-     color=game.accent
-    )
-   }
-  )
+  BoxCompanionHeader(game.label,region.label,caught,dex.size,game.accent)
   Row(
    Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Xs),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
@@ -354,6 +341,14 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    dismiss={captureTarget=null}
   )
  }
+}
+@Composable
+private fun BoxCompanionHeader(game:String,region:String,caught:Int,total:Int,accent:Color){
+ CompanionContextHeader(
+  title="Box",eyebrow="Coleção por jogo",subtitle=game+" · "+region,
+  modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm,bottom=PokedexDesignTokens.Spacing.Xs),
+  progress={Text(caught.toString()+" de "+total,style=MaterialTheme.typography.labelLarge,fontWeight=FontWeight.Bold,color=accent)}
+ )
 }
 @Composable
 private fun QBGrid(
