@@ -129,13 +129,12 @@ internal fun JourneyGamePicker(
             activeGame?.let{game->
                 item(key="active_companion"){
                     val accent=PokedexDesignTokens.Colors.game(game.label)
-                    Card(
+                    Surface(
                         modifier=Modifier.fillMaxWidth(),
-                        shape=RoundedCornerShape(24.dp),
-                        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
-                        elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
+                        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Xl),
+                        color=MaterialTheme.colorScheme.surface
                     ){
-                        Column(Modifier.fillMaxWidth().padding(16.dp)){
+                        Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                             Crossfade(targetState=game.label,label="activeGameHero"){heroGameLabel->
                                 val denseCover=heroGameLabel=="Scarlet / Violet" || GameCoverCatalog.coversFor(heroGameLabel).size>=2
                                 Box(
@@ -210,20 +209,21 @@ internal fun JourneyGamePicker(
                                 accent=accent,
                                 modifier=Modifier.fillMaxWidth().padding(top=12.dp)
                             )
-                            Button(onClick={onSelect(game.label)},modifier=Modifier.fillMaxWidth().padding(top=14.dp).heightIn(min=50.dp)){
-                                Icon(Icons.Default.Explore,null,Modifier.size(18.dp));Spacer(Modifier.width(7.dp));Text("Continuar Jornada")
-                            }
+                            PrimaryCompanionAction(
+                                label="Continuar Jornada",
+                                onClick={onSelect(game.label)},
+                                modifier=Modifier.padding(top=14.dp),
+                                leading={Icon(Icons.Default.Explore,null,Modifier.size(18.dp))}
+                            )
                         }
                     }
                 }
             }
 
             item{
-                Text(
-                    if(activeGame==null)"ESCOLHA UM JOGO" else "OUTRAS JORNADAS",
-                    style=MaterialTheme.typography.labelMedium,
-                    fontWeight=FontWeight.Black,
-                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                CompanionSectionHeader(
+                    title=if(activeGame==null)"Escolha um jogo" else "Outras jornadas",
+                    supporting=if(activeGame==null)"Comece uma aventura para ativar seu Companion." else "Continue ou inicie outra aventura quando quiser.",
                     modifier=Modifier.padding(top=4.dp,bottom=1.dp)
                 )
             }
