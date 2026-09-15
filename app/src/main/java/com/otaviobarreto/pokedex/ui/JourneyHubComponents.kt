@@ -38,7 +38,10 @@ import kotlinx.coroutines.withContext
 internal fun JourneyGamePicker(
     onSelect:(String)->Unit,
     onPokemonClick:(Int,String?)->Unit,
-    onOpenBoxes:(String,String?)->Unit
+    onOpenBoxes:(String,String?)->Unit,
+    onOpenGameDex:()->Unit={},
+    onOpenEvolutionCenter:()->Unit={},
+    onOpenSearch:()->Unit={}
 ){
     val activeGamePreview=AppGameCatalog.adventureGames
         .firstOrNull{it.label==AppStatePreferences.activeGame}
@@ -204,6 +207,11 @@ internal fun JourneyGamePicker(
                                 FilledTonalButton(onClick={onOpenBoxes(game.label,activeRegionSource)},modifier=Modifier.weight(1f)){
                                     Icon(Icons.Default.GridView,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Box")
                                 }
+                            }
+                            Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                                FilledTonalButton(onClick=onOpenGameDex,modifier=Modifier.weight(1f)){Icon(Icons.Default.MenuBook,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));Text("Dex do jogo")}
+                                FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){Icon(Icons.Default.AutoAwesome,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));Text("Evoluções")}
+                                IconButton(onClick=onOpenSearch){Icon(Icons.Default.Search,"Busca universal")}
                             }
                         }
                     }
