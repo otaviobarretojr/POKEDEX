@@ -144,9 +144,9 @@ fun CompanionCenterScreen(
         }
 
         item(key="general_offline_library"){
-            val general=OfflineGamePackManager.generalStatus()
-            val generalValid=OfflineGamePackManager.generalAudit()
-            val generalEstimate=OfflineGamePackManager.estimateGeneral()
+            val general=remember(storageRevision,activeDownload){OfflineGamePackManager.generalStatus()}
+            val generalValid=remember(storageRevision,activeDownload){OfflineGamePackManager.generalAudit()}
+            val generalEstimate=remember(storageRevision){OfflineGamePackManager.estimateGeneral()}
             val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
             val installedServerVersion=OfflineGamePackManager.generalServerVersion()
             val persistentInstallState=remember(installStateRevision,activeDownload){OfflinePackageInstallState.read(context)}
@@ -344,10 +344,10 @@ fun CompanionCenterScreen(
 
         AppGameCatalog.adventureGames.forEach{game->
             item(key=game.label){
-                val pack=OfflineGamePackManager.status(game.label)
-                val audit=OfflineGamePackManager.audit(game.label)
-                val gameEstimate=OfflineGamePackManager.estimateGame(game.label)
-                val generalReadyForReuse=OfflineGamePackManager.generalAudit()
+                val pack=remember(storageRevision,activeDownload,game.label){OfflineGamePackManager.status(game.label)}
+                val audit=remember(storageRevision,activeDownload,game.label){OfflineGamePackManager.audit(game.label)}
+                val gameEstimate=remember(storageRevision,game.label){OfflineGamePackManager.estimateGame(game.label)}
+                val generalReadyForReuse=remember(storageRevision,activeDownload){OfflineGamePackManager.generalAudit()}
                 val remotePackage=remember(remoteManifestRevision,game.label){
                     RemoteOfflinePackageCatalog.forGameLabel(game.label)
                 }
@@ -504,7 +504,7 @@ fun CompanionCenterScreen(
 
         item{
             SettingsSectionTitle("Armazenamento e desempenho")
-            val cache=PokedexDataStore.cacheStats()
+            val cache=remember(storageRevision){PokedexDataStore.cacheStats()}
             val apiCacheBytes=remember(storageRevision){PersistentApiCache.sizeBytes()}
             val apiCacheMb=apiCacheBytes/1024f/1024f
             val downloadedPacks=remember(storageRevision){
