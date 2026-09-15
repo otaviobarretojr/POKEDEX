@@ -1,8 +1,6 @@
 package com.otaviobarreto.pokedex.data
 
 import android.content.Context
-import coil.imageLoader
-import coil.annotation.ExperimentalCoilApi
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -67,7 +65,7 @@ object ServerOfflinePackageInstaller {
             "SHA-256 do pacote geral não confere"
         }
 
-        val extractDir=OfflinePackageInstallState.generalExtract(context,remote.version)
+        val extractDir=OfflinePackageInstallState.generalStaging(context,remote.version)
         if(extractDir.exists()) extractDir.deleteRecursively()
         extractDir.mkdirs()
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.EXTRACTING,remote.version,total,total)
@@ -113,13 +111,15 @@ object ServerOfflinePackageInstaller {
                     val path=image.getString("path")
                     val file=resolveInside(extractDir,path)
                     check(file.exists()){"Imagem ausente: $path"}
-                    val imported=runCatching{
-                        importImageIntoDiskCache(context,cacheKey,file)
-                        sourceUrl?.let{url->importImageIntoDiskCache(context,url,file)}
-                    }.isSuccess
+                    val local=OfflineLibraryManager.installImage(
+                        stagingRoot=extractDir,
+                        relativePath=path,
+                        cacheKey=cacheKey,
+                        sourceUrl=sourceUrl
+                    )
                     if(cacheKey=="pokemon-offline-$id"){
-                        check(imported){"Falha ao importar arte principal #$id"}
-                    }else if(imported && cacheKey.startsWith("pokemon-form-offline-")){
+                        check(local.exists()){"Falha ao preparar arte principal #$id"}
+                    }else if(cacheKey.startsWith("pokemon-form-offline-")){
                         formKeys += cacheKey
                     }
                 }
@@ -153,12 +153,12 @@ object ServerOfflinePackageInstaller {
         }
 
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.AUDITING,remote.version,ids.size.toLong(),ids.size.toLong())
+        OfflineLibraryManager.activateGeneral(context,extractDir,remote.version,ids)
         OfflineGamePackManager.finalizeImportedGeneral(ids,remote.version)
         check(OfflineGamePackManager.generalAudit()){"Biblioteca importada falhou na auditoria"}
+        check(OfflineLibraryManager.auditGeneral(context,remote.version,ids)){"Biblioteca local falhou na auditoria"}
         OfflinePackageInstallState.write(context,OfflinePackageInstallState.Stage.INSTALLED,remote.version,ids.size.toLong(),ids.size.toLong())
         onProgress(Progress(ids.size.toLong(),ids.size.toLong(),"Biblioteca geral pronta"))
-
-        runCatching{extractDir.deleteRecursively()}
         runCatching{zipFile.delete()}
     }
 
@@ -170,7 +170,7 @@ object ServerOfflinePackageInstaller {
         require(remote.packageKey=="general"){"Pacote remoto inválido"}
         val expectedSha=requireNotNull(remote.sha256).lowercase()
         val zip=OfflinePackageInstallState.generalZip(context,remote.version)
-        val extract=OfflinePackageInstallState.generalExtract(context,remote.version)
+        val extract=OfflinePackageInstallState.generalStaging(context,remote.version)
         onProgress(Progress(0L,1L,"Preparando reparo limpo"))
 
         val keepZip=zip.exists() &&
@@ -179,7 +179,7 @@ object ServerOfflinePackageInstaller {
             runCatching{sha256(zip).equals(expectedSha,ignoreCase=true)}.getOrDefault(false)
 
         OfflineGamePackManager.resetGeneralForCleanRepair()
-        runCatching{context.imageLoader.diskCache?.clear()}
+        OfflineLibraryManager.removeGeneral(context)
         runCatching{extract.deleteRecursively()}
         OfflinePackageInstallState.clear(context)
 
@@ -339,27 +339,6 @@ object ServerOfflinePackageInstaller {
         onProgress(Progress(total,total,"Complemento pronto"))
         runCatching{extractDir.deleteRecursively()}
         runCatching{zipFile.delete()}
-    }
-
-    @OptIn(ExperimentalCoilApi::class)
-    private fun importImageIntoDiskCache(context:Context,cacheKey:String,file:File){
-        val disk=requireNotNull(context.imageLoader.diskCache){"Cache de imagens indisponível"}
-        disk.openSnapshot(cacheKey)?.use{return}
-        val editor=disk.openEditor(cacheKey)
-        if(editor==null){
-            disk.openSnapshot(cacheKey)?.use{return}
-            error("Não foi possível abrir o cache $cacheKey")
-        }
-        try{
-            val bytes=file.readBytes()
-            disk.fileSystem.write(editor.data){
-                write(bytes)
-            }
-            editor.commit()
-        }catch(t:Throwable){
-            editor.abort()
-            throw t
-        }
     }
 
     private fun ensureLocalPackage(
