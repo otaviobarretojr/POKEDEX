@@ -151,6 +151,10 @@ private fun JourneyRoute(
     var confirmReset by rememberSaveable(game.label){mutableStateOf(false)}
     val hiddenCompletedCount=completedCount
     val currentIndex=remember(steps,nextStep){nextStep?.let(steps::indexOf) ?: -1}
+    val remainingCount=remember(steps,completed){steps.count{it.id !in completed}}
+    val nextAfterCurrent=remember(steps,completed,currentIndex){
+        if(currentIndex<0) null else steps.drop(currentIndex+1).firstOrNull{it.id !in completed}
+    }
     val upcomingSteps=remember(steps,completed,currentIndex){
         if(currentIndex<0) emptyList()
         else steps.drop(currentIndex+1).filterNot{it.id in completed}
@@ -355,7 +359,24 @@ private fun JourneyRoute(
                     modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
                 ){
                     Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-                        Text("Prepare o próximo passo",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                        Row(verticalAlignment=Alignment.CenterVertically){
+                            Column(Modifier.weight(1f)){
+                                Text("Prepare o próximo passo",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                                Text(
+                                    if(remainingCount==1)"Último objetivo da Jornada"
+                                    else remainingCount.toString()+" objetivos restantes",
+                                    style=MaterialTheme.typography.labelSmall,
+                                    color=MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            nextAfterCurrent?.let{
+                                AssistChip(
+                                    onClick={onOpenStep(it.id)},
+                                    label={Text("Depois: "+journeyDisplayTitle(it),maxLines=1,overflow=TextOverflow.Ellipsis)},
+                                    leadingIcon={Icon(Icons.Default.ArrowForward,null,Modifier.size(15.dp))}
+                                )
+                            }
+                        }
                         Text(
                             smart.recommendation ?: "Use a Pokédex do jogo e a Central de evolução para preparar sua próxima etapa.",
                             style=MaterialTheme.typography.bodySmall,
