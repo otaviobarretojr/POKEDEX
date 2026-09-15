@@ -122,7 +122,7 @@ fun CompanionCenterScreen(
         item(key="offline_content_summary"){
             val generalValid=remember(storageRevision,activeDownload){OfflineGamePackManager.generalAudit()}
             val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
-            val installedServerVersion=OfflineGamePackManager.generalServerVersion()
+            val installedServerVersion=remember(storageRevision,installStateRevision){OfflineGamePackManager.generalServerVersion()}
             val installedGames=remember(storageRevision){
                 AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
             }
@@ -227,7 +227,7 @@ fun CompanionCenterScreen(
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    val startupMs=StartupPreloader.lastWarmDurationMs
+                    val startupMs=remember(storageRevision){StartupPreloader.lastWarmDurationMs}
                     if(startupMs>0){
                         Text(
                             "Última preparação inicial: "+startupMs+" ms",
