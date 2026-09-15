@@ -99,7 +99,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
- val entries=dex.drop(current*30).take(30)
+ val entries=remember(dex,current){dex.drop(current*30).take(30)}
  LaunchedEffect(region.source,dex){
   if(dex.isEmpty()){evolutionMethodIds=emptyMap();evolutionMethodLoading=false}
   else{
@@ -114,11 +114,11 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}
  }
  val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty()
- val caught=dex.count{it.nationalId in capturedIds}
+ val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
  val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
- val variantsInRegion=VariantCollectionStore.ownedVariants.filter{it.source==region.source}
- val shinyCaptured=variantsInRegion.count{it.shiny}
- val formCaptured=variantsInRegion.count{it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)}
+ val variantsInRegion=remember(region.source,VariantCollectionStore.ownedVariants){VariantCollectionStore.ownedVariants.filter{it.source==region.source}}
+ val shinyCaptured=remember(variantsInRegion){variantsInRegion.count{it.shiny}}
+ val formCaptured=remember(variantsInRegion){variantsInRegion.count{it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)}}
  val gameProgress=remember(game.label,CollectionStore.contextualCapturedIds){
   val regionalTotals=game.regions.map{r->
    val ctx=GameContext.fromSource(r.source)
