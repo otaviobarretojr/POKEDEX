@@ -37,8 +37,16 @@ object ContentBootstrapManager {
             var completed=0L
             if(!generalReady){
                 val ok=ServerOfflinePackageInstaller.installOrUpdateGeneral(context,general){p->
-                    val current=p.downloadedBytes.coerceAtMost(p.totalBytes.coerceAtLeast(0L))
-                    onProgress(Progress((current.toDouble()/total).toFloat().coerceIn(0f,.99f),"Biblioteca principal · "+p.label,current,total))
+                    val label=p.label
+                    val stageFraction=when{
+                        label.startsWith("Baixando") -> .70f*p.fraction
+                        label.startsWith("Validando integridade") -> .70f
+                        label.startsWith("Extraindo") -> .78f
+                        label.startsWith("Instalando") || label.startsWith("Importando") -> .80f+(.15f*p.fraction)
+                        label.startsWith("Validado") || label.startsWith("Biblioteca geral pronta") -> .95f
+                        else -> (.70f*p.fraction).coerceAtLeast(.02f)
+                    }
+                    onProgress(Progress(stageFraction.coerceIn(.02f,.95f),"Biblioteca principal · "+label,p.downloadedBytes,p.totalBytes))
                 }
                 if(!ok){
                     val state=OfflinePackageInstallState.read(context)
