@@ -345,6 +345,26 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
             }
         }
 
+        if(currentUi!=null){
+            item(key="journey_context_tools",contentType="tools"){
+                Card(
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
+                ){
+                    Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
+                        Text("Prepare o próximo passo",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                        Text(
+                            smart.recommendation ?: "Use a Pokédex do jogo e a Central de evolução para preparar sua próxima etapa.",
+                            style=MaterialTheme.typography.bodySmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs)
+                        )
+                    }
+                }
+            }
+        }
+
         if(upcomingSteps.isNotEmpty()){
             item(key="upcoming_toggle",contentType="toggle"){
                 FilledTonalButton(
