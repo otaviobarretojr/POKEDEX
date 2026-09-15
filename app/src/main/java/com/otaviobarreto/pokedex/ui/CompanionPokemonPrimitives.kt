@@ -84,7 +84,7 @@ fun PokemonHeroHeader(number:Int,name:String,types:List<String>,modifier:Modifie
 
 @Composable
 fun EvolutionPathCard(condition:String,modifier:Modifier=Modifier,accent:Color=MaterialTheme.colorScheme.primary,
-    from:@Composable()->Unit,to:@Composable()->Unit) {
+    from: @Composable () -> Unit, to: @Composable () -> Unit) {
     Surface(modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
         color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.42f)) {
         Row(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically) {
