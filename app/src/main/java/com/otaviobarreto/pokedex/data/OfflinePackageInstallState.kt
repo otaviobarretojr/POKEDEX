@@ -62,7 +62,8 @@ object OfflinePackageInstallState {
 
     fun packageRoot(context:Context)=File(context.filesDir,"offline-packages").apply{mkdirs()}
     fun generalZip(context:Context,version:Int)=File(packageRoot(context),"general-v$version.zip")
-    fun generalExtract(context:Context,version:Int)=File(packageRoot(context),"general-v$version-extract")
+    fun generalStaging(context:Context,version:Int)=File(OfflineLibraryManager.root(context),"general-v$version.staging")
+    fun generalExtract(context:Context,version:Int)=generalStaging(context,version)
 
     fun diagnose(context:Context,remoteVersion:Int,remoteBytes:Long):String {
         val state=read(context)
