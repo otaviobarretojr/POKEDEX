@@ -246,10 +246,18 @@ fun CompanionCenterScreen(
                                     scope.launch{
                                         val result=runCatching{
                                             if(remoteGeneral?.ready==true){
-                                                ServerOfflinePackageInstaller.installGeneral(
-                                                    context=context,
-                                                    remote=remoteGeneral
-                                                ){p->serverProgress=p}
+                                                if(persistentInstallState.stage==OfflinePackageInstallState.Stage.FAILED){
+                                                    val repaired=ServerOfflinePackageInstaller.cleanRepairGeneral(
+                                                        context=context,
+                                                        remote=remoteGeneral
+                                                    ){p->serverProgress=p}
+                                                    check(repaired){"Reparo limpo não concluiu a auditoria"}
+                                                }else{
+                                                    ServerOfflinePackageInstaller.installGeneral(
+                                                        context=context,
+                                                        remote=remoteGeneral
+                                                    ){p->serverProgress=p}
+                                                }
                                             }else{
                                                 OfflineGamePackManager.downloadGeneral{p->progress=p}
                                             }
