@@ -98,10 +98,13 @@ private fun CollectionHome(
             )
         }
         item{CollectionHero(plan)}
+        item{CompanionSectionHeader(title="Seus álbuns",supporting="Explore sua coleção por objetivo.")}
         item{AlbumPortalCard("Living Dex","${plan.capturedSpecies} de ${plan.totalSpecies} espécies",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
         item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome){onOpenArea(CollectionArea.SHINY)}}
         item{AlbumPortalCard("Form Dex","${plan.formRegistrations} formas alternativas registradas",null,listOf(26,157,724),false,Icons.Default.Extension){onOpenArea(CollectionArea.FORMS)}}
-        item{Text("${insights.gamesWithProgress} jogo(s) com coleção registrada",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        if(insights.gamesWithProgress>0){
+            item{Text("Progresso registrado em ${insights.gamesWithProgress} jogo${if(insights.gamesWithProgress==1) "" else "s"}",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        }
     }
 }
 
@@ -209,7 +212,7 @@ private fun PokemonAlbumGrid(
     Column(Modifier.fillMaxSize()){
         CollectionPageHeader(
             if(shiny)"${generationRegion(generation)} Shiny" else generationRegion(generation),
-            "$ownedCount / ${ids.size} registrados",
+            "$ownedCount de ${ids.size} registrados",
             onBack,
             Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md)
         )
@@ -298,7 +301,7 @@ private fun FormsAlbum(variants:List<OwnedPokemonVariant>,onBack:()->Unit,onPoke
 @Composable
 private fun CollectionPageHeader(title:String,subtitle:String,onBack:()->Unit,modifier:Modifier=Modifier){
     Row(modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-        IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,null)}
+        IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
         Column(Modifier.weight(1f)){
             Text(title,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
             Text(subtitle,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
