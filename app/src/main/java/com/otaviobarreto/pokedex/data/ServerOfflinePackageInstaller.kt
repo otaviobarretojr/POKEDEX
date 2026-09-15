@@ -162,6 +162,49 @@ object ServerOfflinePackageInstaller {
         runCatching{zipFile.delete()}
     }
 
+    suspend fun cleanRepairGeneral(
+        context:Context,
+        remote:RemoteOfflinePackageCatalog.RemotePackage,
+        onProgress:(Progress)->Unit
+    ):Boolean = withContext(Dispatchers.IO){
+        require(remote.packageKey=="general"){"Pacote remoto inválido"}
+        val expectedSha=requireNotNull(remote.sha256).lowercase()
+        val zip=OfflinePackageInstallState.generalZip(context,remote.version)
+        val extract=OfflinePackageInstallState.generalExtract(context,remote.version)
+        onProgress(Progress(0L,1L,"Preparando reparo limpo"))
+
+        val keepZip=zip.exists() &&
+            (remote.sizeBytes ?: 0L)>0L &&
+            zip.length()==remote.sizeBytes &&
+            runCatching{sha256(zip).equals(expectedSha,ignoreCase=true)}.getOrDefault(false)
+
+        OfflineGamePackManager.resetGeneralForCleanRepair()
+        runCatching{context.imageLoader.diskCache?.clear()}
+        runCatching{extract.deleteRecursively()}
+        OfflinePackageInstallState.clear(context)
+
+        if(!keepZip){
+            runCatching{zip.delete()}
+            onProgress(Progress(0L,remote.sizeBytes ?: 0L,"Pacote inválido · baixando novamente"))
+        }else{
+            onProgress(Progress(zip.length(),zip.length(),"Pacote íntegro · reinstalando do zero"))
+        }
+
+        runCatching{
+            installGeneral(context,remote,onProgress)
+            OfflineGamePackManager.generalAudit()
+        }.getOrElse{error->
+            OfflineGamePackManager.markServerGeneralInstallFailed()
+            val current=OfflinePackageInstallState.read(context)
+            OfflinePackageInstallState.write(
+                context,OfflinePackageInstallState.Stage.FAILED,remote.version,
+                current.done,current.total,
+                current.stage.name+": "+(error.message ?: error.javaClass.simpleName)
+            )
+            false
+        }
+    }
+
     suspend fun recoverGeneralIfNeeded(
         context:Context,
         remote:RemoteOfflinePackageCatalog.RemotePackage,
