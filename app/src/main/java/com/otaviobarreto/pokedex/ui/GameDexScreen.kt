@@ -98,11 +98,19 @@ private enum class GameDexFilter(val label:String){
             if(regions.size>1) ScrollableTabRow(selectedTabIndex=regions.indexOfFirst{it.source==source}.coerceAtLeast(0),edgePadding=12.dp){
                 regions.forEach{r->Tab(selected=r.source==source,onClick={source=r.source;AppStatePreferences.setActiveRegionForGame(game,r.source)},text={Text(r.label)})}
             }
-            Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                FilterChip(selected=routeMode,onClick={routeMode=!routeMode},label={Text("Melhor rota")},leadingIcon={Icon(Icons.Default.Route,null)})
-            }
-            if(!routeMode){
-                LazyRow(contentPadding=PaddingValues(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            LazyRow(
+                contentPadding=PaddingValues(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+                horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+            ){
+                item(key="best_route"){
+                    FilterChip(
+                        selected=routeMode,
+                        onClick={routeMode=!routeMode},
+                        label={Text("Melhor rota")},
+                        leadingIcon={Icon(Icons.Default.Route,"Melhor rota")}
+                    )
+                }
+                if(!routeMode){
                     items(GameDexFilter.entries,key={it.name}){item->
                         FilterChip(selected=filter==item,onClick={filter=item},label={Text(item.label)})
                     }
