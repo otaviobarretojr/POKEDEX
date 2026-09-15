@@ -97,7 +97,10 @@ fun JourneyScreen(
             onBack={view=JourneyView.GAME_MENU},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},
             listState=routeListState,
-            onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL}
+            onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL},
+            onOpenGameDex=onOpenGameDex,
+            onOpenEvolutionCenter=onOpenEvolutionCenter,
+            onOpenSearch=onOpenSearch
         ) else { view=JourneyView.GAMES }
         JourneyView.DETAIL -> if(game!=null && selectedStepId!=null){
             val step=JourneyCatalog.steps(game.label).firstOrNull{it.id==selectedStepId}
@@ -121,7 +124,16 @@ private data class JourneyRouteStepUi(
 )
 
 @Composable
-private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:LazyListState,onOpenStep:(String)->Unit){
+private fun JourneyRoute(
+    game:AppGame,
+    onBack:()->Unit,
+    onTeam:()->Unit,
+    listState:LazyListState,
+    onOpenStep:(String)->Unit,
+    onOpenGameDex:()->Unit,
+    onOpenEvolutionCenter:()->Unit,
+    onOpenSearch:()->Unit
+){
     val revision=JourneyProgressStore.revision
     val steps=remember(game.label,revision){JourneyCatalog.steps(game.label)}
     val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
@@ -364,8 +376,21 @@ private fun JourneyRoute(game:AppGame,onBack:()->Unit,onTeam:()->Unit,listState:
                             smart.recommendation ?: "Use a Pokédex do jogo e a Central de evolução para preparar sua próxima etapa.",
                             style=MaterialTheme.typography.bodySmall,
                             color=MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs)
+                            modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs,bottom=PokedexDesignTokens.Spacing.Md)
                         )
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
+                            FilledTonalButton(onClick=onOpenGameDex,modifier=Modifier.weight(1f)){
+                                Icon(Icons.Default.MenuBook,null,Modifier.size(17.dp))
+                                Spacer(Modifier.width(5.dp))
+                                Text("Dex do jogo")
+                            }
+                            FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){
+                                Icon(Icons.Default.AutoAwesome,null,Modifier.size(17.dp))
+                                Spacer(Modifier.width(5.dp))
+                                Text("Evoluções")
+                            }
+                            IconButton(onClick=onOpenSearch){Icon(Icons.Default.Search,"Busca universal")}
+                        }
                     }
                 }
             }
