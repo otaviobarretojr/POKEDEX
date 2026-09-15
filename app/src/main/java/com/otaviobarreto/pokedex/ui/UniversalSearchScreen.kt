@@ -36,7 +36,7 @@ private data class UniversalResult(val kind:String,val title:String,val subtitle
     add(UniversalResult("Pokémon",it.name,"#"+it.id.toString().padStart(4,'0')+" · "+it.types.joinToString(" / "),it.id))
    }
    refs.forEach{(kind,list)->list.asSequence().filter{it.name.contains(q,true)}.take(12).forEach{
-    add(UniversalResult(when(kind){"move"->"Golpe";"ability"->"Habilidade";else->"Item"},it.name.replace("-"," ").replaceFirstChar{ch->ch.uppercase()},kind,it.rawNameOrSelf()))
+    add(UniversalResult(kind=when(kind){"move"->"Golpe";"ability"->"Habilidade";else->"Item"},title=it.name.replace("-"," ").replaceFirstChar{ch->ch.uppercase()},subtitle=kind,rawName=it.rawNameOrSelf()))
    }}
   }.take(50)
  }
@@ -45,7 +45,7 @@ private data class UniversalResult(val kind:String,val title:String,val subtitle
    OutlinedTextField(query,{query=it},Modifier.fillMaxWidth().padding(16.dp),singleLine=true,leadingIcon={Icon(Icons.Default.Search,null)},placeholder={Text("Pokémon, golpe, habilidade ou item")})
    if(query.trim().length<2) DexStatusPane("Encontre qualquer coisa","Digite pelo menos 2 caracteres para pesquisar toda a biblioteca.",Modifier.fillMaxWidth().padding(16.dp))
    else if(results.isEmpty()) DexStatusPane("Nenhum resultado","Tente outro nome, número ou tipo.",Modifier.fillMaxWidth().padding(16.dp))
-   else LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=16.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
+   else LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(start=16.dp,end=16.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
     items(results,key={it.kind+":"+it.title+":"+it.pokemonId}){r->
      Card(Modifier.fillMaxWidth().clickable{r.pokemonId?.let(onPokemonClick)?:r.rawName?.let{onOpenReference(when(r.kind){"Golpe"->"move";"Habilidade"->"ability";else->"item"},it)}}){
       Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
