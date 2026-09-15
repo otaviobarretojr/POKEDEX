@@ -98,6 +98,29 @@ private fun CollectionHome(
             )
         }
         item{CollectionHero(plan)}
+        if(plan.capturedSpecies<plan.totalSpecies){
+            item{
+                DexGlassSurface(Modifier.fillMaxWidth()){
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        Icon(Icons.Default.TipsAndUpdates,"Próxima ação",tint=MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(PokedexDesignTokens.Spacing.Md))
+                        Column(Modifier.weight(1f)){
+                            Text("Próxima ação",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
+                            Text(
+                                (plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0).toString()+" espécies ainda faltam na National Dex.",
+                                style=MaterialTheme.typography.bodySmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        FilledTonalButton(onClick={onOpenBoxes(null,null)}){
+                            Icon(Icons.Default.GridView,null,Modifier.size(17.dp))
+                            Spacer(Modifier.width(5.dp))
+                            Text("Abrir Box")
+                        }
+                    }
+                }
+            }
+        }
         item{CompanionSectionHeader(title="Seus álbuns",supporting="Explore sua coleção por objetivo.")}
         item{AlbumPortalCard("Living Dex","${plan.capturedSpecies} de ${plan.totalSpecies} espécies",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
         item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome){onOpenArea(CollectionArea.SHINY)}}
