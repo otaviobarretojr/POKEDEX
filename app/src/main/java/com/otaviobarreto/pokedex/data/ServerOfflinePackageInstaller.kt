@@ -430,13 +430,28 @@ object ServerOfflinePackageInstaller {
             onProgress(Progress(expectedBytes,expectedBytes,"Download concluído · preparando instalação"))
             return
         }
-        val append=existing>0L && response==HttpURLConnection.HTTP_PARTIAL
         if(response !in 200..299){
             connection.disconnect()
             error("Falha HTTP $response ao baixar pacote")
         }
 
-        if(!append && existing>0L) destination.delete()
+        var append=false
+        if(existing>0L && response==HttpURLConnection.HTTP_PARTIAL){
+            val contentRange=connection.getHeaderField("Content-Range").orEmpty()
+            val expectedPrefix="bytes $existing-"
+            append=contentRange.startsWith(expectedPrefix)
+            if(!append){
+                connection.disconnect()
+                destination.delete()
+                return downloadResumable(url,destination,expectedBytes,label,onProgress)
+            }
+        }else if(existing>0L){
+            // Server ignored Range (HTTP 200) or returned an incompatible response.
+            // Never concatenate it with a partial package.
+            connection.disconnect()
+            destination.delete()
+            return downloadResumable(url,destination,expectedBytes,label,onProgress)
+        }
         val start=if(append) existing else 0L
         val serverLength=connection.contentLengthLong.coerceAtLeast(0L)
         val total=when{
