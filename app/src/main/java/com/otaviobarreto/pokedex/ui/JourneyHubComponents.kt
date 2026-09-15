@@ -179,10 +179,16 @@ internal fun JourneyGamePicker(
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 game.label,
-                                style=MaterialTheme.typography.titleLarge,
+                                style=MaterialTheme.typography.headlineSmall,
                                 fontWeight=FontWeight.Black,
                                 maxLines=1,
                                 overflow=TextOverflow.Ellipsis
+                            )
+                            Text(
+                                "Seu Companion de aventura",
+                                style=MaterialTheme.typography.bodySmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier=Modifier.padding(top=2.dp)
                             )
                             nextStep?.let{step->
                                 CompanionSectionHeader(
@@ -261,7 +267,7 @@ private fun CompanionProgressSection(
     accent:Color,
     modifier:Modifier=Modifier
 ){
-    Surface(modifier=modifier,shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.38f)){
+    Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.28f)){
         Column(Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=12.dp)){
             CompanionSectionHeader(
                 title="SEU PROGRESSO",
