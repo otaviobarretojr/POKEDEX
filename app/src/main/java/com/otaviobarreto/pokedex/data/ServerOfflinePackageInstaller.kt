@@ -250,9 +250,7 @@ object ServerOfflinePackageInstaller {
         val url=requireNotNull(remote.downloadUrl)
         val expectedSha=requireNotNull(remote.sha256).lowercase()
         val total=remote.sizeBytes ?: 0L
-        val root=File(context.cacheDir,"server-offline-packages").apply{mkdirs()}
-        val safeKey=remote.packageKey.replace(Regex("[^a-zA-Z0-9._-]"),"_")
-        val zipFile=File(root,"$safeKey-v${remote.version}.zip")
+        val zipFile=OfflinePackageInstallState.gameZip(context,remote.packageKey,remote.version)
         ensureLocalPackage(
             url=url,
             destination=zipFile,
@@ -267,7 +265,7 @@ object ServerOfflinePackageInstaller {
             "SHA-256 do complemento não confere"
         }
 
-        val extractDir=File(root,"$safeKey-v${remote.version}-extract")
+        val extractDir=OfflinePackageInstallState.gameStaging(context,remote.packageKey,remote.version)
         if(extractDir.exists()) extractDir.deleteRecursively()
         extractDir.mkdirs()
         unzipSafe(zipFile,extractDir)
