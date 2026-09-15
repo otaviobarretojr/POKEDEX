@@ -231,17 +231,21 @@ private fun PokemonAlbumGrid(
 @Composable
 private fun PokemonAlbumTile(id:Int,name:String,owned:Boolean,shiny:Boolean,onClick:()->Unit){
     val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}
-    Card(Modifier.aspectRatio(.82f).clickable(onClick=onClick),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
+    Surface(
+        modifier=Modifier.aspectRatio(.82f).clickable(onClick=onClick),
+        shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+        color=if(owned) MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.34f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.16f)
+    ){
         Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
             PokemonArtwork(
                 model=artwork(id,shiny),
                 contentDescription=name,
                 pokemonId=id,
-                modifier=Modifier.weight(1f).fillMaxWidth().alpha(if(owned)1f else .20f),
+                modifier=Modifier.weight(1f).fillMaxWidth().alpha(if(owned)1f else .18f),
                 colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale)
             )
             Text("#"+id.toString().padStart(4,'0'),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(if(owned)name else "???",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis)
+            Text(if(owned)name else "Não registrado",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis)
         }
     }
 }
