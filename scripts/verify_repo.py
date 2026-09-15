@@ -112,7 +112,7 @@ if "21201" not in workflow or "20.12.1" not in workflow:
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
     violations.append("Living Dex Planner must not return to Journey Home")
-for required in ("COMPANION", "CompanionDexProgress", "Progresso da Pokédex", "JourneyObjectivePreviewCard", "JourneyCompactStatus", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
+for required in ("COMPANION", "CompanionDexProgress", "Progresso da Pokédex", "JourneyObjectivePreviewCard", "CompanionProgressSection", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
     if required not in companion:
         violations.append(f"Companion 20 experience missing {required}")
 
