@@ -222,7 +222,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      )
     }
     DropdownMenu(expanded=evolutionFilterMenu,onDismissRequest={evolutionFilterMenu=false}){
-     DropdownMenuItem(text={Text("Sem filtro")},onClick={evolutionFilterName=null;evolutionFilterMenu=false})
+     DropdownMenuItem(text={Text("Mostrar todas as Boxes")},onClick={evolutionFilterName=null;evolutionFilterMenu=false})
      EvolutionRuleCatalog.filterOptions.forEach{option->
       DropdownMenuItem(
        text={Text(option.label)},

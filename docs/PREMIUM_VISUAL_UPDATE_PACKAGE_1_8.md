@@ -190,11 +190,11 @@ O pacote 1–8 só é considerado concluído quando a Etapa 8 estiver verde. Nen
 
 | Etapa | Estado | Commit | Pipeline | Observação |
 |---|---|---|---|---|
-| 1 | EM ANDAMENTO | f2d53057001f5bdca70d6669e6bf0200a3100936 | #1606 | Aguardando gates finais |
-| 2 | PENDENTE | — | — | Slots |
-| 3 | PENDENTE | — | — | Ações/navegação |
-| 4 | PENDENTE | — | — | Auditoria Box |
-| 5 | PENDENTE | — | — | Companion Center |
-| 6 | PENDENTE | — | — | Secundárias |
-| 7 | PENDENTE | — | — | Auditoria global |
-| 8 | PENDENTE | — | — | Fechamento |
+| 1 | CONCLUÍDA | f2d53057001f5bdca70d6669e6bf0200a3100936 | #1606 | Pipeline completo verde |
+| 2 | CONCLUÍDA | f2356f37ce39096ef3a0edbc9e04619b363e2502 | #1608 | Slots validados |
+| 3 | CONSOLIDADA | pacote 3–8 | — | Ações e navegação revisadas |
+| 4 | CONSOLIDADA | pacote 3–8 | — | Auditoria Box incorporada |
+| 5 | CONSOLIDADA | pacote 3–8 | — | Hierarquia Companion aplicada |
+| 6 | AUDITADA | pacote 3–8 | — | Rotas estáveis preservadas |
+| 7 | AUDITADA | pacote 3–8 | — | Consistência transversal revisada |
+| 8 | EM VALIDAÇÃO | pacote 3–8 | próximo CI | Gate final único |
