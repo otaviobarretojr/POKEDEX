@@ -89,7 +89,7 @@ private val mainDestinations=listOf(
   val resolvedSource=source ?: AppStatePreferences.activeRegionForGame(resolvedGame)
   game?.let{AppStatePreferences.activeGame=it}
   if(resolvedSource!=null) AppStatePreferences.setActiveRegionForGame(resolvedGame,resolvedSource)
-  navController.navigate(PokedexRoutes.BOXES){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=false}
+  navController.navigate(PokedexRoutes.BOXES){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}
  }
  fun openCampaignGuide(game:String,phase:String?=null,step:String?=null){navController.navigate("campaignGuide?game=${Uri.encode(game)}"+(phase?.let{"&phase=${Uri.encode(it)}"}?:"")+(step?.let{"&step=${Uri.encode(it)}"}?:""))}
  fun openReference(kind:String?=null,name:String?=null,source:String?=null){navController.navigate(if(kind.isNullOrBlank()||name.isNullOrBlank())"reference" else "reference?kind=${Uri.encode(kind)}&name=${Uri.encode(name)}"+(source?.let{"&source=${Uri.encode(it)}"}?:""))}
@@ -107,9 +107,9 @@ private val mainDestinations=listOf(
    navController,
    PokedexRoutes.HOME,
    Modifier.padding(innerPadding),
-   enterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Standard))+slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){it/14}},
+   enterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Fast))+slideInHorizontally(tween(PokedexDesignTokens.Motion.Fast)){it/14}},
    exitTransition={fadeOut(tween(PokedexDesignTokens.Motion.Fast))+slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){-(it/18)}},
-   popEnterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Standard))+slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){-(it/14)}},
+   popEnterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Fast))+slideInHorizontally(tween(PokedexDesignTokens.Motion.Fast)){-(it/14)}},
    popExitTransition={fadeOut(tween(PokedexDesignTokens.Motion.Fast))+slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){it/18}}
   ){
    composable(PokedexRoutes.HOME){JourneyScreen(onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase,step->openCampaignGuide(game,phase,step)},onOpenBoxes=::openBoxes)}
