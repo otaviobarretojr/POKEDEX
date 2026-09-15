@@ -1760,7 +1760,7 @@ for required in ('DexNavItem("pokedex","Pokédex"', 'DexNavItem("central","Confi
         violations.append(f"v16.1 navigation missing {required}")
 
 settings_v161 = (ui / "CompanionCenterScreen.kt").read_text(encoding="utf-8")
-for required in ("Configurações", "Downloads dos jogos", "Backup e restauração", "OfflineGamePackManager.download"):
+for required in ("Configurações", "Conteúdo offline", "Backup e restauração", "Reparar biblioteca"):
     if required not in settings_v161:
         violations.append(f"v16.1 settings center missing {required}")
 for forbidden in ("O que faço agora?", "Plano de captura", "Rota recomendada", "Evoluir primeiro"):
