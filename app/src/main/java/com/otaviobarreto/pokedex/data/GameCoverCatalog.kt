@@ -43,6 +43,12 @@ object GameCoverCatalog {
             libraryCover="https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
             visualKey="diamond"
         ),
+        "Sword / Shield" to GameArt(
+            canonicalName="Pokémon Shield",
+            heroArtwork="https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png",
+            libraryCover="https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png",
+            visualKey="shield"
+        ),
         "Let's Go Pikachu / Eevee" to GameArt(
             canonicalName="Pokémon: Let's Go, Pikachu!",
             heroArtwork="https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
