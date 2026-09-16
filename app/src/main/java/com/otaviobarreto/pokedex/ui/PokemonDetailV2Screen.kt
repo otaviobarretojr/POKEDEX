@@ -71,7 +71,9 @@ fun PokemonDetailV2Screen(
         source ?: AppStatePreferences.activeRegionForGame(AppStatePreferences.activeGame)
     }
     LaunchedEffect(id){
-        runCatching { PokedexDataStore.prefetchDetailWindow(id,radius=2) }
+        withContext(Dispatchers.IO){
+            runCatching { PokedexDataStore.prefetchDetailWindow(id,radius=2) }
+        }
     }
 
     LaunchedEffect(id,retry){
@@ -373,7 +375,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
     var advisorReady by remember { mutableStateOf(CollectionAdvisor.isWarm()) }
     LaunchedEffect(Unit){
         if(!advisorReady){
-            runCatching{ CollectionAdvisor.warmAllGames() }
+            withContext(Dispatchers.IO){runCatching{CollectionAdvisor.warmAllGames()}}
             advisorReady=CollectionAdvisor.isWarm()
         }
     }
