@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -519,15 +522,17 @@ private fun JourneyGamePosterCard(game:AppGame,onClick:()->Unit,modifier:Modifie
 @Composable
 private fun JourneyAllGamesDialog(games:List<AppGame>,onDismiss:()->Unit,onSelect:(String)->Unit){
     ModalBottomSheet(onDismissRequest=onDismiss,dragHandle={BottomSheetDefaults.DragHandle()}){
-        Column(Modifier.fillMaxWidth().fillMaxHeight(.92f).padding(horizontal=16.dp)){
+        Column(Modifier.fillMaxWidth().fillMaxHeight(.94f).padding(horizontal=16.dp)){
             Text("Jogos Pokémon",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-            Text("Escolha uma aventura",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(bottom=14.dp))
-            LazyColumn(verticalArrangement=Arrangement.spacedBy(14.dp),contentPadding=PaddingValues(bottom=32.dp)){
-                items(games.chunked(2)){row->
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                        row.forEach{game->JourneyGamePosterCard(game,onClick={onSelect(game.label)},modifier=Modifier.weight(1f))}
-                        if(row.size==1) Spacer(Modifier.weight(1f))
-                    }
+            Text("Sua biblioteca de aventuras",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=2.dp,bottom=14.dp))
+            LazyVerticalGrid(
+                columns=GridCells.Fixed(2),
+                horizontalArrangement=Arrangement.spacedBy(12.dp),
+                verticalArrangement=Arrangement.spacedBy(16.dp),
+                contentPadding=PaddingValues(bottom=36.dp)
+            ){
+                gridItems(games,key={it.label}){game->
+                    JourneyGamePosterCard(game,onClick={onSelect(game.label)},modifier=Modifier.fillMaxWidth())
                 }
             }
         }
