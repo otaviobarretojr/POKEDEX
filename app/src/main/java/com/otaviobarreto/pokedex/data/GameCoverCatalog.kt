@@ -49,7 +49,7 @@ object GameCoverCatalog {
         ),
         "Sword / Shield" to GameArt(
             canonicalName="Pokémon Shield",
-            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000019931/7b0438776a68a56bc24027f06d68611e4ba057ea175ed3e65d20feca768b3e3d",
+            heroArtwork="https://swordshield.pokemon.com/assets/icons/share_icon-fb_en-us.jpg",
             libraryCover="https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png",
             visualKey="shield"
         ),
