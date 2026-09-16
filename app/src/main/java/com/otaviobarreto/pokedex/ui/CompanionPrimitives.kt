@@ -1,6 +1,8 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -77,4 +79,61 @@ internal fun PrimaryCompanionAction(
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge)
     }
+}
+
+
+@Composable
+internal fun ContextFilter(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        modifier = modifier.heightIn(min = PokedexDesignTokens.Companion.MinimumTouchTarget)
+    )
+}
+
+@Composable
+internal fun CompanionEmptyState(
+    title: String,
+    modifier: Modifier = Modifier,
+    message: String? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null
+) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Xl),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+        message?.let {
+            Spacer(Modifier.height(PokedexDesignTokens.Spacing.Sm))
+            Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(PokedexDesignTokens.Spacing.Lg))
+            PrimaryCompanionAction(actionLabel, onAction, Modifier.widthIn(max = 320.dp))
+        }
+    }
+}
+
+@Composable
+internal fun PremiumSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Buscar"
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier.fillMaxWidth(),
+        singleLine = true,
+        placeholder = { Text(placeholder) },
+        shape = RoundedCornerShape(PokedexDesignTokens.Radius.Lg)
+    )
 }
