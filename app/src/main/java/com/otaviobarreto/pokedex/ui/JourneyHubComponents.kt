@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -507,21 +508,23 @@ private fun JourneyGameLibraryCard(game:AppGame,onClick:()->Unit){
     val accent=PokedexDesignTokens.Colors.game(game.label)
     Card(modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(26.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),elevation=CardDefaults.cardElevation(defaultElevation=2.dp)){
         Column{
-            Box(Modifier.fillMaxWidth().aspectRatio(16f/9f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(Color.Black)){
+            Box(Modifier.fillMaxWidth().aspectRatio(16f/9f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(MaterialTheme.colorScheme.surfaceVariant)){
                 val artwork=GameCoverCatalog.heroFor(game.label) ?: GameCoverCatalog.primaryCoverFor(game.label)
-                if(artwork!=null){
+                var artworkFailed by remember(game.label,artwork){mutableStateOf(false)}
+                if(artwork!=null && !artworkFailed){
                     AsyncImage(
                         model=artwork,
                         contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(game.label),
                         modifier=Modifier.fillMaxSize(),
-                        contentScale=ContentScale.Fit
+                        contentScale=ContentScale.Crop,
+                        onState={state-> if(state is AsyncImagePainter.State.Error) artworkFailed=true}
                     )
                 }else{
                     JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxSize())
                 }
             }
-            Column(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=13.dp)){
-                Text(GameCoverCatalog.displayNameFor(game.label),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(bottom=8.dp))
+            Column(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=10.dp)){
+                Text(GameCoverCatalog.displayNameFor(game.label),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(bottom=5.dp))
                 Row(verticalAlignment=Alignment.CenterVertically){
                     Text(if(started)"Continuar Jornada" else "Começar Jornada",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Black,color=accent,modifier=Modifier.weight(1f))
                     Text(if(started)((ratio*100).toInt().toString()+"%") else "NOVO",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black,color=accent)
