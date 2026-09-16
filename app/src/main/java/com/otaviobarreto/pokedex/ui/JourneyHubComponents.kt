@@ -756,85 +756,19 @@ private fun JourneyHeroArtwork(
 
 
 @Composable
-private fun JourneyGameCover(
-    gameLabel: String,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val userScarletArtwork = remember(gameLabel, context.applicationContext) {
-        if (gameLabel == "Scarlet / Violet") {
-            JourneyLocalArtworkCache.scarlet(context.applicationContext)
-        } else null
+private fun JourneyGameCover(gameLabel:String,modifier:Modifier=Modifier){
+    val context=LocalContext.current
+    val userScarletArtwork=remember(gameLabel,context.applicationContext){
+        if(gameLabel=="Scarlet / Violet") JourneyLocalArtworkCache.scarlet(context.applicationContext) else null
     }
-    val covers = GameCoverCatalog.coversFor(gameLabel)
-    val pairedCovers = covers.size >= 2
-    if (covers.isEmpty()) {
-        Box(
-            modifier = modifier
-                .clip(RoundedCornerShape(PokedexDesignTokens.Journey.ArtworkRadius))
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Default.SportsEsports, contentDescription = null)
+    val cover=GameCoverCatalog.primaryCoverFor(gameLabel)
+    Box(modifier.clip(RoundedCornerShape(PokedexDesignTokens.Journey.ArtworkRadius)).background(PokedexDesignTokens.Journey.ArtworkBackdrop),contentAlignment=Alignment.Center){
+        when{
+            userScarletArtwork!=null->AsyncImage(model=userScarletArtwork,contentDescription="Capa de $gameLabel",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+            cover!=null->AsyncImage(model=cover,contentDescription="Capa oficial de $gameLabel",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+            else->Icon(Icons.Default.SportsEsports,contentDescription=null,modifier=Modifier.size(36.dp))
         }
-        return
-    }
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(PokedexDesignTokens.Journey.ArtworkRadius))
-            .background(PokedexDesignTokens.Journey.ArtworkBackdrop)
-    ) {
-        if (userScarletArtwork != null) {
-            AsyncImage(
-                model = userScarletArtwork,
-                contentDescription = "Arte enviada pelo usuário para Scarlet / Violet",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        } else if (pairedCovers) {
-            Row(
-                Modifier.fillMaxSize().padding(horizontal=4.dp,vertical=3.dp),
-                horizontalArrangement=Arrangement.spacedBy(3.dp)
-            ) {
-                covers.take(2).forEach { cover ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = cover,
-                            contentDescription = "Arte oficial de $gameLabel",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-                }
-            }
-        } else {
-            AsyncImage(
-                model = covers.first(),
-                contentDescription = "Arte oficial de $gameLabel",
-                modifier = Modifier.fillMaxSize().padding(3.dp),
-                contentScale = ContentScale.Fit
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            Color.Black.copy(alpha = .04f),
-                            Color.Black.copy(alpha = .16f)
-                        )
-                    )
-                )
-        )
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Transparent,Color.Black.copy(alpha=.12f)))))
     }
 }
 
