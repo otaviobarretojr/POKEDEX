@@ -125,6 +125,7 @@ object StartupPreloader {
         }
 
         val activeCoverUrls = GameCoverCatalog.coversFor(activeGame)
+        val activeGameHeroUrls = listOfNotNull(GameCoverCatalog.heroFor(activeGame))
         val activeHeroUrls = JourneyGameVisualCatalog.forGame(activeGame).heroPokemonIds
             .map { id ->
                 "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
@@ -150,7 +151,7 @@ object StartupPreloader {
         }
 
         val activeJourneyArtworkUrls = (
-            activeCoverUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls
+            activeCoverUrls + activeGameHeroUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls
         ).distinct()
 
         progress(.84f, "Aquecendo sua Jornada")
