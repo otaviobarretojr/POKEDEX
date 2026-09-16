@@ -175,7 +175,31 @@ object StartupPreloader {
             }.awaitAll()
         }
 
-        progress(.91f, "Preparando imagens")
+        progress(.91f, "Preparando biblioteca de jogos")
+        val gameLibraryArtworkUrls = AppGameCatalog.adventureGames
+            .flatMap { game ->
+                GameCoverCatalog.coversFor(game.label) + listOfNotNull(GameCoverCatalog.heroFor(game.label))
+            }
+            .distinct()
+        supervisorScope {
+            gameLibraryArtworkUrls.map { artwork ->
+                async {
+                    artworkSemaphore.withPermit {
+                        runCatching {
+                            context.imageLoader.execute(
+                                ImageRequest.Builder(context)
+                                    .data(artwork)
+                                    .size(640)
+                                    .diskCacheKey(artwork)
+                                    .build()
+                            )
+                        }
+                    }
+                }
+            }.awaitAll()
+        }
+
+        progress(.94f, "Preparando imagens")
         val spriteIds = priorityIds.take(12)
         val spriteSemaphore = Semaphore(4)
         supervisorScope {
@@ -194,7 +218,7 @@ object StartupPreloader {
                             }
                         }
                     }
-                    val local = .91f + ((index + 1f) / spriteIds.size.coerceAtLeast(1)) * .08f
+                    val local = .94f + ((index + 1f) / spriteIds.size.coerceAtLeast(1)) * .05f
                     progress(local, "Preparando imagens")
                 }
             }.awaitAll()
