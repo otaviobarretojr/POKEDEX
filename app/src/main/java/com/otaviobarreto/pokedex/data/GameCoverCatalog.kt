@@ -1,54 +1,65 @@
 package com.otaviobarreto.pokedex.data
 
 /**
- * Official game-cover artwork used only by the Journey game cards.
+ * Curated official artwork for the game-first navigation.
  *
- * Pair releases keep both original covers visible side by side. URLs point to
- * official Nintendo / Pokémon properties so the app does not depend on
- * fan-made artwork.
+ * HERO is intentionally independent from COVER:
+ * - heroArtwork: wide/key art used by the active Journey home.
+ * - libraryCover: portrait/packshot used by the Games library.
+ *
+ * Keeping both roles separate prevents a portrait box from being shrunk into
+ * a wide dashboard card (the visual regression that triggered this rework).
  */
 object GameCoverCatalog {
-    fun coversFor(gameLabel: String): List<String> = covers[gameLabel].orEmpty()
-
-    /** One intentional hero cover per journey. Paired releases no longer compete for card space. */
-    fun primaryCoverFor(gameLabel: String): String? = preferredCover[gameLabel] ?: coversFor(gameLabel).firstOrNull()
-
-    private val preferredCover = mapOf(
-        "Pokémon Legends: Z-A" to "https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
-        "Scarlet / Violet" to "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053971/842b2784d91520d41a947dec17fac116fec889bb1f1db4023615af8429dae00d",
-        "Sword / Shield" to "https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png",
-        "Let's Go Pikachu / Eevee" to "https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
-        "Legends Arceus" to "https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
-        "Brilliant Diamond / Shining Pearl" to "https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
-        "FireRed / LeafGreen" to "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000118613/86f3c6d4e129d185cbbc441169856733dea45ff231446a4edf5fec4624041849"
+    data class GameArt(
+        val canonicalName:String,
+        val heroArtwork:String,
+        val libraryCover:String,
+        val visualKey:String
     )
 
-    private val covers = mapOf(
-        "Pokémon Legends: Z-A" to listOf(
-            "https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png"
+    private val art=mapOf(
+        "Scarlet / Violet" to GameArt(
+            canonicalName="Pokémon Scarlet",
+            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053966/849c234de8df7265201d26d9d72f88eed3f32438d3dca12fc135beb4c3befc85",
+            libraryCover="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053966/849c234de8df7265201d26d9d72f88eed3f32438d3dca12fc135beb4c3befc85",
+            visualKey="scarlet"
         ),
-        "Scarlet / Violet" to listOf(
-            "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053966/849c234de8df7265201d26d9d72f88eed3f32438d3dca12fc135beb4c3befc85",
-            "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053971/842b2784d91520d41a947dec17fac116fec889bb1f1db4023615af8429dae00d"
+        "Pokémon Legends: Z-A" to GameArt(
+            canonicalName="Pokémon Legends: Z-A",
+            heroArtwork="https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
+            libraryCover="https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
+            visualKey="za"
         ),
-        "Sword / Shield" to listOf(
-            "https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_sword.png",
-            "https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png"
+        "Legends Arceus" to GameArt(
+            canonicalName="Pokémon Legends: Arceus",
+            heroArtwork="https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
+            libraryCover="https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
+            visualKey="arceus"
         ),
-        "Let's Go Pikachu / Eevee" to listOf(
-            "https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
-            "https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-eevee.png"
+        "Brilliant Diamond / Shining Pearl" to GameArt(
+            canonicalName="Pokémon Brilliant Diamond",
+            heroArtwork="https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
+            libraryCover="https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
+            visualKey="diamond"
         ),
-        "Legends Arceus" to listOf(
-            "https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png"
+        "Let's Go Pikachu / Eevee" to GameArt(
+            canonicalName="Pokémon: Let's Go, Pikachu!",
+            heroArtwork="https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
+            libraryCover="https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
+            visualKey="letsgo-pikachu"
         ),
-        "Brilliant Diamond / Shining Pearl" to listOf(
-            "https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
-            "https://diamondpearl.pokemon.com/en-us/assets/boxart_sp.png"
-        ),
-        "FireRed / LeafGreen" to listOf(
-            "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000118613/86f3c6d4e129d185cbbc441169856733dea45ff231446a4edf5fec4624041849",
-            "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000118618/af2c94d85c4b3bc671d0a88d3c0ea4b1eb96a8b5d45c758ceea10e29a0ffda44"
+        "FireRed / LeafGreen" to GameArt(
+            canonicalName="Pokémon FireRed",
+            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000118613/86f3c6d4e129d185cbbc441169856733dea45ff231446a4edf5fec4624041849",
+            libraryCover="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000118613/86f3c6d4e129d185cbbc441169856733dea45ff231446a4edf5fec4624041849",
+            visualKey="firered"
         )
     )
+
+    fun artFor(gameLabel:String):GameArt?=art[gameLabel]
+    fun primaryCoverFor(gameLabel:String):String?=artFor(gameLabel)?.libraryCover
+    fun heroFor(gameLabel:String):String?=artFor(gameLabel)?.heroArtwork
+    fun displayNameFor(gameLabel:String):String=artFor(gameLabel)?.canonicalName ?: gameLabel
+    fun coversFor(gameLabel:String):List<String>=primaryCoverFor(gameLabel)?.let(::listOf).orEmpty()
 }
