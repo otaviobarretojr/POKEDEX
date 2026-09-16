@@ -35,7 +35,7 @@ object GameCoverCatalog {
         ),
         "Legends Arceus" to GameArt(
             canonicalName="Pokémon Legends: Arceus",
-            heroArtwork="https://www.nintendo.com/sg/switch/aw7k/img/og.jpg",
+            heroArtwork="https://archives.bulbagarden.net/media/upload/e/e1/Legends_Arceus_artwork_1_horizontal.png",
             libraryCover="https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
             visualKey="arceus",
             libraryAspectRatio=1.72f
