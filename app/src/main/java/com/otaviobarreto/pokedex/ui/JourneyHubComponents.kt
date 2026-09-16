@@ -876,7 +876,25 @@ internal fun JourneyGameMenu(
             contentPadding=PaddingValues(horizontal=16.dp,vertical=14.dp),
             verticalArrangement=Arrangement.spacedBy(12.dp)
         ){
-            item{
+            item(key="active_game_hero"){
+                Box(Modifier.fillMaxWidth().aspectRatio(1.18f).clip(RoundedCornerShape(30.dp))){
+                    val hero=GameCoverCatalog.heroFor(game.label)
+                    if(hero!=null){
+                        AsyncImage(model=hero,contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(game.label),modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+                    }else{
+                        JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxSize())
+                    }
+                    Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Transparent,Color.Black.copy(alpha=.76f)))))
+                    Column(Modifier.align(Alignment.BottomStart).padding(20.dp)){
+                        Surface(shape=RoundedCornerShape(999.dp),color=Color.Black.copy(alpha=.42f)){
+                            Text("JOGO ATUAL",Modifier.padding(horizontal=10.dp,vertical=5.dp),style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=Color.White)
+                        }
+                        Text(GameCoverCatalog.displayNameFor(game.label),style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black,color=Color.White,modifier=Modifier.padding(top=8.dp))
+                        Text(if(started)"Continue de onde parou" else "Sua próxima aventura",style=MaterialTheme.typography.bodyMedium,color=Color.White.copy(alpha=.88f))
+                    }
+                }
+            }
+            item(key="active_game_summary"){
                 Card(
                     shape=RoundedCornerShape(26.dp),
                     colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),
