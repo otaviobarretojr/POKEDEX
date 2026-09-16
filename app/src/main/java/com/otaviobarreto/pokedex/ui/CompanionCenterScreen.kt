@@ -116,33 +116,18 @@ fun CompanionCenterScreen(
         verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Lg)
     ){
         item{
-            DexGlassSurface(Modifier.fillMaxWidth()){
-                Row(verticalAlignment=Alignment.CenterVertically){
-                    Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
-                        Icon(Icons.Default.Settings,null,Modifier.padding(PokedexDesignTokens.Spacing.Md).size(28.dp),tint=MaterialTheme.colorScheme.primary)
-                    }
-                    Column(Modifier.padding(start=PokedexDesignTokens.Spacing.Md)){
-                        DexSectionEyebrow("Sistema")
-                        Text("Configurações",style=MaterialTheme.typography.headlineMedium)
-                        Text(
-                            "Conteúdo offline, armazenamento, backup e manutenção.",
-                            style=MaterialTheme.typography.bodySmall,
-                            color=MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+            CompanionContextHeader(title="Configurações",eyebrow="Trainer Companion",subtitle="Conteúdo, desempenho, áudio e segurança dos seus dados.",progress={Icon(Icons.Default.Settings,"Configurações",tint=MaterialTheme.colorScheme.primary)})
         }
 
         item(key="offline_content_summary"){
             val generalValid=remember(storageRevision,activeDownload){OfflineGamePackManager.generalAudit()}
             val remoteGeneral=remember(remoteManifestRevision){RemoteOfflinePackageCatalog.general()}
-            val installedServerVersion=OfflineGamePackManager.generalServerVersion()
+            val installedServerVersion=remember(storageRevision,installStateRevision){OfflineGamePackManager.generalServerVersion()}
             val installedGames=remember(storageRevision){
                 AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
             }
             val updateAvailable=remoteGeneral?.ready==true && remoteGeneral.version>installedServerVersion && installedServerVersion>0
-            SettingsSectionTitle("Conteúdo offline")
+            CompanionSectionHeader(title="Conteúdo offline")
             Card(
                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.22f))
@@ -218,7 +203,7 @@ fun CompanionCenterScreen(
         }
 
         item{
-            SettingsSectionTitle("Armazenamento e desempenho")
+            CompanionSectionHeader(title="Armazenamento e desempenho")
             val cache=remember(storageRevision){PokedexDataStore.cacheStats()}
             val apiCacheBytes=remember(storageRevision){PersistentApiCache.sizeBytes()}
             val apiCacheMb=apiCacheBytes/1024f/1024f
@@ -227,7 +212,7 @@ fun CompanionCenterScreen(
             }
             Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-                    Text("Cache da sessão",fontWeight=FontWeight.Bold)
+                    Text("Uso local",fontWeight=FontWeight.Bold)
                     Text(
                         cache.total.toString()+" entradas · Pokémon "+cache.pokemon+
                             " · espécies "+cache.species+
@@ -242,7 +227,7 @@ fun CompanionCenterScreen(
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    val startupMs=StartupPreloader.lastWarmDurationMs
+                    val startupMs=remember(storageRevision){StartupPreloader.lastWarmDurationMs}
                     if(startupMs>0){
                         Text(
                             "Última preparação inicial: "+startupMs+" ms",
@@ -302,7 +287,7 @@ fun CompanionCenterScreen(
                         )
                     }
                     Text(
-                        "Mantém o sistema de áudio atual do aplicativo.",
+                        "Controle a música e os sons do Companion.",
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -339,7 +324,7 @@ fun CompanionCenterScreen(
         }
 
         item{
-            SettingsSectionTitle("Backup e restauração")
+            CompanionSectionHeader(title="Backup e restauração")
             Text(
                 "O backup preserva coleção, Jornada, times, formas, Shiny e preferências. Pacotes offline são registrados no backup, mas precisam ser baixados novamente após restauração.",
                 style=MaterialTheme.typography.bodyMedium,
@@ -358,7 +343,7 @@ fun CompanionCenterScreen(
                 ){
                     Icon(Icons.Default.ContentCopy,null)
                     Spacer(Modifier.width(6.dp))
-                    Text("Copiar")
+                    Text("Copiar backup")
                 }
                 FilledTonalButton(
                     onClick={createBackup.launch("pokedex-backup.json")},
@@ -366,7 +351,7 @@ fun CompanionCenterScreen(
                 ){
                     Icon(Icons.Default.Save,null)
                     Spacer(Modifier.width(6.dp))
-                    Text("Arquivo")
+                    Text("Salvar arquivo")
                 }
             }
             Row(
@@ -379,7 +364,7 @@ fun CompanionCenterScreen(
                 ){
                     Icon(Icons.Default.Restore,null)
                     Spacer(Modifier.width(6.dp))
-                    Text("Colar")
+                    Text("Colar backup")
                 }
                 FilledTonalButton(
                     onClick={openBackup.launch(arrayOf("application/json","text/plain"))},
@@ -387,7 +372,7 @@ fun CompanionCenterScreen(
                 ){
                     Icon(Icons.Default.FolderOpen,null)
                     Spacer(Modifier.width(6.dp))
-                    Text("Importar")
+                    Text("Importar arquivo")
                 }
             }
         }
@@ -444,12 +429,6 @@ fun CompanionCenterScreen(
     }
 }
 
+
 @Composable
-private fun SettingsSectionTitle(text:String){
-    Text(
-        text,
-        style=MaterialTheme.typography.titleLarge,
-        fontWeight=FontWeight.Bold,
-        modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs)
-    )
-}
+private fun SettingsSectionTitle(text:String)=CompanionSectionHeader(title=text)

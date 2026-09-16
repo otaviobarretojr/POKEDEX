@@ -20,6 +20,12 @@ object ContentBootstrapManager {
         runCatching{
             cleanupLegacyOnce(context)
             onProgress(Progress(.02f,"Verificando biblioteca POKEDEX"))
+            val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
+            val cachedSignature=prefs.getString(KEY_READY,null)
+            if(!cachedSignature.isNullOrBlank()){
+                onProgress(Progress(1f,"Biblioteca local pronta"))
+                return@runCatching Result(true)
+            }
             val packages=RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}
             check(packages.isNotEmpty()){"Servidor de conteúdo indisponível"}
             val general=packages.firstOrNull{it.packageKey=="general"} ?: error("Biblioteca principal indisponível")

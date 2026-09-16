@@ -16,6 +16,16 @@ journey_source = (
 )
 application_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 main_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+boot_source = (ui / "BootExperienceScreen.kt").read_text(encoding="utf-8")
+preloader_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+if "ContentBootstrapManager.ensureReady" not in boot_source:
+    violations.append("Boot must block on essential content bootstrap")
+if "StartupPreloader.warm(context)" in boot_source or "StartupPreloader.warm(context){" in boot_source:
+    violations.append("Optional cache warmup must not block the boot UI")
+if "StartupPreloader.launchWarmInBackground(context)" not in boot_source:
+    violations.append("Boot must launch optional cache warmup after entering the app")
+if "fun launchWarmInBackground" not in preloader_source or "warm(appContext)" not in preloader_source:
+    violations.append("Background startup warmup architecture missing")
 
 # UI must go through PokedexDataStore instead of bypassing the shared cache layer.
 for path in ui.glob("*.kt"):
@@ -265,7 +275,7 @@ if "migrateCapturedToBox" in boxes or "migrateLegacyGameBox" in boxes:
     violations.append("Box screen must not mutate fixed game ordering")
 if "sortBox(" in boxes or "moveMany(" in boxes:
     violations.append("Box screen must stay search/browse focused")
-if "padding(horizontal=6.dp)" not in boxes or "height(40.dp)" not in boxes:
+if ("padding(horizontal=6.dp)" not in boxes and "padding(horizontal=PokedexDesignTokens.Spacing.Sm)" not in boxes) or "height(40.dp)" not in boxes:
     violations.append("Compact Box chrome regression")
 
 if violations:
@@ -1055,9 +1065,10 @@ if not boot_screen_path.exists():
 else:
     boot_screen = boot_screen_path.read_text(encoding="utf-8")
     for required in (
-        "StartupPreloader.warm",
-        "progress.fraction",
-        "progress.label",
+        "ContentBootstrapManager.ensureReady",
+        "StartupPreloader.launchWarmInBackground",
+        "state.progress",
+        "state.label",
         "packageManager.getPackageInfo",
     ):
         if required not in boot_screen:

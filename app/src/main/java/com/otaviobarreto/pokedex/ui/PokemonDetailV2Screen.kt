@@ -24,6 +24,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -328,6 +330,7 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
 }
 
 @Composable private fun DetailTabs(selected:Int,setSelected:(Int)->Unit,context:GameContext?){
+    val haptics=LocalHapticFeedback.current
     val base=listOf(
         "Info" to Icons.Default.Info,
         "Stats" to Icons.Default.BarChart,
@@ -347,7 +350,12 @@ private fun DetailDexNavigator(currentId:Int,openPokemon:(Int)->Unit){
                     Modifier
                         .weight(1f)
                         .dexInteractiveSurface(interactionSource=interaction,pressedScale=.96f)
-                        .clickable(interactionSource=interaction,indication=null){setSelected(i)},
+                        .clickable(interactionSource=interaction,indication=null){
+                            if(i!=selected){
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                setSelected(i)
+                            }
+                        },
                     shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
                     color=if(active)MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                 ){
@@ -414,6 +422,7 @@ private fun PokemonFormsSummaryCard(
     source:String?,
     accent:Color
 ){
+    val haptics=LocalHapticFeedback.current
     var forms by remember(pokemonId){ mutableStateOf<List<PokemonFormVariant>?>(PokemonFormsService.cached(pokemonId)) }
     LaunchedEffect(pokemonId){
         if(forms==null){
@@ -475,6 +484,7 @@ private fun PokemonFormsSummaryCard(
                                     FilterChip(
                                         selected=normalOwned,
                                         onClick={
+                                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             VariantCollectionStore.toggle(
                                                 source,pokemonId,formId,form.name,false,
                                                 formKey=form.formKey,
@@ -488,6 +498,7 @@ private fun PokemonFormsSummaryCard(
                                     FilterChip(
                                         selected=shinyOwned,
                                         onClick={
+                                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             VariantCollectionStore.toggle(
                                                 source,pokemonId,formId,form.name,true,
                                                 formKey=form.formKey,
@@ -516,7 +527,10 @@ private fun PokemonFormsSummaryCard(
             }
             if(!source.isNullOrBlank() && CollectionStore.isCapturedIn(source,pokemonId)){
                 TextButton(
-                    onClick={VariantCollectionStore.removeAll(source,pokemonId)},
+                    onClick={
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        VariantCollectionStore.removeAll(source,pokemonId)
+                    },
                     modifier=Modifier.fillMaxWidth()
                 ){
                     Icon(Icons.Default.DeleteOutline,null,Modifier.size(17.dp))

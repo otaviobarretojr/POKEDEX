@@ -70,6 +70,97 @@ jobs:
         run: gradle testDebugUnitTest
       - name: Android lint
         run: gradle lintDebug
+      - name: Enable KVM for Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Instrumented UI tests — compact phone
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            gradle connectedDebugAndroidTest
+            mkdir -p visual-regression/compact
+            adb pull /sdcard/Download/pokedex-visual-regression/. visual-regression/compact/
+      - name: Instrumented UI tests — large phone
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            gradle connectedDebugAndroidTest
+            mkdir -p visual-regression/large
+            adb pull /sdcard/Download/pokedex-visual-regression/. visual-regression/large/
+      - name: Compare against approved visual baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p visual-baseline
+          curl -L --fail --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/10428989957/zip" \
+            -o visual-baseline.zip
+          unzip -q visual-baseline.zip -d visual-baseline
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageChops
+          import sys
+          names=("journey.png","pokedex.png","collection.png","box.png")
+          failed=[]
+          for device in ("compact","large"):
+              for name in names:
+                  baseline=Path("visual-baseline")/device/name
+                  current=Path("visual-regression")/device/name
+                  if not baseline.exists() or not current.exists():
+                      failed.append(f"{device}/{name}: arquivo ausente")
+                      continue
+                  with Image.open(baseline) as a, Image.open(current) as b:
+                      a=a.convert("RGBA"); b=b.convert("RGBA")
+                      if a.size != b.size:
+                          failed.append(f"{device}/{name}: tamanho {b.size} != baseline {a.size}")
+                          continue
+                      diff=ImageChops.difference(a,b)
+                      if diff.getbbox() is not None:
+                          out=Path("visual-diff")/device/name
+                          out.parent.mkdir(parents=True,exist_ok=True)
+                          diff.save(out)
+                          failed.append(f"{device}/{name}: regressão pixel-perfect")
+          if failed:
+              print("\n".join("VISUAL FAIL: "+x for x in failed))
+              sys.exit(1)
+          print("Visual regression: 8/8 goldens pixel-perfect.")
+          PY
+      - name: Upload visual regression diff
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-diff
+          path: visual-diff/
+          if-no-files-found: ignore
+      - name: Upload visual regression candidates
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-candidates
+          path: visual-regression/
+      - name: Upload instrumented test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-ui-test-reports
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
       - name: Build debug APK
         run: gradle clean assembleDebug
       - name: Upload APK

@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
@@ -71,6 +73,7 @@ private val mainDestinations=listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun PokedexApp(){
+ val haptics=LocalHapticFeedback.current
  val navController=rememberNavController();val backStackEntry by navController.currentBackStackEntryAsState();val currentRoute=backStackEntry?.destination?.route
  val isSecondaryScreen=PokedexRoutes.isSecondary(currentRoute)
  fun openPokemon(id:Int,source:String?=null){
@@ -104,6 +107,7 @@ private val mainDestinations=listOf(
  containerColor=MaterialTheme.colorScheme.background,
  bottomBar={if(!isSecondaryScreen){
   DexBottomBar(mainDestinations,currentRoute){d->
+   if(d.route!=currentRoute) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
    navController.navigate(d.route){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}
   }
  }},){innerPadding->
