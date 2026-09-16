@@ -27,7 +27,7 @@ object GameCoverCatalog {
             "https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-eevee.png"
         ),
         "Legends Arceus" to listOf(
-            "https://www.nintendo.com/ph/switch/aw7k/img/hero_sp.jpg"
+            "https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png"
         ),
         "Brilliant Diamond / Shining Pearl" to listOf(
             "https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
