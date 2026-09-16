@@ -235,17 +235,18 @@ internal fun JourneyGamePicker(
                 }
             }
 
-            item{
-                CompanionSectionHeader(
-                    title=if(activeGame==null)"Escolha um jogo" else "Outras jornadas",
-                    supporting=if(activeGame==null)"Comece uma aventura para ativar seu Companion." else "Continue ou inicie outra aventura quando quiser.",
-                    modifier=Modifier.padding(top=4.dp,bottom=1.dp)
-                )
-            }
             item(key="games_library_header"){
-                Column(Modifier.fillMaxWidth().padding(top=4.dp,bottom=4.dp)){
-                    Text("Jogos Pokémon",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
-                    Text("Escolha uma aventura",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(Modifier.fillMaxWidth().padding(top=6.dp,bottom=2.dp)){
+                    Text(
+                        if(activeGame==null)"Escolha seu jogo" else "Outras aventuras",
+                        style=MaterialTheme.typography.headlineMedium,
+                        fontWeight=FontWeight.Black
+                    )
+                    Text(
+                        if(activeGame==null)"Comece uma Jornada e ative seu Companion." else "Comece ou continue outra Jornada.",
+                        style=MaterialTheme.typography.bodyMedium,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             items(AppGameCatalog.adventureGames,key={it.label}){game->
