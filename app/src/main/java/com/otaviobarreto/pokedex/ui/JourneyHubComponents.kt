@@ -331,6 +331,46 @@ private fun JourneyObjectivePreviewCard(
 }
 
 @Composable
+private fun CompanionProgressSection(
+    game:AppGame,
+    journeyRatio:Float,
+    journeyDone:Int,
+    journeyTotal:Int,
+    dexIdsBySource:Map<String,List<Int>>,
+    capturedBySource:Map<String,Set<Int>>,
+    dexRatio:Float,
+    dexCaptured:Int,
+    dexTotal:Int,
+    accent:Color,
+    modifier:Modifier=Modifier
+){
+    Column(modifier){
+        CompanionSectionHeader(
+            title="Seu progresso",
+            supporting="Jornada e Pokédex do jogo",
+            modifier=Modifier.padding(bottom=6.dp)
+        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement=Arrangement.spacedBy(10.dp)
+        ){
+            CompanionProgressMini(
+                label="Jornada",
+                value=journeyDone.toString()+" / "+journeyTotal,
+                progress=journeyRatio,
+                modifier=Modifier.weight(1f)
+            )
+            CompanionProgressMini(
+                label="Pokédex",
+                value=dexCaptured.toString()+" / "+dexTotal,
+                progress=dexRatio,
+                modifier=Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
 private fun CompanionProgressMini(
     label:String,
     value:String,
