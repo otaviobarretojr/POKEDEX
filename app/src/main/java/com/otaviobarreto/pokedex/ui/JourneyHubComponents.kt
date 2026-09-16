@@ -242,23 +242,14 @@ internal fun JourneyGamePicker(
                     modifier=Modifier.padding(top=4.dp,bottom=1.dp)
                 )
             }
-            item(key="game_showcase"){
-                var showAllGames by rememberSaveable { mutableStateOf(false) }
-                val availableGames=AppGameCatalog.adventureGames.filter{it.label!=activeGame?.label}
-                Column(Modifier.fillMaxWidth()){
-                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                        Text("Jogos",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,modifier=Modifier.weight(1f))
-                        TextButton(onClick={showAllGames=true}){ Text("Ver todos") }
-                    }
-                    LazyRow(horizontalArrangement=Arrangement.spacedBy(12.dp),contentPadding=PaddingValues(vertical=4.dp)){
-                        items(availableGames.take(3),key={it.label}){game->
-                            JourneyGamePosterCard(game=game,onClick={onSelect(game.label)},modifier=Modifier.width(176.dp))
-                        }
-                    }
+            item(key="games_library_header"){
+                Column(Modifier.fillMaxWidth().padding(top=4.dp,bottom=4.dp)){
+                    Text("Jogos Pokémon",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+                    Text("Escolha uma aventura",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                if(showAllGames){
-                    JourneyAllGamesDialog(games=AppGameCatalog.adventureGames,onDismiss={showAllGames=false},onSelect={label->showAllGames=false;onSelect(label)})
-                }
+            }
+            items(AppGameCatalog.adventureGames,key={it.label}){game->
+                JourneyGameLibraryCard(game=game,onClick={onSelect(game.label)})
             }
             item{Spacer(Modifier.height(20.dp))}
         }
@@ -500,6 +491,36 @@ private fun CompanionMetric(label:String,value:String,subtitle:String,modifier:M
                 textAlign=TextAlign.Center,
                 modifier=Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+@Composable
+private fun JourneyGameLibraryCard(game:AppGame,onClick:()->Unit){
+    val revision=JourneyProgressStore.revision
+    val started=remember(game.label,revision){JourneyProgressStore.isStarted(game.label)}
+    val steps=remember(game.label,revision){JourneyCatalog.steps(game.label)}
+    val completed=remember(game.label,revision){JourneyProgressStore.completed(game.label)}
+    val done=DataIntegrityRules.completedCount(steps.map{it.id},completed)
+    val ratio=if(steps.isEmpty())0f else done.toFloat()/steps.size
+    val accent=PokedexDesignTokens.Colors.game(game.label)
+    Card(modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(26.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),elevation=CardDefaults.cardElevation(defaultElevation=2.dp)){
+        Column{
+            Box(Modifier.fillMaxWidth().aspectRatio(1.48f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp))){
+                JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxSize())
+                Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Transparent,Color.Black.copy(alpha=.56f)))))
+                Text(GameCoverCatalog.displayNameFor(game.label),modifier=Modifier.align(Alignment.BottomStart).padding(16.dp),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=Color.White,maxLines=2,overflow=TextOverflow.Ellipsis)
+            }
+            Column(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=13.dp)){
+                Row(verticalAlignment=Alignment.CenterVertically){
+                    Text(if(started)"Continuar Jornada" else "Começar Jornada",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Black,color=accent,modifier=Modifier.weight(1f))
+                    Text(if(started)((ratio*100).toInt().toString()+"%") else "NOVO",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black,color=accent)
+                }
+                if(started){
+                    LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(top=9.dp).height(6.dp),strokeCap=androidx.compose.ui.graphics.StrokeCap.Round)
+                    Text(done.toString()+" de "+steps.size+" objetivos",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))
+                }
+            }
         }
     }
 }
