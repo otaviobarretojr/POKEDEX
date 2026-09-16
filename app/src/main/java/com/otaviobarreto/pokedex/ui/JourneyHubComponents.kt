@@ -508,7 +508,7 @@ private fun JourneyGameLibraryCard(game:AppGame,onClick:()->Unit){
     val accent=PokedexDesignTokens.Colors.game(game.label)
     Card(modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(26.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),elevation=CardDefaults.cardElevation(defaultElevation=2.dp)){
         Column{
-            Box(Modifier.fillMaxWidth().aspectRatio(16f/9f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(MaterialTheme.colorScheme.surfaceVariant)){
+            Box(Modifier.fillMaxWidth().aspectRatio(GameCoverCatalog.libraryAspectRatioFor(game.label)).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(MaterialTheme.colorScheme.surfaceVariant)){
                 val artwork=GameCoverCatalog.heroFor(game.label) ?: GameCoverCatalog.primaryCoverFor(game.label)
                 var artworkFailed by remember(game.label,artwork){mutableStateOf(false)}
                 if(artwork!=null && !artworkFailed){
@@ -523,7 +523,7 @@ private fun JourneyGameLibraryCard(game:AppGame,onClick:()->Unit){
                     JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxSize())
                 }
             }
-            Column(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=10.dp)){
+            Column(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=9.dp)){
                 Text(GameCoverCatalog.displayNameFor(game.label),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(bottom=5.dp))
                 Row(verticalAlignment=Alignment.CenterVertically){
                     Text(if(started)"Continuar Jornada" else "Começar Jornada",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Black,color=accent,modifier=Modifier.weight(1f))
