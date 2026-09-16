@@ -82,8 +82,10 @@ private val mainDestinations=listOf(
  }
  fun replacePokemonDetail(id:Int,source:String?=null){
   RecentActivityStore.recordPokemon(id)
-  navController.popBackStack()
-  navController.navigate(if(source.isNullOrBlank())"pokemon/"+id else "pokemon/"+id+"?source="+Uri.encode(source))
+  val route=if(source.isNullOrBlank())"pokemon/"+id else "pokemon/"+id+"?source="+Uri.encode(source)
+  navController.navigate(route){
+   popUpTo("pokemon/{id}?source={source}"){inclusive=true}
+  }
  }
  fun openFormDetail(id:Int,name:String,shiny:Boolean){
   navController.navigate("formDetail/"+id+"?name="+Uri.encode(name)+"&shiny="+shiny)
