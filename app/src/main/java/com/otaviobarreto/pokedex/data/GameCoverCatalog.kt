@@ -15,7 +15,8 @@ object GameCoverCatalog {
         val canonicalName:String,
         val heroArtwork:String,
         val libraryCover:String,
-        val visualKey:String
+        val visualKey:String,
+        val libraryAspectRatio:Float=16f/9f
     )
 
     private val art=mapOf(
@@ -29,19 +30,22 @@ object GameCoverCatalog {
             canonicalName="Pokémon Legends: Z-A",
             heroArtwork="https://asia-press.portal-pokemon.com/uploads/2025/07/PokemonLegendsZA_KeyVisual.jpg",
             libraryCover="https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
-            visualKey="za"
+            visualKey="za",
+            libraryAspectRatio=1.42f
         ),
         "Legends Arceus" to GameArt(
             canonicalName="Pokémon Legends: Arceus",
             heroArtwork="https://www.nintendo.com/sg/switch/aw7k/img/og.jpg",
             libraryCover="https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
-            visualKey="arceus"
+            visualKey="arceus",
+            libraryAspectRatio=1.50f
         ),
         "Brilliant Diamond / Shining Pearl" to GameArt(
             canonicalName="Pokémon Brilliant Diamond",
             heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000039987/13d11f4a53d7c3d52f968cadf56b80e9e2545014e6426bcac3b554fcdeee21d7",
             libraryCover="https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
-            visualKey="diamond"
+            visualKey="diamond",
+            libraryAspectRatio=1.56f
         ),
         "Sword / Shield" to GameArt(
             canonicalName="Pokémon Shield",
@@ -66,6 +70,7 @@ object GameCoverCatalog {
     fun artFor(gameLabel:String):GameArt?=art[gameLabel]
     fun primaryCoverFor(gameLabel:String):String?=artFor(gameLabel)?.libraryCover
     fun heroFor(gameLabel:String):String?=artFor(gameLabel)?.heroArtwork
+    fun libraryAspectRatioFor(gameLabel:String):Float=artFor(gameLabel)?.libraryAspectRatio ?: 16f/9f
     fun displayNameFor(gameLabel:String):String=artFor(gameLabel)?.canonicalName ?: gameLabel
     fun coversFor(gameLabel:String): List<String> = primaryCoverFor(gameLabel)?.let(::listOf).orEmpty()
 }
