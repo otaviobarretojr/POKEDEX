@@ -38,7 +38,7 @@ object GameCoverCatalog {
             heroArtwork="https://www.nintendo.com/sg/switch/aw7k/img/og.jpg",
             libraryCover="https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
             visualKey="arceus",
-            libraryAspectRatio=1.50f
+            libraryAspectRatio=1.72f
         ),
         "Brilliant Diamond / Shining Pearl" to GameArt(
             canonicalName="Pokémon Brilliant Diamond",
