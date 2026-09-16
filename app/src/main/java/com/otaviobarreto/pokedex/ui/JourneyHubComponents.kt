@@ -763,7 +763,7 @@ private fun JourneyGameCover(
                     ) {
                         AsyncImage(
                             model = cover,
-                            contentDescription = "Capa oficial de $gameLabel",
+                            contentDescription = "Arte oficial de $gameLabel",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
                         )
@@ -773,7 +773,7 @@ private fun JourneyGameCover(
         } else {
             AsyncImage(
                 model = covers.first(),
-                contentDescription = "Capa oficial de $gameLabel",
+                contentDescription = "Arte oficial de $gameLabel",
                 modifier = Modifier.fillMaxSize().padding(3.dp),
                 contentScale = ContentScale.Fit
             )
