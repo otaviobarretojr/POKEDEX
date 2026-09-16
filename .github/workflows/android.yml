@@ -87,15 +87,18 @@ jobs:
             gradle connectedDebugAndroidTest
             mkdir -p visual-regression/compact
             adb pull /sdcard/Download/pokedex-visual-regression/. visual-regression/compact/
-      - name: Instrumented UI tests — large phone
+      - name: Instrumented UI tests — Galaxy S25 Ultra target
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
           profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -skin 1440x3120
           disable-animations: true
           script: |
+            adb shell wm size 1440x3120
+            adb shell wm density 480
             gradle connectedDebugAndroidTest
             mkdir -p visual-regression/large
             adb pull /sdcard/Download/pokedex-visual-regression/. visual-regression/large/
