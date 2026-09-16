@@ -5,18 +5,11 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class PokedexNavigationInstrumentedTest {
     @get:Rule val composeRule=createAndroidComposeRule<MainActivity>()
-
-    @Before fun provisionVerifiedWarmLaunchState(){
-        val context=androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        context.getSharedPreferences("content_bootstrap_v2",android.content.Context.MODE_PRIVATE)
-            .edit().putString("ready_signature","instrumented-verified-local-library").commit()
-    }
 
     private fun waitForMainNavigation(){
         composeRule.waitUntil(timeoutMillis=10_000){
