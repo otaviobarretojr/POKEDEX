@@ -67,5 +67,5 @@ object GameCoverCatalog {
     fun primaryCoverFor(gameLabel:String):String?=artFor(gameLabel)?.libraryCover
     fun heroFor(gameLabel:String):String?=artFor(gameLabel)?.heroArtwork
     fun displayNameFor(gameLabel:String):String=artFor(gameLabel)?.canonicalName ?: gameLabel
-    fun coversFor(gameLabel:String):List<String>=primaryCoverFor(gameLabel)?.let(::listOf).orEmpty()
+    fun coversFor(gameLabel:String): List<String> = primaryCoverFor(gameLabel)?.let(::listOf).orEmpty()
 }
