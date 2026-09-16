@@ -86,8 +86,7 @@ jobs:
           script: |
             gradle connectedDebugAndroidTest
             mkdir -p visual-regression/compact
-            adb shell 'run-as com.otaviobarreto.pokedex sh -c "cp -r /sdcard/Android/data/com.otaviobarreto.pokedex/files/visual-regression/. files/visual-regression-export/ 2>/dev/null || true"'
-            adb exec-out run-as com.otaviobarreto.pokedex tar -cf - files/visual-regression-export 2>/dev/null | tar -xf - -C visual-regression/compact || true
+            adb pull /sdcard/Android/data/com.otaviobarreto.pokedex/files/visual-regression/. visual-regression/compact/
       - name: Instrumented UI tests — large phone
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -99,8 +98,7 @@ jobs:
           script: |
             gradle connectedDebugAndroidTest
             mkdir -p visual-regression/large
-            adb shell 'run-as com.otaviobarreto.pokedex sh -c "cp -r /sdcard/Android/data/com.otaviobarreto.pokedex/files/visual-regression/. files/visual-regression-export/ 2>/dev/null || true"'
-            adb exec-out run-as com.otaviobarreto.pokedex tar -cf - files/visual-regression-export 2>/dev/null | tar -xf - -C visual-regression/large || true
+            adb pull /sdcard/Android/data/com.otaviobarreto.pokedex/files/visual-regression/. visual-regression/large/
       - name: Upload visual regression candidates
         if: always()
         uses: actions/upload-artifact@v4
