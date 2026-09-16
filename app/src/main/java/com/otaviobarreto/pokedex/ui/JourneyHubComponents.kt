@@ -724,6 +724,7 @@ private fun JourneyGameCover(
         } else null
     }
     val covers = GameCoverCatalog.coversFor(gameLabel)
+    val pairedCovers = covers.size >= 2
     if (covers.isEmpty()) {
         Box(
             modifier = modifier
@@ -748,23 +749,34 @@ private fun JourneyGameCover(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-        } else {
-            Row(Modifier.fillMaxSize()) {
+        } else if (pairedCovers) {
+            Row(
+                Modifier.fillMaxSize().padding(horizontal=4.dp,vertical=3.dp),
+                horizontalArrangement=Arrangement.spacedBy(3.dp)
+            ) {
                 covers.take(2).forEach { cover ->
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxHeight()
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
                     ) {
                         AsyncImage(
                             model = cover,
-                            contentDescription = "Arte oficial de $gameLabel",
+                            contentDescription = "Capa oficial de $gameLabel",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Fit
                         )
                     }
                 }
             }
+        } else {
+            AsyncImage(
+                model = covers.first(),
+                contentDescription = "Capa oficial de $gameLabel",
+                modifier = Modifier.fillMaxSize().padding(3.dp),
+                contentScale = ContentScale.Fit
+            )
         }
 
         Box(
