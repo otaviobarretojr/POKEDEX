@@ -89,7 +89,7 @@ jobs:
           - label: Compact Phone
             profile: pixel_2
             output: compact
-            emulator_options: ""
+            emulator_options: "-no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim"
             device_setup: ":"
           - label: Galaxy S25 Ultra
             profile: pixel_6
