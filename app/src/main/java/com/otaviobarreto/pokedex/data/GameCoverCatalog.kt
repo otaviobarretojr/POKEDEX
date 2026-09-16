@@ -42,10 +42,10 @@ object GameCoverCatalog {
         ),
         "Brilliant Diamond / Shining Pearl" to GameArt(
             canonicalName="Pokémon Brilliant Diamond",
-            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000039987/13d11f4a53d7c3d52f968cadf56b80e9e2545014e6426bcac3b554fcdeee21d7",
+            heroArtwork="https://assets.nintendo.eu/image/upload/f_auto%2Cc_limit%2Cw_1920%2Cq_75/MNS/Content%20Pages%20Assets/Category-List%20Pages/Franchises/Pokemon/16.9_BrandPage_Switch_PokemonBrilliantDiamondShiningPearl_KeyArt_enNOE",
             libraryCover="https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
             visualKey="diamond",
-            libraryAspectRatio=1.56f
+            libraryAspectRatio=1.72f
         ),
         "Sword / Shield" to GameArt(
             canonicalName="Pokémon Shield",
