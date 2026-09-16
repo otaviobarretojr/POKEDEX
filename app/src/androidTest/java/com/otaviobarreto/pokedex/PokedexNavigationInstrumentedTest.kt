@@ -33,7 +33,7 @@ class PokedexNavigationInstrumentedTest {
 
     private fun captureGoldenCandidate(name:String){
         val context=androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        val dir=File(context.getExternalFilesDir(null),"visual-regression").apply{mkdirs()}
+        val dir=File("/sdcard/Download/pokedex-visual-regression").apply{mkdirs()}
         val file=File(dir,name+".png")
         FileOutputStream(file).use{out->
             composeRule.onRoot().captureToImage().asAndroidBitmap()
