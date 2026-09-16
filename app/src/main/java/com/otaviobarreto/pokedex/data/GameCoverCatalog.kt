@@ -22,7 +22,7 @@ object GameCoverCatalog {
         "Scarlet / Violet" to GameArt(
             canonicalName="Pokémon Scarlet",
             heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053966/849c234de8df7265201d26d9d72f88eed3f32438d3dca12fc135beb4c3befc85",
-            libraryCover="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053966/849c234de8df7265201d26d9d72f88eed3f32438d3dca12fc135beb4c3befc85",
+            libraryCover="https://scarletviolet.pokemon.com/_images/global/en-us/packshot-scarlet.png",
             visualKey="scarlet"
         ),
         "Pokémon Legends: Z-A" to GameArt(
