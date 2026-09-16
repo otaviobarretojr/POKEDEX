@@ -143,14 +143,19 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
  Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
-  BoxCompanionHeader(game.label,region.label,caught,dex.size,game.accent)
+  Row(Modifier.fillMaxWidth().padding(top=8.dp,bottom=5.dp),verticalAlignment=Alignment.CenterVertically){
+   Column(Modifier.weight(1f)){
+    Text("Box",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+    Text(game.label+" · "+region.label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+   }
+  }
   Row(
    Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Xs),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
   ){
    ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.18f)){
     OutlinedTextField(
-     game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
+     game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=38.dp),
      readOnly=true,singleLine=true,label={Text("Jogo",style=MaterialTheme.typography.labelSmall)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},
@@ -167,7 +172,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    }
    ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.82f)){
     OutlinedTextField(
-     region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
+     region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=38.dp),
      readOnly=true,singleLine=true,
      label={Text(if(game.regions.size>1)"Região / DLC" else "Região",style=MaterialTheme.typography.labelSmall)},
      textStyle=MaterialTheme.typography.bodySmall,
@@ -188,7 +193,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    }
   }
   Row(
-   Modifier.fillMaxWidth().height(54.dp).padding(horizontal=4.dp),
+   Modifier.fillMaxWidth().height(46.dp).padding(horizontal=4.dp),
    verticalAlignment=Alignment.CenterVertically
   ){
    Column(Modifier.weight(1f)){
@@ -213,7 +218,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    Box{
     IconButton(
      onClick={evolutionFilterMenu=true},
-     modifier=Modifier.size(40.dp)
+     modifier=Modifier.size(36.dp)
     ){
      Icon(
       Icons.Default.AutoAwesome,
@@ -232,7 +237,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      }
     }
    }
-   Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
+   Box(Modifier.size(42.dp),contentAlignment=Alignment.Center){
     if(evolutionFilterName!=null){
      EvolutionModeCounter(filteredEvolutionEntries.size,evolutionMethodLoading,game.accent)
     }else{
