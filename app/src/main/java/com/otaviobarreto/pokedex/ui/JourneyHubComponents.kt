@@ -336,7 +336,7 @@ private fun CompanionProgressSection(
     journeyRatio:Float,
     journeyDone:Int,
     journeyTotal:Int,
-    dexIdsBySource:Map<String,List<Int>>,
+    dexIdsBySource:Map<String,Set<Int>>,
     capturedBySource:Map<String,Set<Int>>,
     dexRatio:Float,
     dexCaptured:Int,
