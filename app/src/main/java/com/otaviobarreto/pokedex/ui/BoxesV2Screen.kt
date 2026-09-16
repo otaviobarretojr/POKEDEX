@@ -81,7 +81,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   AppStatePreferences.setActiveRegionForGame(game.label,region.source)
   page=AppStatePreferences.boxPage(region.source)
   val generalReady=withContext(Dispatchers.IO){OfflineGamePackManager.generalAudit()}
-  val gameReady=OfflineGamePackManager.status(game.label).verified
+  val gameReady=withContext(Dispatchers.IO){OfflineGamePackManager.status(game.label).verified}
   if(generalReady && !gameReady){
    dex=emptyList()
    needsComplement=true
@@ -111,7 +111,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   }
  }
  LaunchedEffect(region.source,current,dex){
-  runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}
+  withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}}
  }
  val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty()
  val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
