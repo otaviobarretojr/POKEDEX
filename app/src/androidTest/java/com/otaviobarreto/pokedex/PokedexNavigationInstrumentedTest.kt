@@ -3,9 +3,8 @@ package com.otaviobarreto.pokedex
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.waitUntilAtLeastOneExists
-import androidx.compose.ui.test.hasText
 import org.junit.Rule
 import org.junit.Test
 
@@ -13,7 +12,9 @@ class PokedexNavigationInstrumentedTest {
     @get:Rule val composeRule=createAndroidComposeRule<MainActivity>()
 
     private fun waitForMainNavigation(){
-        composeRule.waitUntilAtLeastOneExists(hasText("Jornada"),10_000)
+        composeRule.waitUntil(timeoutMillis=10_000){
+            composeRule.onAllNodesWithText("Jornada").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Jornada").assertIsDisplayed()
     }
 
