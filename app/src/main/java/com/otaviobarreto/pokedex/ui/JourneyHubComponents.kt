@@ -146,9 +146,11 @@ internal fun JourneyGamePicker(
                                     Modifier.fillMaxWidth().height(170.dp)
                                         .clip(RoundedCornerShape(20.dp))
                                 ){
-                                    JourneyGameCover(
-                                        gameLabel=heroGameLabel,
-                                        modifier=Modifier.fillMaxSize()
+                                    AsyncImage(
+                                        model=GameCoverCatalog.heroFor(heroGameLabel) ?: GameCoverCatalog.primaryCoverFor(heroGameLabel),
+                                        contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(heroGameLabel),
+                                        modifier=Modifier.fillMaxSize(),
+                                        contentScale=ContentScale.Crop
                                     )
                                     JourneyHeroArtwork(
                                         ids=JourneyGameVisualCatalog.forGame(heroGameLabel).heroPokemonIds,
@@ -183,7 +185,7 @@ internal fun JourneyGamePicker(
                             }
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                game.label,
+                                GameCoverCatalog.displayNameFor(game.label),
                                 style=MaterialTheme.typography.headlineSmall,
                                 fontWeight=FontWeight.Black,
                                 maxLines=1,
@@ -236,93 +238,17 @@ internal fun JourneyGamePicker(
                 }
             }
 
-            item(key="games_library_header"){
-                Column(Modifier.fillMaxWidth().padding(top=6.dp,bottom=2.dp)){
-                    Text(
-                        if(activeGame==null)"Escolha seu jogo" else "Outras aventuras",
-                        style=MaterialTheme.typography.headlineMedium,
-                        fontWeight=FontWeight.Black
-                    )
-                    Text(
-                        if(activeGame==null)"Comece uma Jornada e ative seu Companion." else "Comece ou continue outra Jornada.",
-                        style=MaterialTheme.typography.bodyMedium,
-                        color=MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            items(AppGameCatalog.adventureGames,key={it.label}){game->
-                JourneyGameLibraryCard(game=game,onClick={onSelect(game.label)})
-            }
-            item{Spacer(Modifier.height(20.dp))}
-        }
-
-    }
-}
-
-@Composable
-private fun CompanionProgressSection(
-    game:AppGame,
-    journeyRatio:Float,
-    journeyDone:Int,
-    journeyTotal:Int,
-    dexIdsBySource:Map<String,Set<Int>>,
-    capturedBySource:Map<String,Set<Int>>,
-    dexRatio:Float,
-    dexCaptured:Int,
-    dexTotal:Int,
-    accent:Color,
-    modifier:Modifier=Modifier
-){
-    Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.28f)){
-        Column(Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=12.dp)){
-            CompanionSectionHeader(
-                title="SEU PROGRESSO",
-                supporting="Jornada e Pokédex deste jogo"
-            )
-            Row(Modifier.fillMaxWidth().padding(top=8.dp),verticalAlignment=Alignment.CenterVertically){
-                Column(Modifier.weight(1f)){
-                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                        Text("Jornada",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold)
-                        Spacer(Modifier.weight(1f))
-                        Text((journeyRatio*100).toInt().toString()+"% · "+journeyDone+"/"+journeyTotal,style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black)
-                    }
-                    LinearProgressIndicator(progress={journeyRatio.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=5.dp).height(6.dp),strokeCap=StrokeCap.Round)
-                }
-            }
-            HorizontalDivider(Modifier.padding(vertical=10.dp),color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))
-            Row(verticalAlignment=Alignment.CenterVertically){
-                Box(Modifier.size(66.dp),contentAlignment=Alignment.Center){
-                    Canvas(Modifier.fillMaxSize()){
-                        val stroke=8.dp.toPx()
-                        drawArc(color=accent.copy(alpha=.15f),startAngle=-90f,sweepAngle=360f,useCenter=false,style=Stroke(stroke,cap=StrokeCap.Round))
-                        drawArc(color=accent,startAngle=-90f,sweepAngle=360f*dexRatio.coerceIn(0f,1f),useCenter=false,style=Stroke(stroke,cap=StrokeCap.Round))
-                    }
-                    Text((dexRatio*100).toInt().toString()+"%",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Black)
-                }
-                Column(Modifier.weight(1f).padding(start=13.dp)){
-                    Text("Pokédex do jogo",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Black)
-                    Text(if(dexTotal>0) dexCaptured.toString()+" de "+dexTotal+" registrados" else "Carregando progresso…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            if(game.regions.size>1 && dexTotal>0){
-                Row(Modifier.fillMaxWidth().padding(top=10.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                    game.regions.forEach{region->
-                        val ids=dexIdsBySource[region.source].orEmpty()
-                        if(ids.isNotEmpty()){
-                            val caught=ids.count{it in capturedBySource[region.source].orEmpty()}
-                            val regionalRatio=caught.toFloat()/ids.size
-                            Surface(modifier=Modifier.weight(1f),shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)){
-                                Column(Modifier.padding(horizontal=8.dp,vertical=7.dp)){
-                                    Text(region.label,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
-                                    LinearProgressIndicator(progress={regionalRatio},modifier=Modifier.fillMaxWidth().padding(top=4.dp).height(4.dp),strokeCap=StrokeCap.Round)
-                                    Text(caught.toString()+"/"+ids.size,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=3.dp))
-                                }
-                            }
-                        }
+            if(activeGame==null){
+                item(key="games_library_header"){
+                    Column(Modifier.fillMaxWidth().padding(top=6.dp,bottom=2.dp)){
+                        Text("Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+                        Text("Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-            }
-        }
+                items(AppGameCatalog.adventureGames,key={it.label}){game->
+                    JourneyGameLibraryCard(game=game,onClick={onSelect(game.label)})
+                }
+            }        }
     }
 }
 
