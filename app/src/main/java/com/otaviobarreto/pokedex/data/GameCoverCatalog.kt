@@ -10,6 +10,19 @@ package com.otaviobarreto.pokedex.data
 object GameCoverCatalog {
     fun coversFor(gameLabel: String): List<String> = covers[gameLabel].orEmpty()
 
+    /** One intentional hero cover per journey. Paired releases no longer compete for card space. */
+    fun primaryCoverFor(gameLabel: String): String? = preferredCover[gameLabel] ?: coversFor(gameLabel).firstOrNull()
+
+    private val preferredCover = mapOf(
+        "Pokémon Legends: Z-A" to "https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
+        "Scarlet / Violet" to "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000053971/842b2784d91520d41a947dec17fac116fec889bb1f1db4023615af8429dae00d",
+        "Sword / Shield" to "https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png",
+        "Let's Go Pikachu / Eevee" to "https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
+        "Legends Arceus" to "https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
+        "Brilliant Diamond / Shining Pearl" to "https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
+        "FireRed / LeafGreen" to "https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000118613/86f3c6d4e129d185cbbc441169856733dea45ff231446a4edf5fec4624041849"
+    )
+
     private val covers = mapOf(
         "Pokémon Legends: Z-A" to listOf(
             "https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png"
