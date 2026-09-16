@@ -55,7 +55,7 @@ object GameCoverCatalog {
         ),
         "Let's Go Pikachu / Eevee" to GameArt(
             canonicalName="Pokémon: Let's Go, Pikachu!",
-            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000000433/ef9e13d3f6c17d1f98f4f64e753d2274e14cbb4ad570f87f9a11e86ad69c6a45",
+            heroArtwork="https://fs-prod-cdn.nintendo-europe.com/media/images/10_share_images/games_15/nintendo_switch_4/H2x1_NSwitch_PokemonLetsGo_Combo_enGB_image1280w.jpg",
             libraryCover="https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
             visualKey="letsgo-pikachu"
         ),
