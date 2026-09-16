@@ -50,6 +50,12 @@ class PokedexNavigationInstrumentedTest {
         composeRule.onNodeWithText("Jornada").assertIsDisplayed()
     }
 
+    @Test fun visualSnapshots_areDeterministic(){
+        waitForMainNavigation()
+        composeRule.waitForIdle()
+        captureGoldenCandidate("journey_repeat")
+    }
+
     @Test fun visualSnapshots_primaryDestinations(){
         waitForMainNavigation()
         composeRule.waitForIdle()
