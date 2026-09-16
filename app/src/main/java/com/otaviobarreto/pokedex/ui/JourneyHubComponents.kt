@@ -506,18 +506,19 @@ private fun JourneyGameLibraryCard(game:AppGame,onClick:()->Unit){
     val accent=PokedexDesignTokens.Colors.game(game.label)
     Card(modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(26.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),elevation=CardDefaults.cardElevation(defaultElevation=2.dp)){
         Column{
-            Box(Modifier.fillMaxWidth().height(330.dp).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(accent.copy(alpha=.08f)),contentAlignment=Alignment.Center){
-                val cover=GameCoverCatalog.primaryCoverFor(game.label)
-                if(cover!=null){
+            Box(Modifier.fillMaxWidth().aspectRatio(16f/9f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp))){
+                val artwork=GameCoverCatalog.heroFor(game.label) ?: GameCoverCatalog.primaryCoverFor(game.label)
+                if(artwork!=null){
                     AsyncImage(
-                        model=cover,
-                        contentDescription="Capa oficial de "+GameCoverCatalog.displayNameFor(game.label),
-                        modifier=Modifier.fillMaxHeight().aspectRatio(.70f).padding(vertical=14.dp),
-                        contentScale=ContentScale.Fit
+                        model=artwork,
+                        contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(game.label),
+                        modifier=Modifier.fillMaxSize(),
+                        contentScale=ContentScale.Crop
                     )
                 }else{
-                    JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxHeight().aspectRatio(.70f).padding(vertical=14.dp))
+                    JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxSize())
                 }
+                Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Transparent,Color.Black.copy(alpha=.34f)))))
             }
             Column(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=13.dp)){
                 Text(GameCoverCatalog.displayNameFor(game.label),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(bottom=8.dp))
