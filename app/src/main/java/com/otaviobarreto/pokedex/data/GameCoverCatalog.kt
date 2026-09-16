@@ -27,7 +27,7 @@ object GameCoverCatalog {
         ),
         "Pokémon Legends: Z-A" to GameArt(
             canonicalName="Pokémon Legends: Z-A",
-            heroArtwork="https://www.nintendo.com/eu/media/images/assets/nintendo_switch_games/pokemonlegendsza/1x1_NSwitch2_PokemonLegendsZA_KV_DE_de_image500w.jpg",
+            heroArtwork="https://asia-press.portal-pokemon.com/uploads/2025/07/PokemonLegendsZA_KeyVisual.jpg",
             libraryCover="https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
             visualKey="za"
         ),
