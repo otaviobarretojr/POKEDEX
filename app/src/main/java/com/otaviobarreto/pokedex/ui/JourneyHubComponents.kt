@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -238,14 +239,23 @@ internal fun JourneyGamePicker(
                     modifier=Modifier.padding(top=4.dp,bottom=1.dp)
                 )
             }
-            items(
-                AppGameCatalog.adventureGames.filter{it.label!=activeGame?.label},
-                key={it.label}
-            ){game->
-                JourneyGameReferenceCard(
-                    game=game,
-                    onClick={onSelect(game.label)}
-                )
+            item(key="game_showcase"){
+                var showAllGames by rememberSaveable { mutableStateOf(false) }
+                val availableGames=AppGameCatalog.adventureGames.filter{it.label!=activeGame?.label}
+                Column(Modifier.fillMaxWidth()){
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Text("Jogos",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black,modifier=Modifier.weight(1f))
+                        TextButton(onClick={showAllGames=true}){ Text("Ver todos") }
+                    }
+                    LazyRow(horizontalArrangement=Arrangement.spacedBy(12.dp),contentPadding=PaddingValues(vertical=4.dp)){
+                        items(availableGames.take(3),key={it.label}){game->
+                            JourneyGamePosterCard(game=game,onClick={onSelect(game.label)},modifier=Modifier.width(176.dp))
+                        }
+                    }
+                }
+                if(showAllGames){
+                    JourneyAllGamesDialog(games=AppGameCatalog.adventureGames,onDismiss={showAllGames=false},onSelect={label->showAllGames=false;onSelect(label)})
+                }
             }
             item{Spacer(Modifier.height(20.dp))}
         }
@@ -487,6 +497,39 @@ private fun CompanionMetric(label:String,value:String,subtitle:String,modifier:M
                 textAlign=TextAlign.Center,
                 modifier=Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+@Composable
+private fun JourneyGamePosterCard(game:AppGame,onClick:()->Unit,modifier:Modifier=Modifier){
+    val started=JourneyProgressStore.isStarted(game.label)
+    Card(modifier=modifier.clickable(onClick=onClick),shape=RoundedCornerShape(22.dp),elevation=CardDefaults.cardElevation(defaultElevation=3.dp)){
+        Column{
+            JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxWidth().aspectRatio(.70f))
+            Column(Modifier.padding(12.dp)){
+                Text(game.label,style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Black,maxLines=2,overflow=TextOverflow.Ellipsis)
+                Text(if(started)"Continuar Jornada" else "Começar Jornada",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=6.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun JourneyAllGamesDialog(games:List<AppGame>,onDismiss:()->Unit,onSelect:(String)->Unit){
+    ModalBottomSheet(onDismissRequest=onDismiss,dragHandle={BottomSheetDefaults.DragHandle()}){
+        Column(Modifier.fillMaxWidth().fillMaxHeight(.92f).padding(horizontal=16.dp)){
+            Text("Jogos Pokémon",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+            Text("Escolha uma aventura",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(bottom=14.dp))
+            LazyColumn(verticalArrangement=Arrangement.spacedBy(14.dp),contentPadding=PaddingValues(bottom=32.dp)){
+                items(games.chunked(2)){row->
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)){
+                        row.forEach{game->JourneyGamePosterCard(game,onClick={onSelect(game.label)},modifier=Modifier.weight(1f))}
+                        if(row.size==1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
         }
     }
 }
