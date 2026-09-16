@@ -769,8 +769,8 @@ private fun JourneyGameCover(gameLabel:String,modifier:Modifier=Modifier){
     val cover=GameCoverCatalog.primaryCoverFor(gameLabel)
     Box(modifier.clip(RoundedCornerShape(PokedexDesignTokens.Journey.ArtworkRadius)).background(PokedexDesignTokens.Journey.ArtworkBackdrop),contentAlignment=Alignment.Center){
         when{
-            userScarletArtwork!=null->AsyncImage(model=userScarletArtwork,contentDescription="Capa de $gameLabel",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
-            cover!=null->AsyncImage(model=cover,contentDescription="Capa oficial de $gameLabel",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+            userScarletArtwork!=null->AsyncImage(model=userScarletArtwork,contentDescription="Arte enviada pelo usuário para Scarlet / Violet",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+            cover!=null->AsyncImage(model=cover,contentDescription="Arte oficial de $gameLabel",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
             else->Icon(Icons.Default.SportsEsports,contentDescription=null,modifier=Modifier.size(36.dp))
         }
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Transparent,Color.Black.copy(alpha=.12f)))))
