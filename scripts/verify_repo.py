@@ -1065,9 +1065,10 @@ if not boot_screen_path.exists():
 else:
     boot_screen = boot_screen_path.read_text(encoding="utf-8")
     for required in (
-        "StartupPreloader.warm",
-        "progress.fraction",
-        "progress.label",
+        "ContentBootstrapManager.ensureReady",
+        "StartupPreloader.launchWarmInBackground",
+        "state.progress",
+        "state.label",
         "packageManager.getPackageInfo",
     ):
         if required not in boot_screen:
