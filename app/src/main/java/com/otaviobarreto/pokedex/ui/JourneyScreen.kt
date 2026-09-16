@@ -36,6 +36,7 @@ import com.otaviobarreto.pokedex.data.*
 private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 @Composable
 fun JourneyScreen(
+    startInGames:Boolean=true,
     onPokemonClick:(Int,String?)->Unit,
     onOpenTeamGuide:(String,String?,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit,
@@ -43,8 +44,9 @@ fun JourneyScreen(
     onOpenEvolutionCenter:()->Unit={},
     onOpenSearch:()->Unit={}
 ){
-    var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
-    var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
+    val initialActiveGame=AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame && JourneyProgressStore.isStarted(it.label)}
+    var selectedGame by rememberSaveable { mutableStateOf(if(startInGames)null else initialActiveGame?.label) }
+    var view by rememberSaveable { mutableStateOf(if(startInGames || initialActiveGame==null) JourneyView.GAMES else JourneyView.GAME_MENU) }
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val routeListState=rememberLazyListState()
