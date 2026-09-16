@@ -54,12 +54,10 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             state=BootState(progress.fraction,progress.label)
         }
         if(result.ready){
-            StartupPreloader.warm(context){progress->
-                state=BootState(.96f+progress.fraction*.04f,progress.label)
-            }
+            state=BootState(1f,"Biblioteca pronta")
             finished=true
-            StartupPreloader.launchExtendedWarm(context)
             onReady()
+            StartupPreloader.launchWarmInBackground(context)
         }else{
             bootstrapError=result.error ?: "Não foi possível preparar a biblioteca."
             state=BootState(state.progress,"Download interrompido")
