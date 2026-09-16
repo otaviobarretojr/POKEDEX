@@ -27,13 +27,13 @@ object GameCoverCatalog {
         ),
         "Pokémon Legends: Z-A" to GameArt(
             canonicalName="Pokémon Legends: Z-A",
-            heroArtwork="https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
+            heroArtwork="https://www.nintendo.com/eu/media/images/assets/nintendo_switch_games/pokemonlegendsza/1x1_NSwitch2_PokemonLegendsZA_KV_DE_de_image500w.jpg",
             libraryCover="https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
             visualKey="za"
         ),
         "Legends Arceus" to GameArt(
             canonicalName="Pokémon Legends: Arceus",
-            heroArtwork="https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
+            heroArtwork="https://www.nintendo.com/sg/switch/aw7k/img/og.jpg",
             libraryCover="https://legends.arceus.pokemon.com/assets/img/common/packshot/en-us/packshot.png",
             visualKey="arceus"
         ),
