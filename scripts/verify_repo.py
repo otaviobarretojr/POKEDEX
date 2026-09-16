@@ -122,9 +122,13 @@ if "21201" not in workflow or "20.12.1" not in workflow:
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
     violations.append("Living Dex Planner must not return to Journey Home")
-for required in ("COMPANION", "CompanionProgressSection", "Pokédex do jogo", "SEU PROGRESSO", "JourneyObjectivePreviewCard", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
+for required in ("COMPANION", "CompanionProgressSection", "JourneyObjectivePreviewCard", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
     if required not in companion:
         violations.append(f"Companion 20 experience missing {required}")
+progress_component = (ui / "CompanionProgressSection.kt").read_text(encoding="utf-8")
+for required in ("Pokédex do jogo", "SEU PROGRESSO"):
+    if required not in progress_component:
+        violations.append(f"Companion progress experience missing {required}")
 
 if violations:
     print("Source verification failed:")
