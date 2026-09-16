@@ -54,6 +54,7 @@ class PokedexNavigationInstrumentedTest {
         waitForMainNavigation()
         composeRule.waitForIdle()
         captureGoldenCandidate("journey")
+        composeRule.onNodeWithText("Jogos").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("games")
         composeRule.onNodeWithText("Pokédex").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("pokedex")
         composeRule.onNodeWithText("Coleção").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("collection")
         composeRule.onNodeWithText("Box").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("box")
@@ -64,11 +65,13 @@ class PokedexNavigationInstrumentedTest {
 
     @Test fun primaryRoutes_areReachableAndBottomNavigationSurvives(){
         waitForMainNavigation()
+        composeRule.onNodeWithText("Jogos").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Pokédex").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Coleção").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Box").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Config.").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Jornada").assertIsDisplayed().performClick()
+        composeRule.onNodeWithText("Jogos").assertIsDisplayed()
         composeRule.onNodeWithText("Pokédex").assertIsDisplayed()
         composeRule.onNodeWithText("Coleção").assertIsDisplayed()
         composeRule.onNodeWithText("Box").assertIsDisplayed()
@@ -79,6 +82,7 @@ class PokedexNavigationInstrumentedTest {
         waitForMainNavigation()
         repeat(2){
             composeRule.onNodeWithText("Box").assertIsDisplayed().performClick()
+            composeRule.onNodeWithText("Jogos").assertIsDisplayed().performClick()
             composeRule.onNodeWithText("Coleção").assertIsDisplayed().performClick()
             composeRule.onNodeWithText("Jornada").assertIsDisplayed().performClick()
         }
