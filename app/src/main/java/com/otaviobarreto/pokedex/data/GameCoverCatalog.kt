@@ -39,19 +39,19 @@ object GameCoverCatalog {
         ),
         "Brilliant Diamond / Shining Pearl" to GameArt(
             canonicalName="Pokémon Brilliant Diamond",
-            heroArtwork="https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
+            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000039987/13d11f4a53d7c3d52f968cadf56b80e9e2545014e6426bcac3b554fcdeee21d7",
             libraryCover="https://diamondpearl.pokemon.com/en-us/assets/boxart_bd.png",
             visualKey="diamond"
         ),
         "Sword / Shield" to GameArt(
             canonicalName="Pokémon Shield",
-            heroArtwork="https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png",
+            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000019931/7b0438776a68a56bc24027f06d68611e4ba057ea175ed3e65d20feca768b3e3d",
             libraryCover="https://swordshield.pokemon.com/assets/img/common/packshot/en-gb/packshot_shield.png",
             visualKey="shield"
         ),
         "Let's Go Pikachu / Eevee" to GameArt(
             canonicalName="Pokémon: Let's Go, Pikachu!",
-            heroArtwork="https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
+            heroArtwork="https://assets.nintendo.com/image/upload/ar_16%3A9%2Cb_auto%3Aborder%2Cc_lpad/b_white/f_auto/q_auto/dpr_1.5/store/software/switch/70010000000433/ef9e13d3f6c17d1f98f4f64e753d2274e14cbb4ad570f87f9a11e86ad69c6a45",
             libraryCover="https://pokemonletsgo.pokemon.com/assets/img/en-us/packshot-pikachu.png",
             visualKey="letsgo-pikachu"
         ),
