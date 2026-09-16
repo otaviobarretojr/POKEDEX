@@ -43,7 +43,6 @@ fun JourneyScreen(
     onOpenEvolutionCenter:()->Unit={},
     onOpenSearch:()->Unit={}
 ){
-    val initialActiveGame=AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame && JourneyProgressStore.isStarted(it.label)}
     var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
     var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
