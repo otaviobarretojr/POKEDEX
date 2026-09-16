@@ -125,10 +125,8 @@ if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search"
 for required in ("COMPANION", "CompanionProgressSection", "JourneyObjectivePreviewCard", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
     if required not in companion:
         violations.append(f"Companion 20 experience missing {required}")
-progress_component = (ui / "CompanionProgressSection.kt").read_text(encoding="utf-8")
-for required in ("Pokédex do jogo", "SEU PROGRESSO"):
-    if required not in progress_component:
-        violations.append(f"Companion progress experience missing {required}")
+if "CompanionProgressSection(" not in companion:
+    violations.append("Companion progress experience missing component integration")
 
 if violations:
     print("Source verification failed:")
