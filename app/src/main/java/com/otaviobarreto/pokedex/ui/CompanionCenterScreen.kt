@@ -38,12 +38,14 @@ fun CompanionCenterScreen(
     var storageRevision by remember{mutableIntStateOf(0)}
     var remoteManifestRevision by remember{mutableIntStateOf(0)}
     var installStateRevision by remember{mutableIntStateOf(0)}
+    var performanceSnapshot by remember{mutableStateOf<SettingsPerformanceSnapshot?>(null)}
 
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
 
     LaunchedEffect(Unit){
+        performanceSnapshot=withContext(Dispatchers.IO){loadSettingsPerformanceSnapshot()}
         withContext(Dispatchers.IO){runCatching{RemoteOfflinePackageCatalog.refresh()}}
         remoteManifestRevision++
         val remote=RemoteOfflinePackageCatalog.general()
@@ -204,12 +206,13 @@ fun CompanionCenterScreen(
 
         item{
             CompanionSectionHeader(title="Armazenamento e desempenho")
-            val cache=remember(storageRevision){PokedexDataStore.cacheStats()}
-            val apiCacheBytes=remember(storageRevision){PersistentApiCache.sizeBytes()}
-            val apiCacheMb=apiCacheBytes/1024f/1024f
-            val downloadedPacks=remember(storageRevision){
-                AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded}
+            LaunchedEffect(storageRevision){
+                performanceSnapshot=withContext(Dispatchers.IO){loadSettingsPerformanceSnapshot()}
             }
+            val snapshot=performanceSnapshot
+            val cache=snapshot?.cache ?: PokedexDataStore.cacheStats()
+            val apiCacheMb=(snapshot?.apiCacheBytes ?: 0L)/1024f/1024f
+            val downloadedPacks=snapshot?.downloadedPacks ?: 0
             Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg)){
                 Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                     Text("Uso local",fontWeight=FontWeight.Bold)
@@ -227,7 +230,7 @@ fun CompanionCenterScreen(
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    val startupMs=remember(storageRevision){StartupPreloader.lastWarmDurationMs}
+                    val startupMs=snapshot?.startupMs ?: StartupPreloader.lastWarmDurationMs
                     if(startupMs>0){
                         Text(
                             "Última preparação inicial: "+startupMs+" ms",
@@ -432,3 +435,18 @@ fun CompanionCenterScreen(
 
 @Composable
 private fun SettingsSectionTitle(text:String)=CompanionSectionHeader(title=text)
+
+
+private data class SettingsPerformanceSnapshot(
+    val cache: PokedexDataStore.CacheStats,
+    val apiCacheBytes: Long,
+    val downloadedPacks: Int,
+    val startupMs: Long
+)
+
+private fun loadSettingsPerformanceSnapshot()=SettingsPerformanceSnapshot(
+    cache=PokedexDataStore.cacheStats(),
+    apiCacheBytes=PersistentApiCache.sizeBytes(),
+    downloadedPacks=AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded},
+    startupMs=StartupPreloader.lastWarmDurationMs
+)
