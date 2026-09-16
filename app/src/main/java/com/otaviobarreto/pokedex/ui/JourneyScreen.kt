@@ -44,8 +44,8 @@ fun JourneyScreen(
     onOpenSearch:()->Unit={}
 ){
     val initialActiveGame=AppGameCatalog.adventureGames.firstOrNull{it.label==AppStatePreferences.activeGame && JourneyProgressStore.isStarted(it.label)}
-    var selectedGame by rememberSaveable { mutableStateOf(if(startInGames)null else initialActiveGame?.label) }
-    var view by rememberSaveable { mutableStateOf(if(startInGames || initialActiveGame==null) JourneyView.GAMES else JourneyView.GAME_MENU) }
+    var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
+    var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val routeListState=rememberLazyListState()
@@ -68,6 +68,7 @@ fun JourneyScreen(
     }
     when(view){
         JourneyView.GAMES -> JourneyGamePicker(
+            libraryOnly=startInGames,
             onSelect={
                 explicitGameSelectionRevision++
                 selectedGame=it
