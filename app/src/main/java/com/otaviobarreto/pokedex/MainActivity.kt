@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
@@ -65,6 +66,7 @@ class MainActivity : ComponentActivity() {
  // DexNavItem("central","Config."
 private val mainDestinations=listOf(
  DexNavItem(PokedexRoutes.HOME,"Jornada",Icons.Default.Map),
+ DexNavItem("games","Jogos",Icons.Default.SportsEsports),
  DexNavItem(PokedexRoutes.POKEDEX,"Pokédex",Icons.Default.MenuBook),
  DexNavItem(PokedexRoutes.COLLECTION,"Coleção",Icons.Default.AutoAwesome),
  DexNavItem(PokedexRoutes.BOXES,"Box",Icons.Default.GridView),
@@ -122,7 +124,8 @@ private val mainDestinations=listOf(
    popEnterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Fast))+slideInHorizontally(tween(PokedexDesignTokens.Motion.Fast)){-(it/14)}},
    popExitTransition={fadeOut(tween(PokedexDesignTokens.Motion.Fast))+slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){it/18}}
   ){
-   composable(PokedexRoutes.HOME){JourneyScreen(onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase,step->openCampaignGuide(game,phase,step)},onOpenBoxes=::openBoxes,onOpenGameDex=::openGameDex,onOpenEvolutionCenter=::openEvolutionCenter,onOpenSearch=::openUniversalSearch)}
+   composable("games"){JourneyScreen(startInGames=true,onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase,step->openCampaignGuide(game,phase,step)},onOpenBoxes=::openBoxes,onOpenGameDex=::openGameDex,onOpenEvolutionCenter=::openEvolutionCenter,onOpenSearch=::openUniversalSearch)}
+   composable(PokedexRoutes.HOME){JourneyScreen(startInGames=false,onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase,step->openCampaignGuide(game,phase,step)},onOpenBoxes=::openBoxes,onOpenGameDex=::openGameDex,onOpenEvolutionCenter=::openEvolutionCenter,onOpenSearch=::openUniversalSearch)}
    composable("campaignGuide?game={game}&phase={phase}&step={step}",arguments=listOf(navArgument("game"){type=NavType.StringType;nullable=false},navArgument("phase"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("step"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val game=entry.arguments?.getString("game")?.let(Uri::decode);val phase=entry.arguments?.getString("phase")?.let(Uri::decode);val step=entry.arguments?.getString("step")?.let(Uri::decode);CampaignTeamGuideScreen(onBackToMyTeams={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)},initialGame=game,initialPhase=phase,initialStepId=step)}
    composable("reference?kind={kind}&name={name}&source={source}",arguments=listOf(navArgument("kind"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("name"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val kind=entry.arguments?.getString("kind")?.let(Uri::decode);val name=entry.arguments?.getString("name")?.let(Uri::decode);val source=entry.arguments?.getString("source")?.let(Uri::decode);ReferenceHubScreen(onBack={navController.popBackStack()},initialKind=kind,initialName=name,source=source,onPokemonClick={id,pokemonSource->openPokemon(id,pokemonSource)})}
    composable("pokemon/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode);PokemonDetailV2Screen(id=id,source=source,onBack={navController.popBackStack()},onOpenReference={kind,name->openReference(kind,name,source)},onOpenPokemon={nextId->replacePokemonDetail(nextId,source)})}
