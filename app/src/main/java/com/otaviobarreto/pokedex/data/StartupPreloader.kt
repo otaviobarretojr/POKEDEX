@@ -203,6 +203,14 @@ object StartupPreloader {
         lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
     }
 
+    fun launchWarmInBackground(context: Context) {
+        val appContext=context.applicationContext
+        backgroundScope.launch {
+            runCatching { warm(appContext) { } }
+            launchExtendedWarm(appContext)
+        }
+    }
+
     fun launchExtendedWarm(context: Context) {
         val appContext = context.applicationContext
         backgroundScope.launch {
