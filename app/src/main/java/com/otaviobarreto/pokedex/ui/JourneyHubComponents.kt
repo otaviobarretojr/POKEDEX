@@ -44,6 +44,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun JourneyGamePicker(
+    libraryOnly:Boolean=false,
     onSelect:(String)->Unit,
     onPokemonClick:(Int,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit
@@ -52,7 +53,7 @@ internal fun JourneyGamePicker(
         .firstOrNull{it.label==AppStatePreferences.activeGame}
         ?.takeIf{JourneyProgressStore.isStarted(it.label)}
     val dexIdsBySource by rememberJourneyDexIdsBySource(activeGamePreview)
-    val activeGame=activeGamePreview
+    val activeGame=activeGamePreview.takeUnless{libraryOnly}
     val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
     val activeRegionSource=activeGame?.let{game->
         AppStatePreferences.activeRegionForGame(game.label)
@@ -100,9 +101,10 @@ internal fun JourneyGamePicker(
                         }
                     }
                     Spacer(Modifier.height(10.dp))
-                    Text("Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+                    Text(if(libraryOnly)"Jogos Pokémon" else "Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
                     Text(
-                        if(activeGame==null) "Escolha um jogo para começar uma nova Jornada."
+                        if(libraryOnly) "Escolha uma aventura, continue ou gerencie uma Jornada."
+                        else if(activeGame==null) "Escolha um jogo para começar uma nova Jornada."
                         else "Continue exatamente de onde parou.",
                         style=MaterialTheme.typography.bodyMedium,
                         color=MaterialTheme.colorScheme.onSurfaceVariant
@@ -110,7 +112,7 @@ internal fun JourneyGamePicker(
                 }
             }
 
-            if(activeGame==null){
+            if(activeGame==null && !libraryOnly){
                 item(key="no_active_journey"){
                     Surface(
                         modifier=Modifier.fillMaxWidth(),
@@ -241,8 +243,8 @@ internal fun JourneyGamePicker(
             if(activeGame==null){
                 item(key="games_library_header"){
                     Column(Modifier.fillMaxWidth().padding(top=6.dp,bottom=2.dp)){
-                        Text("Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                        Text("Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if(libraryOnly)"Todas as aventuras" else "Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+                        Text(if(libraryOnly)"Abra um jogo para iniciar, continuar ou recomeçar sua Jornada." else "Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 items(AppGameCatalog.adventureGames,key={it.label}){game->
