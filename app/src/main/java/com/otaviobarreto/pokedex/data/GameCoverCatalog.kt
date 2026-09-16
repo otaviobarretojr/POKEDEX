@@ -31,7 +31,7 @@ object GameCoverCatalog {
             heroArtwork="https://asia-press.portal-pokemon.com/uploads/2025/07/PokemonLegendsZA_KeyVisual.jpg",
             libraryCover="https://legends.pokemon.com/images/box-art/poke-legends-box-art-NS-UKV-2x.png",
             visualKey="za",
-            libraryAspectRatio=1.42f
+            libraryAspectRatio=1.72f
         ),
         "Legends Arceus" to GameArt(
             canonicalName="Pokémon Legends: Arceus",
