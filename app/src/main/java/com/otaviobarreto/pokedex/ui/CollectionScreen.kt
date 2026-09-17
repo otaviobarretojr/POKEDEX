@@ -89,35 +89,27 @@ private fun CollectionHome(
                 eyebrow="Sua coleção",
                 subtitle="Espécies, Shinies e formas que você já registrou.",
                 progress={
-                    Text(
-                        "${plan.capturedSpecies} de ${plan.totalSpecies} espécies",
-                        style=MaterialTheme.typography.labelLarge,
-                        fontWeight=FontWeight.Bold
+                    CompanionProgress(
+                        current=plan.capturedSpecies,
+                        total=plan.totalSpecies,
+                        label="National Dex"
                     )
                 }
             )
         }
-        item{CollectionHero(plan)}
         if(plan.capturedSpecies<plan.totalSpecies){
             item{
-                DexGlassSurface(Modifier.fillMaxWidth()){
-                    Row(verticalAlignment=Alignment.CenterVertically){
-                        Icon(Icons.Default.TipsAndUpdates,"Próxima ação",tint=MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(PokedexDesignTokens.Spacing.Md))
-                        Column(Modifier.weight(1f)){
-                            Text("Próxima ação",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                            Text(
-                                (plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0).toString()+" espécies ainda faltam na National Dex.",
-                                style=MaterialTheme.typography.bodySmall,
-                                color=MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        FilledTonalButton(onClick={onOpenBoxes(null,null)}){
-                            Icon(Icons.Default.GridView,null,Modifier.size(17.dp))
-                            Spacer(Modifier.width(5.dp))
-                            Text("Abrir Box")
-                        }
-                    }
+                Column{
+                    CompanionSectionHeader(
+                        title="Continue sua coleção",
+                        supporting=(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0).toString()+" espécies ainda faltam na National Dex."
+                    )
+                    Spacer(Modifier.height(PokedexDesignTokens.Spacing.Md))
+                    PrimaryCompanionAction(
+                        label="Abrir Box",
+                        onClick={onOpenBoxes(null,null)},
+                        leading={Icon(Icons.Default.GridView,null)}
+                    )
                 }
             }
         }
@@ -128,22 +120,6 @@ private fun CollectionHome(
         if(insights.gamesWithProgress>0){
             item{Text("Progresso registrado em ${insights.gamesWithProgress} jogo${if(insights.gamesWithProgress==1) "" else "s"}",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         }
-    }
-}
-
-@Composable
-private fun CollectionHero(plan:LivingDexPlan){
-    DexGlassSurface(Modifier.fillMaxWidth()){
-        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
-            Column(Modifier.weight(1f)){
-                DexSectionEyebrow("National Dex")
-                Text("${(plan.speciesRatio*100).toInt()}%",style=MaterialTheme.typography.displaySmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
-                Text("${plan.capturedSpecies} / ${plan.totalSpecies}",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-                Text("Faltam ${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            PokemonArtwork(model=artwork(25,false),contentDescription="Pikachu",pokemonId=25,modifier=Modifier.size(112.dp))
-        }
-        LinearProgressIndicator(progress={plan.speciesRatio},modifier=Modifier.fillMaxWidth().padding(top=12.dp))
     }
 }
 
