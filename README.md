@@ -1,48 +1,85 @@
 # POKEDEX
 
-Aplicativo Android pessoal para organizar a jornada nos jogos Pokémon, acompanhar a coleção por jogo/região e consultar a National Dex com formas e variantes.
+Aplicativo Android pessoal para organizar jornadas Pokémon, acompanhar a coleção por jogo/região e consultar a National Dex com formas, variantes e Shiny.
 
-## Estado atual — v18.4.0
+## Estado atual — v20.13.0
 
-A v18.4.0 evolui a Jornada com o mapa interativo de Paldea: asset oficial incorporado ao APK, modo tela cheia imersivo, câmera limitada, foco animado no próximo objetivo, marcadores de progresso e cache local do bitmap, preservando a Foundation Lock da v18.3.0.
-
-### Principais garantias
-
-- National Dex #0001–#1025.
-- Normal, Shiny e formas com identidade canônica.
-- Box contextual por jogo/região.
-- Backup schema 5 com compatibilidade para backups antigos sem misturar dados novos da instalação atual.
-- Restore com rollback e reparo de integridade da coleção.
-- Serviço central de auditoria/reparo para ownership global, contextual, Box e variantes.
-- Pacotes offline com forms/Shiny obrigatórios: falhas entram em retry em vez de serem ignoradas.
-- Manifesto de artes de formas/Shiny e preservação de recursos compartilhados.
-- Cache persistente GZIP com limite para entradas não fixadas; recursos offline pinados são preservados.
-- Diagnóstico de armazenamento e botão **Verificar integridade** nas Configurações.
-- Métrica da duração do preload inicial.
-- Startup limitado ao contexto ativo.
-- Áudio local assíncrono.
-- AGP 8.6.1 + Gradle 8.7 para suporte oficial ao compileSdk 35.
+A **v20.13.0 — Stable Foundation** consolida a base atual do aplicativo depois do rework de Jornada, Jogos, Pokédex, Coleção, Box, conteúdo offline e artwork. O objetivo desta versão é funcionar como nova baseline estável para as próximas evoluções, preservando compatibilidade com as instalações anteriores.
 
 ### Navegação principal
 
 1. Jornada
-2. Pokédex
-3. Boxes
-4. Config.
+2. Jogos
+3. Pokédex
+4. Coleção
+5. Box
+6. Config.
+
+A Jornada é a Home. Jogos funciona como biblioteca de títulos e não duplica a tela principal da aventura.
+
+### Garantias funcionais
+
+- National Dex #0001–#1025.
+- Normal, Shiny, formas regionais, especiais, cosméticas, gênero e formas de batalha.
+- Coleção separada em Living Dex, Shiny Dex e Form Dex.
+- Box fixa em **6 colunas × 5 linhas = 30 Pokémon por Box**.
+- Swipe entre Boxes, retorno para a mesma Box e persistência por jogo/região.
+- Registro Normal/Shiny e variantes sem reordenar automaticamente a Box.
+- Jornada com progresso, objetivo atual, próximo objetivo, times e conteúdo por jogo.
+- Pokémon Champions não faz parte do catálogo nem da arquitetura.
+- Backup schema 6 com checksum SHA-256, rollback e reparo de integridade.
+- Contexto ativo, região, Box atual, inicial da Jornada e versão do jogo persistidos.
+
+### Conteúdo offline
+
+Na inicialização o aplicativo:
+
+1. valida a biblioteca e os pacotes pelo manifesto/versão/SHA-256;
+2. atualiza somente pacotes alterados;
+3. audita a biblioteca local antes de aceitar fallback offline;
+4. verifica o inventário completo de artworks;
+5. identifica artes ausentes ou modificadas;
+6. mantém Normal, Shiny, formas, capas e visuais da Jornada em armazenamento durável;
+7. abre usando primeiro os arquivos locais.
+
+O sistema de artwork acompanha revisões do diretório de sprites do PokeAPI e possui guardas de CI para impedir que telas principais voltem a depender diretamente de imagens remotas.
+
+### Performance
+
+- cache de imagem Coil com memória e disco;
+- biblioteca offline separada do cache descartável;
+- preload prioritário da Jornada, contexto ativo, Box atual, detalhes próximos e coleção;
+- prefetch limitado para evitar carregar a National Dex inteira desnecessariamente em memória;
+- downloads concorrentes com limites definidos;
+- preparo de áudio assíncrono.
+
+### Estabilidade
+
+A v20.13.0 adiciona:
+
+- preservação do boot concluído em recriações da Activity;
+- áudio protegido contra recriação de configuração;
+- Busca, Evoluções e Game Dex tratados como telas secundárias;
+- fallback offline somente após auditoria real da biblioteca;
+- tolerância a novos pacotes remotos ainda desconhecidos pelo cliente;
+- versionCode **21300**, superior à linha v20.12.1, preservando o caminho de atualização;
+- compilação dos testes instrumentados no CI.
 
 ### Qualidade
 
 O workflow **Android Build** valida:
 
 - versão e identidade do pacote;
-- arquitetura;
-- artwork;
-- visuais da Jornada;
-- National Dex;
-- National Forms;
+- arquitetura e contratos de regressão;
+- hardening funcional;
+- acessibilidade;
+- prontidão de dispositivo;
+- artwork e visuais da Jornada;
+- National Dex e National Forms;
 - formas problemáticas;
 - testes unitários;
 - Android Lint;
+- compilação dos testes instrumentados;
 - build do APK atualizável.
 
-A assinatura estável atual permanece preservada para permitir atualização sobre as instalações anteriores.
+A assinatura estável existente é preservada para manter compatibilidade de atualização com as instalações anteriores.
