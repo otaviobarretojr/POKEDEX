@@ -116,8 +116,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "21201" not in workflow or "20.12.1" not in workflow:
-    violations.append("CI v20.12.1 version validation missing")
+if "21300" not in workflow or "20.13.0" not in workflow:
+    violations.append("CI v20.13.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
@@ -2070,8 +2070,8 @@ if "sameOwnedVariantIdentity" not in variant_v1810:
     violations.append("v18.1 canonical variant regression helper missing")
 
 readme_v1810 = (root / "README.md").read_text(encoding="utf-8")
-if "Estado atual — v18.4.0" not in readme_v1810:
-    violations.append("README current version is not v18.4.0")
+if "Estado atual — v20.13.0" not in readme_v1810:
+    violations.append("README current version is not v20.13.0")
 
 if violations:
     print("Source verification failed:")
