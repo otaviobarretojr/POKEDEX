@@ -161,9 +161,12 @@ for marker in [
     "auditCachedLibrary(context,cachedSignature)",
     "OfflineLibraryManager.auditGeneralDetailed(context,generalVersion)",
     "supportedGameKeys",
+    "bootstrapMutex=Mutex()",
 ]:
     if marker not in bootstrap:
         errors.append(f"stable bootstrap guard missing: {marker}")
+if "syncMutex=Mutex()" not in artwork_sync:
+    errors.append("artwork sync must be serialized across boot recreation")
 
 # Hardening budget: prevent the largest screens from growing further before extraction.
 budgets = {
