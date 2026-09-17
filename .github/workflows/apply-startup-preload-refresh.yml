@@ -1,0 +1,124 @@
+name: Apply startup preload and asset refresh
+
+on:
+  push:
+    branches: [ "feature/nintendo-companion-design-system" ]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/nintendo-companion-design-system
+          fetch-depth: 0
+
+      - name: Apply startup and Shiny preview improvements
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, marker):
+              p=Path(path)
+              text=p.read_text()
+              if marker in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f'Patch target not found in {path}: {marker}')
+              p.write_text(text.replace(old,new,1))
+
+          # Shiny Dex portal: the three decorative examples must visibly be Shiny,
+          # independent of whether those exact species are already owned.
+          replace_once(
+              'app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt',
+              'listOf(25,94,448),true,Icons.Default.AutoAwesome,ownedIds=shinyIds){onOpenArea(CollectionArea.SHINY)}}',
+              'listOf(25,94,448),true,Icons.Default.AutoAwesome,ownedIds=setOf(25,94,448)){onOpenArea(CollectionArea.SHINY)}}',
+              'ownedIds=setOf(25,94,448)'
+          )
+
+          # Explicit variant artwork should still use the durable offline library
+          # when the package contains the exact Shiny URL; never fall back to the
+          # generic normal-species cache entry.
+          replace_once(
+              'app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonArtwork.kt',
+              '''        if (explicitVariantArtwork) {\n            model\n        } else {''',
+              '''        if (explicitVariantArtwork) {\n            (model as? String)?.let { OfflineLibraryManager.resolveAny(context,it) } ?: model\n        } else {''',
+              'OfflineLibraryManager.resolveAny(context,it) } ?: model'
+          )
+
+          # Always consult the remote package manifest at boot. A saved signature
+          # means "last verified", not "never check for updates again".
+          p=Path('app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt')
+          text=p.read_text()
+          marker='val previousSignatures=cachedSignature?.split("|")'
+          if marker not in text:
+              old='''            val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)\n            val cachedSignature=prefs.getString(KEY_READY,null)\n            if(!cachedSignature.isNullOrBlank()){\n                onProgress(Progress(1f,"Biblioteca local pronta"))\n                return@runCatching Result(true)\n            }\n            val packages=RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}\n            check(packages.isNotEmpty()){\"Servidor de conteúdo indisponível\"}\n            val general=packages.firstOrNull{it.packageKey=="general"} ?: error("Biblioteca principal indisponível")\n            val gamePackages=packages.filter{it.packageKey!="general"}.distinctBy{it.packageKey}\n            val signature=packages.sortedBy{it.packageKey}.joinToString("|"){p->p.packageKey+":"+p.version+":"+p.sha256}\n            val generalIds=OfflineGamePackManager.generalManifestIds()\n            val generalReady=OfflineLibraryManager.auditGeneral(context,general.version,generalIds)'''
+              new='''            val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)\n            val cachedSignature=prefs.getString(KEY_READY,null)\n            val packages=try {\n                RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}\n            } catch(e:Exception) {\n                if(!cachedSignature.isNullOrBlank()){\n                    onProgress(Progress(1f,"Biblioteca local pronta · atualização será verificada depois"))\n                    return@runCatching Result(true)\n                }\n                throw e\n            }\n            check(packages.isNotEmpty()){\"Servidor de conteúdo indisponível\"}\n            val general=packages.firstOrNull{it.packageKey=="general"} ?: error("Biblioteca principal indisponível")\n            val gamePackages=packages.filter{it.packageKey!="general"}.distinctBy{it.packageKey}\n            val signature=packages.sortedBy{it.packageKey}.joinToString("|"){p->p.packageKey+":"+p.version+":"+p.sha256}\n            val previousSignatures=cachedSignature?.split("|")\n                ?.mapNotNull{entry->\n                    val parts=entry.split(':',limit=3)\n                    if(parts.size==3) parts[0] to (parts[1]+":"+parts[2]) else null\n                }?.toMap().orEmpty()\n            fun packageSignature(p:RemoteOfflinePackageCatalog.RemotePackage)=p.version.toString()+":"+(p.sha256 ?: "")\n            fun packageChanged(p:RemoteOfflinePackageCatalog.RemotePackage)=\n                cachedSignature!=null && previousSignatures[p.packageKey]!=packageSignature(p)\n            val generalIds=OfflineGamePackManager.generalManifestIds()\n            val generalReady=!packageChanged(general) && OfflineLibraryManager.auditGeneral(context,general.version,generalIds)'''
+              if old not in text:
+                  raise SystemExit('ContentBootstrap initial block not found')
+              text=text.replace(old,new,1)
+              old2='''                if(!status.downloaded || OfflineGamePackManager.gameServerVersion(game.label)!=p.version) return false'''
+              new2='''                if(!status.downloaded || OfflineGamePackManager.gameServerVersion(game.label)!=p.version || packageChanged(p)) return false'''
+              if old2 not in text:
+                  raise SystemExit('ContentBootstrap gameReady guard not found')
+              text=text.replace(old2,new2,1)
+              p.write_text(text)
+
+          # Move collection intelligence and its most visible artwork into the
+          # startup warm path so opening Coleção no first visit is already warm.
+          p=Path('app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt')
+          text=p.read_text()
+          if 'progress(.14f, "Preparando sua coleção")' not in text:
+              old='''        val nationalSnapshot = PokedexDataStore.cachedNationalDex().orEmpty()\n        val nationalByName = nationalSnapshot.associateBy { it.name.lowercase() }\n\n        val activeGame = AppStatePreferences.activeGame'''
+              new='''        val nationalSnapshot = PokedexDataStore.cachedNationalDex().orEmpty()\n        val nationalByName = nationalSnapshot.associateBy { it.name.lowercase() }\n\n        progress(.14f, "Preparando sua coleção")\n        runCatching { CollectionAdvisor.warmAllGames() }\n\n        val activeGame = AppStatePreferences.activeGame'''
+              if old not in text:
+                  raise SystemExit('StartupPreloader collection insertion point not found')
+              text=text.replace(old,new,1)
+
+          if 'val collectionArtworkUrls = buildList' not in text:
+              old='''        val activeJourneyArtworkUrls = (\n            activeCoverUrls + activeGameHeroUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls\n        ).distinct()\n\n        progress(.84f, "Aquecendo sua Jornada")'''
+              new='''        val activeJourneyArtworkUrls = (\n            activeCoverUrls + activeGameHeroUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls\n        ).distinct()\n        val ownedShinyIds = VariantCollectionStore.ownedVariants\n            .asSequence().filter { it.shiny }.map { it.speciesId }.distinct().take(12).toList()\n        val collectionArtworkUrls = buildList {\n            listOf(1,4,7,26,157,724).forEach { id ->\n                add("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+id+".png")\n            }\n            (listOf(25,94,448)+ownedShinyIds).distinct().forEach { id ->\n                add("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+id+".png")\n            }\n        }\n        val criticalArtworkUrls=(activeJourneyArtworkUrls+collectionArtworkUrls).distinct()\n\n        progress(.84f, "Aquecendo Jornada e Coleção")'''
+              if old not in text:
+                  raise SystemExit('StartupPreloader artwork insertion point not found')
+              text=text.replace(old,new,1)
+              text=text.replace('''            activeJourneyArtworkUrls.mapIndexed { index, artwork ->''','''            criticalArtworkUrls.mapIndexed { index, artwork ->''',1)
+              text=text.replace('''.data(artwork)\n                                    .size(320)''','''.data(OfflineLibraryManager.resolveAny(context,artwork) ?: artwork)\n                                    .size(320)''',1)
+              text=text.replace('''((index + 1f) / activeJourneyArtworkUrls.size.coerceAtLeast(1))''','''((index + 1f) / criticalArtworkUrls.size.coerceAtLeast(1))''',1)
+              text=text.replace('''progress(local, "Aquecendo sua Jornada")''','''progress(local, "Aquecendo Jornada e Coleção")''',1)
+              p.write_text(text)
+
+          # Critical preload now completes during the boot experience. Extended
+          # warming remains background-only after the app opens.
+          p=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt')
+          text=p.read_text()
+          if 'StartupPreloader.launchExtendedWarm(context)' not in text:
+              old='''        val result=ContentBootstrapManager.ensureReady(context){progress->\n            state=BootState(progress.fraction,progress.label)\n        }\n        if(result.ready){\n            state=BootState(1f,"Biblioteca pronta")\n            finished=true\n            onReady()\n            StartupPreloader.launchWarmInBackground(context)\n        }else{'''
+              new='''        val result=ContentBootstrapManager.ensureReady(context){progress->\n            state=BootState((progress.fraction*.72f).coerceIn(.01f,.72f),progress.label)\n        }\n        if(result.ready){\n            state=BootState(.72f,"Otimizando telas principais")\n            runCatching {\n                StartupPreloader.warm(context){progress->\n                    state=BootState((.72f+progress.fraction*.28f).coerceIn(.72f,1f),progress.label)\n                }\n            }\n            state=BootState(1f,"Tudo pronto")\n            finished=true\n            onReady()\n            StartupPreloader.launchExtendedWarm(context)\n        }else{'''
+              if old not in text:
+                  raise SystemExit('BootExperience preload block not found')
+              p.write_text(text.replace(old,new,1))
+          PY
+
+      - name: Validate source markers
+        run: |
+          grep -q 'ownedIds=setOf(25,94,448)' app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt
+          grep -q 'previousSignatures=cachedSignature?.split' app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt
+          grep -q 'packageChanged(p)' app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt
+          grep -q 'progress(.14f, "Preparando sua coleção")' app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt
+          grep -q 'collectionArtworkUrls = buildList' app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt
+          grep -q 'StartupPreloader.launchExtendedWarm(context)' app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt
+          python3 scripts/verify_repo.py
+          git diff --check
+
+      - name: Persist startup preload improvements
+        run: |
+          if ! git diff --quiet -- app/src/main/java/com/otaviobarreto/pokedex; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add app/src/main/java/com/otaviobarreto/pokedex
+            git commit -m 'feat(startup): refresh content and preload collection assets'
+            git push origin HEAD:feature/nintendo-companion-design-system
+          fi
