@@ -1,12 +1,16 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -83,6 +87,61 @@ fun ContextFilter(
             selectedLabelColor = accent
         )
     )
+}
+
+@Composable
+fun CompanionSelector(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    accent: Color = MaterialTheme.colorScheme.primary
+) {
+    Surface(
+        modifier = modifier
+            .heightIn(min = 42.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = PokedexDesignTokens.Spacing.Md, vertical = PokedexDesignTokens.Spacing.Xs),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = accent)
+        }
+    }
+}
+
+@Composable
+fun CompanionCompactAction(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    accent: Color = MaterialTheme.colorScheme.primary
+) {
+    Surface(
+        modifier = modifier
+            .heightIn(min = 40.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+        color = accent.copy(alpha = .10f)
+    ) {
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = PokedexDesignTokens.Spacing.Md),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp), tint = accent)
+            Spacer(Modifier.width(PokedexDesignTokens.Spacing.Xs))
+            Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = accent, maxLines = 1)
+        }
+    }
 }
 
 @Composable
