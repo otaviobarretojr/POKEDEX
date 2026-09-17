@@ -1,0 +1,47 @@
+name: Patch Journey Direct Route
+
+on:
+  push:
+    branches: [feature/nintendo-companion-design-system]
+    paths: [.github/workflows/patch-journey-direct-route.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/nintendo-companion-design-system
+      - name: Patch Journey navigation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt')
+          s = p.read_text()
+          old1 = '''                selectedGame=it
+                view=JourneyView.GAME_MENU'''
+          new1 = '''                selectedGame=it
+                view=if(startInGames) JourneyView.GAME_MENU else JourneyView.ROUTE'''
+          old2 = '''            JourneyView.ROUTE -> view=JourneyView.GAME_MENU'''
+          new2 = '''            JourneyView.ROUTE -> view=if(startInGames) JourneyView.GAME_MENU else JourneyView.GAMES'''
+          old3 = '''            onBack={view=JourneyView.GAME_MENU},
+            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},'''
+          new3 = '''            onBack={view=if(startInGames) JourneyView.GAME_MENU else JourneyView.GAMES},
+            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},'''
+          for old, new, label in [(old1,new1,'selection'),(old2,new2,'system back'),(old3,new3,'route back')]:
+              if old not in s:
+                  raise SystemExit(f'Expected Journey pattern missing: {label}')
+              s = s.replace(old,new,1)
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt
+          git diff --cached --check
+          git commit -m 'fix(journey): open active route without duplicate game menu'
+          git push origin HEAD:feature/nintendo-companion-design-system
