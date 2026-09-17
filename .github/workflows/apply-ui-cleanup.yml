@@ -1,0 +1,151 @@
+name: Apply UI cleanup
+
+on:
+  push:
+    branches: [ "feature/nintendo-companion-design-system" ]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feature/nintendo-companion-design-system
+          fetch-depth: 0
+      - name: Apply cross-app hierarchy cleanup
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root=Path('.')
+          def patch(path, old, new, label):
+              p=root/path
+              text=p.read_text()
+              if old not in text:
+                  raise SystemExit(f'missing pattern: {label} in {path}')
+              p.write_text(text.replace(old,new,1))
+
+          # Jornada: remove dead back affordance on the main tab, fix contextual chips,
+          # retire starter guidance after the opening stretch, and remove repeated recommendation copy.
+          journey=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt')
+          patch(journey,
+                '        JourneyView.ROUTE -> if(game!=null) JourneyRoute(\n            game=game,\n            onBack={if(startInGames) view=JourneyView.GAME_MENU},',
+                '        JourneyView.ROUTE -> if(game!=null) JourneyRoute(\n            game=game,showBack=startInGames,\n            onBack={if(startInGames) view=JourneyView.GAME_MENU},',
+                'journey route showBack call')
+          patch(journey,
+                'private fun JourneyRoute(\n    game:AppGame,\n    onBack:()->Unit,',
+                'private fun JourneyRoute(\n    game:AppGame,showBack:Boolean,\n    onBack:()->Unit,',
+                'journey route signature')
+          patch(journey,
+                '                IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}',
+                '                if(showBack) IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}',
+                'journey main back affordance')
+          patch(journey,
+                '                            "Pokémon Scarlet / Violet" -> {',
+                '                            "Scarlet / Violet" -> {',
+                'scarlet violet journey pills')
+          patch(journey,
+                '        if(starterOptions.isNotEmpty() && !hasChosenStarter){',
+                '        if(starterOptions.isNotEmpty() && !hasChosenStarter && completedCount<=2){',
+                'starter guidance lifecycle')
+          patch(journey,
+                '                            "OBJETIVO ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),',
+                '                            "AGORA · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),',
+                'current journey label')
+          patch(journey,
+                '                            journeyRecommendation=smart.recommendation,',
+                '                            journeyRecommendation=null,',
+                'duplicate journey recommendation')
+
+          # Jogos: clearer library identity and slightly denser cards.
+          hub=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyHubComponents.kt')
+          patch(hub,
+                'Text(if(libraryOnly)"Jogos Pokémon" else "Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)',
+                'Text(if(libraryOnly)"Jogos" else "Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)',
+                'games title')
+          patch(hub,
+                'if(libraryOnly) "Escolha uma aventura, continue ou gerencie uma Jornada."',
+                'if(libraryOnly) "Escolha um jogo e explore sua aventura."',
+                'games subtitle')
+          patch(hub,
+                'Text(if(libraryOnly)"Todas as aventuras" else "Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)',
+                'Text(if(libraryOnly)"Biblioteca" else "Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)',
+                'games library title')
+          patch(hub,
+                'Text(if(libraryOnly)"Abra um jogo para iniciar, continuar ou recomeçar sua Jornada." else "Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)',
+                'Text(if(libraryOnly)"Todos os jogos disponíveis." else "Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)',
+                'games library subtitle')
+          patch(hub,'.aspectRatio(1.72f)','.aspectRatio(1.95f)','denser game cards')
+
+          # Pokédex: one title, one search entry point, only genuinely different shortcuts.
+          dex=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexCatalogScreen.kt')
+          block='''        CompanionSectionHeader(\n            title="Explorar Pokédex",\n            supporting=if(query.isBlank()) "Encontre por nome, número ou tipo." else filtered.size.toString()+" resultado(s)",\n            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg)\n        )\n'''
+          patch(dex,block,'','duplicate pokedex section header')
+          patch(dex,
+                '            item{ContextFilter(label="Busca universal",selected=false,onClick=onOpenSearch)}\n',
+                '',
+                'duplicate universal search chip')
+          patch(dex,
+                '            subtitle="#0001–#1025 · formas e Shiny",',
+                '            subtitle="#0001–#1025 · formas · Shiny",',
+                'pokedex subtitle hierarchy')
+
+          # Coleção: keep the screen about collection, not about navigating back to Box.
+          collection=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt')
+          p=root/collection
+          text=p.read_text()
+          start=text.find('        if(plan.capturedSpecies<plan.totalSpecies){')
+          end=text.find('        item{CompanionSectionHeader(title="Seus álbuns"',start)
+          if start<0 or end<0:
+              raise SystemExit('missing collection CTA block')
+          text=text[:start]+text[end:]
+          text=text.replace('item{CompanionSectionHeader(title="Seus álbuns",supporting="Explore sua coleção por objetivo.")}',
+                            'item{CompanionSectionHeader(title="Álbuns",supporting="Organize sua coleção por objetivo.")}',1)
+          text=text.replace('item{AlbumPortalCard("Living Dex","${plan.capturedSpecies} de ${plan.totalSpecies} espécies",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}',
+                            'item{AlbumPortalCard("Living Dex","${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies ainda faltam",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}',1)
+          p.write_text(text)
+
+          # Box: remove repeated game/region/progress header; selectors and circular progress already carry that context.
+          boxes=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Screen.kt')
+          old='''  BoxCompanionHeader(\n   game=game.label,\n   region=region.label,\n   caught=caught,\n   total=dex.size,\n   accent=game.accent\n  )\n'''
+          new='''  Column(Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Sm)){\n   Text("Box",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)\n   Text("Organize e registre sua coleção por jogo.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)\n  }\n'''
+          patch(boxes,old,new,'box duplicate context header')
+
+          # Configurações: keep the primary surface user-facing; reduce diagnostic noise.
+          settings=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/CompanionCenterScreen.kt')
+          patch(settings,
+                'CompanionSectionHeader(title="Armazenamento e desempenho")',
+                'CompanionSectionHeader(title="Armazenamento")',
+                'settings storage title')
+          patch(settings,
+                'CompanionSettingsRow("Uso local",cache.total.toString()+" entradas · API "+String.format("%.1f MB",apiCacheMb)+" · "+downloadedPacks+" pacotes offline"+(if(startupMs>0)" · inicialização ${startupMs} ms" else ""),Icons.Default.Storage)',
+                'CompanionSettingsRow("Uso local",downloadedPacks.toString()+" pacotes offline · cache "+String.format("%.1f MB",apiCacheMb),Icons.Default.Storage)',
+                'settings technical diagnostics')
+          patch(settings,
+                'CompanionSettingsRow("POKEDEX v$versionName",context.packageName,Icons.Default.Info)',
+                'CompanionSettingsRow("POKEDEX v$versionName","Versão instalada neste dispositivo",Icons.Default.Info)',
+                'settings package id')
+
+          # Hardening guard: Journey must remain inside its current source-size budget.
+          lines=(root/journey).read_text().splitlines()
+          if len(lines)>1250:
+              raise SystemExit(f'JourneyScreen.kt exceeds budget after cleanup: {len(lines)}>1250')
+          print('UI cleanup applied; Journey lines:',len(lines))
+          PY
+      - name: Commit source cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --check
+          git add app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt \
+                  app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyHubComponents.kt \
+                  app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexCatalogScreen.kt \
+                  app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt \
+                  app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Screen.kt \
+                  app/src/main/java/com/otaviobarreto/pokedex/ui/CompanionCenterScreen.kt
+          git commit -m 'design: simplify hierarchy across companion tabs'
+          git push origin HEAD:feature/nintendo-companion-design-system
