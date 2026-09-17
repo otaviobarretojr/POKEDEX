@@ -380,12 +380,6 @@ private fun JourneyRoute(
                             }
                         }
                     }
-                    Text("FERRAMENTAS DA JORNADA",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md,bottom=PokedexDesignTokens.Spacing.Xs,start=PokedexDesignTokens.Spacing.Xs))
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
-                        FilledTonalButton(onClick=onOpenGameDex,modifier=Modifier.weight(1f)){Icon(Icons.Default.MenuBook,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));Text("Dex")}
-                        FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){Icon(Icons.Default.AutoAwesome,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));Text("Evoluções")}
-                        FilledTonalIconButton(onClick=onOpenSearch){Icon(Icons.Default.Search,"Buscar Pokémon")}
-                    }
                 }
             }
         }
