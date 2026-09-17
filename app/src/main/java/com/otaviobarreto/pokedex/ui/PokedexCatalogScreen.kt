@@ -250,12 +250,17 @@ private fun PokedexFormsDialog(
             Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
+                        Text("POKÉMON",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Black)
                         Text(base?.name ?: "Pokémon",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-                        Text("Formas e variantes",color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(previews.size.toString()+" variantes disponíveis",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
                     }
                     IconButton(onDismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
-                TextButton(onClick=onOpenBase){Text("Abrir ficha principal")}
+                PrimaryCompanionAction(
+                    label="Abrir ficha principal",
+                    onClick=onOpenBase,
+                    modifier=Modifier.padding(vertical=PokedexDesignTokens.Spacing.Sm)
+                )
                 if(forms!=null){
                     val kinds=previews.map{it.kind}.distinct()
                     if(kinds.size>1){
@@ -265,27 +270,21 @@ private fun PokedexFormsDialog(
                             contentPadding=PaddingValues(vertical=4.dp)
                         ){
                             item{
-                                FilterChip(
-                                    selected=selectedKind==null,
-                                    onClick={selectedKind=null},
-                                    label={Text("Todas")}
-                                )
+                                ContextFilter(label="Todas",selected=selectedKind==null,onClick={selectedKind=null})
                             }
                             items(kinds,key={it.name}){kind->
-                                FilterChip(
+                                ContextFilter(
+                                    label=when(kind){
+                                        PokemonFormKind.DEFAULT -> "Padrão"
+                                        PokemonFormKind.REGIONAL -> "Regionais"
+                                        PokemonFormKind.GENDER -> "Gênero"
+                                        PokemonFormKind.BATTLE -> "Batalha"
+                                        PokemonFormKind.SPECIAL -> "Especiais"
+                                        PokemonFormKind.COSMETIC -> "Cosméticas"
+                                        PokemonFormKind.OTHER -> "Outras"
+                                    },
                                     selected=selectedKind==kind,
-                                    onClick={selectedKind=kind},
-                                    label={Text(
-                                        when(kind){
-                                            PokemonFormKind.DEFAULT -> "Padrão"
-                                            PokemonFormKind.REGIONAL -> "Regionais"
-                                            PokemonFormKind.GENDER -> "Gênero"
-                                            PokemonFormKind.BATTLE -> "Batalha"
-                                            PokemonFormKind.SPECIAL -> "Especiais"
-                                            PokemonFormKind.COSMETIC -> "Cosméticas"
-                                            PokemonFormKind.OTHER -> "Outras"
-                                        }
-                                    )}
+                                    onClick={selectedKind=kind}
                                 )
                             }
                         }
