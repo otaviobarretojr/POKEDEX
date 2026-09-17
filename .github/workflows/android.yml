@@ -7,12 +7,61 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Apply direct Journey route patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt')
+          s = p.read_text()
+          replacements = [
+              (
+                  '''                selectedGame=it\n                view=JourneyView.GAME_MENU''',
+                  '''                selectedGame=it\n                view=if(startInGames) JourneyView.GAME_MENU else JourneyView.ROUTE''',
+                  'selection'
+              ),
+              (
+                  '''            JourneyView.ROUTE -> view=JourneyView.GAME_MENU''',
+                  '''            JourneyView.ROUTE -> view=if(startInGames) JourneyView.GAME_MENU else JourneyView.GAMES''',
+                  'system back'
+              ),
+              (
+                  '''            onBack={view=JourneyView.GAME_MENU},\n            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},''',
+                  '''            onBack={view=if(startInGames) JourneyView.GAME_MENU else JourneyView.GAMES},\n            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},''',
+                  'route back'
+              ),
+          ]
+          changed = False
+          for old, new, label in replacements:
+              if new in s:
+                  continue
+              if old not in s:
+                  raise SystemExit(f'Expected Journey pattern missing: {label}')
+              s = s.replace(old, new, 1)
+              changed = True
+          if changed:
+              p.write_text(s)
+          PY
+      - name: Persist Journey route patch
+        run: |
+          if git diff --quiet -- app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt; then
+            echo 'Journey route already patched.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt
+            git diff --cached --check
+            git commit -m 'fix(journey): bypass duplicate game menu for active journey'
+            git push origin HEAD:feature/nintendo-companion-design-system
+          fi
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -70,7 +119,6 @@ jobs:
         run: gradle testDebugUnitTest
       - name: Android lint
         run: gradle lintDebug
-
       - name: Build debug APK
         run: gradle clean assembleDebug
       - name: Upload APK
