@@ -31,9 +31,10 @@ import kotlinx.coroutines.withContext
 private enum class CollectionArea { HOME, LIVING, SHINY, FORMS }
 
 @Composable
-fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit){
+fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit,onOpenFormDetail:(Int,String,Boolean)->Unit){
     val captured=CollectionStore.capturedIds
     val variants=VariantCollectionStore.ownedVariants
+    val shinyIds=remember(variants){variants.asSequence().filter{it.shiny}.map{it.speciesId}.toSet()}
     val plan=remember(captured,variants){LivingDexPlanner.current(PokeApiService.MAX_NATIONAL_DEX_ID)}
     val insights=remember(captured,variants,CollectionStore.boxes){CollectionInsightsService.current()}
     var areaName by rememberSaveable{mutableStateOf(CollectionArea.HOME.name)}
@@ -54,17 +55,18 @@ fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->U
 
     DexAppBackground{
         when{
-            area==CollectionArea.HOME -> CollectionHome(plan,insights,advisorReady,{areaName=it.name},onOpenBoxes,onPokemonClick)
+            area==CollectionArea.HOME -> CollectionHome(plan,insights,advisorReady,shinyIds,{areaName=it.name},onOpenBoxes,onPokemonClick)
             area==CollectionArea.FORMS -> FormsAlbum(variants,{areaName=CollectionArea.HOME.name},onPokemonClick)
             generation==null -> GenerationShelf(
                 if(area==CollectionArea.LIVING)"Living Dex" else "Shiny Dex",
                 if(area==CollectionArea.LIVING)"Complete cada geração da National Dex." else "Sua coleção Shiny organizada por geração.",
                 plan,
                 area==CollectionArea.SHINY,
+                shinyIds,
                 {areaName=CollectionArea.HOME.name},
                 {generation=it}
             )
-            else -> PokemonAlbumGrid(generation!!,area==CollectionArea.SHINY,captured,variants,{generation=null},onPokemonClick)
+            else -> PokemonAlbumGrid(generation!!,area==CollectionArea.SHINY,captured,variants,{generation=null},onPokemonClick,onOpenFormDetail)
         }
     }
 }
@@ -74,6 +76,7 @@ private fun CollectionHome(
     plan:LivingDexPlan,
     insights:CollectionInsights,
     advisorReady:Boolean,
+    shinyIds:Set<Int>,
     onOpenArea:(CollectionArea)->Unit,
     onOpenBoxes:(String?,String?)->Unit,
     onPokemonClick:(Int)->Unit
@@ -99,7 +102,7 @@ private fun CollectionHome(
         }
         item{CompanionSectionHeader(title="Álbuns",supporting="Organize sua coleção por objetivo.")}
         item{AlbumPortalCard("Living Dex","${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies ainda faltam",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
-        item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome){onOpenArea(CollectionArea.SHINY)}}
+        item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome,ownedIds=shinyIds){onOpenArea(CollectionArea.SHINY)}}
         item{AlbumPortalCard("Form Dex","${plan.formRegistrations} formas alternativas registradas",null,listOf(26,157,724),false,Icons.Default.Extension){onOpenArea(CollectionArea.FORMS)}}
         if(insights.gamesWithProgress>0){
             item{Text("Progresso registrado em ${insights.gamesWithProgress} jogo${if(insights.gamesWithProgress==1) "" else "s"}",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
@@ -110,8 +113,9 @@ private fun CollectionHome(
 @Composable
 private fun AlbumPortalCard(
     title:String,subtitle:String,progress:Float?,ids:List<Int>,shiny:Boolean,
-    icon:androidx.compose.ui.graphics.vector.ImageVector,onClick:()->Unit
+    icon:androidx.compose.ui.graphics.vector.ImageVector,ownedIds:Set<Int> = emptySet(),onClick:()->Unit
 ){
+    val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}
     Surface(
         modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
@@ -133,11 +137,13 @@ private fun AlbumPortalCard(
                 verticalAlignment=Alignment.CenterVertically
             ){
                 ids.forEach{id->
+                    val owned=!shiny || id in ownedIds
                     PokemonArtwork(
                         model=artwork(id,shiny),
-                        contentDescription=null,
+                        contentDescription=if(shiny)"Shiny" else null,
                         pokemonId=id,
-                        modifier=Modifier.size(76.dp)
+                        modifier=Modifier.size(76.dp).alpha(if(owned)1f else .18f),
+                        colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale)
                     )
                 }
             }
@@ -148,8 +154,9 @@ private fun AlbumPortalCard(
 
 @Composable
 private fun GenerationShelf(
-    title:String,subtitle:String,plan:LivingDexPlan,shiny:Boolean,onBack:()->Unit,onGeneration:(Int)->Unit
+    title:String,subtitle:String,plan:LivingDexPlan,shiny:Boolean,shinyIds:Set<Int>,onBack:()->Unit,onGeneration:(Int)->Unit
 ){
+    val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
         contentPadding=PaddingValues(top=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xxl),
@@ -182,7 +189,10 @@ private fun GenerationShelf(
                             Text("$value de ${gen.total} registrados",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Row(horizontalArrangement=Arrangement.spacedBy(2.dp)){
-                            representatives.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(50.dp))}
+                            representatives.forEach{id->
+                                val owned=!shiny || id in shinyIds
+                                PokemonArtwork(model=artwork(id,shiny),contentDescription=if(shiny)"Shiny" else null,pokemonId=id,modifier=Modifier.size(50.dp).alpha(if(owned)1f else .18f),colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale))
+                            }
                         }
                     }
                     CompanionProgress(
@@ -200,7 +210,7 @@ private fun GenerationShelf(
 @Composable
 private fun PokemonAlbumGrid(
     generation:Int,shiny:Boolean,captured:Set<Int>,variants:List<OwnedPokemonVariant>,
-    onBack:()->Unit,onPokemonClick:(Int)->Unit
+    onBack:()->Unit,onPokemonClick:(Int)->Unit,onOpenFormDetail:(Int,String,Boolean)->Unit
 ){
     val ids=remember(generation){NationalDexCatalog.all.filter{it.generation==generation}}
     val shinyIds=remember(variants){variants.asSequence().filter{it.shiny}.map{it.speciesId}.toSet()}
@@ -221,7 +231,7 @@ private fun PokemonAlbumGrid(
         ){
             gridItems(ids,key={it.id}){species->
                 val owned=if(shiny)species.id in shinyIds else species.id in captured
-                PokemonAlbumTile(species.id,species.displayName,owned,shiny){onPokemonClick(species.id)}
+                PokemonAlbumTile(species.id,species.displayName,owned,shiny){if(shiny)onOpenFormDetail(species.id,species.displayName+" · Shiny",true) else onPokemonClick(species.id)}
             }
         }
     }
@@ -238,7 +248,7 @@ private fun PokemonAlbumTile(id:Int,name:String,owned:Boolean,shiny:Boolean,onCl
         Column(Modifier.fillMaxSize().padding(6.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
             PokemonArtwork(
                 model=artwork(id,shiny),
-                contentDescription=name,
+                contentDescription=if(shiny)name+" Shiny" else name,
                 pokemonId=id,
                 modifier=Modifier.weight(1f).fillMaxWidth().alpha(if(owned)1f else .18f),
                 colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale)

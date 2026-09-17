@@ -89,7 +89,7 @@ private val mainDestinations=listOf(
    composable("evolutionCenter"){EvolutionCenterScreen(onBack={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)})}
    composable("gameDex"){GameDexScreen(onBack={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)})}
    composable(PokedexRoutes.POKEDEX){PokedexCatalogScreen(onPokemonClick={id->openPokemon(id,null)},onOpenFormDetail=::openFormDetail,onOpenSearch=::openUniversalSearch,onOpenEvolutionCenter=::openEvolutionCenter,onOpenGameDex=::openGameDex)}
-   composable(PokedexRoutes.COLLECTION){CollectionScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes)}
+   composable(PokedexRoutes.COLLECTION){CollectionScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes,onOpenFormDetail=::openFormDetail)}
    composable(PokedexRoutes.BOXES){BoxesV2Screen(onPokemonClick={id,source->openPokemon(id,source)})}
    composable(PokedexRoutes.CENTRAL){CompanionCenterScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes)}
   }
