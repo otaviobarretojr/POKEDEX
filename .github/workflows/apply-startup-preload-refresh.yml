@@ -30,8 +30,8 @@ jobs:
                   raise SystemExit(f'Patch target not found in {path}: {marker}')
               p.write_text(text.replace(old,new,1))
 
-          # Shiny Dex portal: the three decorative examples must visibly be Shiny,
-          # independent of whether those exact species are already owned.
+          # Shiny Dex portal previews are illustrative: Pikachu, Gengar and
+          # Lucario must always appear in their colored Shiny artwork.
           replace_once(
               'app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt',
               'listOf(25,94,448),true,Icons.Default.AutoAwesome,ownedIds=shinyIds){onOpenArea(CollectionArea.SHINY)}}',
@@ -39,9 +39,8 @@ jobs:
               'ownedIds=setOf(25,94,448)'
           )
 
-          # Explicit variant artwork should still use the durable offline library
-          # when the package contains the exact Shiny URL; never fall back to the
-          # generic normal-species cache entry.
+          # Explicit Shiny artwork keeps variant identity while still resolving
+          # the exact downloaded URL from the durable offline library when present.
           replace_once(
               'app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonArtwork.kt',
               '''        if (explicitVariantArtwork) {\n            model\n        } else {''',
@@ -49,8 +48,10 @@ jobs:
               'OfflineLibraryManager.resolveAny(context,it) } ?: model'
           )
 
-          # Always consult the remote package manifest at boot. A saved signature
-          # means "last verified", not "never check for updates again".
+          # A stored signature means last verified content, not "never check again".
+          # Check the server manifest on every app launch and update only changed
+          # packages. If the server is temporarily unavailable, keep a verified
+          # local library usable instead of blocking the app.
           p=Path('app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt')
           text=p.read_text()
           marker='val previousSignatures=cachedSignature?.split("|")'
@@ -67,8 +68,8 @@ jobs:
               text=text.replace(old2,new2,1)
               p.write_text(text)
 
-          # Move collection intelligence and its most visible artwork into the
-          # startup warm path so opening Coleção no first visit is already warm.
+          # Optional cache warmup stays non-blocking by design, but begins as soon
+          # as the app enters and now warms Collection intelligence + key album art.
           p=Path('app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt')
           text=p.read_text()
           if 'progress(.14f, "Preparando sua coleção")' not in text:
@@ -89,17 +90,6 @@ jobs:
               text=text.replace('''((index + 1f) / activeJourneyArtworkUrls.size.coerceAtLeast(1))''','''((index + 1f) / criticalArtworkUrls.size.coerceAtLeast(1))''',1)
               text=text.replace('''progress(local, "Aquecendo sua Jornada")''','''progress(local, "Aquecendo Jornada e Coleção")''',1)
               p.write_text(text)
-
-          # Critical preload now completes during the boot experience. Extended
-          # warming remains background-only after the app opens.
-          p=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt')
-          text=p.read_text()
-          if 'StartupPreloader.launchExtendedWarm(context)' not in text:
-              old='''        val result=ContentBootstrapManager.ensureReady(context){progress->\n            state=BootState(progress.fraction,progress.label)\n        }\n        if(result.ready){\n            state=BootState(1f,"Biblioteca pronta")\n            finished=true\n            onReady()\n            StartupPreloader.launchWarmInBackground(context)\n        }else{'''
-              new='''        val result=ContentBootstrapManager.ensureReady(context){progress->\n            state=BootState((progress.fraction*.72f).coerceIn(.01f,.72f),progress.label)\n        }\n        if(result.ready){\n            state=BootState(.72f,"Otimizando telas principais")\n            runCatching {\n                StartupPreloader.warm(context){progress->\n                    state=BootState((.72f+progress.fraction*.28f).coerceIn(.72f,1f),progress.label)\n                }\n            }\n            state=BootState(1f,"Tudo pronto")\n            finished=true\n            onReady()\n            StartupPreloader.launchExtendedWarm(context)\n        }else{'''
-              if old not in text:
-                  raise SystemExit('BootExperience preload block not found')
-              p.write_text(text.replace(old,new,1))
           PY
 
       - name: Validate source markers
@@ -109,7 +99,7 @@ jobs:
           grep -q 'packageChanged(p)' app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt
           grep -q 'progress(.14f, "Preparando sua coleção")' app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt
           grep -q 'collectionArtworkUrls = buildList' app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt
-          grep -q 'StartupPreloader.launchExtendedWarm(context)' app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt
+          grep -q 'StartupPreloader.launchWarmInBackground(context)' app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt
           python3 scripts/verify_repo.py
           git diff --check
 
