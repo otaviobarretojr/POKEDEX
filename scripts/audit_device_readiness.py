@@ -26,11 +26,12 @@ workflow=read(".github/workflows/android.yml")
 
 checks={
     "stable package id": 'applicationId = "com.otaviobarreto.pokedex"' in gradle,
-    "update-safe version code": ('versionCode = 19200' in gradle) or ('versionCode = 20000' in gradle) or ('versionCode = 20300' in gradle) or ('versionCode = 20400' in gradle) or ('versionCode = 20500' in gradle) or ('versionCode = 20600' in gradle) or ('versionCode = 20700' in gradle) or ('versionCode = 20701' in gradle) or ('versionCode = 20800' in gradle) or ('versionCode = 20900' in gradle) or ('versionCode = 21000' in gradle) or ('versionCode = 21100' in gradle) or ('versionCode = 21200' in gradle) or ('versionCode = 21201' in gradle),
+    "update-safe version code": ('versionCode = 19200' in gradle) or ('versionCode = 20000' in gradle) or ('versionCode = 20300' in gradle) or ('versionCode = 20400' in gradle) or ('versionCode = 20500' in gradle) or ('versionCode = 20600' in gradle) or ('versionCode = 20700' in gradle) or ('versionCode = 20701' in gradle) or ('versionCode = 20800' in gradle) or ('versionCode = 20900' in gradle) or ('versionCode = 21000' in gradle) or ('versionCode = 21100' in gradle) or ('versionCode = 21200' in gradle) or ('versionCode = 21201' in gradle) or ('versionCode = 21300' in gradle),
     "minimum supported Android": 'minSdk = 26' in gradle,
     "current target SDK": 'targetSdk = 35' in gradle,
     "stable signing config": 'stableDebug' in gradle and 'pokedex-release.jks' in gradle,
     "CI restores stable signing key": 'Restore stable signing key' in workflow,
+    "instrumentation tests compile in CI": 'assembleDebugAndroidTest' in workflow,
     "Android backup enabled": 'android:allowBackup="true"' in manifest,
     "Android backup rules wired": 'android:fullBackupContent="@xml/backup_rules"' in manifest and 'android:dataExtractionRules="@xml/data_extraction_rules"' in manifest,
     "offline cache excluded from backup": 'offline_game_packs_v2.xml' in backup_rules and 'offline_game_packs_v2.xml' in data_rules,
