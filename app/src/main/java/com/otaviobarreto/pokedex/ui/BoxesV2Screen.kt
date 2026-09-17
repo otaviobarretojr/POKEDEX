@@ -143,12 +143,13 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
  Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
-  Row(Modifier.fillMaxWidth().padding(top=8.dp,bottom=5.dp),verticalAlignment=Alignment.CenterVertically){
-   Column(Modifier.weight(1f)){
-    Text("Box",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-    Text(game.label+" · "+region.label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
-   }
-  }
+  BoxCompanionHeader(
+   game=game.label,
+   region=region.label,
+   caught=caught,
+   total=dex.size,
+   accent=game.accent
+  )
   Row(
    Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Xs),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
@@ -193,17 +194,17 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    }
   }
   Row(
-   Modifier.fillMaxWidth().height(46.dp).padding(horizontal=4.dp),
+   Modifier.fillMaxWidth().height(40.dp).padding(horizontal=4.dp),
    verticalAlignment=Alignment.CenterVertically
   ){
    Column(Modifier.weight(1f)){
-    Text("BOX "+(current+1)+" DE "+pages,fontSize=8.sp,lineHeight=9.sp,fontWeight=FontWeight.Black,letterSpacing=.7.sp,color=game.accent)
     Text(
-     if(evolutionFilterName==null)region.label else "EVOLUÇÃO · "+evolutionFilterLabel.orEmpty().uppercase(),
-     fontSize=16.sp,
-     lineHeight=17.sp,
+     if(evolutionFilterName==null)"BOX "+(current+1)+" DE "+pages else "EVOLUÇÃO · "+evolutionFilterLabel.orEmpty().uppercase(),
+     fontSize=10.sp,
+     lineHeight=11.sp,
      fontWeight=FontWeight.Black,
-     color=MaterialTheme.colorScheme.onSurface,
+     letterSpacing=.5.sp,
+     color=game.accent,
      maxLines=1,
      overflow=TextOverflow.Ellipsis
     )
@@ -211,7 +212,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      if(evolutionMethodLoading)"Organizando Pokémon…" else filteredEvolutionEntries.size.toString()+" Pokémon",
      fontSize=8.5.sp,
      fontWeight=FontWeight.Bold,
-     color=game.accent,
+     color=MaterialTheme.colorScheme.onSurfaceVariant,
      maxLines=1
     )
    }
@@ -340,7 +341,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   )
  }
 }
-@Composable private fun BoxCompanionHeader(game:String,region:String,caught:Int,total:Int,accent:Color)=CompanionContextHeader(title="Box",eyebrow="Coleção por jogo",subtitle=game+" · "+region,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Sm,bottom=PokedexDesignTokens.Spacing.Xs),progress={Text(caught.toString()+" de "+total,style=MaterialTheme.typography.labelLarge,fontWeight=FontWeight.Bold,color=accent)})
+@Composable private fun BoxCompanionHeader(game:String,region:String,caught:Int,total:Int,accent:Color)=CompanionContextHeader(title="Box",eyebrow="Coleção por jogo",subtitle=game+" · "+region,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs,bottom=PokedexDesignTokens.Spacing.Xs),accent=accent,progress={CompanionProgress(current=caught,total=total,label="Pokédex do jogo",accent=accent)})
 @Composable
 private fun QBGrid(
     entries:List<GameDexService.GameDexEntry>,
