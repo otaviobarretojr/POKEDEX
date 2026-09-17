@@ -120,7 +120,7 @@ fun PokedexCatalogScreen(
         CompanionContextHeader(
             title="Pokédex",
             eyebrow="National Dex",
-            subtitle="#0001–#1025 · formas e Shiny",
+            subtitle="#0001–#1025 · formas · Shiny",
             modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
             artwork={
                 Icon(
@@ -130,11 +130,6 @@ fun PokedexCatalogScreen(
                     tint=MaterialTheme.colorScheme.primary.copy(alpha=.28f)
                 )
             }
-        )
-        CompanionSectionHeader(
-            title="Explorar Pokédex",
-            supporting=if(query.isBlank()) "Encontre por nome, número ou tipo." else filtered.size.toString()+" resultado(s)",
-            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg)
         )
         OutlinedTextField(
             value=query,
@@ -151,7 +146,6 @@ fun PokedexCatalogScreen(
             contentPadding=PaddingValues(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
             horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
         ){
-            item{ContextFilter(label="Busca universal",selected=false,onClick=onOpenSearch)}
             item{ContextFilter(label="Evoluções",selected=false,onClick=onOpenEvolutionCenter)}
             item{ContextFilter(label="Dex · "+AppStatePreferences.activeGame,selected=false,onClick=onOpenGameDex)}
         }

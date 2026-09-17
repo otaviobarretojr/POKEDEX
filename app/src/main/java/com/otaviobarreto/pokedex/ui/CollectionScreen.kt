@@ -97,24 +97,8 @@ private fun CollectionHome(
                 }
             )
         }
-        if(plan.capturedSpecies<plan.totalSpecies){
-            item{
-                Column{
-                    CompanionSectionHeader(
-                        title="Continue sua coleção",
-                        supporting=(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0).toString()+" espécies ainda faltam na National Dex."
-                    )
-                    Spacer(Modifier.height(PokedexDesignTokens.Spacing.Md))
-                    PrimaryCompanionAction(
-                        label="Abrir Box",
-                        onClick={onOpenBoxes(null,null)},
-                        leading={Icon(Icons.Default.GridView,null)}
-                    )
-                }
-            }
-        }
-        item{CompanionSectionHeader(title="Seus álbuns",supporting="Explore sua coleção por objetivo.")}
-        item{AlbumPortalCard("Living Dex","${plan.capturedSpecies} de ${plan.totalSpecies} espécies",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
+        item{CompanionSectionHeader(title="Álbuns",supporting="Organize sua coleção por objetivo.")}
+        item{AlbumPortalCard("Living Dex","${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies ainda faltam",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
         item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome){onOpenArea(CollectionArea.SHINY)}}
         item{AlbumPortalCard("Form Dex","${plan.formRegistrations} formas alternativas registradas",null,listOf(26,157,724),false,Icons.Default.Extension){onOpenArea(CollectionArea.FORMS)}}
         if(insights.gamesWithProgress>0){

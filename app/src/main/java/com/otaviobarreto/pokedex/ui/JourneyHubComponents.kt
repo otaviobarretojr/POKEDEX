@@ -101,9 +101,9 @@ internal fun JourneyGamePicker(
                         }
                     }
                     Spacer(Modifier.height(10.dp))
-                    Text(if(libraryOnly)"Jogos Pokémon" else "Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
+                    Text(if(libraryOnly)"Jogos" else "Sua aventura",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black)
                     Text(
-                        if(libraryOnly) "Escolha uma aventura, continue ou gerencie uma Jornada."
+                        if(libraryOnly) "Escolha um jogo e explore sua aventura."
                         else if(activeGame==null) "Escolha um jogo para começar uma nova Jornada."
                         else "Continue exatamente de onde parou.",
                         style=MaterialTheme.typography.bodyMedium,
@@ -243,8 +243,8 @@ internal fun JourneyGamePicker(
             if(activeGame==null){
                 item(key="games_library_header"){
                     Column(Modifier.fillMaxWidth().padding(top=6.dp,bottom=2.dp)){
-                        Text(if(libraryOnly)"Todas as aventuras" else "Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                        Text(if(libraryOnly)"Abra um jogo para iniciar, continuar ou recomeçar sua Jornada." else "Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if(libraryOnly)"Biblioteca" else "Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+                        Text(if(libraryOnly)"Todos os jogos disponíveis." else "Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 items(AppGameCatalog.adventureGames,key={it.label}){game->
@@ -476,7 +476,7 @@ private fun JourneyGameLibraryCard(game:AppGame,onClick:()->Unit){
     val accent=PokedexDesignTokens.Colors.game(game.label)
     Card(modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(26.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),elevation=CardDefaults.cardElevation(defaultElevation=2.dp)){
         Column{
-            Box(Modifier.fillMaxWidth().aspectRatio(1.72f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(MaterialTheme.colorScheme.surfaceVariant)){
+            Box(Modifier.fillMaxWidth().aspectRatio(1.95f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(MaterialTheme.colorScheme.surfaceVariant)){
                 val artwork=GameCoverCatalog.heroFor(game.label) ?: GameCoverCatalog.primaryCoverFor(game.label)
                 var artworkFailed by remember(game.label,artwork){mutableStateOf(false)}
                 if(artwork!=null && !artworkFailed){

@@ -85,7 +85,7 @@ fun JourneyScreen(
             onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
-            game=game,
+            game=game,showBack=startInGames,
             onBack={if(startInGames) view=JourneyView.GAME_MENU},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},
             listState=routeListState,
@@ -115,7 +115,7 @@ private data class JourneyRouteStepUi(
 )
 @Composable
 private fun JourneyRoute(
-    game:AppGame,
+    game:AppGame,showBack:Boolean,
     onBack:()->Unit,
     onTeam:()->Unit,
     listState:LazyListState,
@@ -205,7 +205,7 @@ private fun JourneyRoute(
                 Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md),
                 verticalAlignment=Alignment.CenterVertically
             ){
-                IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
+                if(showBack) IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
                 Column(Modifier.weight(1f)){
                     Text("Minha Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
                     Text(game.label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -258,7 +258,7 @@ private fun JourneyRoute(
                                 JourneyCountPill(Icons.Default.AutoAwesome,"Rogue Megas")
                                 JourneyCountPill(Icons.Default.Explore,"Mega Dimension")
                             }
-                            "Pokémon Scarlet / Violet" -> {
+                            "Scarlet / Violet" -> {
                                 JourneyCountPill(Icons.Default.EmojiEvents,"8 Ginásios")
                                 JourneyCountPill(Icons.Default.Landscape,"5 Titãs")
                                 JourneyCountPill(Icons.Default.Stars,"5 Team Star")
@@ -295,7 +295,7 @@ private fun JourneyRoute(
         }
         val starterOptions=JourneyStarterCatalog.forGame(game.label)
         val hasChosenStarter=AppStatePreferences.journeyStarterForGame(game.label)!=null
-        if(starterOptions.isNotEmpty() && !hasChosenStarter){
+        if(starterOptions.isNotEmpty() && !hasChosenStarter && completedCount<=2){
             item(key="starter_guide",contentType="guide"){
                 JourneyStarterGuideCard(
                     starters=starterOptions,
@@ -318,7 +318,7 @@ private fun JourneyRoute(
                     val step=ui.step
                     Column{
                         Text(
-                            "OBJETIVO ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
+                            "AGORA · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
                             fontWeight=FontWeight.Black,
                             style=MaterialTheme.typography.labelMedium,
                             color=MaterialTheme.colorScheme.primary,
@@ -331,7 +331,7 @@ private fun JourneyRoute(
                             opponentPokemonIds=ui.opponentPokemonIds,
                             done=false,
                             isNext=true,
-                            journeyRecommendation=smart.recommendation,
+                            journeyRecommendation=null,
                             displayTitle=journeyDisplayTitle(step),
                             onOpen={onOpenStep(step.id)},
                             onToggle={JourneyProgressStore.toggle(game.label,step.id)}
