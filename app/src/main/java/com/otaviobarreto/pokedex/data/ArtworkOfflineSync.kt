@@ -47,9 +47,10 @@ object ArtworkOfflineSync {
     private const val PREFS="artwork_offline_sync_v1"
     private const val KEY_REVISION="sprites_revision"
     private const val KEY_INVENTORY="inventory_signature"
-    private const val RAW_ART="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork"
-    private const val SPRITES_PATH="sprites/pokemon/other/official-artwork/"
-    private const val REVISION_URL="https://api.github.com/repos/PokeAPI/sprites/commits?path=sprites/pokemon/other/official-artwork&per_page=1"
+    private const val RAW_SPRITES="https://raw.githubusercontent.com/PokeAPI/sprites/master"
+    private const val RAW_ART="$RAW_SPRITES/sprites/pokemon/other/official-artwork"
+    private const val SPRITES_PATH="sprites/"
+    private const val REVISION_URL="https://api.github.com/repos/PokeAPI/sprites/commits?path=sprites&per_page=1"
     private const val DOWNLOAD_CONCURRENCY=6
 
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.IO)
@@ -79,8 +80,8 @@ object ArtworkOfflineSync {
         val missing=inventory.filter{OfflineLibraryManager.resolveAny(appContext,it)==null}.toSet()
         val changed=when{
             remoteRevision.isNullOrBlank() || previousRevision.isNullOrBlank() || remoteRevision==previousRevision -> emptySet()
-            else -> runCatching{fetchChangedOfficialArtwork(previousRevision,remoteRevision,inventory)}
-                .getOrElse{officialArtworkUrls().filterTo(linkedSetOf()){it in inventory}}
+            else -> runCatching{fetchChangedSpriteArtwork(previousRevision,remoteRevision,inventory)}
+                .getOrElse{pokeApiSpriteUrls(inventory)}
         }
 
         val queue=(missing+changed)
@@ -267,7 +268,7 @@ object ArtworkOfflineSync {
             ?: error("Revisão de artwork indisponível")
     }
 
-    private fun fetchChangedOfficialArtwork(
+    private fun fetchChangedSpriteArtwork(
         oldRevision:String,
         newRevision:String,
         inventory:Set<String>
@@ -275,19 +276,21 @@ object ArtworkOfflineSync {
         val body=readText("https://api.github.com/repos/PokeAPI/sprites/compare/$oldRevision...$newRevision")
         val json=JSONObject(body)
         val files=json.optJSONArray("files") ?: error("Comparação de artwork sem arquivos")
-        if(files.length()>=300) return officialArtworkUrls().filterTo(linkedSetOf()){it in inventory}
+        if(files.length()>=300) return pokeApiSpriteUrls(inventory)
         return buildSet{
             for(i in 0 until files.length()){
                 val file=files.optJSONObject(i) ?: continue
                 if(file.optString("status")=="removed") continue
                 val path=file.optString("filename")
                 if(!path.startsWith(SPRITES_PATH)) continue
-                val relative=path.removePrefix(SPRITES_PATH)
-                val url="$RAW_ART/$relative"
+                val url="$RAW_SPRITES/$path"
                 if(url in inventory) add(url)
             }
         }
     }
+
+    private fun pokeApiSpriteUrls(inventory:Set<String>):Set<String> =
+        inventory.filterTo(linkedSetOf()){it.startsWith("$RAW_SPRITES/sprites/")}
 
     private fun cacheKeysFor(url:String):Set<String>{
         val shiny=Regex("""/official-artwork/shiny/(\d+)\.png(?:\?.*)?$""").find(url)
