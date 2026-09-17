@@ -318,7 +318,7 @@ private fun JourneyRoute(
                     val step=ui.step
                     Column{
                         Text(
-                            "AGORA · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
+                            "OBJETIVO ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
                             fontWeight=FontWeight.Black,
                             style=MaterialTheme.typography.labelMedium,
                             color=MaterialTheme.colorScheme.primary,
