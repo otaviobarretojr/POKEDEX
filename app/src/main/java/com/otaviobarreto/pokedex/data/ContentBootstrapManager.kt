@@ -25,15 +25,19 @@ object ContentBootstrapManager {
             val packages=try {
                 RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}
             } catch(e:Exception) {
-                if(!cachedSignature.isNullOrBlank()){
-                    onProgress(Progress(1f,"Biblioteca local pronta · atualização será verificada depois"))
+                if(!cachedSignature.isNullOrBlank() && auditCachedLibrary(context,cachedSignature)){
+                    onProgress(Progress(1f,"Biblioteca local validada · atualização será verificada depois"))
                     return@runCatching Result(true)
                 }
                 throw e
             }
             check(packages.isNotEmpty()){"Servidor de conteúdo indisponível"}
             val general=packages.firstOrNull{it.packageKey=="general"} ?: error("Biblioteca principal indisponível")
-            val gamePackages=packages.filter{it.packageKey!="general"}.distinctBy{it.packageKey}
+            val supportedGameKeys=AppGameCatalog.games
+                .mapTo(linkedSetOf()){RemoteOfflinePackageCatalog.packageKeyForGame(it.label)}
+            val gamePackages=packages
+                .filter{it.packageKey!="general" && it.packageKey in supportedGameKeys}
+                .distinctBy{it.packageKey}
             val signature=packages.sortedBy{it.packageKey}.joinToString("|"){p->p.packageKey+":"+p.version+":"+p.sha256}
             val previousSignatures=cachedSignature?.split("|")
                 ?.mapNotNull{entry->
@@ -118,6 +122,36 @@ object ContentBootstrapManager {
             onProgress(Progress(1f,"POKEDEX pronto",total,total))
             Result(true)
         }.getOrElse{e->Result(false,e.message ?: e.javaClass.simpleName)}
+    }
+
+    private fun auditCachedLibrary(context:Context,signature:String):Boolean {
+        val versions=signature.split("|")
+            .mapNotNull{entry->
+                val parts=entry.split(':',limit=3)
+                if(parts.size!=3) return@mapNotNull null
+                val version=parts[1].toIntOrNull() ?: return@mapNotNull null
+                parts[0] to version
+            }
+            .toMap()
+        val generalVersion=versions["general"] ?: return false
+        if(!OfflineLibraryManager.auditGeneralDetailed(context,generalVersion).ok) return false
+
+        return versions
+            .filterKeys{it!="general"}
+            .all{(packageKey,version)->
+                val game=AppGameCatalog.games.firstOrNull{
+                    RemoteOfflinePackageCatalog.packageKeyForGame(it.label)==packageKey
+                } ?: return@all true
+                val status=OfflineGamePackManager.status(game.label)
+                status.downloaded &&
+                    OfflineGamePackManager.gameServerVersion(game.label)==version &&
+                    OfflineLibraryManager.auditGame(
+                        context,
+                        packageKey,
+                        OfflineGamePackManager.gameResourceUrls(game.label),
+                        OfflineGamePackManager.gameVisualUrls(game.label)
+                    )
+            }
     }
 
     private fun cleanupLegacyOnce(context:Context){
