@@ -75,6 +75,23 @@ jobs:
         run: gradle lintDebug
       - name: Compile instrumentation tests
         run: gradle assembleDebugAndroidTest
+      - name: Run stable smoke tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: gradle connectedDebugAndroidTest --stacktrace
+      - name: Upload instrumentation test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumentation-test-reports
+          path: |
+            app/build/reports/androidTests/connected/
+            app/build/outputs/androidTest-results/connected/
+          if-no-files-found: ignore
       - name: Build debug APK
         run: gradle clean assembleDebug
       - name: Upload APK
