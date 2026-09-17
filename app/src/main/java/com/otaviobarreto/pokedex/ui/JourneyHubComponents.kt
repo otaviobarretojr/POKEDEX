@@ -311,9 +311,10 @@ private fun JourneyObjectivePreviewCard(
                                 Modifier.padding(vertical=6.dp),
                                 horizontalAlignment=Alignment.CenterHorizontally
                             ){
-                                AsyncImage(
-                                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+member.pokemonId+".png",
+                                PokemonArtwork(
+                                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+member.pokemonId+".png",
                                     contentDescription=PokemonRepository.byId(member.pokemonId)?.name,
+                                    pokemonId=member.pokemonId,
                                     modifier=Modifier.size(38.dp),
                                     contentScale=ContentScale.Fit
                                 )
