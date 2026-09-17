@@ -1,5 +1,5 @@
 name: Apply Journey home hierarchy polish
-
+# trigger source polish
 on:
   push:
     branches: [ "feature/nintendo-companion-design-system" ]
