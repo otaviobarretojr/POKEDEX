@@ -221,6 +221,7 @@ object ArtworkOfflineSync {
 
     private fun artworkInventory(context:Context):LinkedHashSet<String> = linkedSetOf<String>().apply{
         addAll(officialArtworkUrls())
+        addAll(JourneyTypeIconCatalog.allUrls())
         addAll(generalManifestArtworkUrls(context))
         AppGameCatalog.adventureGames.forEach{game->
             addAll(OfflineGamePackManager.gameVisualUrls(game.label))
