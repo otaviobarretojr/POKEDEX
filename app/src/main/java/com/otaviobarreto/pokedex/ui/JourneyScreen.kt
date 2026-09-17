@@ -1144,30 +1144,60 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
     }
 }
 @Composable
+private fun journeyVisualBackdrop(asset:JourneyVisualAsset)=when(asset.role){
+    JourneyVisualRole.GYM_LEADER,
+    JourneyVisualRole.TOURNAMENT,
+    JourneyVisualRole.PROMOTION,
+    JourneyVisualRole.EPILOGUE -> MaterialTheme.colorScheme.primaryContainer
+    JourneyVisualRole.TITAN,
+    JourneyVisualRole.EXPLORATION,
+    JourneyVisualRole.LEGENDARY,
+    JourneyVisualRole.HYPERSPACE -> MaterialTheme.colorScheme.secondaryContainer
+    JourneyVisualRole.TEAM_STAR_BOSS,
+    JourneyVisualRole.RAID,
+    JourneyVisualRole.DLC_CHARACTER,
+    JourneyVisualRole.ROGUE_MEGA -> MaterialTheme.colorScheme.tertiaryContainer
+    JourneyVisualRole.STORY -> MaterialTheme.colorScheme.surfaceContainerHigh
+}
+@Composable
 private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
-    Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=MaterialTheme.colorScheme.surface){
+    val shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
+    Surface(
+        modifier=modifier,
+        shape=shape,
+        color=journeyVisualBackdrop(asset),
+        tonalElevation=PokedexDesignTokens.Elevation.Low
+    ){
         AsyncImage(
             model=asset.imageUrl,
             contentDescription=asset.subject,
-            contentScale=ContentScale.Fit,
-            modifier=Modifier.fillMaxSize().padding(4.dp)
+            contentScale=ContentScale.Crop,
+            modifier=Modifier.fillMaxSize()
         )
     }
 }
 @Composable
 private fun JourneyVisualHero(asset:JourneyVisualAsset){
+    val backdrop=journeyVisualBackdrop(asset)
     Card(
         Modifier.fillMaxWidth().height(190.dp),
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
-        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.72f))
+        colors=CardDefaults.cardColors(containerColor=backdrop.copy(alpha=.52f))
     ){
         Row(Modifier.fillMaxSize().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
-            AsyncImage(
-                model=asset.imageUrl,
-                contentDescription=asset.subject,
-                contentScale=ContentScale.Fit,
-                modifier=Modifier.weight(1f).fillMaxHeight()
-            )
+            Surface(
+                modifier=Modifier.weight(1f).fillMaxHeight(),
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+                color=backdrop,
+                tonalElevation=PokedexDesignTokens.Elevation.Low
+            ){
+                AsyncImage(
+                    model=asset.imageUrl,
+                    contentDescription=asset.subject,
+                    contentScale=ContentScale.Crop,
+                    modifier=Modifier.fillMaxSize()
+                )
+            }
             Column(Modifier.weight(.72f).padding(start=10.dp)){
                 Text(asset.subject,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge)
                 Text(asset.emblemLabel,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs))
