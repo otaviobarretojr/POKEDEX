@@ -289,7 +289,7 @@ object ArtworkOfflineSync {
         val digest=MessageDigest.getInstance("SHA-256")
         urls.sorted().forEach{url->
             digest.update(url.toByteArray(Charsets.UTF_8))
-            digest.update(0)
+            digest.update(0.toByte())
         }
         return digest.digest().joinToString(""){"%02x".format(it)}
     }
