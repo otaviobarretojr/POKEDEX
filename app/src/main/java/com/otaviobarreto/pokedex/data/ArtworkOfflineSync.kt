@@ -223,6 +223,7 @@ object ArtworkOfflineSync {
         addAll(officialArtworkUrls())
         addAll(JourneyTypeIconCatalog.allUrls())
         addAll(generalManifestArtworkUrls(context))
+        VariantCollectionStore.ownedVariants.mapTo(this){it.artworkUrl}
         AppGameCatalog.adventureGames.forEach{game->
             addAll(OfflineGamePackManager.gameVisualUrls(game.label))
             addAll(GameCoverCatalog.coversFor(game.label))
