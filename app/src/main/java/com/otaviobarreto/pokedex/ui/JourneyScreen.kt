@@ -1145,35 +1145,15 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
 }
 @Composable
 private fun journeyVisualBackdrop(asset:JourneyVisualAsset)=when(asset.role){
-    JourneyVisualRole.GYM_LEADER,
-    JourneyVisualRole.TOURNAMENT,
-    JourneyVisualRole.PROMOTION,
-    JourneyVisualRole.EPILOGUE -> MaterialTheme.colorScheme.primaryContainer
-    JourneyVisualRole.TITAN,
-    JourneyVisualRole.EXPLORATION,
-    JourneyVisualRole.LEGENDARY,
-    JourneyVisualRole.HYPERSPACE -> MaterialTheme.colorScheme.secondaryContainer
-    JourneyVisualRole.TEAM_STAR_BOSS,
-    JourneyVisualRole.RAID,
-    JourneyVisualRole.DLC_CHARACTER,
-    JourneyVisualRole.ROGUE_MEGA -> MaterialTheme.colorScheme.tertiaryContainer
-    JourneyVisualRole.STORY -> MaterialTheme.colorScheme.surfaceContainerHigh
+    JourneyVisualRole.GYM_LEADER,JourneyVisualRole.TOURNAMENT,JourneyVisualRole.PROMOTION,JourneyVisualRole.EPILOGUE->MaterialTheme.colorScheme.primaryContainer
+    JourneyVisualRole.TITAN,JourneyVisualRole.EXPLORATION,JourneyVisualRole.LEGENDARY,JourneyVisualRole.HYPERSPACE->MaterialTheme.colorScheme.secondaryContainer
+    JourneyVisualRole.TEAM_STAR_BOSS,JourneyVisualRole.RAID,JourneyVisualRole.DLC_CHARACTER,JourneyVisualRole.ROGUE_MEGA->MaterialTheme.colorScheme.tertiaryContainer
+    JourneyVisualRole.STORY->MaterialTheme.colorScheme.surfaceContainerHigh
 }
 @Composable
 private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
-    val shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
-    Surface(
-        modifier=modifier,
-        shape=shape,
-        color=journeyVisualBackdrop(asset),
-        tonalElevation=PokedexDesignTokens.Elevation.Low
-    ){
-        AsyncImage(
-            model=asset.imageUrl,
-            contentDescription=asset.subject,
-            contentScale=ContentScale.Crop,
-            modifier=Modifier.fillMaxSize()
-        )
+    Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=journeyVisualBackdrop(asset),tonalElevation=PokedexDesignTokens.Elevation.Low){
+        AsyncImage(model=asset.imageUrl,contentDescription=asset.subject,contentScale=ContentScale.Crop,modifier=Modifier.fillMaxSize())
     }
 }
 @Composable
