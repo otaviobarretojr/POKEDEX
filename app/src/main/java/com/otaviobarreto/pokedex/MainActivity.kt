@@ -22,7 +22,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
@@ -65,7 +64,13 @@ private val mainDestinations=listOf(
  fun openPokemon(id:Int,source:String?=null){RecentActivityStore.recordPokemon(id);navController.navigate(if(source.isNullOrBlank())"pokemon/"+id else "pokemon/"+id+"?source="+Uri.encode(source))}
  fun replacePokemonDetail(id:Int,source:String?=null){RecentActivityStore.recordPokemon(id);val route=if(source.isNullOrBlank())"pokemon/"+id else "pokemon/"+id+"?source="+Uri.encode(source);navController.navigate(route){popUpTo("pokemon/{id}?source={source}"){inclusive=true}}}
  fun openFormDetail(id:Int,name:String,shiny:Boolean){navController.navigate("formDetail/"+id+"?name="+Uri.encode(name)+"&shiny="+shiny)}
- fun openBoxes(game:String?=null,source:String?=null){val resolvedGame=game?:AppStatePreferences.activeGame;val resolvedSource=source?:AppStatePreferences.activeRegionForGame(resolvedGame);game?.let{AppStatePreferences.activeGame=it};if(resolvedSource!=null)AppStatePreferences.setActiveRegionForGame(resolvedGame,resolvedSource);navController.navigate(PokedexRoutes.BOXES){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}}
+ fun openBoxes(game:String?=null,source:String?=null){
+  val resolvedGame=game ?: AppStatePreferences.activeGame
+  val resolvedSource=source ?: AppStatePreferences.activeRegionForGame(resolvedGame)
+  game?.let{AppStatePreferences.activeGame=it}
+  if(resolvedSource!=null)AppStatePreferences.setActiveRegionForGame(resolvedGame,resolvedSource)
+  navController.navigate(PokedexRoutes.BOXES){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}
+ }
  fun openCampaignGuide(game:String,phase:String?=null,step:String?=null){navController.navigate("campaignGuide?game=${Uri.encode(game)}"+(phase?.let{"&phase=${Uri.encode(it)}"}?:"")+(step?.let{"&step=${Uri.encode(it)}"}?:""))}
  fun openReference(kind:String?=null,name:String?=null,source:String?=null){navController.navigate(if(kind.isNullOrBlank()||name.isNullOrBlank())"reference" else "reference?kind=${Uri.encode(kind)}&name=${Uri.encode(name)}"+(source?.let{"&source=${Uri.encode(it)}"}?:""))}
  fun openUniversalSearch(){navController.navigate("search")}
