@@ -67,7 +67,7 @@ fun CompanionHomeScreen(
                     artwork = hero?.let { url ->
                         {
                             AsyncImage(
-                                model = url,
+                                model = rememberOfflineArtworkModel(url),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .align(Alignment.CenterEnd)
