@@ -19,55 +19,27 @@ jobs:
         with:
           ref: feature/nintendo-companion-design-system
           fetch-depth: 0
-      - name: Apply direct Journey route patch
+      - name: Compact persisted Journey navigation fix
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt')
-          s = p.read_text()
-          replacements = [
-              (
-                  '''    var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }\n    var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }''',
-                  '''    val activeJourneyGame = remember(startInGames) {\n        if(startInGames) null else AppStatePreferences.activeGame\n            .takeIf { active -> AppGameCatalog.adventureGames.any { it.label == active } }\n    }\n    var selectedGame by rememberSaveable(startInGames) { mutableStateOf(activeJourneyGame) }\n    var view by rememberSaveable(startInGames) {\n        mutableStateOf(if(!startInGames && activeJourneyGame != null) JourneyView.ROUTE else JourneyView.GAMES)\n    }''',
-                  'initial active journey'
-              ),
-              (
-                  '''                selectedGame=it\n                view=JourneyView.GAME_MENU''',
-                  '''                selectedGame=it\n                view=if(startInGames) JourneyView.GAME_MENU else JourneyView.ROUTE''',
-                  'selection'
-              ),
-              (
-                  '''            JourneyView.ROUTE -> view=JourneyView.GAME_MENU''',
-                  '''            JourneyView.ROUTE -> if(startInGames) view=JourneyView.GAME_MENU''',
-                  'system back'
-              ),
-              (
-                  '''            onBack={view=JourneyView.GAME_MENU},\n            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},''',
-                  '''            onBack={if(startInGames) view=JourneyView.GAME_MENU},\n            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},''',
-                  'route back'
-              ),
-          ]
-          changed = False
-          for old, new, label in replacements:
-              if new in s:
-                  continue
-              if old not in s:
-                  raise SystemExit(f'Expected Journey pattern missing: {label}')
-              s = s.replace(old, new, 1)
-              changed = True
-          if changed:
-              p.write_text(s)
+          p=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt')
+          s=p.read_text()
+          old='''    val activeJourneyGame = remember(startInGames) {\n        if(startInGames) null else AppStatePreferences.activeGame\n            .takeIf { active -> AppGameCatalog.adventureGames.any { it.label == active } }\n    }\n    var selectedGame by rememberSaveable(startInGames) { mutableStateOf(activeJourneyGame) }\n    var view by rememberSaveable(startInGames) {\n        mutableStateOf(if(!startInGames && activeJourneyGame != null) JourneyView.ROUTE else JourneyView.GAMES)\n    }'''
+          new='''    val activeJourneyGame=remember(startInGames){if(startInGames)null else AppStatePreferences.activeGame.takeIf{active->AppGameCatalog.adventureGames.any{it.label==active}}}\n    var selectedGame by rememberSaveable(startInGames){mutableStateOf(activeJourneyGame)}\n    var view by rememberSaveable(startInGames){mutableStateOf(if(!startInGames&&activeJourneyGame!=null)JourneyView.ROUTE else JourneyView.GAMES)}'''
+          if old in s:
+              p.write_text(s.replace(old,new,1))
+          elif new not in s:
+              raise SystemExit('Expected persisted Journey navigation block not found')
           PY
-      - name: Persist Journey route patch
+      - name: Persist compact Journey fix
         run: |
-          if git diff --quiet -- app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt; then
-            echo 'Journey route already patched.'
-          else
+          if ! git diff --quiet -- app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt
             git diff --cached --check
-            git commit -m 'fix(journey): separate active journey from game library'
+            git commit -m 'fix(journey): compact universal direct-route navigation'
             git push origin HEAD:feature/nintendo-companion-design-system
           fi
       - name: Set up JDK 17
