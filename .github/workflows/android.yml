@@ -82,7 +82,13 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          script: gradle connectedDebugAndroidTest --stacktrace
+          script: |
+            set +e
+            gradle connectedDebugAndroidTest --stacktrace
+            status=$?
+            mkdir -p app/build/outputs/androidTest-results/connected
+            adb logcat -d -v threadtime > app/build/outputs/androidTest-results/connected/emulator-logcat.txt || true
+            exit $status
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v7
