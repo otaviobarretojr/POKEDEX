@@ -8,6 +8,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -54,6 +55,7 @@ object ArtworkOfflineSync {
     private const val DOWNLOAD_CONCURRENCY=6
 
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.IO)
+    private val syncMutex=Mutex()
     private val running=AtomicBoolean(false)
     @Volatile var lastStatus=Status()
         private set
@@ -66,9 +68,14 @@ object ArtworkOfflineSync {
     suspend fun sync(
         context:Context,
         onProgress:suspend (Progress)->Unit = {}
-    ):Status=withContext(Dispatchers.IO){
-        if(!running.compareAndSet(false,true)) return@withContext lastStatus
+    ):Status {
+        val observedUpdate=lastStatus.updatedAt
+        syncMutex.lock()
         try{
+            if(lastStatus.updatedAt>observedUpdate && !lastStatus.running) return lastStatus
+            return withContext(Dispatchers.IO){
+                running.set(true)
+                try{
         val appContext=context.applicationContext
         onProgress(Progress(0f,"Verificando artworks"))
         val prefs=appContext.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
@@ -199,9 +206,13 @@ object ArtworkOfflineSync {
             )
         )
         result
+                }finally{
+                    running.set(false)
+                    lastStatus=lastStatus.copy(running=false)
+                }
+            }
         }finally{
-            running.set(false)
-            lastStatus=lastStatus.copy(running=false)
+            syncMutex.unlock()
         }
     }
 
