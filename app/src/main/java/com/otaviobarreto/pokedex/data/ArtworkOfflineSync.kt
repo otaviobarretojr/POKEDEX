@@ -26,6 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * changed official artwork is refreshed without waiting for a screen to open.
  */
 object ArtworkOfflineSync {
+    data class Progress(
+        val fraction:Float,
+        val label:String,
+        val done:Int=0,
+        val total:Int=0
+    )
+
     data class Status(
         val total:Int=0,
         val missing:Int=0,
@@ -51,19 +58,18 @@ object ArtworkOfflineSync {
         private set
 
     fun launch(context:Context){
-        if(!running.compareAndSet(false,true)) return
         val appContext=context.applicationContext
-        scope.launch{
-            try{sync(appContext)}
-            finally{
-                running.set(false)
-                lastStatus=lastStatus.copy(running=false)
-            }
-        }
+        scope.launch{sync(appContext)}
     }
 
-    suspend fun sync(context:Context):Status=withContext(Dispatchers.IO){
+    suspend fun sync(
+        context:Context,
+        onProgress:suspend (Progress)->Unit = {}
+    ):Status=withContext(Dispatchers.IO){
+        if(!running.compareAndSet(false,true)) return@withContext lastStatus
+        try{
         val appContext=context.applicationContext
+        onProgress(Progress(0f,"Verificando artworks"))
         val prefs=appContext.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
         val inventory=artworkInventory(appContext)
         val previousRevision=prefs.getString(KEY_REVISION,null)
@@ -93,6 +99,18 @@ object ArtworkOfflineSync {
             revision=remoteRevision ?: previousRevision
         )
         persistStatus(appContext,lastStatus)
+        onProgress(
+            Progress(
+                fraction=if(queue.isEmpty())1f else 0f,
+                label=when{
+                    queue.isEmpty()->"Artworks prontas"
+                    !online->"Offline · "+queue.size+" artworks pendentes"
+                    else->"Baixando artworks 0 / "+queue.size
+                },
+                done=0,
+                total=queue.size
+            )
+        )
 
         if(!online || queue.isEmpty()){
             val done=lastStatus.copy(running=false,updatedAt=System.currentTimeMillis())
@@ -104,6 +122,14 @@ object ArtworkOfflineSync {
             }
             lastStatus=done
             persistStatus(appContext,done)
+            onProgress(
+                Progress(
+                    1f,
+                    if(queue.isEmpty())"Artworks prontas" else "Offline · atualização de artworks adiada",
+                    queue.size,
+                    queue.size
+                )
+            )
             return@withContext done
         }
 
@@ -127,12 +153,23 @@ object ArtworkOfflineSync {
                                     cacheKeysFor(artworkUrl)
                                 )
                             }.isSuccess
-                            synchronized(lock){
+                            val processed=synchronized(lock){
                                 if(ok) downloaded++ else failed++
                                 lastStatus=lastStatus.copy(
                                     downloaded=downloaded,
                                     failed=failed,
                                     running=true
+                                )
+                                downloaded+failed
+                            }
+                            if(processed==queue.size || processed%8==0){
+                                onProgress(
+                                    Progress(
+                                        fraction=processed.toFloat()/queue.size.coerceAtLeast(1),
+                                        label="Baixando artworks "+processed+" / "+queue.size,
+                                        done=processed,
+                                        total=queue.size
+                                    )
                                 )
                             }
                         }
@@ -152,7 +189,19 @@ object ArtworkOfflineSync {
         val result=lastStatus.copy(running=false,updatedAt=System.currentTimeMillis())
         lastStatus=result
         persistStatus(appContext,result)
+        onProgress(
+            Progress(
+                1f,
+                if(failed==0)"Artworks prontas" else "Artworks atualizadas · "+failed+" pendentes",
+                queue.size,
+                queue.size
+            )
+        )
         result
+        }finally{
+            running.set(false)
+            lastStatus=lastStatus.copy(running=false)
+        }
     }
 
     fun status(context:Context):Status {
