@@ -43,8 +43,14 @@ fun JourneyScreen(
     onOpenEvolutionCenter:()->Unit={},
     onOpenSearch:()->Unit={}
 ){
-    var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
-    var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
+    val activeJourneyGame = remember(startInGames) {
+        if(startInGames) null else AppStatePreferences.activeGame
+            .takeIf { active -> AppGameCatalog.adventureGames.any { it.label == active } }
+    }
+    var selectedGame by rememberSaveable(startInGames) { mutableStateOf(activeJourneyGame) }
+    var view by rememberSaveable(startInGames) {
+        mutableStateOf(if(!startInGames && activeJourneyGame != null) JourneyView.ROUTE else JourneyView.GAMES)
+    }
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val routeListState=rememberLazyListState()
@@ -57,7 +63,7 @@ fun JourneyScreen(
     BackHandler(enabled=view!=JourneyView.GAMES){
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
-            JourneyView.ROUTE -> view=JourneyView.GAME_MENU
+            JourneyView.ROUTE -> if(startInGames) view=JourneyView.GAME_MENU
             JourneyView.DETAIL -> {
                 selectedStepId=null
                 view=detailReturnView
@@ -71,7 +77,7 @@ fun JourneyScreen(
             onSelect={
                 explicitGameSelectionRevision++
                 selectedGame=it
-                view=JourneyView.GAME_MENU
+                view=if(startInGames) JourneyView.GAME_MENU else JourneyView.ROUTE
             },
             onPokemonClick=onPokemonClick,
             onOpenBoxes=onOpenBoxes
@@ -86,7 +92,7 @@ fun JourneyScreen(
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
             game=game,
-            onBack={view=JourneyView.GAME_MENU},
+            onBack={if(startInGames) view=JourneyView.GAME_MENU},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},
             listState=routeListState,
             onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL},
