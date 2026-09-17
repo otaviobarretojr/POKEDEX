@@ -92,18 +92,32 @@ fun PokemonArtwork(
 ) {
     val context = LocalContext.current
     val tuning = remember(pokemonId) { ArtworkTuningCatalog.forPokemon(pokemonId) }
-    val localModel = remember(model,pokemonId) {
-        pokemonId?.let{OfflineLibraryManager.resolveAny(context,"pokemon-offline-$it")}
-            ?: (model as? String)?.let{OfflineLibraryManager.resolveAny(context,it)}
-            ?: model
+    // Explicit variant artwork (notably Shiny) must win over the generic
+    // offline species artwork. Otherwise pokemonId resolves the normal image
+    // and silently replaces the Shiny URL supplied by collection screens.
+    val explicitVariantArtwork = remember(model) {
+        (model as? String)?.let { url ->
+            "/shiny/" in url || "?shiny=" in url || "-shiny." in url
+        } == true
     }
-    val request = remember(localModel,pokemonId,cropTransparentBounds) {
+    val localModel = remember(model,pokemonId,explicitVariantArtwork) {
+        if (explicitVariantArtwork) {
+            model
+        } else {
+            pokemonId?.let{OfflineLibraryManager.resolveAny(context,"pokemon-offline-$it")}
+                ?: (model as? String)?.let{OfflineLibraryManager.resolveAny(context,it)}
+                ?: model
+        }
+    }
+    val request = remember(localModel,pokemonId,cropTransparentBounds,explicitVariantArtwork) {
         ImageRequest.Builder(context)
             .data(localModel)
             .apply {
-                pokemonId?.let { id ->
-                    diskCacheKey("pokemon-offline-$id")
-                    memoryCacheKey("pokemon-offline-$id")
+                if (!explicitVariantArtwork) {
+                    pokemonId?.let { id ->
+                        diskCacheKey("pokemon-offline-$id")
+                        memoryCacheKey("pokemon-offline-$id")
+                    }
                 }
             }
             .crossfade(false)
