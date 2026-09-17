@@ -1152,13 +1152,15 @@ private fun journeyVisualBackdrop(asset:JourneyVisualAsset)=when(asset.role){
 }
 @Composable
 private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
+    val model=rememberOfflineArtworkModel(asset.imageUrl)
     Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=journeyVisualBackdrop(asset),tonalElevation=PokedexDesignTokens.Elevation.Low){
-        AsyncImage(model=asset.imageUrl,contentDescription=asset.subject,contentScale=ContentScale.Crop,modifier=Modifier.fillMaxSize())
+        AsyncImage(model=model,contentDescription=asset.subject,contentScale=ContentScale.Crop,modifier=Modifier.fillMaxSize())
     }
 }
 @Composable
 private fun JourneyVisualHero(asset:JourneyVisualAsset){
     val backdrop=journeyVisualBackdrop(asset)
+    val model=rememberOfflineArtworkModel(asset.imageUrl)
     Card(
         Modifier.fillMaxWidth().height(190.dp),
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
@@ -1172,7 +1174,7 @@ private fun JourneyVisualHero(asset:JourneyVisualAsset){
                 tonalElevation=PokedexDesignTokens.Elevation.Low
             ){
                 AsyncImage(
-                    model=asset.imageUrl,
+                    model=model,
                     contentDescription=asset.subject,
                     contentScale=ContentScale.Crop,
                     modifier=Modifier.fillMaxSize()
