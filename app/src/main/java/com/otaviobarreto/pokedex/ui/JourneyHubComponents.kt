@@ -149,7 +149,7 @@ internal fun JourneyGamePicker(
                                         .clip(RoundedCornerShape(20.dp))
                                 ){
                                     AsyncImage(
-                                        model=GameCoverCatalog.heroFor(heroGameLabel) ?: GameCoverCatalog.primaryCoverFor(heroGameLabel),
+                                        model=rememberOfflineArtworkModel(GameCoverCatalog.heroFor(heroGameLabel) ?: GameCoverCatalog.primaryCoverFor(heroGameLabel)),
                                         contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(heroGameLabel),
                                         modifier=Modifier.fillMaxSize(),
                                         contentScale=ContentScale.Crop
@@ -478,10 +478,11 @@ private fun JourneyGameLibraryCard(game:AppGame,onClick:()->Unit){
         Column{
             Box(Modifier.fillMaxWidth().aspectRatio(1.95f).clip(RoundedCornerShape(topStart=26.dp,topEnd=26.dp)).background(MaterialTheme.colorScheme.surfaceVariant)){
                 val artwork=GameCoverCatalog.heroFor(game.label) ?: GameCoverCatalog.primaryCoverFor(game.label)
+                val artworkModel=rememberOfflineArtworkModel(artwork)
                 var artworkFailed by remember(game.label,artwork){mutableStateOf(false)}
                 if(artwork!=null && !artworkFailed){
                     AsyncImage(
-                        model=artwork,
+                        model=artworkModel,
                         contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(game.label),
                         modifier=Modifier.fillMaxSize(),
                         contentScale=ContentScale.Crop,
@@ -747,9 +748,10 @@ private fun JourneyHeroArtwork(
     if (ids.isEmpty()) return
     Box(modifier) {
         ids.take(2).forEachIndexed { index, id ->
-            AsyncImage(
+            PokemonArtwork(
                 model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png",
                 contentDescription = null,
+                pokemonId = id,
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(if (ids.size > 1) .72f else 1f)
@@ -769,10 +771,11 @@ private fun JourneyGameCover(gameLabel:String,modifier:Modifier=Modifier){
         if(gameLabel=="Scarlet / Violet") JourneyLocalArtworkCache.scarlet(context.applicationContext) else null
     }
     val cover=GameCoverCatalog.primaryCoverFor(gameLabel)
+    val coverModel=rememberOfflineArtworkModel(cover)
     Box(modifier.clip(RoundedCornerShape(PokedexDesignTokens.Journey.ArtworkRadius)).background(PokedexDesignTokens.Journey.ArtworkBackdrop),contentAlignment=Alignment.Center){
         when{
             userScarletArtwork!=null->AsyncImage(model=userScarletArtwork,contentDescription="Arte enviada pelo usuário para Scarlet / Violet",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
-            cover!=null->AsyncImage(model=cover,contentDescription="Arte oficial de $gameLabel",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+            cover!=null->AsyncImage(model=coverModel,contentDescription="Arte oficial de $gameLabel",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
             else->Icon(Icons.Default.SportsEsports,contentDescription=null,modifier=Modifier.size(36.dp))
         }
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Transparent,Color.Black.copy(alpha=.12f)))))
@@ -860,8 +863,9 @@ internal fun JourneyGameMenu(
             item(key="active_game_hero"){
                 Box(Modifier.fillMaxWidth().aspectRatio(1.18f).clip(RoundedCornerShape(30.dp))){
                     val hero=GameCoverCatalog.heroFor(game.label)
+                    val heroModel=rememberOfflineArtworkModel(hero)
                     if(hero!=null){
-                        AsyncImage(model=hero,contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(game.label),modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+                        AsyncImage(model=heroModel,contentDescription="Arte oficial de "+GameCoverCatalog.displayNameFor(game.label),modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
                     }else{
                         JourneyGameCover(gameLabel=game.label,modifier=Modifier.fillMaxSize())
                     }
@@ -1199,9 +1203,10 @@ private fun JourneyStarterSetupCard(
                             Modifier.fillMaxWidth().padding(vertical=9.dp,horizontal=6.dp),
                             horizontalAlignment=Alignment.CenterHorizontally
                         ){
-                            AsyncImage(
+                            PokemonArtwork(
                                 model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+id+".png",
                                 contentDescription=name,
+                                pokemonId=id,
                                 modifier=Modifier.size(68.dp),
                                 contentScale=ContentScale.Fit
                             )
@@ -1251,9 +1256,10 @@ private fun JourneyProgressTeamCard(
                         shape=RoundedCornerShape(12.dp),
                         color=MaterialTheme.colorScheme.surface.copy(alpha=.82f)
                     ){
-                        AsyncImage(
+                        PokemonArtwork(
                             model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+slot.pokemonId+".png",
                             contentDescription=PokemonRepository.byId(slot.pokemonId)?.name,
+                            pokemonId=slot.pokemonId,
                             modifier=Modifier.fillMaxWidth().aspectRatio(1f).padding(4.dp),
                             contentScale=ContentScale.Fit
                         )
