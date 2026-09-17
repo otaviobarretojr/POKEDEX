@@ -31,6 +31,7 @@ form_detail = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonFormDe
 campaign_guide = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CampaignTeamGuideScreen.kt")
 companion_home = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CompanionHomeScreen.kt")
 artwork_sync = read("app/src/main/java/com/otaviobarreto/pokedex/data/ArtworkOfflineSync.kt")
+bootstrap = read("app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt")
 boot = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt")
 manifest = read("app/src/main/AndroidManifest.xml")
 gradle = read("app/build.gradle.kts")
@@ -47,6 +48,17 @@ for marker in required_route_markers:
 
 if "PokedexRoutes.isSecondary(currentRoute)" not in main:
     errors.append("MainActivity must use centralized secondary-route detection")
+for route_marker in [
+    'const val SEARCH = "search"',
+    'const val EVOLUTION_CENTER = "evolutionCenter"',
+    'const val GAME_DEX = "gameDex"',
+]:
+    if route_marker not in routes:
+        errors.append(f"stable secondary navigation missing: {route_marker}")
+if "rememberSaveable{mutableStateOf(false)}" not in main:
+    errors.append("boot completion must survive Activity recreation")
+if "if (isFinishing) HomeAudioManager.release()" not in main:
+    errors.append("audio must not be torn down during configuration recreation")
 
 for marker in [
     "PersistentApiCache.initialize(this)",
@@ -97,7 +109,8 @@ supported_version = (
     ('versionCode = 21000' in gradle and 'versionName = "20.10.0"' in gradle) or
     ('versionCode = 21100' in gradle and 'versionName = "20.11.0"' in gradle) or
     ('versionCode = 21200' in gradle and 'versionName = "20.12.0"' in gradle) or
-    ('versionCode = 21201' in gradle and 'versionName = "20.12.1"' in gradle)
+    ('versionCode = 21201' in gradle and 'versionName = "20.12.1"' in gradle) or
+    ('versionCode = 21300' in gradle and 'versionName = "20.13.0"' in gradle)
 )
 if not supported_version:
     errors.append("supported version contract changed unexpectedly")
@@ -143,6 +156,14 @@ if '"$RAW_ART/shiny/$id.png"' not in artwork_sync:
     errors.append("startup artwork inventory must include official Shiny artwork")
 if "installSupplementalArtwork" not in read("app/src/main/java/com/otaviobarreto/pokedex/data/OfflineLibraryManager.kt"):
     errors.append("durable supplemental artwork storage missing")
+
+for marker in [
+    "auditCachedLibrary(context,cachedSignature)",
+    "OfflineLibraryManager.auditGeneralDetailed(context,generalVersion)",
+    "supportedGameKeys",
+]:
+    if marker not in bootstrap:
+        errors.append(f"stable bootstrap guard missing: {marker}")
 
 # Hardening budget: prevent the largest screens from growing further before extraction.
 budgets = {
