@@ -24,6 +24,14 @@ offline = read("app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePack
 cache = read("app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt")
 collection = read("app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt")
 variants = read("app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt")
+pokedex_ui = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexCatalogScreen.kt")
+collection_ui = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt")
+journey_hub = read("app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyHubComponents.kt")
+form_detail = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonFormDetailScreen.kt")
+campaign_guide = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CampaignTeamGuideScreen.kt")
+companion_home = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CompanionHomeScreen.kt")
+artwork_sync = read("app/src/main/java/com/otaviobarreto/pokedex/data/ArtworkOfflineSync.kt")
+boot = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt")
 manifest = read("app/src/main/AndroidManifest.xml")
 gradle = read("app/build.gradle.kts")
 
@@ -101,6 +109,40 @@ for path, content in [
 ]:
     if "TODO" in content or "FIXME" in content:
         errors.append(f"unfinished marker found in {path}")
+
+# Artwork offline contract: every core visual surface must resolve artwork
+# through PokemonArtwork or the durable offline model, never a raw remote AsyncImage.
+remote_async = re.compile(r'AsyncImage\s*\(\s*(?:model\s*=\s*)?["\']https?://', re.S)
+for name, source in [
+    ("PokedexCatalogScreen.kt", pokedex_ui),
+    ("CollectionScreen.kt", collection_ui),
+    ("BoxesV2Screen.kt", boxes),
+    ("JourneyScreen.kt", journey),
+    ("JourneyHubComponents.kt", journey_hub),
+    ("PokemonDetailV2Screen.kt", detail),
+    ("PokemonFormDetailScreen.kt", form_detail),
+    ("CampaignTeamGuideScreen.kt", campaign_guide),
+    ("CompanionHomeScreen.kt", companion_home),
+]:
+    if remote_async.search(source):
+        errors.append(f"{name} contains raw remote AsyncImage outside offline artwork resolver")
+
+for marker in [
+    "addAll(officialArtworkUrls())",
+    "addAll(JourneyTypeIconCatalog.allUrls())",
+    "addAll(generalManifestArtworkUrls(context))",
+    "VariantCollectionStore.ownedVariants.mapTo(this){it.artworkUrl}",
+    "GameCoverCatalog.coversFor(game.label)",
+]:
+    if marker not in artwork_sync:
+        errors.append(f"startup artwork inventory missing: {marker}")
+
+if "ArtworkOfflineSync.sync(context)" not in boot:
+    errors.append("boot must visibly audit/sync artwork before releasing Home")
+if '"$RAW_ART/shiny/$id.png"' not in artwork_sync:
+    errors.append("startup artwork inventory must include official Shiny artwork")
+if "installSupplementalArtwork" not in read("app/src/main/java/com/otaviobarreto/pokedex/data/OfflineLibraryManager.kt"):
+    errors.append("durable supplemental artwork storage missing")
 
 # Hardening budget: prevent the largest screens from growing further before extraction.
 budgets = {
