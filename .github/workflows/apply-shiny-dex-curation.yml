@@ -1,0 +1,111 @@
+name: Apply Shiny Dex curation
+
+on:
+  push:
+    branches: [ "feature/nintendo-companion-design-system" ]
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/nintendo-companion-design-system
+      - name: Curate Shiny Dex behavior
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt')
+          text=p.read_text()
+
+          replacements=[
+          (
+          'fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit){',
+          'fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit,onOpenFormDetail:(Int,String,Boolean)->Unit){'
+          ),
+          (
+          '    val variants=VariantCollectionStore.ownedVariants\n    val plan=',
+          '    val variants=VariantCollectionStore.ownedVariants\n    val shinyIds=remember(variants){variants.asSequence().filter{it.shiny}.map{it.speciesId}.toSet()}\n    val plan='
+          ),
+          (
+          '            area==CollectionArea.HOME -> CollectionHome(plan,insights,advisorReady,{areaName=it.name},onOpenBoxes,onPokemonClick)',
+          '            area==CollectionArea.HOME -> CollectionHome(plan,insights,advisorReady,shinyIds,{areaName=it.name},onOpenBoxes,onPokemonClick)'
+          ),
+          (
+          '                area==CollectionArea.SHINY,\n                {areaName=CollectionArea.HOME.name},',
+          '                area==CollectionArea.SHINY,\n                shinyIds,\n                {areaName=CollectionArea.HOME.name},'
+          ),
+          (
+          '            else -> PokemonAlbumGrid(generation!!,area==CollectionArea.SHINY,captured,variants,{generation=null},onPokemonClick)',
+          '            else -> PokemonAlbumGrid(generation!!,area==CollectionArea.SHINY,captured,variants,{generation=null},onPokemonClick,onOpenFormDetail)'
+          ),
+          (
+          '    advisorReady:Boolean,\n    onOpenArea:(CollectionArea)->Unit,',
+          '    advisorReady:Boolean,\n    shinyIds:Set<Int>,\n    onOpenArea:(CollectionArea)->Unit,'
+          ),
+          (
+          '        item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome){onOpenArea(CollectionArea.SHINY)}}',
+          '        item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome,ownedIds=shinyIds){onOpenArea(CollectionArea.SHINY)}}'
+          ),
+          (
+          '    icon:androidx.compose.ui.graphics.vector.ImageVector,onClick:()->Unit\n){\n    Surface(',
+          '    icon:androidx.compose.ui.graphics.vector.ImageVector,ownedIds:Set<Int> = emptySet(),onClick:()->Unit\n){\n    val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}\n    Surface('
+          ),
+          (
+          '                    PokemonArtwork(\n                        model=artwork(id,shiny),\n                        contentDescription=null,\n                        pokemonId=id,\n                        modifier=Modifier.size(76.dp)\n                    )',
+          '                    val owned=!shiny || id in ownedIds\n                    PokemonArtwork(\n                        model=artwork(id,shiny),\n                        contentDescription=if(shiny)"Shiny" else null,\n                        pokemonId=id,\n                        modifier=Modifier.size(76.dp).alpha(if(owned)1f else .18f),\n                        colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale)\n                    )'
+          ),
+          (
+          'private fun GenerationShelf(\n    title:String,subtitle:String,plan:LivingDexPlan,shiny:Boolean,onBack:()->Unit,onGeneration:(Int)->Unit\n){\n    LazyColumn(',
+          'private fun GenerationShelf(\n    title:String,subtitle:String,plan:LivingDexPlan,shiny:Boolean,shinyIds:Set<Int>,onBack:()->Unit,onGeneration:(Int)->Unit\n){\n    val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}\n    LazyColumn('
+          ),
+          (
+          '                            representatives.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(50.dp))}',
+          '                            representatives.forEach{id->\n                                val owned=!shiny || id in shinyIds\n                                PokemonArtwork(model=artwork(id,shiny),contentDescription=if(shiny)"Shiny" else null,pokemonId=id,modifier=Modifier.size(50.dp).alpha(if(owned)1f else .18f),colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale))\n                            }'
+          ),
+          (
+          '    onBack:()->Unit,onPokemonClick:(Int)->Unit\n){',
+          '    onBack:()->Unit,onPokemonClick:(Int)->Unit,onOpenFormDetail:(Int,String,Boolean)->Unit\n){'
+          ),
+          (
+          '                PokemonAlbumTile(species.id,species.displayName,owned,shiny){onPokemonClick(species.id)}',
+          '                PokemonAlbumTile(species.id,species.displayName,owned,shiny){if(shiny)onOpenFormDetail(species.id,species.displayName+" · Shiny",true) else onPokemonClick(species.id)}'
+          ),
+          (
+          '                contentDescription=name,',
+          '                contentDescription=if(shiny)name+" Shiny" else name,'
+          ),
+          ]
+          for old,new in replacements:
+              if old not in text:
+                  raise SystemExit('Collection replacement not found: '+old[:90])
+              text=text.replace(old,new,1)
+          p.write_text(text)
+
+          p=Path('app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt')
+          text=p.read_text()
+          old='composable(PokedexRoutes.COLLECTION){CollectionScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes)}'
+          new='composable(PokedexRoutes.COLLECTION){CollectionScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes,onOpenFormDetail=::openFormDetail)}'
+          if old not in text:
+              raise SystemExit('MainActivity Collection route not found')
+          p.write_text(text.replace(old,new,1))
+          PY
+      - name: Validate patch markers
+        run: |
+          grep -q 'ownedIds=shinyIds' app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt
+          grep -q 'onOpenFormDetail(species.id,species.displayName+" · Shiny",true)' app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt
+          grep -q 'colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale)' app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt
+          grep -q 'onOpenFormDetail=::openFormDetail' app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt
+          python3 scripts/verify_repo.py
+      - name: Persist Shiny Dex curation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt
+          git diff --cached --check
+          git commit -m 'feat(collection): curate Shiny Dex artwork and detail flow'
+          git push origin HEAD:feature/nintendo-companion-design-system
