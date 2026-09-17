@@ -279,7 +279,7 @@ private fun FormsAlbum(variants:List<OwnedPokemonVariant>,onBack:()->Unit,onPoke
             item{
                 CompanionEmptyState(
                     title="Nenhuma forma alternativa registrada",
-                    supporting="Registre formas regionais e especiais para montar este álbum."
+                    message="Registre formas regionais e especiais para montar este álbum."
                 )
             }
         }else{
