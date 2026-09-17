@@ -364,7 +364,7 @@ private fun JourneyRoute(
             }
         }
         if(currentUi!=null){
-            item(key="journey_context_tools",contentType="tools"){
+            item(key="journey_next_objective",contentType="next_objective"){
                 Column(Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)){
                     nextAfterCurrent?.let{next->
                         Surface(
