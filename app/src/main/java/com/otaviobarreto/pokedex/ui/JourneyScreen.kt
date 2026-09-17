@@ -43,14 +43,9 @@ fun JourneyScreen(
     onOpenEvolutionCenter:()->Unit={},
     onOpenSearch:()->Unit={}
 ){
-    val activeJourneyGame = remember(startInGames) {
-        if(startInGames) null else AppStatePreferences.activeGame
-            .takeIf { active -> AppGameCatalog.adventureGames.any { it.label == active } }
-    }
-    var selectedGame by rememberSaveable(startInGames) { mutableStateOf(activeJourneyGame) }
-    var view by rememberSaveable(startInGames) {
-        mutableStateOf(if(!startInGames && activeJourneyGame != null) JourneyView.ROUTE else JourneyView.GAMES)
-    }
+    val activeJourneyGame=remember(startInGames){if(startInGames)null else AppStatePreferences.activeGame.takeIf{active->AppGameCatalog.adventureGames.any{it.label==active}}}
+    var selectedGame by rememberSaveable(startInGames){mutableStateOf(activeJourneyGame)}
+    var view by rememberSaveable(startInGames){mutableStateOf(if(!startInGames&&activeJourneyGame!=null)JourneyView.ROUTE else JourneyView.GAMES)}
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val routeListState=rememberLazyListState()
