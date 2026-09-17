@@ -22,23 +22,35 @@ object ContentBootstrapManager {
             onProgress(Progress(.02f,"Verificando biblioteca POKEDEX"))
             val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
             val cachedSignature=prefs.getString(KEY_READY,null)
-            if(!cachedSignature.isNullOrBlank()){
-                onProgress(Progress(1f,"Biblioteca local pronta"))
-                return@runCatching Result(true)
+            val packages=try {
+                RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}
+            } catch(e:Exception) {
+                if(!cachedSignature.isNullOrBlank()){
+                    onProgress(Progress(1f,"Biblioteca local pronta · atualização será verificada depois"))
+                    return@runCatching Result(true)
+                }
+                throw e
             }
-            val packages=RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}
             check(packages.isNotEmpty()){"Servidor de conteúdo indisponível"}
             val general=packages.firstOrNull{it.packageKey=="general"} ?: error("Biblioteca principal indisponível")
             val gamePackages=packages.filter{it.packageKey!="general"}.distinctBy{it.packageKey}
             val signature=packages.sortedBy{it.packageKey}.joinToString("|"){p->p.packageKey+":"+p.version+":"+p.sha256}
+            val previousSignatures=cachedSignature?.split("|")
+                ?.mapNotNull{entry->
+                    val parts=entry.split(':',limit=3)
+                    if(parts.size==3) parts[0] to (parts[1]+":"+parts[2]) else null
+                }?.toMap().orEmpty()
+            fun packageSignature(p:RemoteOfflinePackageCatalog.RemotePackage)=p.version.toString()+":"+(p.sha256 ?: "")
+            fun packageChanged(p:RemoteOfflinePackageCatalog.RemotePackage)=
+                cachedSignature!=null && previousSignatures[p.packageKey]!=packageSignature(p)
             val generalIds=OfflineGamePackManager.generalManifestIds()
-            val generalReady=OfflineLibraryManager.auditGeneral(context,general.version,generalIds)
+            val generalReady=!packageChanged(general) && OfflineLibraryManager.auditGeneral(context,general.version,generalIds)
             fun localGameFor(p:RemoteOfflinePackageCatalog.RemotePackage)=
                 AppGameCatalog.games.firstOrNull{g->RemoteOfflinePackageCatalog.packageKeyForGame(g.label)==p.packageKey}
             fun gameReady(p:RemoteOfflinePackageCatalog.RemotePackage):Boolean {
                 val game=localGameFor(p) ?: return false
                 val status=OfflineGamePackManager.status(game.label)
-                if(!status.downloaded || OfflineGamePackManager.gameServerVersion(game.label)!=p.version) return false
+                if(!status.downloaded || OfflineGamePackManager.gameServerVersion(game.label)!=p.version || packageChanged(p)) return false
                 val resources=OfflineGamePackManager.gameResourceUrls(game.label)
                 val visuals=OfflineGamePackManager.gameVisualUrls(game.label)
                 return OfflineLibraryManager.auditGame(context,p.packageKey,resources,visuals)

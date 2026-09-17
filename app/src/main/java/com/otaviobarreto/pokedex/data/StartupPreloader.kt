@@ -42,6 +42,9 @@ object StartupPreloader {
         val nationalSnapshot = PokedexDataStore.cachedNationalDex().orEmpty()
         val nationalByName = nationalSnapshot.associateBy { it.name.lowercase() }
 
+        progress(.14f, "Preparando sua coleção")
+        runCatching { CollectionAdvisor.warmAllGames() }
+
         val activeGame = AppStatePreferences.activeGame
         val game = AppGameCatalog.games.firstOrNull { it.label == activeGame }
         val journeySteps = JourneyCatalog.steps(activeGame)
@@ -153,23 +156,34 @@ object StartupPreloader {
         val activeJourneyArtworkUrls = (
             activeCoverUrls + activeGameHeroUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls
         ).distinct()
+        val ownedShinyIds = VariantCollectionStore.ownedVariants
+            .asSequence().filter { it.shiny }.map { it.speciesId }.distinct().take(12).toList()
+        val collectionArtworkUrls = buildList {
+            listOf(1,4,7,26,157,724).forEach { id ->
+                add("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+id+".png")
+            }
+            (listOf(25,94,448)+ownedShinyIds).distinct().forEach { id ->
+                add("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+id+".png")
+            }
+        }
+        val criticalArtworkUrls=(activeJourneyArtworkUrls+collectionArtworkUrls).distinct()
 
         progress(.84f, "Aquecendo sua Jornada")
         val artworkSemaphore = Semaphore(4)
         supervisorScope {
-            activeJourneyArtworkUrls.mapIndexed { index, artwork ->
+            criticalArtworkUrls.mapIndexed { index, artwork ->
                 async {
                     artworkSemaphore.withPermit {
                         runCatching {
                             context.imageLoader.execute(
                                 ImageRequest.Builder(context)
-                                    .data(artwork)
+                                    .data(OfflineLibraryManager.resolveAny(context,artwork) ?: artwork)
                                     .size(320)
                                     .build()
                             )
                         }
                     }
-                    val local = .84f + ((index + 1f) / activeJourneyArtworkUrls.size.coerceAtLeast(1)) * .07f
+                    val local = .84f + ((index + 1f) / criticalArtworkUrls.size.coerceAtLeast(1)) * .07f
                     progress(local, "Aquecendo sua Jornada")
                 }
             }.awaitAll()

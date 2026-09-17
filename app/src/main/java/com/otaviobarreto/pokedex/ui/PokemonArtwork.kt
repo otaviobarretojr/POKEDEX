@@ -102,7 +102,7 @@ fun PokemonArtwork(
     }
     val localModel = remember(model,pokemonId,explicitVariantArtwork) {
         if (explicitVariantArtwork) {
-            model
+            (model as? String)?.let { OfflineLibraryManager.resolveAny(context,it) } ?: model
         } else {
             pokemonId?.let{OfflineLibraryManager.resolveAny(context,"pokemon-offline-$it")}
                 ?: (model as? String)?.let{OfflineLibraryManager.resolveAny(context,it)}
