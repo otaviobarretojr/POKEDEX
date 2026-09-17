@@ -232,14 +232,14 @@ private fun JourneyRoute(
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer),
                 modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
             ){
-                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Md)){
+                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Sm)){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Column(Modifier.weight(1f)){
-                            Text("Progresso da campanha",style=MaterialTheme.typography.labelMedium)
+                            Text("Progresso da campanha",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onPrimaryContainer)
                             Text(
                                 completedCount.toString()+" / "+steps.size+" objetivos",
                                 fontWeight=FontWeight.Black,
-                                style=MaterialTheme.typography.titleLarge
+                                style=MaterialTheme.typography.titleMedium
                             )
                         }
                         Surface(
@@ -248,18 +248,19 @@ private fun JourneyRoute(
                         ){
                             Text(
                                 (progress*100).toInt().toString()+"%",
-                                modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Md,vertical=PokedexDesignTokens.Spacing.Sm),
-                                fontWeight=FontWeight.Bold
+                                modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Sm,vertical=PokedexDesignTokens.Spacing.Xs),
+                                fontWeight=FontWeight.Bold,
+                                style=MaterialTheme.typography.labelLarge
                             )
                         }
                     }
                     LinearProgressIndicator(
                         progress={progress},
-                        modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Sm).height(6.dp)
+                        modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Xs).height(4.dp)
                     )
                     Row(
-                        Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Sm).horizontalScroll(rememberScrollState()),
-                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+                        Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Xs).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Xs)
                     ){
                         when(game.label){
                             "Pokémon Legends: Z-A" -> {
@@ -531,10 +532,10 @@ private fun JourneyCountPill(icon:ImageVector,label:String){
         color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)
     ){
         Row(
-            Modifier.padding(horizontal=8.dp,vertical=6.dp),
+            Modifier.padding(horizontal=7.dp,vertical=4.dp),
             verticalAlignment=Alignment.CenterVertically
         ){
-            Icon(icon,null,Modifier.size(15.dp))
+            Icon(icon,null,Modifier.size(13.dp))
             Spacer(Modifier.width(4.dp))
             Text(label,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold)
         }
@@ -622,7 +623,7 @@ private fun JourneyStepCard(
             colors=CardDefaults.cardColors(
                 containerColor=when{
                     done->MaterialTheme.colorScheme.secondaryContainer
-                    isNext->MaterialTheme.colorScheme.primaryContainer.copy(alpha=.58f)
+                    isNext->MaterialTheme.colorScheme.surfaceContainerHigh
                     else->MaterialTheme.colorScheme.surfaceContainer
                 }
             )
@@ -630,7 +631,7 @@ private fun JourneyStepCard(
             Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(verticalAlignment=Alignment.CenterVertically){
                     visual?.let{
-                        JourneyVisualThumb(it,Modifier.size(if(isNext)82.dp else 62.dp))
+                        JourneyVisualThumb(it,Modifier.size(if(isNext)96.dp else 62.dp))
                         Spacer(Modifier.width(10.dp))
                     }
                     Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=kindColor){
@@ -662,11 +663,13 @@ private fun JourneyStepCard(
                     fontWeight=FontWeight.Black,
                     modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
                 )
-                Text(
-                    step.subtitle,
-                    style=MaterialTheme.typography.bodyMedium,
-                    color=MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if(!displayTitle.contains(step.subtitle,ignoreCase=true)){
+                    Text(
+                        step.subtitle,
+                        style=MaterialTheme.typography.bodyMedium,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Row(
                     Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md),
                     horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
@@ -696,7 +699,10 @@ private fun JourneyStepCard(
                         }
                     }
                 }
-                detail?.opponents?.takeIf{it.isNotEmpty() && !isNext}?.let{members->
+                val resolvedOpponents=detail?.opponents.orEmpty().mapIndexedNotNull{index,member->
+                    opponentPokemonIds.getOrNull(index)?.let{pokemonId->member to pokemonId}
+                }
+                if(resolvedOpponents.isNotEmpty()){
                     HorizontalDivider(Modifier.padding(top=PokedexDesignTokens.Spacing.Md,bottom=PokedexDesignTokens.Spacing.Sm))
                     Text(
                         if(step.kind==JourneyChallengeKind.TITAN)"ALVO" else "EQUIPE",
@@ -709,7 +715,7 @@ private fun JourneyStepCard(
                         horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
                         items(
-                            items=members.take(6).mapIndexed { index, member -> member to opponentPokemonIds.getOrNull(index) },
+                            items=resolvedOpponents.take(6),
                             key={it.first.name+"_"+it.first.level},
                             contentType={"opponent"}
                         ){(member,pokemonId)->
@@ -779,7 +785,7 @@ private fun JourneyInfoChip(
 private fun JourneyOpponentMiniCard(
     name:String,
     level:String,
-    pokemonId:Int?
+    pokemonId:Int
 ){
     Surface(
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
@@ -796,18 +802,12 @@ private fun JourneyOpponentMiniCard(
                 color=MaterialTheme.colorScheme.surfaceContainer,
                 modifier=Modifier.size(58.dp)
             ){
-                if(pokemonId!=null){
-                    PokemonArtwork(
-                        model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
-                        contentDescription=name,
-                        modifier=Modifier.fillMaxSize().padding(4.dp),
-                        pokemonId=pokemonId
-                    )
-                }else{
-                    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
-                        Icon(Icons.Default.CatchingPokemon,null,Modifier.size(24.dp))
-                    }
-                }
+                PokemonArtwork(
+                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
+                    contentDescription=name,
+                    modifier=Modifier.fillMaxSize().padding(4.dp),
+                    pokemonId=pokemonId
+                )
             }
             Text(
                 name,
