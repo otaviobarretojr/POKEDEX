@@ -172,7 +172,14 @@ def build_pokemon(species_id: int) -> dict[str, Any]:
         resource_urls.add(evo_url)
 
     default_art_url = f"{RAW_ART}/{species_id}.png"
+    default_shiny_art_url = f"{RAW_ART}/shiny/{species_id}.png"
     images = [image_entry(f"pokemon-offline-{species_id}", default_art_url)]
+    shiny_entry = optional_image_entry(
+        f"pokemon-shiny-offline-{species_id}",
+        default_shiny_art_url,
+    )
+    if shiny_entry:
+        images.append(shiny_entry)
 
     varieties = species.get("varieties") or []
     for variety in varieties:
