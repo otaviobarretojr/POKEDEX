@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 
@@ -15,9 +16,19 @@ object ContentBootstrapManager {
     private const val PREFS="content_bootstrap_v2"
     private const val KEY_READY="ready_signature"
     private const val LEGACY_CLEANED="legacy_cleaned"
+    private val bootstrapMutex=Mutex()
+    @Volatile private var lastCompletedAt=0L
+    @Volatile private var lastResult:Result?=null
 
-    suspend fun ensureReady(context:Context,onProgress:(Progress)->Unit):Result=withContext(Dispatchers.IO){
-        runCatching{
+    suspend fun ensureReady(context:Context,onProgress:(Progress)->Unit):Result {
+        val observedCompletion=lastCompletedAt
+        bootstrapMutex.lock()
+        try{
+            if(lastCompletedAt>observedCompletion){
+                return lastResult ?: Result(false,"Bootstrap concorrente sem resultado")
+            }
+            val result=withContext(Dispatchers.IO){
+                runCatching{
             cleanupLegacyOnce(context)
             onProgress(Progress(.02f,"Verificando biblioteca POKEDEX"))
             val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
@@ -121,7 +132,14 @@ object ContentBootstrapManager {
             context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putString(KEY_READY,signature).commit()
             onProgress(Progress(1f,"POKEDEX pronto",total,total))
             Result(true)
-        }.getOrElse{e->Result(false,e.message ?: e.javaClass.simpleName)}
+                }.getOrElse{e->Result(false,e.message ?: e.javaClass.simpleName)}
+            }
+            lastResult=result
+            lastCompletedAt=System.currentTimeMillis()
+            return result
+        }finally{
+            bootstrapMutex.unlock()
+        }
     }
 
     private fun auditCachedLibrary(context:Context,signature:String):Boolean {
