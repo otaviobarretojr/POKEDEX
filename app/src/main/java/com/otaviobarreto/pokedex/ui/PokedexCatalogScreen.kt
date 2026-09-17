@@ -64,6 +64,7 @@ private fun ArtworkWithFallback(
 ){
     var current by remember(model,fallbackModel){mutableStateOf(model)}
     var failed by remember(model,fallbackModel){mutableStateOf(false)}
+    val resolvedCurrent=rememberOfflineArtworkModel(current)
     Surface(
         modifier=modifier,
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
@@ -72,7 +73,7 @@ private fun ArtworkWithFallback(
         Box(Modifier.fillMaxSize().padding(6.dp),contentAlignment=Alignment.Center){
         if(!failed){
             AsyncImage(
-                model=current,
+                model=resolvedCurrent,
                 contentDescription=contentDescription,
                 modifier=Modifier.fillMaxSize(),
                 contentScale=ContentScale.Fit,
