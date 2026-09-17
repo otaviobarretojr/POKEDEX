@@ -244,7 +244,6 @@ object StartupPreloader {
 
     fun launchWarmInBackground(context: Context) {
         val appContext=context.applicationContext
-        ArtworkOfflineSync.launch(appContext)
         backgroundScope.launch {
             runCatching { warm(appContext) { } }
             launchExtendedWarm(appContext)
