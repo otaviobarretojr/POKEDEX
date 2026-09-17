@@ -252,7 +252,7 @@ private fun PokedexFormsDialog(
                     Column(Modifier.weight(1f)){
                         Text("POKÉMON",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Black)
                         Text(base?.name ?: "Pokémon",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-                        Text(previews.size.toString()+" variantes disponíveis",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
+                        Text("Formas e variantes · "+previews.size.toString()+" disponíveis",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
                     }
                     IconButton(onDismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
