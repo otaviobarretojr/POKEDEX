@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: feature/nintendo-companion-design-system
+          fetch-depth: 0
       - name: Apply direct Journey route patch
         run: |
           python3 - <<'PY'
@@ -24,18 +27,23 @@ jobs:
           s = p.read_text()
           replacements = [
               (
+                  '''    var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }\n    var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }''',
+                  '''    val activeJourneyGame = remember(startInGames) {\n        if(startInGames) null else AppStatePreferences.activeGame\n            .takeIf { active -> AppGameCatalog.adventureGames.any { it.label == active } }\n    }\n    var selectedGame by rememberSaveable(startInGames) { mutableStateOf(activeJourneyGame) }\n    var view by rememberSaveable(startInGames) {\n        mutableStateOf(if(!startInGames && activeJourneyGame != null) JourneyView.ROUTE else JourneyView.GAMES)\n    }''',
+                  'initial active journey'
+              ),
+              (
                   '''                selectedGame=it\n                view=JourneyView.GAME_MENU''',
                   '''                selectedGame=it\n                view=if(startInGames) JourneyView.GAME_MENU else JourneyView.ROUTE''',
                   'selection'
               ),
               (
                   '''            JourneyView.ROUTE -> view=JourneyView.GAME_MENU''',
-                  '''            JourneyView.ROUTE -> view=if(startInGames) JourneyView.GAME_MENU else JourneyView.GAMES''',
+                  '''            JourneyView.ROUTE -> if(startInGames) view=JourneyView.GAME_MENU''',
                   'system back'
               ),
               (
                   '''            onBack={view=JourneyView.GAME_MENU},\n            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},''',
-                  '''            onBack={view=if(startInGames) JourneyView.GAME_MENU else JourneyView.GAMES},\n            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},''',
+                  '''            onBack={if(startInGames) view=JourneyView.GAME_MENU},\n            onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},''',
                   'route back'
               ),
           ]
@@ -59,7 +67,7 @@ jobs:
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt
             git diff --cached --check
-            git commit -m 'fix(journey): bypass duplicate game menu for active journey'
+            git commit -m 'fix(journey): separate active journey from game library'
             git push origin HEAD:feature/nintendo-companion-design-system
           fi
       - name: Set up JDK 17
