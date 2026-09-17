@@ -31,6 +31,13 @@ checks={
     "current target SDK": 'targetSdk = 35' in gradle,
     "stable signing config": 'stableDebug' in gradle and 'pokedex-release.jks' in gradle,
     "CI restores stable signing key": 'Restore stable signing key' in workflow,
+    "CI uses current Node 24 actions": all(marker in workflow for marker in (
+        "actions/checkout@v7",
+        "actions/setup-java@v6",
+        "gradle/actions/setup-gradle@v6",
+        "actions/upload-artifact@v7",
+    )),
+    "CI uses read-only repository permission": "contents: read" in workflow,
     "instrumentation tests compile in CI": 'assembleDebugAndroidTest' in workflow,
     "Android backup enabled": 'android:allowBackup="true"' in manifest,
     "Android backup rules wired": 'android:fullBackupContent="@xml/backup_rules"' in manifest and 'android:dataExtractionRules="@xml/data_extraction_rules"' in manifest,
