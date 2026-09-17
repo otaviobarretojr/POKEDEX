@@ -131,6 +131,11 @@ fun PokedexCatalogScreen(
                 )
             }
         )
+        CompanionSectionHeader(
+            title="Explorar Pokédex",
+            supporting=if(query.isBlank()) "Encontre por nome, número ou tipo." else filtered.size.toString()+" resultado(s)",
+            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg)
+        )
         OutlinedTextField(
             value=query,
             onValueChange={value:String->query=value},
@@ -138,37 +143,17 @@ fun PokedexCatalogScreen(
             singleLine=true,
             shape=RoundedCornerShape(PokedexDesignTokens.Radius.Pill),
             leadingIcon={Icon(Icons.Default.Search,null)},
-            trailingIcon={
-                if(query.isNotEmpty()){
-                    IconButton(onClick={query=""}){
-                        Icon(Icons.Default.Close,contentDescription="Limpar busca")
-                    }
-                }
-            },
+            trailingIcon={if(query.isNotEmpty()){IconButton(onClick={query=""}){Icon(Icons.Default.Close,contentDescription="Limpar busca")}}},
             placeholder={Text("Nome, número ou tipo")}
         )
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+        LazyRow(
+            modifier=Modifier.fillMaxWidth(),
+            contentPadding=PaddingValues(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
             horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
         ){
-            AssistChip(
-                onClick=onOpenSearch,
-                label={Text("Busca universal")},
-                leadingIcon={Icon(Icons.Default.Search,null,Modifier.size(18.dp))}
-            )
-            AssistChip(
-                onClick=onOpenEvolutionCenter,
-                label={Text("Evoluções")},
-                leadingIcon={Icon(Icons.Default.AutoAwesome,null,Modifier.size(18.dp))}
-            )
-        }
-        TextButton(
-            onClick=onOpenGameDex,
-            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg)
-        ){
-            Icon(Icons.Default.Map,null,Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Pokédex do jogo · "+AppStatePreferences.activeGame)
+            item{ContextFilter(label="Busca universal",selected=false,onClick=onOpenSearch)}
+            item{ContextFilter(label="Evoluções",selected=false,onClick=onOpenEvolutionCenter)}
+            item{ContextFilter(label="Dex · "+AppStatePreferences.activeGame,selected=false,onClick=onOpenGameDex)}
         }
         LazyVerticalGrid(
             columns=GridCells.Adaptive(112.dp),
