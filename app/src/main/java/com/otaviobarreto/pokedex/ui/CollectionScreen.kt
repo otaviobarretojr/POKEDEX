@@ -171,7 +171,15 @@ private fun GenerationShelf(
         contentPadding=PaddingValues(top=PokedexDesignTokens.Spacing.Lg,bottom=PokedexDesignTokens.Spacing.Xxl),
         verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Md)
     ){
-        item{CollectionPageHeader(title,subtitle,onBack)}
+        item{
+            CollectionPageHeader(title,subtitle,onBack)
+            CompanionProgress(
+                current=plan.byGeneration.sumOf{if(shiny)it.shiny else it.captured},
+                total=plan.byGeneration.sumOf{it.total},
+                label=if(shiny)"Shiny Dex" else "Living Dex",
+                modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
+            )
+        }
         items(plan.byGeneration,key={it.generation}){gen->
             val value=if(shiny)gen.shiny else gen.captured
             val ratio=if(gen.total==0)0f else value.toFloat()/gen.total
@@ -193,7 +201,12 @@ private fun GenerationShelf(
                             representatives.forEach{id->PokemonArtwork(model=artwork(id,shiny),contentDescription=null,pokemonId=id,modifier=Modifier.size(50.dp))}
                         }
                     }
-                    LinearProgressIndicator(progress={ratio},modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md))
+                    CompanionProgress(
+                        current=value,
+                        total=gen.total,
+                        label="Progresso",
+                        modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
+                    )
                 }
             }
         }
@@ -263,7 +276,12 @@ private fun FormsAlbum(variants:List<OwnedPokemonVariant>,onBack:()->Unit,onPoke
     ){
         item{CollectionPageHeader("Form Dex","Formas alternativas organizadas por tipo.",onBack)}
         if(forms.isEmpty()){
-            item{DexGlassSurface(Modifier.fillMaxWidth()){Text("Nenhuma forma alternativa registrada",fontWeight=FontWeight.Black);Text("Registre formas regionais e especiais para montar este álbum.",color=MaterialTheme.colorScheme.onSurfaceVariant)}}
+            item{
+                CompanionEmptyState(
+                    title="Nenhuma forma alternativa registrada",
+                    supporting="Registre formas regionais e especiais para montar este álbum."
+                )
+            }
         }else{
             formCategoryOrder.forEach{category->
                 val entries=groups[category].orEmpty()
