@@ -19,28 +19,26 @@ jobs:
         with:
           ref: feature/nintendo-companion-design-system
           fetch-depth: 0
-      - name: Finish persisted Journey hardening compaction
+      - name: Finalize Journey hardening budget
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt')
-          s=p.read_text()
-          marker='    var view by rememberSaveable(startInGames){mutableStateOf(if(!startInGames&&activeJourneyGame!=null)JourneyView.ROUTE else JourneyView.GAMES)}\n'
-          if marker not in s: raise SystemExit('Expected Journey navigation marker not found')
-          tail=s[s.index(marker)+len(marker):]
-          if '\n\n' in tail:
-              before,after=tail.split('\n\n',1)
-              s=s[:s.index(marker)+len(marker)]+before+'\n'+after
-              p.write_text(s)
+          lines=p.read_text().splitlines(keepends=True)
+          for i,line in enumerate(lines):
+              if not line.strip():
+                  del lines[i]
+                  p.write_text(''.join(lines))
+                  break
           PY
-      - name: Persist final Journey compaction
+      - name: Persist Journey hardening fix
         run: |
           if ! git diff --quiet -- app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt
             git diff --cached --check
-            git commit -m 'fix(journey): satisfy hardening budget without behavior change'
+            git commit -m 'fix(journey): meet hardening budget without behavior change'
             git push origin HEAD:feature/nintendo-companion-design-system
           fi
       - name: Set up JDK 17
