@@ -1212,7 +1212,7 @@ private fun JourneyTypeChip(typeLabel:String){
         Row(Modifier.padding(horizontal=8.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
             JourneyTypeIconCatalog.iconUrl(typeLabel)?.let{url->
                 AsyncImage(
-                    model=url,
+                    model=rememberOfflineArtworkModel(url),
                     contentDescription=typeLabel,
                     contentScale=ContentScale.Fit,
                     modifier=Modifier.size(18.dp)
@@ -1228,7 +1228,7 @@ private fun JourneyTypeDetailLine(typeLabel:String){
     Row(verticalAlignment=Alignment.CenterVertically){
         JourneyTypeIconCatalog.iconUrl(typeLabel)?.let{url->
             AsyncImage(
-                model=url,
+                model=rememberOfflineArtworkModel(url),
                 contentDescription=typeLabel,
                 contentScale=ContentScale.Fit,
                 modifier=Modifier.size(22.dp)
