@@ -19,27 +19,28 @@ jobs:
         with:
           ref: feature/nintendo-companion-design-system
           fetch-depth: 0
-      - name: Compact persisted Journey navigation fix
+      - name: Finish persisted Journey hardening compaction
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt')
           s=p.read_text()
-          old='''    val activeJourneyGame = remember(startInGames) {\n        if(startInGames) null else AppStatePreferences.activeGame\n            .takeIf { active -> AppGameCatalog.adventureGames.any { it.label == active } }\n    }\n    var selectedGame by rememberSaveable(startInGames) { mutableStateOf(activeJourneyGame) }\n    var view by rememberSaveable(startInGames) {\n        mutableStateOf(if(!startInGames && activeJourneyGame != null) JourneyView.ROUTE else JourneyView.GAMES)\n    }'''
-          new='''    val activeJourneyGame=remember(startInGames){if(startInGames)null else AppStatePreferences.activeGame.takeIf{active->AppGameCatalog.adventureGames.any{it.label==active}}}\n    var selectedGame by rememberSaveable(startInGames){mutableStateOf(activeJourneyGame)}\n    var view by rememberSaveable(startInGames){mutableStateOf(if(!startInGames&&activeJourneyGame!=null)JourneyView.ROUTE else JourneyView.GAMES)}'''
-          if old in s:
-              p.write_text(s.replace(old,new,1))
-          elif new not in s:
-              raise SystemExit('Expected persisted Journey navigation block not found')
+          marker='    var view by rememberSaveable(startInGames){mutableStateOf(if(!startInGames&&activeJourneyGame!=null)JourneyView.ROUTE else JourneyView.GAMES)}\n'
+          if marker not in s: raise SystemExit('Expected Journey navigation marker not found')
+          tail=s[s.index(marker)+len(marker):]
+          if '\n\n' in tail:
+              before,after=tail.split('\n\n',1)
+              s=s[:s.index(marker)+len(marker)]+before+'\n'+after
+              p.write_text(s)
           PY
-      - name: Persist compact Journey fix
+      - name: Persist final Journey compaction
         run: |
           if ! git diff --quiet -- app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt
             git diff --cached --check
-            git commit -m 'fix(journey): compact universal direct-route navigation'
+            git commit -m 'fix(journey): satisfy hardening budget without behavior change'
             git push origin HEAD:feature/nintendo-companion-design-system
           fi
       - name: Set up JDK 17
