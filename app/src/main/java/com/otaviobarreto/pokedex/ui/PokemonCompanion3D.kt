@@ -3,10 +3,10 @@ package com.otaviobarreto.pokedex.ui
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,7 +21,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -55,14 +60,15 @@ private enum class CompanionReaction(
     val preferredClips: List<String>,
     val status: String,
     val mood: String,
-    val settleMillis: Long
+    val settleMillis: Long,
+    val speech: String
 ) {
-    IDLE(listOf("Idle", "idle", "Breath", "breath"), "Observando você.", "Curioso", Long.MAX_VALUE),
-    PET(listOf("Cute", "Cute 2", "Pet", "pet", "Happy", "happy"), "Gostou do carinho.", "Feliz", 1500),
-    CALL(listOf("Static-Cute", "Static", "Call", "call", "Look", "look"), "Olhou para você.", "Atento", 1350),
-    BERRY(listOf("CuteAction", "Cute", "EatBerry", "eat_berry", "Eat", "eat"), "Adorou a Berry.", "Feliz", 2100),
-    PLAY(listOf("Jump", "Run", "Play", "play", "jump"), "Quer brincar mais.", "Empolgado", 1800),
-    TAP(listOf("Cute 2", "Cute", "Happy", "happy", "Tap", "tap"), "Reagiu ao seu toque.", "Feliz", 1350)
+    IDLE(listOf("Idle", "idle", "Breath", "breath"), "Observando você.", "Curioso", Long.MAX_VALUE, "Pika!"),
+    PET(listOf("Cute", "Cute 2", "Pet", "pet", "Happy", "happy"), "Gostou do carinho.", "Feliz", 1500, "Pika pika!"),
+    CALL(listOf("Static-Cute", "Static", "Call", "call", "Look", "look"), "Olhou para você.", "Atento", 1350, "Pika?"),
+    BERRY(listOf("CuteAction", "Cute", "EatBerry", "eat_berry", "Eat", "eat"), "Adorou a Berry.", "Feliz", 2100, "Pikachu!"),
+    PLAY(listOf("Jump", "Run", "Play", "play", "jump"), "Quer brincar mais.", "Empolgado", 1800, "Pika!!"),
+    TAP(listOf("Cute 2", "Cute", "Happy", "happy", "Tap", "tap"), "Reagiu ao seu toque.", "Feliz", 1350, "Pika! ♡")
 }
 
 private fun Context.hasAsset(path: String): Boolean =
@@ -109,11 +115,19 @@ internal fun PokemonLivingCompanionCard(
     val supports3D = remember { context.supportsCompanion3D() }
     val modelAvailable = hasModelAssets && supports3D
     val accent = PokedexDesignTokens.Colors.game(gameLabel)
-    val heroArtwork = remember(gameLabel) { GameCoverCatalog.heroFor(gameLabel) }
+    val sceneLabel = remember(gameLabel) { companionSceneLabel(gameLabel) }
+    val isLumiose = remember(gameLabel) {
+        gameLabel.contains("Z-A", ignoreCase = true) || gameLabel.contains("Z A", ignoreCase = true)
+    }
     var reaction by rememberSaveable { mutableStateOf(CompanionReaction.IDLE.name) }
-    var affinity by rememberSaveable { mutableIntStateOf(55) }
+    var affinity by rememberSaveable { mutableIntStateOf(72) }
     val activeReaction = remember(reaction) {
         runCatching { CompanionReaction.valueOf(reaction) }.getOrDefault(CompanionReaction.IDLE)
+    }
+
+    fun react(target: CompanionReaction, gain: Int) {
+        reaction = target.name
+        affinity = (affinity + gain).coerceAtMost(100)
     }
 
     LaunchedEffect(activeReaction) {
@@ -126,58 +140,59 @@ internal fun PokemonLivingCompanionCard(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(PokedexDesignTokens.Radius.Xl),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = PokedexDesignTokens.Elevation.Low)
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(448.dp)
-                .background(MaterialTheme.colorScheme.surface)
+                .height(510.dp)
+                .clip(RoundedCornerShape(PokedexDesignTokens.Radius.Xl))
         ) {
-            heroArtwork?.let { artwork ->
-                AsyncImage(
-                    model = rememberOfflineArtworkModel(artwork),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    alpha = .28f
-                )
-            }
+            CompanionWorldBackdrop(
+                accent = accent,
+                lumiose = isLumiose,
+                modifier = Modifier.fillMaxSize()
+            )
+
             Box(
                 Modifier
-                    .matchParentSize()
+                    .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
                             listOf(
-                                accent.copy(alpha = .20f),
-                                MaterialTheme.colorScheme.surface.copy(alpha = .16f),
-                                MaterialTheme.colorScheme.surface.copy(alpha = .94f)
-                            )
+                                Color.Transparent,
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.surface.copy(alpha = .34f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = .76f)
+                            ),
+                            startY = 0f
                         )
                     )
-            )
-            Box(
-                Modifier
-                    .size(210.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(x = 68.dp, y = (-68).dp)
-                    .background(accent.copy(alpha = .12f), CircleShape)
             )
 
             Column(
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = 18.dp, top = 16.dp)
+                    .padding(start = 16.dp, top = 14.dp)
+                    .widthIn(max = 190.dp)
             ) {
-                Text(
-                    "COMPANHEIRO",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Black,
-                    color = accent
-                )
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = .80f)
+                ) {
+                    Text(
+                        sceneLabel,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = accent
+                    )
+                }
                 Text(
                     pokemonName,
-                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(top = 7.dp),
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Black
                 )
                 Text(
@@ -190,153 +205,370 @@ internal fun PokemonLivingCompanionCard(
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 16.dp, end = 16.dp),
+                    .padding(12.dp),
                 shape = RoundedCornerShape(999.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = .86f),
-                tonalElevation = 2.dp
+                color = MaterialTheme.colorScheme.surface.copy(alpha = .78f)
             ) {
-                Row(
-                    Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Favorite,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = accent
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    Text(
-                        "$affinity%",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Black
-                    )
-                }
+                Text(
+                    if (isLumiose) "☀  Lumiose" else "☀  Em viagem",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 11.dp, top = 72.dp, bottom = 96.dp)
+                    .width(128.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                CompanionActionButton(
+                    label = "Carinho",
+                    icon = Icons.Default.Pets,
+                    selected = activeReaction == CompanionReaction.PET,
+                    accent = accent
+                ) { react(CompanionReaction.PET, 3) }
+                CompanionActionButton(
+                    label = "Chamar",
+                    icon = Icons.Default.WavingHand,
+                    selected = activeReaction == CompanionReaction.CALL,
+                    accent = accent
+                ) { react(CompanionReaction.CALL, 1) }
+                CompanionActionButton(
+                    label = "Dar Berry",
+                    icon = Icons.Default.Restaurant,
+                    selected = activeReaction == CompanionReaction.BERRY,
+                    accent = accent
+                ) { react(CompanionReaction.BERRY, 4) }
+                CompanionActionButton(
+                    label = "Brincar",
+                    icon = Icons.Default.Favorite,
+                    selected = activeReaction == CompanionReaction.PLAY,
+                    accent = accent
+                ) { react(CompanionReaction.PLAY, 2) }
             }
 
             if (modelAvailable) {
                 PokemonCompanionScene(
                     reaction = activeReaction,
-                    onPokemonTap = {
-                        reaction = CompanionReaction.TAP.name
-                        affinity = (affinity + 2).coerceAtMost(100)
-                    },
+                    onPokemonTap = { react(CompanionReaction.TAP, 2) },
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxWidth()
-                        .height(310.dp)
-                        .padding(top = 24.dp, bottom = 18.dp)
+                        .align(Alignment.CenterEnd)
+                        .width(270.dp)
+                        .height(330.dp)
+                        .padding(top = 64.dp, end = 2.dp, bottom = 54.dp)
                 )
             } else {
                 Box(
                     Modifier
-                        .align(Alignment.Center)
-                        .fillMaxWidth()
+                        .align(Alignment.CenterEnd)
+                        .width(260.dp)
                         .height(300.dp)
-                        .padding(top = 24.dp, bottom = 18.dp),
+                        .padding(top = 58.dp, end = 4.dp, bottom = 42.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     PokemonArtwork(
                         model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$pokemonId.png",
                         contentDescription = pokemonName,
-                        modifier = Modifier.size(238.dp),
+                        modifier = Modifier.size(220.dp),
                         pokemonId = pokemonId
                     )
                 }
                 Surface(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 12.dp, top = 58.dp),
+                        .padding(end = 12.dp, bottom = 104.dp),
                     shape = RoundedCornerShape(999.dp),
                     color = MaterialTheme.colorScheme.surface.copy(alpha = .84f)
                 ) {
-                    Text(
-                        if (hasModelAssets) "Modo 2D" else "3D indisponível",
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                    Row(
+                        Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CatchingPokemon, null, Modifier.size(14.dp), tint = accent)
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            if (hasModelAssets) "Modo 2D neste dispositivo" else "Modelo 3D indisponível",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
             }
 
-            Surface(
+            CompanionSpeechBubble(
+                pokemonName = pokemonName,
+                speech = activeReaction.speech,
+                accent = accent,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 18.dp, bottom = 188.dp)
+            )
+
+            CompanionAffinityPanel(
+                mood = activeReaction.mood,
+                affinity = affinity,
+                accent = accent,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = .90f),
-                tonalElevation = 3.dp
-            ) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 9.dp)
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        CompanionQuickAction(
-                            label = "Carinho",
-                            icon = Icons.Default.Pets,
-                            selected = activeReaction == CompanionReaction.PET,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                reaction = CompanionReaction.PET.name
-                                affinity = (affinity + 3).coerceAtMost(100)
-                            }
-                        )
-                        CompanionQuickAction(
-                            label = "Chamar",
-                            icon = Icons.Default.WavingHand,
-                            selected = activeReaction == CompanionReaction.CALL,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                reaction = CompanionReaction.CALL.name
-                                affinity = (affinity + 1).coerceAtMost(100)
-                            }
-                        )
-                        CompanionQuickAction(
-                            label = "Berry",
-                            icon = Icons.Default.Restaurant,
-                            selected = activeReaction == CompanionReaction.BERRY,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                reaction = CompanionReaction.BERRY.name
-                                affinity = (affinity + 4).coerceAtMost(100)
-                            }
-                        )
-                        CompanionQuickAction(
-                            label = "Brincar",
-                            icon = Icons.Default.Favorite,
-                            selected = activeReaction == CompanionReaction.PLAY,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                reaction = CompanionReaction.PLAY.name
-                                affinity = (affinity + 2).coerceAtMost(100)
-                            }
-                        )
-                    }
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Humor · " + activeReaction.mood,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.widthIn(min = 92.dp)
-                        )
-                        LinearProgressIndicator(
-                            progress = { affinity / 100f },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp)
-                                .height(4.dp),
-                            color = accent
-                        )
-                    }
+                    .padding(12.dp)
+            )
+        }
+    }
+}
+
+private fun companionSceneLabel(gameLabel: String): String = when {
+    gameLabel.contains("Z-A", ignoreCase = true) -> "LUMIOSE CITY"
+    gameLabel.contains("Scarlet", ignoreCase = true) -> "PALDEA"
+    gameLabel.contains("Sword", ignoreCase = true) -> "GALAR"
+    gameLabel.contains("Arceus", ignoreCase = true) -> "HISUI"
+    gameLabel.contains("Let's Go", ignoreCase = true) -> "KANTO"
+    gameLabel.contains("Diamond", ignoreCase = true) -> "SINNOH"
+    else -> "COMPANHEIRO"
+}
+
+@Composable
+private fun CompanionWorldBackdrop(
+    accent: Color,
+    lumiose: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFF64B5F6),
+                    Color(0xFFAEDCFF),
+                    Color(0xFFD8ECF5),
+                    Color(0xFF7D8B92)
+                )
+            )
+        )
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val horizon = h * .57f
+
+            drawCircle(
+                color = Color.White.copy(alpha = .24f),
+                radius = w * .28f,
+                center = Offset(w * .78f, h * .11f)
+            )
+
+            val buildingColor = Color(0xFF44515D).copy(alpha = .52f)
+            val buildingLight = Color(0xFF647482).copy(alpha = .55f)
+            val widths = floatArrayOf(.12f, .11f, .14f, .10f, .13f)
+            var x = 0f
+            widths.forEachIndexed { index, fraction ->
+                val bw = w * fraction
+                val bh = h * (.20f + (index % 3) * .045f)
+                drawRect(
+                    color = if (index % 2 == 0) buildingColor else buildingLight,
+                    topLeft = Offset(x, horizon - bh),
+                    size = Size(bw, bh)
+                )
+                x += bw * 1.04f
+            }
+            x = w
+            widths.reversedArray().forEachIndexed { index, fraction ->
+                val bw = w * fraction
+                val bh = h * (.19f + (index % 3) * .05f)
+                x -= bw
+                drawRect(
+                    color = if (index % 2 == 0) buildingLight else buildingColor,
+                    topLeft = Offset(x, horizon - bh),
+                    size = Size(bw, bh)
+                )
+                x -= bw * .04f
+            }
+
+            if (lumiose) {
+                val tower = Path().apply {
+                    moveTo(w * .50f, h * .08f)
+                    lineTo(w * .466f, horizon * .74f)
+                    lineTo(w * .448f, horizon)
+                    lineTo(w * .552f, horizon)
+                    lineTo(w * .534f, horizon * .74f)
+                    close()
                 }
+                drawPath(tower, Color(0xFF2D4051).copy(alpha = .78f))
+                drawLine(
+                    color = accent.copy(alpha = .92f),
+                    start = Offset(w * .50f, h * .12f),
+                    end = Offset(w * .50f, horizon * .93f),
+                    strokeWidth = 5f
+                )
+                drawCircle(
+                    color = accent.copy(alpha = .95f),
+                    radius = 12f,
+                    center = Offset(w * .50f, horizon * .72f),
+                    style = Stroke(width = 3.5f)
+                )
+            }
+
+            drawRect(
+                color = Color(0xFF63727A).copy(alpha = .72f),
+                topLeft = Offset(0f, horizon),
+                size = Size(w, h - horizon)
+            )
+            drawLine(
+                Color.White.copy(alpha = .26f),
+                Offset(w * .50f, horizon),
+                Offset(w * .17f, h),
+                strokeWidth = 2f
+            )
+            drawLine(
+                Color.White.copy(alpha = .26f),
+                Offset(w * .50f, horizon),
+                Offset(w * .83f, h),
+                strokeWidth = 2f
+            )
+            drawLine(
+                accent.copy(alpha = .20f),
+                Offset(w * .50f, horizon),
+                Offset(w * .50f, h),
+                strokeWidth = 4f
+            )
+
+            listOf(
+                Offset(w * .08f, horizon * .83f),
+                Offset(w * .17f, horizon * .74f),
+                Offset(w * .86f, horizon * .78f),
+                Offset(w * .93f, horizon * .88f)
+            ).forEachIndexed { index, center ->
+                drawCircle(
+                    color = if (index % 2 == 0) Color(0xFF4D7E58) else Color(0xFF65956B),
+                    radius = w * .055f,
+                    center = center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompanionActionButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    accent: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 46.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) accent.copy(alpha = .27f)
+        else MaterialTheme.colorScheme.surface.copy(alpha = .82f),
+        tonalElevation = if (selected) PokedexDesignTokens.Elevation.Medium else PokedexDesignTokens.Elevation.Low
+    ) {
+        Row(
+            Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(19.dp),
+                tint = if (selected) accent else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompanionSpeechBubble(
+    pokemonName: String,
+    speech: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.widthIn(min = 112.dp, max = 148.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = .88f),
+        tonalElevation = PokedexDesignTokens.Elevation.Medium
+    ) {
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    pokemonName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(speech, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleMedium)
+            }
+            Icon(
+                Icons.Default.Favorite,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = accent
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompanionAffinityPanel(
+    mood: String,
+    affinity: Int,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = .88f),
+        tonalElevation = PokedexDesignTokens.Elevation.Medium
+    ) {
+        Row(
+            Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = accent.copy(alpha = .18f),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Favorite, null, tint = accent, modifier = Modifier.size(21.dp))
+                }
+            }
+            Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Humor", style = MaterialTheme.typography.labelSmall)
+                        Text(mood, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleMedium)
+                    }
+                    Text("$affinity%", fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleMedium)
+                }
+                LinearProgressIndicator(
+                    progress = { affinity / 100f },
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(6.dp),
+                    color = accent,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f)
+                )
+                Text(
+                    "Afinidade",
+                    modifier = Modifier.padding(top = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
