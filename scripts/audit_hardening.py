@@ -29,7 +29,7 @@ collection_ui = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionS
 journey_hub = read("app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyHubComponents.kt")
 form_detail = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonFormDetailScreen.kt")
 campaign_guide = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CampaignTeamGuideScreen.kt")
-companion_home = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CompanionHomeScreen.kt")
+trainer_home = read("app/src/main/java/com/otaviobarreto/pokedex/ui/TrainerHomeScreen.kt")
 artwork_sync = read("app/src/main/java/com/otaviobarreto/pokedex/data/ArtworkOfflineSync.kt")
 bootstrap = read("app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt")
 boot = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt")
@@ -66,6 +66,7 @@ for marker in [
     "CollectionStore.initialize(this)",
     "VariantCollectionStore.initialize(this)",
     "JourneyProgressStore.initialize(this)",
+    "TrainerTodayStore.initialize(",
 ]:
     if marker not in app:
         errors.append(f"startup initialization missing: {marker}")
@@ -143,7 +144,7 @@ for name, source in [
     ("PokemonDetailV2Screen.kt", detail),
     ("PokemonFormDetailScreen.kt", form_detail),
     ("CampaignTeamGuideScreen.kt", campaign_guide),
-    ("CompanionHomeScreen.kt", companion_home),
+    ("TrainerHomeScreen.kt", trainer_home),
 ]:
     if remote_async.search(source):
         errors.append(f"{name} contains raw remote AsyncImage outside offline artwork resolver")
