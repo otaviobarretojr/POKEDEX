@@ -94,16 +94,8 @@ jobs:
             cat app/build/outputs/stable-smoke/instrumentation.txt
             adb logcat -d -v threadtime > app/build/outputs/stable-smoke/emulator-logcat.txt || true
             test "$status" -eq 0
-            grep -Eq '^OK \\([1-9][0-9]* tests?\\)      - name: Build debug APK
-        run: gradle clean assembleDebug
-      - name: Upload APK
-        uses: actions/upload-artifact@v7
-        with:
-          name: POKEDEX-v20.13.0-Stable-Foundation
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
- app/build/outputs/stable-smoke/instrumentation.txt
-            ! grep -Eq 'FAILURES!!!|Process crashed|INSTRUMENTATION_FAILED' app/build/outputs/stable-smoke/instrumentation.txt
+            grep -Eq '^OK \\([1-9][0-9]* tests?\\)$' app/build/outputs/stable-smoke/instrumentation.txt
+            if grep -Eq 'FAILURES!!!|Process crashed|INSTRUMENTATION_FAILED' app/build/outputs/stable-smoke/instrumentation.txt; then exit 1; fi
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v7
