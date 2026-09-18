@@ -1,6 +1,8 @@
 package com.otaviobarreto.pokedex.ui
 
+import android.app.ActivityManager
 import android.content.Context
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -35,6 +37,7 @@ import kotlinx.coroutines.delay
 
 internal object Companion3DContract {
     const val MODEL_ASSET = "models/pikachu_companion/Pikachu_resize.gltf"
+    const val MODEL_BUFFER_ASSET = "models/pikachu_companion/Pikachu_resize.bin"
     const val IDLE = "Idle"
     const val PET = "Pet"
     const val CALL = "Call"
@@ -65,6 +68,29 @@ private fun Context.hasAsset(path: String): Boolean =
         true
     }.getOrDefault(false)
 
+private fun Context.supportsCompanion3D(): Boolean {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        ?: return false
+    val config = activityManager.deviceConfigurationInfo
+    val fingerprint = Build.FINGERPRINT.lowercase()
+    val model = Build.MODEL.lowercase()
+    val product = Build.PRODUCT.lowercase()
+    val hardware = Build.HARDWARE.lowercase()
+
+    val isEmulator =
+        fingerprint.startsWith("generic") ||
+            fingerprint.contains("emulator") ||
+            model.contains("emulator") ||
+            model.contains("sdk_gphone") ||
+            product.contains("sdk_gphone") ||
+            hardware.contains("goldfish") ||
+            hardware.contains("ranchu")
+
+    return !isEmulator &&
+        !activityManager.isLowRamDevice &&
+        config.reqGlEsVersion >= 0x00030000
+}
+
 @Composable
 internal fun PokemonLivingCompanionCard(
     gameLabel: String,
@@ -73,7 +99,12 @@ internal fun PokemonLivingCompanionCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val modelAvailable = remember { context.hasAsset(Companion3DContract.MODEL_ASSET) }
+    val hasModelAssets = remember {
+        context.hasAsset(Companion3DContract.MODEL_ASSET) &&
+            context.hasAsset(Companion3DContract.MODEL_BUFFER_ASSET)
+    }
+    val supports3D = remember { context.supportsCompanion3D() }
+    val modelAvailable = hasModelAssets && supports3D
     val accent = PokedexDesignTokens.Colors.game(gameLabel)
     var reaction by rememberSaveable { mutableStateOf(CompanionReaction.IDLE.name) }
     var affinity by rememberSaveable { mutableIntStateOf(55) }
@@ -188,7 +219,10 @@ internal fun PokemonLivingCompanionCard(
                     ) {
                         Icon(Icons.Default.CatchingPokemon, null, Modifier.size(15.dp), tint = accent)
                         Spacer(Modifier.width(5.dp))
-                        Text("3D pronto para receber o GLB", style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            if (hasModelAssets) "Modo 2D neste dispositivo" else "Modelo 3D indisponível",
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                 }
             }
