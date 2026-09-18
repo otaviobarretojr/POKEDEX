@@ -1,6 +1,6 @@
 # Living Pokémon 3D — contrato do asset
 
-A Home já possui a integração SceneView/Filament. O modelo final deve ser incluído em:
+A Home já possui a integração SceneView 2.3.0 / Filament. O modelo final deve ser incluído em:
 
 `app/src/main/assets/models/pikachu_companion.glb`
 
@@ -36,6 +36,6 @@ Há aliases para alguns nomes comuns. Se nenhum nome for encontrado, o primeiro 
 - retorno automático ao Idle
 - afinidade local da Home
 - fallback 2D enquanto o GLB não estiver presente
-- SceneView em TextureSurface transparente para permitir composição com a UI Compose
+- Scene Compose com superfície transparente para permitir composição com a UI Compose
 
 O asset 3D não deve ser substituído por geometria procedural no build final.

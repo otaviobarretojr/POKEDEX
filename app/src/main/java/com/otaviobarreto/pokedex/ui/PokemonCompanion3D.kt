@@ -20,16 +20,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.github.sceneview.SceneView
-import io.github.sceneview.SurfaceType
+import io.github.sceneview.Scene
 import io.github.sceneview.math.Position
+import io.github.sceneview.node.ModelNode
+import io.github.sceneview.rememberCameraNode
 import io.github.sceneview.rememberEngine
-import io.github.sceneview.rememberModelInstance
 import io.github.sceneview.rememberModelLoader
+import io.github.sceneview.rememberNode
 import io.github.sceneview.rememberOnGestureListener
 import kotlinx.coroutines.delay
 
@@ -278,44 +278,52 @@ private fun PokemonCompanionScene(
 ) {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
-    val modelInstance = rememberModelInstance(modelLoader, Companion3DContract.MODEL_ASSET)
-    val animationNames = remember(modelInstance) {
-        val animator = modelInstance?.animator ?: return@remember emptyList()
-        (0 until animator.animationCount).map { animator.getAnimationName(it) }
+    val cameraNode = rememberCameraNode(engine) {
+        position = Position(y = .72f, z = 3.15f)
+    }
+    val modelNode = rememberNode {
+        ModelNode(
+            modelInstance = modelLoader.createModelInstance(
+                assetFileLocation = Companion3DContract.MODEL_ASSET
+            ),
+            autoAnimate = false,
+            scaleToUnits = 1.65f,
+            centerOrigin = Position(0f, -1f, 0f)
+        )
+    }
+    val animationNames = remember(modelNode) {
+        (0 until modelNode.animationCount).map { modelNode.animator.getAnimationName(it) }
     }
     val animationName = remember(reaction, animationNames) {
         reaction.preferredClips.firstNotNullOfOrNull { candidate ->
             animationNames.firstOrNull { it.equals(candidate, ignoreCase = true) }
         } ?: animationNames.firstOrNull()
     }
-    val gestures = rememberOnGestureListener(
-        onSingleTapConfirmed = { _, node ->
-            if (node != null) onPokemonTap()
-        }
-    )
 
-    SceneView(
-        modifier = modifier.clip(RoundedCornerShape(28.dp)),
-        surfaceType = SurfaceType.TextureSurface,
-        engine = engine,
-        modelLoader = modelLoader,
-        isOpaque = false,
-        autoFitContent = true,
-        framingPadding = .08f,
-        cameraManipulator = null,
-        onGestureListener = gestures
-    ) {
-        modelInstance?.let { instance ->
-            ModelNode(
-                modelInstance = instance,
-                autoAnimate = animationName == null,
-                animationName = animationName,
-                animationLoop = reaction == CompanionReaction.IDLE,
-                scaleToUnits = 1.65f,
-                centerOrigin = Position(0f, -1f, 0f)
+    LaunchedEffect(modelNode, animationName, reaction) {
+        modelNode.playingAnimations.keys.toList().forEach(modelNode::stopAnimation)
+        animationName?.let {
+            modelNode.playAnimation(
+                animationName = it,
+                loop = reaction == CompanionReaction.IDLE
             )
         }
     }
+
+    Scene(
+        modifier = modifier.clip(RoundedCornerShape(28.dp)),
+        engine = engine,
+        modelLoader = modelLoader,
+        isOpaque = false,
+        cameraNode = cameraNode,
+        cameraManipulator = null,
+        childNodes = listOf(modelNode),
+        onGestureListener = rememberOnGestureListener(
+            onSingleTapConfirmed = { _, node ->
+                if (node != null) onPokemonTap()
+            }
+        )
+    )
 }
 
 @Composable
