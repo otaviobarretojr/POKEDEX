@@ -493,7 +493,7 @@ private fun UpcomingJourneyCard(
                 Text(if (current) "AGORA" else "DEPOIS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                 Text(step.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    listOf(step.location, step.level).filter { it.isNotBlank() }.joinToString(" · "),
+                    listOf(step.location, step.levelLabel).filter { it.isNotBlank() }.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
