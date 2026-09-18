@@ -44,8 +44,8 @@ import io.github.sceneview.rememberOnGestureListener
 import kotlinx.coroutines.delay
 
 internal object Companion3DContract {
-    const val MODEL_ASSET = "models/pikachu_companion/Pikachu_resize.gltf"
-    const val MODEL_BUFFER_ASSET = "models/pikachu_companion/Pikachu_resize.bin"
+    const val MODEL_ASSET = "models/pikachu_companion/Pikachu_companion_embedded.gltf"
+    const val PALDEA_WORLD_ASSET = "models/companion_worlds/paldea_companion_world.gltf"
     const val IDLE = "Idle"
     const val PET = "Pet"
     const val CALL = "Call"
@@ -110,14 +110,13 @@ internal fun PokemonLivingCompanionCard(
     immersive: Boolean = false
 ) {
     val context = LocalContext.current
-    val hasModelAssets = remember {
-        context.hasAsset(Companion3DContract.MODEL_ASSET) &&
-            context.hasAsset(Companion3DContract.MODEL_BUFFER_ASSET)
-    }
+    val hasModelAssets = remember { context.hasAsset(Companion3DContract.MODEL_ASSET) }
     val supports3D = remember { context.supportsCompanion3D() }
     val modelAvailable = hasModelAssets && supports3D
     val accent = PokedexDesignTokens.Colors.game(gameLabel)
     val worldKind = remember(gameLabel, regionSource) { companionWorldKind(gameLabel, regionSource) }
+    val world3DAsset = remember(worldKind) { companionWorld3DAsset(worldKind) }
+    val hasWorld3DAsset = remember(world3DAsset) { world3DAsset?.let(context::hasAsset) == true }
     val sceneLabel = remember(worldKind) { companionSceneLabel(worldKind) }
     var reaction by rememberSaveable { mutableStateOf(CompanionReaction.IDLE.name) }
     var affinity by rememberSaveable { mutableIntStateOf(72) }
@@ -151,6 +150,14 @@ internal fun PokemonLivingCompanionCard(
                 accent = accent,
                 modifier = Modifier.fillMaxSize()
             )
+
+            if (modelAvailable) {
+                PokemonCompanionScene(
+                    reaction = activeReaction,
+                    worldAsset = world3DAsset.takeIf { hasWorld3DAsset },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             Box(
                 Modifier
@@ -248,22 +255,13 @@ internal fun PokemonLivingCompanionCard(
             }
 
             if (modelAvailable) {
-                PokemonCompanionScene(
-                    reaction = activeReaction,
-                    onPokemonTap = { react(CompanionReaction.TAP, 2) },
-                    modifier = if (immersive) {
-                        Modifier
-                            .align(Alignment.CenterEnd)
-                            .fillMaxWidth(.62f)
-                            .fillMaxHeight(.70f)
-                            .padding(top = 44.dp, end = 2.dp, bottom = 70.dp)
-                    } else {
-                        Modifier
-                            .align(Alignment.CenterEnd)
-                            .width(270.dp)
-                            .height(330.dp)
-                            .padding(top = 64.dp, end = 2.dp, bottom = 54.dp)
-                    }
+                Box(
+                    Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxWidth(.62f)
+                        .fillMaxHeight(.68f)
+                        .padding(top = 52.dp, bottom = 84.dp)
+                        .clickable { react(CompanionReaction.TAP, 2) }
                 )
             } else {
                 Box(
@@ -387,6 +385,11 @@ private fun companionWorldBadge(kind: CompanionWorldKind): String = when (kind) 
     CompanionWorldKind.KANTO_GBA -> "▦  Kanto"
 }
 
+private fun companionWorld3DAsset(kind: CompanionWorldKind): String? = when (kind) {
+    CompanionWorldKind.PALDEA -> Companion3DContract.PALDEA_WORLD_ASSET
+    else -> null
+}
+
 private data class CompanionWorldPalette(
     val skyTop: Color,
     val skyBottom: Color,
@@ -420,130 +423,23 @@ private fun CompanionWorldBackdrop(
     Box(
         modifier.background(
             Brush.verticalGradient(
-                listOf(palette.skyTop, palette.skyBottom, palette.ground)
+                listOf(palette.skyTop, palette.skyBottom, palette.ground.copy(alpha = .28f))
             )
         )
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
-            val horizon = h * .58f
-
             drawCircle(
-                color = Color.White.copy(alpha = .22f),
+                color = Color.White.copy(alpha = .18f),
                 radius = w * .23f,
                 center = Offset(w * .78f, h * .12f)
             )
-
-            when (worldKind) {
-                CompanionWorldKind.LUMIOSE, CompanionWorldKind.HYPERSPACE -> {
-                    val widths = floatArrayOf(.13f, .10f, .14f, .11f, .12f)
-                    var x = 0f
-                    widths.forEachIndexed { index, fraction ->
-                        val bw = w * fraction
-                        val bh = h * (.18f + (index % 3) * .045f)
-                        drawRect(
-                            color = palette.landmark.copy(alpha = if (worldKind == CompanionWorldKind.HYPERSPACE) .42f else .50f),
-                            topLeft = Offset(x, horizon - bh),
-                            size = Size(bw, bh)
-                        )
-                        x += bw * 1.05f
-                    }
-                    val tower = Path().apply {
-                        moveTo(w * .50f, h * .08f)
-                        lineTo(w * .466f, horizon * .74f)
-                        lineTo(w * .448f, horizon)
-                        lineTo(w * .552f, horizon)
-                        lineTo(w * .534f, horizon * .74f)
-                        close()
-                    }
-                    drawPath(tower, palette.landmark.copy(alpha = .82f))
-                    drawLine(accent.copy(alpha = .92f), Offset(w * .50f, h * .12f), Offset(w * .50f, horizon * .93f), strokeWidth = 5f)
-                    if (worldKind == CompanionWorldKind.HYPERSPACE) {
-                        repeat(4) { index ->
-                            drawCircle(
-                                color = accent.copy(alpha = .16f + index * .04f),
-                                radius = w * (.10f + index * .06f),
-                                center = Offset(w * .72f, h * .29f),
-                                style = Stroke(width = 3f)
-                            )
-                        }
-                    }
-                }
-                CompanionWorldKind.PALDEA -> {
-                    val hill = Path().apply {
-                        moveTo(0f, horizon)
-                        quadraticBezierTo(w * .22f, h * .43f, w * .48f, horizon)
-                        quadraticBezierTo(w * .74f, h * .46f, w, horizon)
-                        lineTo(w, h); lineTo(0f, h); close()
-                    }
-                    drawPath(hill, palette.foliage.copy(alpha = .56f))
-                    drawRect(palette.landmark.copy(alpha = .62f), Offset(w*.44f,horizon-h*.105f), Size(w*.12f,h*.105f))
-                    drawLine(palette.landmark, Offset(w*.50f,horizon-h*.16f), Offset(w*.50f,horizon-h*.105f), strokeWidth=6f)
-                }
-                CompanionWorldKind.KITAKAMI -> {
-                    val hill = Path().apply {
-                        moveTo(0f, horizon); quadraticBezierTo(w*.30f,h*.40f,w*.58f,horizon); quadraticBezierTo(w*.82f,h*.48f,w,horizon); lineTo(w,h); lineTo(0f,h); close()
-                    }
-                    drawPath(hill,palette.foliage.copy(alpha=.62f))
-                    listOf(.22f,.70f).forEach { cx ->
-                        drawRect(palette.landmark.copy(alpha=.64f), Offset(w*cx,horizon-h*.08f), Size(w*.12f,h*.08f))
-                        val roof=Path().apply{moveTo(w*(cx-.02f),horizon-h*.08f);lineTo(w*(cx+.06f),horizon-h*.135f);lineTo(w*(cx+.14f),horizon-h*.08f);close()}
-                        drawPath(roof,accent.copy(alpha=.45f))
-                    }
-                }
-                CompanionWorldKind.BLUEBERRY -> {
-                    drawRect(palette.ground.copy(alpha=.82f), Offset(0f,horizon), Size(w,h-horizon))
-                    drawCircle(palette.landmark.copy(alpha=.18f), w*.44f, Offset(w*.50f,h*.50f), style=Stroke(width=5f))
-                    drawLine(palette.landmark.copy(alpha=.55f),Offset(0f,horizon),Offset(w,horizon),strokeWidth=5f)
-                    repeat(5){i->drawLine(Color.White.copy(alpha=.16f),Offset(w*(i/5f),horizon),Offset(w*.5f,h*.28f),strokeWidth=2f)}
-                }
-                CompanionWorldKind.GALAR -> {
-                    val hill=Path().apply{moveTo(0f,horizon);quadraticBezierTo(w*.28f,h*.43f,w*.52f,horizon);quadraticBezierTo(w*.78f,h*.46f,w,horizon);lineTo(w,h);lineTo(0f,h);close()}
-                    drawPath(hill,palette.foliage.copy(alpha=.58f))
-                    drawOval(palette.skyBottom.copy(alpha=.55f),Offset(w*.08f,horizon+h*.03f),Size(w*.36f,h*.10f))
-                    drawRect(palette.landmark.copy(alpha=.55f),Offset(w*.78f,horizon-h*.13f),Size(w*.06f,h*.13f))
-                }
-                CompanionWorldKind.ISLE_ARMOR -> {
-                    drawRect(Color(0xFF4AB4CF).copy(alpha=.72f),Offset(0f,horizon),Size(w,h*.16f))
-                    drawRect(palette.ground,Offset(0f,horizon+h*.16f),Size(w,h-horizon-h*.16f))
-                    drawRect(palette.landmark.copy(alpha=.65f),Offset(w*.68f,horizon-h*.08f),Size(w*.16f,h*.08f))
-                    repeat(4){i->drawCircle(palette.foliage.copy(alpha=.72f),w*.05f,Offset(w*(.12f+i*.16f),horizon-h*.01f))}
-                }
-                CompanionWorldKind.CROWN_TUNDRA -> {
-                    val back=Path().apply{moveTo(0f,horizon);lineTo(w*.22f,h*.28f);lineTo(w*.39f,horizon);lineTo(w*.62f,h*.22f);lineTo(w,horizon);lineTo(w,h);lineTo(0f,h);close()}
-                    drawPath(back,palette.landmark.copy(alpha=.68f))
-                    val snow=Path().apply{moveTo(w*.12f,h*.37f);lineTo(w*.22f,h*.28f);lineTo(w*.30f,h*.39f);moveTo(w*.49f,h*.34f);lineTo(w*.62f,h*.22f);lineTo(w*.73f,h*.37f)}
-                    drawPath(snow,Color.White.copy(alpha=.80f),style=Stroke(width=8f))
-                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
-                }
-                CompanionWorldKind.HISUI, CompanionWorldKind.SINNOH -> {
-                    val peakX=if(worldKind==CompanionWorldKind.HISUI).58f else .48f
-                    val mountain=Path().apply{moveTo(0f,horizon);lineTo(w*peakX,h*.20f);lineTo(w,horizon);lineTo(w,h);lineTo(0f,h);close()}
-                    drawPath(mountain,palette.landmark.copy(alpha=if(worldKind==CompanionWorldKind.HISUI).58f else .66f))
-                    drawPath(Path().apply{moveTo(w*(peakX-.12f),h*.34f);lineTo(w*peakX,h*.20f);lineTo(w*(peakX+.11f),h*.35f)},Color.White.copy(alpha=.62f),style=Stroke(width=7f))
-                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
-                    repeat(5){i->drawCircle(palette.foliage.copy(alpha=.68f),w*.045f,Offset(w*(.08f+i*.20f),horizon-h*.02f))}
-                }
-                CompanionWorldKind.KANTO_LETS_GO -> {
-                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
-                    repeat(5){i->drawCircle(palette.foliage.copy(alpha=.78f),w*.065f,Offset(w*(.08f+i*.21f),horizon-h*.02f))}
-                    drawRect(palette.landmark.copy(alpha=.72f),Offset(w*.64f,horizon-h*.10f),Size(w*.17f,h*.10f))
-                    val roof=Path().apply{moveTo(w*.61f,horizon-h*.10f);lineTo(w*.725f,horizon-h*.16f);lineTo(w*.84f,horizon-h*.10f);close()}
-                    drawPath(roof,accent.copy(alpha=.46f))
-                }
-                CompanionWorldKind.KANTO_GBA -> {
-                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
-                    val block=w*.07f
-                    repeat(5){row-> repeat(8){col->
-                        if((row+col)%3!=0) drawRect(palette.foliage.copy(alpha=.80f),Offset(col*block*1.9f,horizon-row*block*.72f),Size(block,block))
-                    }}
-                    drawRect(palette.landmark.copy(alpha=.68f),Offset(w*.62f,horizon-h*.11f),Size(w*.18f,h*.11f))
-                }
-            }
-
-            drawLine(Color.White.copy(alpha=.16f),Offset(w*.50f,horizon),Offset(w*.22f,h),strokeWidth=2f)
-            drawLine(Color.White.copy(alpha=.16f),Offset(w*.50f,horizon),Offset(w*.78f,h),strokeWidth=2f)
+            drawCircle(
+                color = accent.copy(alpha = .06f),
+                radius = w * .34f,
+                center = Offset(w * .78f, h * .12f)
+            )
         }
     }
 }
@@ -676,24 +572,39 @@ private fun CompanionAffinityPanel(
 @Composable
 private fun PokemonCompanionScene(
     reaction: CompanionReaction,
-    onPokemonTap: () -> Unit,
+    worldAsset: String?,
     modifier: Modifier = Modifier
 ) {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraNode = rememberCameraNode(engine) {
-        position = Position(y = .72f, z = 3.15f)
+        position = Position(y = .90f, z = 4.20f)
     }
+
+    val worldNode = worldAsset?.let { asset ->
+        rememberNode(asset) {
+            ModelNode(
+                modelInstance = modelLoader.createModelInstance(assetFileLocation = asset),
+                autoAnimate = false
+            )
+        }
+    }
+
     val modelNode = rememberNode {
         ModelNode(
             modelInstance = modelLoader.createModelInstance(
                 assetFileLocation = Companion3DContract.MODEL_ASSET
             ),
             autoAnimate = false,
-            scaleToUnits = 1.65f,
-            centerOrigin = Position(0f, -1f, 0f)
+            scaleToUnits = 1.85f,
+            centerOrigin = null,
+            // The bundled source model has an off-centre authored pivot.
+            // This translation is derived from its normalized AABB after removing
+            // the broken SceneView 2.3 bottom-origin transform.
+            position = Position(x = -.25f, y = .16f, z = .30f)
         )
     }
+
     val animationNames = remember(modelNode) {
         (0 until modelNode.animationCount).map { modelNode.animator.getAnimationName(it) }
     }
@@ -714,18 +625,13 @@ private fun PokemonCompanionScene(
     }
 
     Scene(
-        modifier = modifier.clip(RoundedCornerShape(28.dp)),
+        modifier = modifier,
         engine = engine,
         modelLoader = modelLoader,
         isOpaque = false,
         cameraNode = cameraNode,
         cameraManipulator = null,
-        childNodes = listOf(modelNode),
-        onGestureListener = rememberOnGestureListener(
-            onSingleTapConfirmed = { _, node ->
-                if (node != null) onPokemonTap()
-            }
-        )
+        childNodes = listOfNotNull(worldNode, modelNode)
     )
 }
 
