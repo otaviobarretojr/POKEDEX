@@ -218,7 +218,7 @@ internal fun PokemonLivingCompanionCard(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(start = 11.dp, top = 72.dp, bottom = 96.dp)
-                    .width(128.dp),
+                    .width(112.dp),
                 verticalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 CompanionActionButton(
@@ -254,7 +254,7 @@ internal fun PokemonLivingCompanionCard(
                     modifier = if (immersive) {
                         Modifier
                             .align(Alignment.CenterEnd)
-                            .fillMaxWidth(.76f)
+                            .fillMaxWidth(.62f)
                             .fillMaxHeight(.70f)
                             .padding(top = 44.dp, end = 2.dp, bottom = 70.dp)
                     } else {
@@ -270,7 +270,7 @@ internal fun PokemonLivingCompanionCard(
                     if (immersive) {
                         Modifier
                             .align(Alignment.CenterEnd)
-                            .fillMaxWidth(.74f)
+                            .fillMaxWidth(.62f)
                             .fillMaxHeight(.66f)
                             .padding(top = 46.dp, end = 4.dp, bottom = 68.dp)
                     } else {
