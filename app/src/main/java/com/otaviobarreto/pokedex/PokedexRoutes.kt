@@ -15,10 +15,11 @@ object PokedexRoutes {
     const val SEARCH = "search"
     const val EVOLUTION_CENTER = "evolutionCenter"
     const val GAME_DEX = "gameDex"
+    const val JOURNEY_CONTINUE = "journeyContinue"
 
     val secondary = setOf(
         POKEMON, FORM_DETAIL, REFERENCE, CAMPAIGN_GUIDE,
-        SEARCH, EVOLUTION_CENTER, GAME_DEX
+        SEARCH, EVOLUTION_CENTER, GAME_DEX, JOURNEY_CONTINUE
     )
     val main = setOf(HOME, GAMES, POKEDEX, COLLECTION, BOXES, CENTRAL)
 
