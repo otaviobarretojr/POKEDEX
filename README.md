@@ -2,20 +2,35 @@
 
 Aplicativo Android pessoal para organizar jornadas Pokémon, acompanhar a coleção por jogo/região e consultar a National Dex com formas, variantes e Shiny.
 
-## Estado atual — v20.13.7
+## Estado atual — v20.14.0
 
-A **v20.13.7 — Static Rig Check** consolida a base atual do aplicativo depois do rework de Jornada, Jogos, Pokédex, Coleção, Box, conteúdo offline e artwork. O objetivo desta versão é funcionar como nova baseline estável para as próximas evoluções, preservando compatibilidade com as instalações anteriores.
+A **v20.14.0 — Trainer Today** substitui integralmente o experimento de Companion 3D por uma Home de produto: simples, útil e baseada em progresso real.
 
 ### Navegação principal
 
-1. Jornada
+1. Início
 2. Jogos
 3. Pokédex
 4. Coleção
 5. Box
 6. Config.
 
-A Jornada é a Home. Jogos funciona como biblioteca de títulos e não duplica a tela principal da aventura.
+**Início** agora é a Central do Treinador. **Jogos** concentra as Jornadas completas e continua sendo a biblioteca de títulos.
+
+### Trainer Today
+
+A Home reúne:
+
+- saudação, data e sequência diária de uso;
+- card principal **Continuar Jornada**, com jogo ativo, próximo objetivo e progresso;
+- **Pokémon do dia** com acesso direto aos detalhes;
+- **Missão diária** baseada em registros ou avanço real da Jornada;
+- resumo de registros e objetivos concluídos no dia;
+- total atual da coleção;
+- capturas e Pokémon vistos recentemente;
+- próximos objetivos da Jornada ativa.
+
+As métricas do dia usam baselines locais e não inventam progresso.
 
 ### Garantias funcionais
 
@@ -29,6 +44,10 @@ A Jornada é a Home. Jogos funciona como biblioteca de títulos e não duplica a
 - Pokémon Champions não faz parte do catálogo nem da arquitetura.
 - Backup schema 6 com checksum SHA-256, rollback e reparo de integridade.
 - Contexto ativo, região, Box atual, inicial da Jornada e versão do jogo persistidos.
+
+### Limpeza da arquitetura
+
+A linha de Companion 3D foi encerrada. SceneView, modelos Pikachu, cenários 3D, scripts de download/conversão e documentação temporária do renderer foram removidos do projeto. A Home não depende mais de Filament nem de assets 3D.
 
 ### Conteúdo offline
 
@@ -55,48 +74,14 @@ O sistema de artwork acompanha revisões do diretório de sprites do PokeAPI e p
 
 ### Estabilidade
 
-A v20.13.7 adiciona:
+A v20.14.0 adiciona:
 
-- diagnóstico controlado do novo Pikachu 3D em bind pose, sem qualquer chamada ao animator;
-- manutenção do mesmo GLB, câmera, fundo e estrutura da Home para isolar a causa da deformação observada no aparelho físico;
-- interações continuam atualizando humor, afinidade e fala, mas sem movimentar o esqueleto nesta build;
-
-
-- substituição do modelo provisório por Pikachu 3D rigado e licenciado em CC BY 4.0;
-- build-time audit do GLB com validação de rig, animações e texturas;
-- animações remapeadas para Idle, Walking, Dance e Jump;
-- enquadramento recalibrado sem alterar a orientação interna do rig;
-- sombra e balão reposicionados para integrar o companion ao palco fixo;
-
-
-- orientação frontal do Pikachu 3D com rotação Y de 180°;
-- escala do companion aumentada para recuperar protagonismo visual sem voltar a cortar o corpo;
-- reposicionamento horizontal e vertical para manter o personagem centralizado acima do painel inferior;
-
-
-- Home Companion independente de jogo/região, com palco visual fixo do aplicativo;
-- remoção da lógica de fundos por Paldea, Lumiose, Galar, Hisui e demais regiões na Home;
-- nova calibração do Pikachu 3D para enquadramento completo, com escala menor e posição vertical corrigida;
-- HUD lateral e painel de humor/afinidade mais compactos, liberando área visual para o personagem;
-
-
-- renderer 3D reduzido para um único ModelNode na abertura da Home;
-- Pikachu normalizado mantendo `.gltf + .bin` externo, o caminho que já não causava crash no aparelho físico;
-- cenário 3D regional desacoplado temporariamente da inicialização para eliminar a regressão nativa da v20.13.2;
-
-
-- renderer 3D corrigido para o Companion, com Pikachu normalizado e enquadramento independente do `centerOrigin` defeituoso do SceneView 2.3.0;
-- modelo do Pikachu empacotado como glTF autocontido para eliminar dependência de resolução externa do `.bin`;
-- primeiro cenário regional em geometria 3D real: Paldea / Mesagoza, substituindo o placeholder geométrico 2D da Home;
-
-
-- preservação do boot concluído em recriações da Activity;
-- áudio protegido contra recriação de configuração;
-- Busca, Evoluções e Game Dex tratados como telas secundárias;
-- fallback offline somente após auditoria real da biblioteca;
-- tolerância a novos pacotes remotos ainda desconhecidos pelo cliente;
-- versionCode **21300**, superior à linha v20.12.1, preservando o caminho de atualização;
-- compilação dos testes instrumentados no CI.
+- Home Trainer Today sem renderer 3D;
+- acesso direto da Home à Jornada ativa;
+- métricas diárias persistentes e baseadas em alterações reais;
+- missão diária simples sem sistema de moeda paralelo;
+- remoção da dependência SceneView e dos assets 3D experimentais;
+- preservação do boot, áudio, conteúdo offline e assinatura estável de atualização.
 
 ### Qualidade
 
