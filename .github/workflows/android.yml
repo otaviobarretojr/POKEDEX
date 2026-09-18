@@ -83,20 +83,36 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
+            mkdir -p app/build/outputs/stable-smoke
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb logcat -c
             set +e
-            gradle connectedDebugAndroidTest --stacktrace
+            adb shell am instrument -w -r com.otaviobarreto.pokedex.test/androidx.test.runner.AndroidJUnitRunner > app/build/outputs/stable-smoke/instrumentation.txt 2>&1
             status=$?
-            mkdir -p app/build/outputs/androidTest-results/connected
-            adb logcat -d -v threadtime > app/build/outputs/androidTest-results/connected/emulator-logcat.txt || true
-            exit $status
+            set -e
+            cat app/build/outputs/stable-smoke/instrumentation.txt
+            adb logcat -d -v threadtime > app/build/outputs/stable-smoke/emulator-logcat.txt || true
+            test "$status" -eq 0
+            grep -Eq '^OK \\([1-9][0-9]* tests?\\)      - name: Build debug APK
+        run: gradle clean assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: POKEDEX-v20.13.0-Stable-Foundation
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+ app/build/outputs/stable-smoke/instrumentation.txt
+            ! grep -Eq 'FAILURES!!!|Process crashed|INSTRUMENTATION_FAILED' app/build/outputs/stable-smoke/instrumentation.txt
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: instrumentation-test-reports
           path: |
-            app/build/reports/androidTests/connected/
-            app/build/outputs/androidTest-results/connected/
+            app/build/outputs/stable-smoke/
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
           if-no-files-found: ignore
       - name: Build debug APK
         run: gradle clean assembleDebug
