@@ -57,7 +57,7 @@ private fun PokedexRoot(){
 // DexNavItem("boxes","Boxes"
 // DexNavItem("central","Config."
 private val mainDestinations=listOf(
- DexNavItem(PokedexRoutes.HOME,"Jornada",Icons.Default.Map),
+ DexNavItem(PokedexRoutes.HOME,"Início",Icons.Default.Home),
  DexNavItem(PokedexRoutes.GAMES,"Jogos",Icons.Default.SportsEsports),
  DexNavItem(PokedexRoutes.POKEDEX,"Pokédex",Icons.Default.MenuBook),
  DexNavItem(PokedexRoutes.COLLECTION,"Coleção",Icons.Default.AutoAwesome),
