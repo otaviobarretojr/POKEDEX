@@ -582,7 +582,7 @@ private fun PokemonCompanionScene(
     }
 
     val worldNode = worldAsset?.let { asset ->
-        rememberNode(asset) {
+        rememberNode {
             ModelNode(
                 modelInstance = modelLoader.createModelInstance(assetFileLocation = asset),
                 autoAnimate = false
