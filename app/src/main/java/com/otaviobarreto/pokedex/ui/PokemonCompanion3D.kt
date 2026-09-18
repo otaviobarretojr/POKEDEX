@@ -40,8 +40,7 @@ import io.github.sceneview.rememberNode
 import kotlinx.coroutines.delay
 
 internal object Companion3DContract {
-    const val MODEL_ASSET = "models/pikachu_companion/Pikachu_companion_normalized.gltf"
-    const val MODEL_BUFFER_ASSET = "models/pikachu_companion/Pikachu_resize.bin"
+    const val MODEL_ASSET = "models/pikachu_companion/Pikachu_final.glb"
     const val IDLE = "Idle"
     const val PET = "Pet"
     const val CALL = "Call"
@@ -59,12 +58,12 @@ private enum class CompanionReaction(
     val settleMillis: Long,
     val speech: String
 ) {
-    IDLE(listOf("Idle", "idle", "Breath", "breath"), "Observando você.", "Curioso", Long.MAX_VALUE, "Pika!"),
-    PET(listOf("Cute", "Cute 2", "Pet", "pet", "Happy", "happy"), "Gostou do carinho.", "Feliz", 1500, "Pika pika!"),
-    CALL(listOf("Static-Cute", "Static", "Call", "call", "Look", "look"), "Olhou para você.", "Atento", 1350, "Pika?"),
-    BERRY(listOf("CuteAction", "Cute", "EatBerry", "eat_berry", "Eat", "eat"), "Adorou a Berry.", "Feliz", 2100, "Pikachu!"),
-    PLAY(listOf("Jump", "Run", "Play", "play", "jump"), "Quer brincar mais.", "Empolgado", 1800, "Pika!!"),
-    TAP(listOf("Cute 2", "Cute", "Happy", "happy", "Tap", "tap"), "Reagiu ao seu toque.", "Feliz", 1350, "Pika! ♡")
+    IDLE(listOf("Idle", "idle"), "Observando você.", "Curioso", Long.MAX_VALUE, "Pika!"),
+    PET(listOf("Dance", "Idle"), "Gostou do carinho.", "Feliz", 1600, "Pika pika!"),
+    CALL(listOf("Walking", "Idle"), "Olhou para você.", "Atento", 1400, "Pika?"),
+    BERRY(listOf("Dance", "Idle"), "Adorou a Berry.", "Feliz", 2200, "Pikachu!"),
+    PLAY(listOf("Jump", "Walking", "Dance"), "Quer brincar mais.", "Empolgado", 1850, "Pika!!"),
+    TAP(listOf("Jump", "Dance", "Idle"), "Reagiu ao seu toque.", "Feliz", 1350, "Pika! ♡")
 }
 
 private fun Context.hasAsset(path: String): Boolean =
@@ -105,8 +104,7 @@ internal fun PokemonLivingCompanionCard(
 ) {
     val context = LocalContext.current
     val hasModelAssets = remember {
-        context.hasAsset(Companion3DContract.MODEL_ASSET) &&
-            context.hasAsset(Companion3DContract.MODEL_BUFFER_ASSET)
+        context.hasAsset(Companion3DContract.MODEL_ASSET)
     }
     val supports3D = remember { context.supportsCompanion3D() }
     val modelAvailable = hasModelAssets && supports3D
@@ -153,9 +151,9 @@ internal fun PokemonLivingCompanionCard(
 
             val sceneModifier = Modifier
                 .align(Alignment.CenterEnd)
-                .fillMaxWidth(.72f)
-                .fillMaxHeight(.70f)
-                .padding(top = 58.dp, end = 4.dp, bottom = 78.dp)
+                .fillMaxWidth(.70f)
+                .fillMaxHeight(.72f)
+                .padding(top = 64.dp, end = 6.dp, bottom = 70.dp)
 
             if (modelAvailable) {
                 PokemonCompanionScene(
@@ -295,7 +293,7 @@ internal fun PokemonLivingCompanionCard(
                 accent = accent,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 126.dp, end = 16.dp)
+                    .padding(top = 180.dp, end = 16.dp)
             )
 
             CompanionAffinityPanel(
@@ -363,13 +361,13 @@ private fun CompanionStaticBackdrop(
 
             drawOval(
                 color = Color(0xFF101820).copy(alpha = .17f),
-                topLeft = Offset(w * .47f, h * .71f),
-                size = Size(w * .39f, h * .055f)
+                topLeft = Offset(w * .49f, h * .665f),
+                size = Size(w * .36f, h * .045f)
             )
             drawOval(
                 color = Color.White.copy(alpha = .08f),
-                topLeft = Offset(w * .51f, h * .705f),
-                size = Size(w * .31f, h * .035f)
+                topLeft = Offset(w * .53f, h * .662f),
+                size = Size(w * .28f, h * .027f)
             )
 
             val sparkles = listOf(
@@ -562,7 +560,7 @@ private fun PokemonCompanionScene(
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraNode = rememberCameraNode(engine) {
-        position = Position(x = 0f, y = .95f, z = 4.20f)
+        position = Position(x = 0f, y = .82f, z = 4.35f)
     }
 
     val modelNode = rememberNode {
@@ -571,11 +569,11 @@ private fun PokemonCompanionScene(
                 assetFileLocation = Companion3DContract.MODEL_ASSET
             ),
             autoAnimate = false,
-            scaleToUnits = 1.70f,
+            scaleToUnits = 1.90f,
             centerOrigin = null
         ).apply {
-            position = Position(x = -.10f, y = .64f, z = .04f)
-            rotation = Rotation(y = 180f)
+            position = Position(x = -.03f, y = .06f, z = .02f)
+            rotation = Rotation(y = 0f)
         }
     }
 
