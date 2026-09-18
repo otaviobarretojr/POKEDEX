@@ -14,7 +14,7 @@ class PokedexBootInstrumentedTest {
     @Test fun mainActivityBoot_rendersWithoutCrash(){
         ActivityScenario.launch(MainActivity::class.java).use{
             composeRule.waitUntil(timeoutMillis=10_000){
-                composeRule.onAllNodesWithText("POKEDEX",substring=true)
+                composeRule.onAllNodesWithText("SUA JORNADA, ORGANIZADA.")
                     .fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onNodeWithText("POKEDEX",substring=true,useUnmergedTree=true)
