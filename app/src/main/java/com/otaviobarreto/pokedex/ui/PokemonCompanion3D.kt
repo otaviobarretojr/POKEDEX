@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import io.github.sceneview.Scene
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
@@ -106,6 +108,7 @@ internal fun PokemonLivingCompanionCard(
     val supports3D = remember { context.supportsCompanion3D() }
     val modelAvailable = hasModelAssets && supports3D
     val accent = PokedexDesignTokens.Colors.game(gameLabel)
+    val heroArtwork = remember(gameLabel) { GameCoverCatalog.heroFor(gameLabel) }
     var reaction by rememberSaveable { mutableStateOf(CompanionReaction.IDLE.name) }
     var affinity by rememberSaveable { mutableIntStateOf(55) }
     val activeReaction = remember(reaction) {
@@ -127,37 +130,43 @@ internal fun PokemonLivingCompanionCard(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(390.dp)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            accent.copy(alpha = .22f),
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = .42f),
-                            MaterialTheme.colorScheme.surface
-                        )
-                    )
-                )
+                .height(448.dp)
+                .background(MaterialTheme.colorScheme.surface)
         ) {
+            heroArtwork?.let { artwork ->
+                AsyncImage(
+                    model = rememberOfflineArtworkModel(artwork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alpha = .28f
+                )
+            }
             Box(
                 Modifier
-                    .size(240.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(x = 72.dp, y = (-72).dp)
-                    .background(accent.copy(alpha = .10f), CircleShape)
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                accent.copy(alpha = .20f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = .16f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = .94f)
+                            )
+                        )
+                    )
             )
             Box(
                 Modifier
-                    .size(180.dp)
-                    .align(Alignment.CenterStart)
-                    .offset(x = (-80).dp, y = 34.dp)
-                    .background(accent.copy(alpha = .08f), CircleShape)
+                    .size(210.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = 68.dp, y = (-68).dp)
+                    .background(accent.copy(alpha = .12f), CircleShape)
             )
 
             Column(
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(18.dp)
-                    .widthIn(max = 190.dp)
+                    .padding(start = 18.dp, top = 16.dp)
             ) {
                 Text(
                     "COMPANHEIRO",
@@ -167,7 +176,7 @@ internal fun PokemonLivingCompanionCard(
                 )
                 Text(
                     pokemonName,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Black
                 )
                 Text(
@@ -175,6 +184,33 @@ internal fun PokemonLivingCompanionCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 16.dp, end = 16.dp),
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = .86f),
+                tonalElevation = 2.dp
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Favorite,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = accent
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        "$affinity%",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Black
+                    )
+                }
             }
 
             if (modelAvailable) {
@@ -187,117 +223,118 @@ internal fun PokemonLivingCompanionCard(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .fillMaxWidth()
-                        .height(260.dp)
-                        .padding(top = 18.dp)
+                        .height(310.dp)
+                        .padding(top = 24.dp, bottom = 18.dp)
                 )
             } else {
                 Box(
                     Modifier
                         .align(Alignment.Center)
                         .fillMaxWidth()
-                        .height(250.dp)
-                        .padding(top = 18.dp),
+                        .height(300.dp)
+                        .padding(top = 24.dp, bottom = 18.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     PokemonArtwork(
                         model = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$pokemonId.png",
                         contentDescription = pokemonName,
-                        modifier = Modifier.size(215.dp),
+                        modifier = Modifier.size(238.dp),
                         pokemonId = pokemonId
                     )
                 }
                 Surface(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 12.dp, top = 22.dp),
+                        .padding(end = 12.dp, top = 58.dp),
                     shape = RoundedCornerShape(999.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = .86f)
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = .84f)
                 ) {
-                    Row(
-                        Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.CatchingPokemon, null, Modifier.size(15.dp), tint = accent)
-                        Spacer(Modifier.width(5.dp))
-                        Text(
-                            if (hasModelAssets) "Modo 2D neste dispositivo" else "Modelo 3D indisponível",
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
+                    Text(
+                        if (hasModelAssets) "Modo 2D" else "3D indisponível",
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
 
-            Column(
-                Modifier
+            Surface(
+                modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(14.dp)
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = .90f),
+                tonalElevation = 3.dp
             ) {
-                Row(
+                Column(
                     Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = 8.dp, vertical = 9.dp)
                 ) {
-                    CompanionActionChip(
-                        label = "Carinho",
-                        icon = Icons.Default.Pets,
-                        selected = activeReaction == CompanionReaction.PET,
-                        onClick = {
-                            reaction = CompanionReaction.PET.name
-                            affinity = (affinity + 3).coerceAtMost(100)
-                        }
-                    )
-                    CompanionActionChip(
-                        label = "Chamar",
-                        icon = Icons.Default.WavingHand,
-                        selected = activeReaction == CompanionReaction.CALL,
-                        onClick = {
-                            reaction = CompanionReaction.CALL.name
-                            affinity = (affinity + 1).coerceAtMost(100)
-                        }
-                    )
-                    CompanionActionChip(
-                        label = "Dar Berry",
-                        icon = Icons.Default.Restaurant,
-                        selected = activeReaction == CompanionReaction.BERRY,
-                        onClick = {
-                            reaction = CompanionReaction.BERRY.name
-                            affinity = (affinity + 4).coerceAtMost(100)
-                        }
-                    )
-                    CompanionActionChip(
-                        label = "Brincar",
-                        icon = Icons.Default.Favorite,
-                        selected = activeReaction == CompanionReaction.PLAY,
-                        onClick = {
-                            reaction = CompanionReaction.PLAY.name
-                            affinity = (affinity + 2).coerceAtMost(100)
-                        }
-                    )
-                }
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(Modifier.weight(1f)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        CompanionQuickAction(
+                            label = "Carinho",
+                            icon = Icons.Default.Pets,
+                            selected = activeReaction == CompanionReaction.PET,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                reaction = CompanionReaction.PET.name
+                                affinity = (affinity + 3).coerceAtMost(100)
+                            }
+                        )
+                        CompanionQuickAction(
+                            label = "Chamar",
+                            icon = Icons.Default.WavingHand,
+                            selected = activeReaction == CompanionReaction.CALL,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                reaction = CompanionReaction.CALL.name
+                                affinity = (affinity + 1).coerceAtMost(100)
+                            }
+                        )
+                        CompanionQuickAction(
+                            label = "Berry",
+                            icon = Icons.Default.Restaurant,
+                            selected = activeReaction == CompanionReaction.BERRY,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                reaction = CompanionReaction.BERRY.name
+                                affinity = (affinity + 4).coerceAtMost(100)
+                            }
+                        )
+                        CompanionQuickAction(
+                            label = "Brincar",
+                            icon = Icons.Default.Favorite,
+                            selected = activeReaction == CompanionReaction.PLAY,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                reaction = CompanionReaction.PLAY.name
+                                affinity = (affinity + 2).coerceAtMost(100)
+                            }
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             "Humor · " + activeReaction.mood,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.widthIn(min = 92.dp)
                         )
                         LinearProgressIndicator(
                             progress = { affinity / 100f },
-                            modifier = Modifier.fillMaxWidth().padding(top = 5.dp).height(5.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 8.dp)
+                                .height(4.dp),
                             color = accent
                         )
                     }
-                    Text(
-                        "$affinity%",
-                        modifier = Modifier.padding(start = 12.dp),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black
-                    )
                 }
             }
         }
@@ -361,16 +398,39 @@ private fun PokemonCompanionScene(
 }
 
 @Composable
-private fun CompanionActionChip(
+private fun CompanionQuickAction(
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    FilterChip(
-        selected = selected,
+    TextButton(
         onClick = onClick,
-        label = { Text(label, fontWeight = FontWeight.Bold) },
-        leadingIcon = { Icon(icon, null, Modifier.size(17.dp)) }
-    )
+        modifier = modifier.heightIn(min = 56.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = .82f)
+            } else {
+                MaterialTheme.colorScheme.surface.copy(alpha = .36f)
+            },
+            contentColor = if (selected) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        ),
+        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, Modifier.size(19.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+        }
+    }
 }
