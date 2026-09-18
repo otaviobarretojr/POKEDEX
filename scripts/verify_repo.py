@@ -119,14 +119,21 @@ workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
 if "21400" not in workflow or "20.14.0" not in workflow:
     violations.append("CI v20.14.0 version validation missing")
 
-companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
-if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
+journey_hub = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+if 'item(key="living_dex_planner")' in journey_hub or 'item(key="universal_search")' in journey_hub:
     violations.append("Living Dex Planner must not return to Journey Home")
-for required in ("COMPANION", "CompanionProgressSection", "JourneyObjectivePreviewCard", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
-    if required not in companion:
-        violations.append(f"Companion 20 experience missing {required}")
-if "CompanionProgressSection(" not in companion:
-    violations.append("Companion progress experience missing component integration")
+for required in ("CompanionProgressSection", "JourneyObjectivePreviewCard", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
+    if required not in journey_hub:
+        violations.append(f"Journey experience missing {required}")
+if "CompanionProgressSection(" not in journey_hub:
+    violations.append("Journey progress component integration missing")
+
+trainer_home = (ui / "TrainerHomeScreen.kt").read_text(encoding="utf-8")
+for required in ("TrainerHomeScreen", "Pokémon do dia", "Missão diária", "Seu dia", "A seguir", "Continuar"):
+    if required not in trainer_home:
+        violations.append(f"Trainer Today experience missing {required}")
+if "CompanionHomeScreen" in main_source:
+    violations.append("Cancelled Companion Home must not remain wired")
 
 if violations:
     print("Source verification failed:")
