@@ -404,20 +404,21 @@ for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
 for required in ("completed", "toggle", "clear", "beginConfiguration", "confirmStart", "isConfiguring"):
     if required not in journey_progress:
         violations.append(f"Journey progress persistence missing {required}")
-if "Perfil da coleção" in companion:
-    violations.append("Journey Home must stay campaign-focused without collection profile")
+if "Perfil da coleção" in journey:
+    violations.append("Journey screen must stay campaign-focused without collection profile")
 team_guide_source = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
 if "AppStatePreferences.activeGame=g" in team_guide_source:
     violations.append("Team guide must not switch the active Journey game")
 for required in ("PLANO DA JORNADA", "Automático", "Editar inicial"):
     if required not in team_guide_source:
         violations.append(f"Journey team guide context missing {required}")
-journey_primary = (
-    'DexNavItem("home","Jornada"' in main or
-    'DexNavItem(PokedexRoutes.HOME,"Jornada"' in main
+trainer_today_primary = (
+    'DexNavItem(PokedexRoutes.HOME,"Início"' in main and
+    'DexNavItem(PokedexRoutes.GAMES,"Jogos"' in main and
+    "TrainerHomeScreen" in main
 )
-if not journey_primary or "JourneyProgressStore.initialize" not in application_source:
-    violations.append("Journey is not wired as the primary tab")
+if not trainer_today_primary or "JourneyProgressStore.initialize" not in application_source:
+    violations.append("Trainer Today / Jogos navigation contract is not wired")
 
 if violations:
     print("Source verification failed:")
@@ -786,7 +787,7 @@ for forbidden in ('"Living Dex"','"Companion"'):
     if forbidden in main_nav:
         violations.append(f"Legacy primary tab still present: {forbidden}")
 nav_contracts = (
-    ('DexNavItem("home","Jornada"', 'DexNavItem(PokedexRoutes.HOME,"Jornada"'),
+    ('DexNavItem("home","Início"', 'DexNavItem(PokedexRoutes.HOME,"Início"'),
     ('DexNavItem("pokedex","Pokédex"', 'DexNavItem(PokedexRoutes.POKEDEX,"Pokédex"'),
     ('DexNavItem("central","Config."', 'DexNavItem(PokedexRoutes.CENTRAL,"Config."'),
     ('DexNavItem("boxes","Boxes"', 'DexNavItem(PokedexRoutes.BOXES,"Boxes"'),
