@@ -116,8 +116,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "21307" not in workflow or "20.13.7" not in workflow:
-    violations.append("CI v20.13.7 version validation missing")
+if "21400" not in workflow or "20.14.0" not in workflow:
+    violations.append("CI v20.14.0 version validation missing")
 
 companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
@@ -1196,7 +1196,8 @@ local_v2134 = 'versionName = "20.13.4"' in local_gradle and "versionCode = 21304
 local_v2135 = 'versionName = "20.13.5"' in local_gradle and "versionCode = 21305" in local_gradle
 local_v2136 = 'versionName = "20.13.6"' in local_gradle and "versionCode = 21306" in local_gradle
 local_v2137 = 'versionName = "20.13.7"' in local_gradle and "versionCode = 21307" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110 or local_v2121 or local_v2130 or local_v2131 or local_v2132 or local_v2133 or local_v2134 or local_v2135 or local_v2136 or local_v2137):
+local_v2140 = 'versionName = "20.14.0"' in local_gradle and "versionCode = 21400" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110 or local_v2121 or local_v2130 or local_v2131 or local_v2132 or local_v2133 or local_v2134 or local_v2135 or local_v2136 or local_v2137 or local_v2140):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -2078,8 +2079,8 @@ if "sameOwnedVariantIdentity" not in variant_v1810:
     violations.append("v18.1 canonical variant regression helper missing")
 
 readme_v1810 = (root / "README.md").read_text(encoding="utf-8")
-if "Estado atual — v20.13.7" not in readme_v1810:
-    violations.append("README current version is not v20.13.7")
+if "Estado atual — v20.14.0" not in readme_v1810:
+    violations.append("README current version is not v20.14.0")
 
 if violations:
     print("Source verification failed:")
