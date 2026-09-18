@@ -1,7 +1,7 @@
 package com.otaviobarreto.pokedex
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onAllNodesWithText
@@ -10,25 +10,17 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.asAndroidBitmap
 import java.io.File
 import java.io.FileOutputStream
-import androidx.test.core.app.ActivityScenario
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class PokedexNavigationInstrumentedTest {
-    @get:Rule val composeRule=createEmptyComposeRule()
-    private var scenario:ActivityScenario<MainActivity>?=null
+    @get:Rule val composeRule=createComposeRule()
 
-    @Before fun launchVerifiedWarmApp(){
-        val context=androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        context.getSharedPreferences("content_bootstrap_v2",android.content.Context.MODE_PRIVATE)
-            .edit().putString("ready_signature","instrumented-verified-local-library").commit()
-        scenario=ActivityScenario.launch(MainActivity::class.java)
-    }
-
-    @After fun closeApp(){
-        scenario?.close()
+    @Before fun launchStableAppSurface(){
+        composeRule.setContent{
+            com.otaviobarreto.pokedex.ui.PokedexTheme{PokedexApp()}
+        }
     }
 
     private fun captureGoldenCandidate(name:String){
