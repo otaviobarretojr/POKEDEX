@@ -98,7 +98,7 @@ internal fun JourneyGamePicker(
                         Row(Modifier.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
                             Icon(Icons.Default.AutoAwesome,null,Modifier.size(15.dp),tint=MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(5.dp))
-                            Text("COMPANION",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+                            Text("JORNADA",style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
                         }
                     }
                     Spacer(Modifier.height(10.dp))
@@ -195,7 +195,7 @@ internal fun JourneyGamePicker(
                                 overflow=TextOverflow.Ellipsis
                             )
                             Text(
-                                "Seu Companion de aventura",
+                                "Sua Jornada ativa",
                                 style=MaterialTheme.typography.bodySmall,
                                 color=MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier=Modifier.padding(top=2.dp)
@@ -245,7 +245,7 @@ internal fun JourneyGamePicker(
                 item(key="games_library_header"){
                     Column(Modifier.fillMaxWidth().padding(top=6.dp,bottom=2.dp)){
                         Text(if(libraryOnly)"Biblioteca" else "Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-                        Text(if(libraryOnly)"Todos os jogos disponíveis." else "Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if(libraryOnly)"Todos os jogos disponíveis." else "Comece uma Jornada e acompanhe seu progresso.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 items(AppGameCatalog.adventureGames.filterNot{it.label==activeGame?.label},key={it.label}){game->
