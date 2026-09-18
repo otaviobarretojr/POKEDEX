@@ -46,6 +46,7 @@ import kotlinx.coroutines.withContext
 internal fun JourneyGamePicker(
     libraryOnly:Boolean=false,
     onSelect:(String)->Unit,
+    onContinue:(String)->Unit,
     onPokemonClick:(Int,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit
 ){
@@ -53,7 +54,7 @@ internal fun JourneyGamePicker(
         .firstOrNull{it.label==AppStatePreferences.activeGame}
         ?.takeIf{JourneyProgressStore.isStarted(it.label)}
     val dexIdsBySource by rememberJourneyDexIdsBySource(activeGamePreview)
-    val activeGame=activeGamePreview.takeUnless{libraryOnly}
+    val activeGame=activeGamePreview
     val activeSources=activeGame?.regions?.map{it.source}.orEmpty()
     val activeRegionSource=activeGame?.let{game->
         AppStatePreferences.activeRegionForGame(game.label)
@@ -231,7 +232,7 @@ internal fun JourneyGamePicker(
                             )
                             PrimaryCompanionAction(
                                 label="Continuar Jornada",
-                                onClick={onSelect(game.label)},
+                                onClick={onContinue(game.label)},
                                 modifier=Modifier.padding(top=14.dp),
                                 leading={Icon(Icons.Default.Explore,null,Modifier.size(18.dp))}
                             )
@@ -240,14 +241,14 @@ internal fun JourneyGamePicker(
                 }
             }
 
-            if(activeGame==null){
+            if(activeGame==null || libraryOnly){
                 item(key="games_library_header"){
                     Column(Modifier.fillMaxWidth().padding(top=6.dp,bottom=2.dp)){
                         Text(if(libraryOnly)"Biblioteca" else "Escolha seu jogo",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
                         Text(if(libraryOnly)"Todos os jogos disponíveis." else "Comece uma Jornada e ative seu Companion.",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                items(AppGameCatalog.adventureGames,key={it.label}){game->
+                items(AppGameCatalog.adventureGames.filterNot{it.label==activeGame?.label},key={it.label}){game->
                     JourneyGameLibraryCard(game=game,onClick={onSelect(game.label)})
                 }
             }        }

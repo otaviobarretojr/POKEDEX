@@ -71,7 +71,12 @@ fun JourneyScreen(
             onSelect={
                 explicitGameSelectionRevision++
                 selectedGame=it
-                view=if(startInGames) JourneyView.GAME_MENU else JourneyView.ROUTE
+                view=JourneyView.GAME_MENU
+            },
+            onContinue={
+                explicitGameSelectionRevision++
+                selectedGame=it
+                view=JourneyView.ROUTE
             },
             onPokemonClick=onPokemonClick,
             onOpenBoxes=onOpenBoxes
@@ -225,14 +230,6 @@ private fun JourneyRoute(
                     }
                 }
             }
-        }
-        item(key="living_companion",contentType="companion"){
-            PokemonLivingCompanionCard(
-                gameLabel=game.label,
-                pokemonId=25,
-                pokemonName="Pikachu",
-                modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
-            )
         }
         item(key="route_progress",contentType="summary"){
             Card(

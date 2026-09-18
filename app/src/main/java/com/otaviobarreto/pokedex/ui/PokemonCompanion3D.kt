@@ -105,7 +105,9 @@ internal fun PokemonLivingCompanionCard(
     gameLabel: String,
     pokemonId: Int,
     pokemonName: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    regionSource: String? = null,
+    immersive: Boolean = false
 ) {
     val context = LocalContext.current
     val hasModelAssets = remember {
@@ -115,10 +117,8 @@ internal fun PokemonLivingCompanionCard(
     val supports3D = remember { context.supportsCompanion3D() }
     val modelAvailable = hasModelAssets && supports3D
     val accent = PokedexDesignTokens.Colors.game(gameLabel)
-    val sceneLabel = remember(gameLabel) { companionSceneLabel(gameLabel) }
-    val isLumiose = remember(gameLabel) {
-        gameLabel.contains("Z-A", ignoreCase = true) || gameLabel.contains("Z A", ignoreCase = true)
-    }
+    val worldKind = remember(gameLabel, regionSource) { companionWorldKind(gameLabel, regionSource) }
+    val sceneLabel = remember(worldKind) { companionSceneLabel(worldKind) }
     var reaction by rememberSaveable { mutableStateOf(CompanionReaction.IDLE.name) }
     var affinity by rememberSaveable { mutableIntStateOf(72) }
     val activeReaction = remember(reaction) {
@@ -137,21 +137,18 @@ internal fun PokemonLivingCompanionCard(
         }
     }
 
+    val cardShape = if (immersive) RoundedCornerShape(0.dp) else RoundedCornerShape(PokedexDesignTokens.Radius.Xl)
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(PokedexDesignTokens.Radius.Xl),
+        shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = PokedexDesignTokens.Elevation.Low)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (immersive) 0.dp else PokedexDesignTokens.Elevation.Low)
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(510.dp)
-                .clip(RoundedCornerShape(PokedexDesignTokens.Radius.Xl))
-        ) {
+        val stageModifier = if (immersive) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(510.dp)
+        Box(stageModifier.clip(cardShape)) {
             CompanionWorldBackdrop(
+                worldKind = worldKind,
                 accent = accent,
-                lumiose = isLumiose,
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -210,7 +207,7 @@ internal fun PokemonLivingCompanionCard(
                 color = MaterialTheme.colorScheme.surface.copy(alpha = .78f)
             ) {
                 Text(
-                    if (isLumiose) "☀  Lumiose" else "☀  Em viagem",
+                    companionWorldBadge(worldKind),
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold
@@ -254,19 +251,35 @@ internal fun PokemonLivingCompanionCard(
                 PokemonCompanionScene(
                     reaction = activeReaction,
                     onPokemonTap = { react(CompanionReaction.TAP, 2) },
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .width(270.dp)
-                        .height(330.dp)
-                        .padding(top = 64.dp, end = 2.dp, bottom = 54.dp)
+                    modifier = if (immersive) {
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .fillMaxWidth(.76f)
+                            .fillMaxHeight(.70f)
+                            .padding(top = 44.dp, end = 2.dp, bottom = 70.dp)
+                    } else {
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .width(270.dp)
+                            .height(330.dp)
+                            .padding(top = 64.dp, end = 2.dp, bottom = 54.dp)
+                    }
                 )
             } else {
                 Box(
-                    Modifier
-                        .align(Alignment.CenterEnd)
-                        .width(260.dp)
-                        .height(300.dp)
-                        .padding(top = 58.dp, end = 4.dp, bottom = 42.dp),
+                    if (immersive) {
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .fillMaxWidth(.74f)
+                            .fillMaxHeight(.66f)
+                            .padding(top = 46.dp, end = 4.dp, bottom = 68.dp)
+                    } else {
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .width(260.dp)
+                            .height(300.dp)
+                            .padding(top = 58.dp, end = 4.dp, bottom = 42.dp)
+                    },
                     contentAlignment = Alignment.Center
                 ) {
                     PokemonArtwork(
@@ -319,132 +332,218 @@ internal fun PokemonLivingCompanionCard(
     }
 }
 
-private fun companionSceneLabel(gameLabel: String): String = when {
-    gameLabel.contains("Z-A", ignoreCase = true) -> "LUMIOSE CITY"
-    gameLabel.contains("Scarlet", ignoreCase = true) -> "PALDEA"
-    gameLabel.contains("Sword", ignoreCase = true) -> "GALAR"
-    gameLabel.contains("Arceus", ignoreCase = true) -> "HISUI"
-    gameLabel.contains("Let's Go", ignoreCase = true) -> "KANTO"
-    gameLabel.contains("Diamond", ignoreCase = true) -> "SINNOH"
-    else -> "COMPANHEIRO"
+private enum class CompanionWorldKind {
+    LUMIOSE, HYPERSPACE, PALDEA, KITAKAMI, BLUEBERRY,
+    GALAR, ISLE_ARMOR, CROWN_TUNDRA, HISUI, KANTO_LETS_GO,
+    SINNOH, KANTO_GBA
+}
+
+private fun companionWorldKind(gameLabel: String, regionSource: String?): CompanionWorldKind {
+    val game = gameLabel.lowercase()
+    val region = regionSource.orEmpty().lowercase()
+    return when {
+        game.contains("z-a") && region.contains("hyperspace") -> CompanionWorldKind.HYPERSPACE
+        game.contains("z-a") -> CompanionWorldKind.LUMIOSE
+        game.contains("scarlet") && region.contains("kitakami") -> CompanionWorldKind.KITAKAMI
+        game.contains("scarlet") && region.contains("blueberry") -> CompanionWorldKind.BLUEBERRY
+        game.contains("scarlet") -> CompanionWorldKind.PALDEA
+        game.contains("sword") && region.contains("armor") -> CompanionWorldKind.ISLE_ARMOR
+        game.contains("sword") && region.contains("tundra") -> CompanionWorldKind.CROWN_TUNDRA
+        game.contains("sword") -> CompanionWorldKind.GALAR
+        game.contains("arceus") -> CompanionWorldKind.HISUI
+        game.contains("let's go") || game.contains("lets go") -> CompanionWorldKind.KANTO_LETS_GO
+        game.contains("diamond") || game.contains("pearl") -> CompanionWorldKind.SINNOH
+        else -> CompanionWorldKind.KANTO_GBA
+    }
+}
+
+private fun companionSceneLabel(kind: CompanionWorldKind): String = when (kind) {
+    CompanionWorldKind.LUMIOSE -> "LUMIOSE CITY"
+    CompanionWorldKind.HYPERSPACE -> "HYPERSPACE LUMIOSE"
+    CompanionWorldKind.PALDEA -> "PALDEA"
+    CompanionWorldKind.KITAKAMI -> "KITAKAMI"
+    CompanionWorldKind.BLUEBERRY -> "BLUEBERRY ACADEMY"
+    CompanionWorldKind.GALAR -> "WILD AREA · GALAR"
+    CompanionWorldKind.ISLE_ARMOR -> "ISLE OF ARMOR"
+    CompanionWorldKind.CROWN_TUNDRA -> "CROWN TUNDRA"
+    CompanionWorldKind.HISUI -> "HISUI"
+    CompanionWorldKind.KANTO_LETS_GO -> "KANTO"
+    CompanionWorldKind.SINNOH -> "SINNOH"
+    CompanionWorldKind.KANTO_GBA -> "KANTO · GBA"
+}
+
+private fun companionWorldBadge(kind: CompanionWorldKind): String = when (kind) {
+    CompanionWorldKind.LUMIOSE -> "☀  Lumiose"
+    CompanionWorldKind.HYPERSPACE -> "✦  Hyperspace"
+    CompanionWorldKind.PALDEA -> "☀  Paldea"
+    CompanionWorldKind.KITAKAMI -> "☀  Kitakami"
+    CompanionWorldKind.BLUEBERRY -> "◌  Terarium"
+    CompanionWorldKind.GALAR -> "☁  Galar"
+    CompanionWorldKind.ISLE_ARMOR -> "☀  Isle of Armor"
+    CompanionWorldKind.CROWN_TUNDRA -> "❄  Crown Tundra"
+    CompanionWorldKind.HISUI -> "☀  Hisui"
+    CompanionWorldKind.KANTO_LETS_GO -> "☀  Kanto"
+    CompanionWorldKind.SINNOH -> "☀  Sinnoh"
+    CompanionWorldKind.KANTO_GBA -> "▦  Kanto"
+}
+
+private data class CompanionWorldPalette(
+    val skyTop: Color,
+    val skyBottom: Color,
+    val ground: Color,
+    val landmark: Color,
+    val foliage: Color
+)
+
+private fun companionWorldPalette(kind: CompanionWorldKind): CompanionWorldPalette = when (kind) {
+    CompanionWorldKind.LUMIOSE -> CompanionWorldPalette(Color(0xFF64B5F6), Color(0xFFD8ECF5), Color(0xFF697980), Color(0xFF334A5D), Color(0xFF5F946A))
+    CompanionWorldKind.HYPERSPACE -> CompanionWorldPalette(Color(0xFF372B76), Color(0xFF8A6ED9), Color(0xFF34304C), Color(0xFF78E2FF), Color(0xFF7257A7))
+    CompanionWorldKind.PALDEA -> CompanionWorldPalette(Color(0xFF72C8FF), Color(0xFFDDF3FF), Color(0xFF79A95B), Color(0xFFD6A55F), Color(0xFF4D8E4D))
+    CompanionWorldKind.KITAKAMI -> CompanionWorldPalette(Color(0xFF8CC5D6), Color(0xFFE7E4C3), Color(0xFF78945B), Color(0xFF7B5541), Color(0xFF4F7C52))
+    CompanionWorldKind.BLUEBERRY -> CompanionWorldPalette(Color(0xFF4F91BB), Color(0xFFBFE9E8), Color(0xFF5B927B), Color(0xFFDAF4F1), Color(0xFF3E7E6D))
+    CompanionWorldKind.GALAR -> CompanionWorldPalette(Color(0xFF7397B2), Color(0xFFD8E1E3), Color(0xFF62835F), Color(0xFF536575), Color(0xFF466B49))
+    CompanionWorldKind.ISLE_ARMOR -> CompanionWorldPalette(Color(0xFF58CBE4), Color(0xFFD6F4E8), Color(0xFFCAA96A), Color(0xFF7B6548), Color(0xFF3F8E62))
+    CompanionWorldKind.CROWN_TUNDRA -> CompanionWorldPalette(Color(0xFF8BAFC8), Color(0xFFEAF4F8), Color(0xFFD7E4EA), Color(0xFF71869A), Color(0xFF708A89))
+    CompanionWorldKind.HISUI -> CompanionWorldPalette(Color(0xFF7FAEC2), Color(0xFFE1D8B9), Color(0xFF75845A), Color(0xFF666356), Color(0xFF4F6E48))
+    CompanionWorldKind.KANTO_LETS_GO -> CompanionWorldPalette(Color(0xFF7CCEFF), Color(0xFFF0F4CF), Color(0xFF82B765), Color(0xFFB27D57), Color(0xFF4D9851))
+    CompanionWorldKind.SINNOH -> CompanionWorldPalette(Color(0xFF7CB9E8), Color(0xFFE5F0F6), Color(0xFF719B69), Color(0xFF7A8793), Color(0xFF4F7C56))
+    CompanionWorldKind.KANTO_GBA -> CompanionWorldPalette(Color(0xFF86C8A5), Color(0xFFCFE4B3), Color(0xFF80A75A), Color(0xFF5D6D4B), Color(0xFF3F7745))
 }
 
 @Composable
 private fun CompanionWorldBackdrop(
+    worldKind: CompanionWorldKind,
     accent: Color,
-    lumiose: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val palette = remember(worldKind) { companionWorldPalette(worldKind) }
     Box(
         modifier.background(
             Brush.verticalGradient(
-                listOf(
-                    Color(0xFF64B5F6),
-                    Color(0xFFAEDCFF),
-                    Color(0xFFD8ECF5),
-                    Color(0xFF7D8B92)
-                )
+                listOf(palette.skyTop, palette.skyBottom, palette.ground)
             )
         )
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
-            val horizon = h * .57f
+            val horizon = h * .58f
 
             drawCircle(
-                color = Color.White.copy(alpha = .24f),
-                radius = w * .28f,
-                center = Offset(w * .78f, h * .11f)
+                color = Color.White.copy(alpha = .22f),
+                radius = w * .23f,
+                center = Offset(w * .78f, h * .12f)
             )
 
-            val buildingColor = Color(0xFF44515D).copy(alpha = .52f)
-            val buildingLight = Color(0xFF647482).copy(alpha = .55f)
-            val widths = floatArrayOf(.12f, .11f, .14f, .10f, .13f)
-            var x = 0f
-            widths.forEachIndexed { index, fraction ->
-                val bw = w * fraction
-                val bh = h * (.20f + (index % 3) * .045f)
-                drawRect(
-                    color = if (index % 2 == 0) buildingColor else buildingLight,
-                    topLeft = Offset(x, horizon - bh),
-                    size = Size(bw, bh)
-                )
-                x += bw * 1.04f
-            }
-            x = w
-            widths.reversedArray().forEachIndexed { index, fraction ->
-                val bw = w * fraction
-                val bh = h * (.19f + (index % 3) * .05f)
-                x -= bw
-                drawRect(
-                    color = if (index % 2 == 0) buildingLight else buildingColor,
-                    topLeft = Offset(x, horizon - bh),
-                    size = Size(bw, bh)
-                )
-                x -= bw * .04f
-            }
-
-            if (lumiose) {
-                val tower = Path().apply {
-                    moveTo(w * .50f, h * .08f)
-                    lineTo(w * .466f, horizon * .74f)
-                    lineTo(w * .448f, horizon)
-                    lineTo(w * .552f, horizon)
-                    lineTo(w * .534f, horizon * .74f)
-                    close()
+            when (worldKind) {
+                CompanionWorldKind.LUMIOSE, CompanionWorldKind.HYPERSPACE -> {
+                    val widths = floatArrayOf(.13f, .10f, .14f, .11f, .12f)
+                    var x = 0f
+                    widths.forEachIndexed { index, fraction ->
+                        val bw = w * fraction
+                        val bh = h * (.18f + (index % 3) * .045f)
+                        drawRect(
+                            color = palette.landmark.copy(alpha = if (worldKind == CompanionWorldKind.HYPERSPACE) .42f else .50f),
+                            topLeft = Offset(x, horizon - bh),
+                            size = Size(bw, bh)
+                        )
+                        x += bw * 1.05f
+                    }
+                    val tower = Path().apply {
+                        moveTo(w * .50f, h * .08f)
+                        lineTo(w * .466f, horizon * .74f)
+                        lineTo(w * .448f, horizon)
+                        lineTo(w * .552f, horizon)
+                        lineTo(w * .534f, horizon * .74f)
+                        close()
+                    }
+                    drawPath(tower, palette.landmark.copy(alpha = .82f))
+                    drawLine(accent.copy(alpha = .92f), Offset(w * .50f, h * .12f), Offset(w * .50f, horizon * .93f), strokeWidth = 5f)
+                    if (worldKind == CompanionWorldKind.HYPERSPACE) {
+                        repeat(4) { index ->
+                            drawCircle(
+                                color = accent.copy(alpha = .16f + index * .04f),
+                                radius = w * (.10f + index * .06f),
+                                center = Offset(w * .72f, h * .29f),
+                                style = Stroke(width = 3f)
+                            )
+                        }
+                    }
                 }
-                drawPath(tower, Color(0xFF2D4051).copy(alpha = .78f))
-                drawLine(
-                    color = accent.copy(alpha = .92f),
-                    start = Offset(w * .50f, h * .12f),
-                    end = Offset(w * .50f, horizon * .93f),
-                    strokeWidth = 5f
-                )
-                drawCircle(
-                    color = accent.copy(alpha = .95f),
-                    radius = 12f,
-                    center = Offset(w * .50f, horizon * .72f),
-                    style = Stroke(width = 3.5f)
-                )
+                CompanionWorldKind.PALDEA -> {
+                    val hill = Path().apply {
+                        moveTo(0f, horizon)
+                        quadraticBezierTo(w * .22f, h * .43f, w * .48f, horizon)
+                        quadraticBezierTo(w * .74f, h * .46f, w, horizon)
+                        lineTo(w, h); lineTo(0f, h); close()
+                    }
+                    drawPath(hill, palette.foliage.copy(alpha = .56f))
+                    drawRect(palette.landmark.copy(alpha = .62f), Offset(w*.44f,horizon-h*.105f), Size(w*.12f,h*.105f))
+                    drawLine(palette.landmark, Offset(w*.50f,horizon-h*.16f), Offset(w*.50f,horizon-h*.105f), strokeWidth=6f)
+                }
+                CompanionWorldKind.KITAKAMI -> {
+                    val hill = Path().apply {
+                        moveTo(0f, horizon); quadraticBezierTo(w*.30f,h*.40f,w*.58f,horizon); quadraticBezierTo(w*.82f,h*.48f,w,horizon); lineTo(w,h); lineTo(0f,h); close()
+                    }
+                    drawPath(hill,palette.foliage.copy(alpha=.62f))
+                    listOf(.22f,.70f).forEach { cx ->
+                        drawRect(palette.landmark.copy(alpha=.64f), Offset(w*cx,horizon-h*.08f), Size(w*.12f,h*.08f))
+                        val roof=Path().apply{moveTo(w*(cx-.02f),horizon-h*.08f);lineTo(w*(cx+.06f),horizon-h*.135f);lineTo(w*(cx+.14f),horizon-h*.08f);close()}
+                        drawPath(roof,accent.copy(alpha=.45f))
+                    }
+                }
+                CompanionWorldKind.BLUEBERRY -> {
+                    drawRect(palette.ground.copy(alpha=.82f), Offset(0f,horizon), Size(w,h-horizon))
+                    drawCircle(palette.landmark.copy(alpha=.18f), w*.44f, Offset(w*.50f,h*.50f), style=Stroke(width=5f))
+                    drawLine(palette.landmark.copy(alpha=.55f),Offset(0f,horizon),Offset(w,horizon),strokeWidth=5f)
+                    repeat(5){i->drawLine(Color.White.copy(alpha=.16f),Offset(w*(i/5f),horizon),Offset(w*.5f,h*.28f),strokeWidth=2f)}
+                }
+                CompanionWorldKind.GALAR -> {
+                    val hill=Path().apply{moveTo(0f,horizon);quadraticBezierTo(w*.28f,h*.43f,w*.52f,horizon);quadraticBezierTo(w*.78f,h*.46f,w,horizon);lineTo(w,h);lineTo(0f,h);close()}
+                    drawPath(hill,palette.foliage.copy(alpha=.58f))
+                    drawOval(palette.skyBottom.copy(alpha=.55f),Offset(w*.08f,horizon+h*.03f),Size(w*.36f,h*.10f))
+                    drawRect(palette.landmark.copy(alpha=.55f),Offset(w*.78f,horizon-h*.13f),Size(w*.06f,h*.13f))
+                }
+                CompanionWorldKind.ISLE_ARMOR -> {
+                    drawRect(Color(0xFF4AB4CF).copy(alpha=.72f),Offset(0f,horizon),Size(w,h*.16f))
+                    drawRect(palette.ground,Offset(0f,horizon+h*.16f),Size(w,h-horizon-h*.16f))
+                    drawRect(palette.landmark.copy(alpha=.65f),Offset(w*.68f,horizon-h*.08f),Size(w*.16f,h*.08f))
+                    repeat(4){i->drawCircle(palette.foliage.copy(alpha=.72f),w*.05f,Offset(w*(.12f+i*.16f),horizon-h*.01f))}
+                }
+                CompanionWorldKind.CROWN_TUNDRA -> {
+                    val back=Path().apply{moveTo(0f,horizon);lineTo(w*.22f,h*.28f);lineTo(w*.39f,horizon);lineTo(w*.62f,h*.22f);lineTo(w,horizon);lineTo(w,h);lineTo(0f,h);close()}
+                    drawPath(back,palette.landmark.copy(alpha=.68f))
+                    val snow=Path().apply{moveTo(w*.12f,h*.37f);lineTo(w*.22f,h*.28f);lineTo(w*.30f,h*.39f);moveTo(w*.49f,h*.34f);lineTo(w*.62f,h*.22f);lineTo(w*.73f,h*.37f)}
+                    drawPath(snow,Color.White.copy(alpha=.80f),style=Stroke(width=8f))
+                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
+                }
+                CompanionWorldKind.HISUI, CompanionWorldKind.SINNOH -> {
+                    val peakX=if(worldKind==CompanionWorldKind.HISUI).58f else .48f
+                    val mountain=Path().apply{moveTo(0f,horizon);lineTo(w*peakX,h*.20f);lineTo(w,horizon);lineTo(w,h);lineTo(0f,h);close()}
+                    drawPath(mountain,palette.landmark.copy(alpha=if(worldKind==CompanionWorldKind.HISUI).58f else .66f))
+                    drawPath(Path().apply{moveTo(w*(peakX-.12f),h*.34f);lineTo(w*peakX,h*.20f);lineTo(w*(peakX+.11f),h*.35f)},Color.White.copy(alpha=.62f),style=Stroke(width=7f))
+                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
+                    repeat(5){i->drawCircle(palette.foliage.copy(alpha=.68f),w*.045f,Offset(w*(.08f+i*.20f),horizon-h*.02f))}
+                }
+                CompanionWorldKind.KANTO_LETS_GO -> {
+                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
+                    repeat(5){i->drawCircle(palette.foliage.copy(alpha=.78f),w*.065f,Offset(w*(.08f+i*.21f),horizon-h*.02f))}
+                    drawRect(palette.landmark.copy(alpha=.72f),Offset(w*.64f,horizon-h*.10f),Size(w*.17f,h*.10f))
+                    val roof=Path().apply{moveTo(w*.61f,horizon-h*.10f);lineTo(w*.725f,horizon-h*.16f);lineTo(w*.84f,horizon-h*.10f);close()}
+                    drawPath(roof,accent.copy(alpha=.46f))
+                }
+                CompanionWorldKind.KANTO_GBA -> {
+                    drawRect(palette.ground,Offset(0f,horizon),Size(w,h-horizon))
+                    val block=w*.07f
+                    repeat(5){row-> repeat(8){col->
+                        if((row+col)%3!=0) drawRect(palette.foliage.copy(alpha=.80f),Offset(col*block*1.9f,horizon-row*block*.72f),Size(block,block))
+                    }}
+                    drawRect(palette.landmark.copy(alpha=.68f),Offset(w*.62f,horizon-h*.11f),Size(w*.18f,h*.11f))
+                }
             }
 
-            drawRect(
-                color = Color(0xFF63727A).copy(alpha = .72f),
-                topLeft = Offset(0f, horizon),
-                size = Size(w, h - horizon)
-            )
-            drawLine(
-                Color.White.copy(alpha = .26f),
-                Offset(w * .50f, horizon),
-                Offset(w * .17f, h),
-                strokeWidth = 2f
-            )
-            drawLine(
-                Color.White.copy(alpha = .26f),
-                Offset(w * .50f, horizon),
-                Offset(w * .83f, h),
-                strokeWidth = 2f
-            )
-            drawLine(
-                accent.copy(alpha = .20f),
-                Offset(w * .50f, horizon),
-                Offset(w * .50f, h),
-                strokeWidth = 4f
-            )
-
-            listOf(
-                Offset(w * .08f, horizon * .83f),
-                Offset(w * .17f, horizon * .74f),
-                Offset(w * .86f, horizon * .78f),
-                Offset(w * .93f, horizon * .88f)
-            ).forEachIndexed { index, center ->
-                drawCircle(
-                    color = if (index % 2 == 0) Color(0xFF4D7E58) else Color(0xFF65956B),
-                    radius = w * .055f,
-                    center = center
-                )
-            }
+            drawLine(Color.White.copy(alpha=.16f),Offset(w*.50f,horizon),Offset(w*.22f,h),strokeWidth=2f)
+            drawLine(Color.White.copy(alpha=.16f),Offset(w*.50f,horizon),Offset(w*.78f,h),strokeWidth=2f)
         }
     }
 }
