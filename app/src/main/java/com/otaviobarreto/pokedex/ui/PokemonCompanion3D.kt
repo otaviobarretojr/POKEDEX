@@ -597,12 +597,13 @@ private fun PokemonCompanionScene(
             ),
             autoAnimate = false,
             scaleToUnits = 1.85f,
-            centerOrigin = null,
-            // The bundled source model has an off-centre authored pivot.
-            // This translation is derived from its normalized AABB after removing
-            // the broken SceneView 2.3 bottom-origin transform.
+            centerOrigin = null
+        ).apply {
+            // SceneView 2.3 applies transforms imperatively on ModelNode.
+            // This translation is derived from the normalized AABB after removing
+            // the broken bottom-origin transform.
             position = Position(x = -.25f, y = .16f, z = .30f)
-        )
+        }
     }
 
     val animationNames = remember(modelNode) {
