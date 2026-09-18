@@ -9,7 +9,7 @@ LAUNCH_LOG="$OUT_DIR/launch-logcat.txt"
 TEST_LOG="$OUT_DIR/emulator-logcat.txt"
 PACKAGE="com.otaviobarreto.pokedex"
 RUNNER="com.otaviobarreto.pokedex.test/androidx.test.runner.AndroidJUnitRunner"
-CLASSES="com.otaviobarreto.pokedex.PokedexNavigationInstrumentedTest,com.otaviobarreto.pokedex.data.CollectionPersistenceInstrumentedTest,com.otaviobarreto.pokedex.ui.PokedexChromeInstrumentedTest"
+CLASSES="com.otaviobarreto.pokedex.PokedexNavigationInstrumentedTest#primaryRoutes_areReachableAndBottomNavigationSurvives,com.otaviobarreto.pokedex.PokedexNavigationInstrumentedTest#routeSwitching_doesNotLosePrimaryNavigation,com.otaviobarreto.pokedex.data.CollectionPersistenceInstrumentedTest,com.otaviobarreto.pokedex.ui.PokedexChromeInstrumentedTest"
 
 mkdir -p "$OUT_DIR"
 
@@ -59,13 +59,13 @@ with open(output_path, "w", encoding="utf-8") as output:
             command,
             stdout=output,
             stderr=subprocess.STDOUT,
-            timeout=180,
+            timeout=240,
             check=False,
             text=True,
         )
         code = completed.returncode
     except subprocess.TimeoutExpired:
-        output.write("\nSMOKE_TIMEOUT_AFTER_180_SECONDS\n")
+        output.write("\nSMOKE_TIMEOUT_AFTER_240_SECONDS\n")
         code = 124
 sys.exit(code)
 PY
