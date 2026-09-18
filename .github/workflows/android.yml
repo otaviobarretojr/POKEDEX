@@ -73,8 +73,8 @@ jobs:
         run: gradle testDebugUnitTest
       - name: Android lint
         run: gradle lintDebug
-      - name: Compile instrumentation tests
-        run: gradle assembleDebugAndroidTest
+      - name: Compile app and instrumentation tests
+        run: gradle assembleDebug assembleDebugAndroidTest
       - name: Run stable smoke tests on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
