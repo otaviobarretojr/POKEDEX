@@ -226,6 +226,14 @@ private fun JourneyRoute(
                 }
             }
         }
+        item(key="living_companion",contentType="companion"){
+            PokemonLivingCompanionCard(
+                gameLabel=game.label,
+                pokemonId=25,
+                pokemonName="Pikachu",
+                modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
+            )
+        }
         item(key="route_progress",contentType="summary"){
             Card(
                 shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
