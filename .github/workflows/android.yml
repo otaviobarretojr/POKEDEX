@@ -88,7 +88,7 @@ jobs:
             adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb logcat -c
             set +e
-            adb shell am instrument -w -r com.otaviobarreto.pokedex.test/androidx.test.runner.AndroidJUnitRunner > app/build/outputs/stable-smoke/instrumentation.txt 2>&1
+            timeout 240s adb shell am instrument -w -r com.otaviobarreto.pokedex.test/androidx.test.runner.AndroidJUnitRunner > app/build/outputs/stable-smoke/instrumentation.txt 2>&1
             status=$?
             set -e
             cat app/build/outputs/stable-smoke/instrumentation.txt
