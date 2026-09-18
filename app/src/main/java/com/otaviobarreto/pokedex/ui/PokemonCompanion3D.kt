@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.sceneview.Scene
 import io.github.sceneview.math.Position
+import io.github.sceneview.math.Rotation
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.rememberCameraNode
 import io.github.sceneview.rememberEngine
@@ -570,10 +571,11 @@ private fun PokemonCompanionScene(
                 assetFileLocation = Companion3DContract.MODEL_ASSET
             ),
             autoAnimate = false,
-            scaleToUnits = 1.38f,
+            scaleToUnits = 1.70f,
             centerOrigin = null
         ).apply {
-            position = Position(x = -.36f, y = .56f, z = .04f)
+            position = Position(x = -.10f, y = .64f, z = .04f)
+            rotation = Rotation(y = 180f)
         }
     }
 
