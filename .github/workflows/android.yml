@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Fetch and audit final Pikachu companion model
-        run: python3 scripts/fetch_companion_model.py
       - name: Set up JDK 17
         uses: actions/setup-java@v6
         with:
@@ -37,10 +35,10 @@ jobs:
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
       - name: Apply release metadata
         run: python3 scripts/apply_release_version.py
-      - name: Validate v20.13.7 Static Rig Check
+      - name: Validate v20.14.0 Trainer Today
         run: |
-          grep -q 'versionCode = 21307' app/build.gradle.kts
-          grep -q 'versionName = "20.13.7"' app/build.gradle.kts
+          grep -q 'versionCode = 21400' app/build.gradle.kts
+          grep -q 'versionName = "20.14.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
@@ -91,7 +89,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: POKEDEX-v20.13.7-Static-Rig-Check
+          name: POKEDEX-v20.14.0-Trainer-Today
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
