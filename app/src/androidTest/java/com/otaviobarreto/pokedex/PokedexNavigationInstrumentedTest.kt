@@ -37,9 +37,9 @@ class PokedexNavigationInstrumentedTest {
 
     private fun waitForMainNavigation(){
         composeRule.waitUntil(timeoutMillis=10_000){
-            composeRule.onAllNodesWithText("Jornada").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Início").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText("Jornada").assertIsDisplayed()
+        composeRule.onNodeWithText("Início").assertIsDisplayed()
     }
 
     @Test fun visualSnapshots_primaryDestinations(){
@@ -62,7 +62,7 @@ class PokedexNavigationInstrumentedTest {
         composeRule.onNodeWithText("Coleção").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Box").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Config.").assertIsDisplayed().performClick()
-        composeRule.onNodeWithText("Jornada").assertIsDisplayed().performClick()
+        composeRule.onNodeWithText("Início").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Jogos").assertIsDisplayed()
         composeRule.onNodeWithText("Pokédex").assertIsDisplayed()
         composeRule.onNodeWithText("Coleção").assertIsDisplayed()
@@ -76,7 +76,7 @@ class PokedexNavigationInstrumentedTest {
             composeRule.onNodeWithText("Box").assertIsDisplayed().performClick()
             composeRule.onNodeWithText("Jogos").assertIsDisplayed().performClick()
             composeRule.onNodeWithText("Coleção").assertIsDisplayed().performClick()
-            composeRule.onNodeWithText("Jornada").assertIsDisplayed().performClick()
+            composeRule.onNodeWithText("Início").assertIsDisplayed().performClick()
         }
         composeRule.onNodeWithText("Pokédex").assertIsDisplayed()
         composeRule.onNodeWithText("Config.").assertIsDisplayed()
