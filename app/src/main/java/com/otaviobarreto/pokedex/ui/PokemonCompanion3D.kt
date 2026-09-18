@@ -34,7 +34,7 @@ import io.github.sceneview.rememberOnGestureListener
 import kotlinx.coroutines.delay
 
 internal object Companion3DContract {
-    const val MODEL_ASSET = "models/pikachu_companion.glb"
+    const val MODEL_ASSET = "models/pikachu_companion/Pikachu_resize.gltf"
     const val IDLE = "Idle"
     const val PET = "Pet"
     const val CALL = "Call"
@@ -52,11 +52,11 @@ private enum class CompanionReaction(
     val settleMillis: Long
 ) {
     IDLE(listOf("Idle", "idle", "Breath", "breath"), "Observando você.", "Curioso", Long.MAX_VALUE),
-    PET(listOf("Pet", "pet", "Happy", "happy"), "Gostou do carinho.", "Feliz", 1500),
-    CALL(listOf("Call", "call", "Look", "look"), "Olhou para você.", "Atento", 1350),
-    BERRY(listOf("EatBerry", "eat_berry", "Eat", "eat"), "Adorou a Berry.", "Feliz", 2100),
-    PLAY(listOf("Play", "play", "Jump", "jump"), "Quer brincar mais.", "Empolgado", 1800),
-    TAP(listOf("Happy", "happy", "Tap", "tap"), "Reagiu ao seu toque.", "Feliz", 1350)
+    PET(listOf("Cute", "Cute 2", "Pet", "pet", "Happy", "happy"), "Gostou do carinho.", "Feliz", 1500),
+    CALL(listOf("Static-Cute", "Static", "Call", "call", "Look", "look"), "Olhou para você.", "Atento", 1350),
+    BERRY(listOf("CuteAction", "Cute", "EatBerry", "eat_berry", "Eat", "eat"), "Adorou a Berry.", "Feliz", 2100),
+    PLAY(listOf("Jump", "Run", "Play", "play", "jump"), "Quer brincar mais.", "Empolgado", 1800),
+    TAP(listOf("Cute 2", "Cute", "Happy", "happy", "Tap", "tap"), "Reagiu ao seu toque.", "Feliz", 1350)
 }
 
 private fun Context.hasAsset(path: String): Boolean =
