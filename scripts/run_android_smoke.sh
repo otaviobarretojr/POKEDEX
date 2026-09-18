@@ -11,8 +11,61 @@ RUNNER="com.otaviobarreto.pokedex.test/androidx.test.runner.AndroidJUnitRunner"
 
 mkdir -p "$OUT_DIR"
 
-adb install -r "$APP_APK"
-adb install -r "$TEST_APK"
+restart_adb() {
+  adb kill-server >/dev/null 2>&1 || true
+  sleep 2
+  adb start-server >/dev/null
+}
+
+wait_for_android_ready() {
+  local attempt
+  restart_adb
+  for attempt in $(seq 1 90); do
+    if adb wait-for-device >/dev/null 2>&1 &&
+       [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ] &&
+       adb shell cmd package list packages >/dev/null 2>&1; then
+      echo "ANDROID_READY_AFTER_ATTEMPT=$attempt"
+      return 0
+    fi
+
+    if [ $((attempt % 15)) -eq 0 ]; then
+      echo "ADB/package manager not ready on attempt $attempt; restarting ADB."
+      restart_adb
+    fi
+    sleep 2
+  done
+
+  echo "Android emulator never reached a usable ADB/package-manager state." >&2
+  adb devices -l || true
+  adb shell getprop sys.boot_completed || true
+  return 1
+}
+
+install_apk_with_retry() {
+  local apk="$1"
+  local label="$2"
+  local attempt
+
+  for attempt in $(seq 1 5); do
+    if adb install -r "$apk"; then
+      echo "APK_INSTALL_${label}=OK_ATTEMPT_${attempt}"
+      return 0
+    fi
+
+    echo "Install failed for $label on attempt $attempt; recovering ADB/package manager." >&2
+    restart_adb
+    wait_for_android_ready || true
+    sleep 2
+  done
+
+  echo "Unable to install $label after retries." >&2
+  return 1
+}
+
+wait_for_android_ready
+install_apk_with_retry "$APP_APK" "APP"
+install_apk_with_retry "$TEST_APK" "TEST"
+
 adb shell input keyevent 82 >/dev/null 2>&1 || true
 adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
 
