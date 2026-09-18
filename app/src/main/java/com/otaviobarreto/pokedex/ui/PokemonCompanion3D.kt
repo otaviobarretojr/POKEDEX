@@ -44,8 +44,8 @@ import io.github.sceneview.rememberOnGestureListener
 import kotlinx.coroutines.delay
 
 internal object Companion3DContract {
-    const val MODEL_ASSET = "models/pikachu_companion/Pikachu_companion_embedded.gltf"
-    const val PALDEA_WORLD_ASSET = "models/companion_worlds/paldea_companion_world.gltf"
+    const val MODEL_ASSET = "models/pikachu_companion/Pikachu_companion_normalized.gltf"
+    const val MODEL_BUFFER_ASSET = "models/pikachu_companion/Pikachu_resize.bin"
     const val IDLE = "Idle"
     const val PET = "Pet"
     const val CALL = "Call"
@@ -110,13 +110,14 @@ internal fun PokemonLivingCompanionCard(
     immersive: Boolean = false
 ) {
     val context = LocalContext.current
-    val hasModelAssets = remember { context.hasAsset(Companion3DContract.MODEL_ASSET) }
+    val hasModelAssets = remember {
+        context.hasAsset(Companion3DContract.MODEL_ASSET) &&
+            context.hasAsset(Companion3DContract.MODEL_BUFFER_ASSET)
+    }
     val supports3D = remember { context.supportsCompanion3D() }
     val modelAvailable = hasModelAssets && supports3D
     val accent = PokedexDesignTokens.Colors.game(gameLabel)
     val worldKind = remember(gameLabel, regionSource) { companionWorldKind(gameLabel, regionSource) }
-    val world3DAsset = remember(worldKind) { companionWorld3DAsset(worldKind) }
-    val hasWorld3DAsset = remember(world3DAsset) { world3DAsset?.let(context::hasAsset) == true }
     val sceneLabel = remember(worldKind) { companionSceneLabel(worldKind) }
     var reaction by rememberSaveable { mutableStateOf(CompanionReaction.IDLE.name) }
     var affinity by rememberSaveable { mutableIntStateOf(72) }
@@ -154,7 +155,6 @@ internal fun PokemonLivingCompanionCard(
             if (modelAvailable) {
                 PokemonCompanionScene(
                     reaction = activeReaction,
-                    worldAsset = world3DAsset.takeIf { hasWorld3DAsset },
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -385,11 +385,6 @@ private fun companionWorldBadge(kind: CompanionWorldKind): String = when (kind) 
     CompanionWorldKind.KANTO_GBA -> "▦  Kanto"
 }
 
-private fun companionWorld3DAsset(kind: CompanionWorldKind): String? = when (kind) {
-    CompanionWorldKind.PALDEA -> Companion3DContract.PALDEA_WORLD_ASSET
-    else -> null
-}
-
 private data class CompanionWorldPalette(
     val skyTop: Color,
     val skyBottom: Color,
@@ -572,22 +567,12 @@ private fun CompanionAffinityPanel(
 @Composable
 private fun PokemonCompanionScene(
     reaction: CompanionReaction,
-    worldAsset: String?,
     modifier: Modifier = Modifier
 ) {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraNode = rememberCameraNode(engine) {
-        position = Position(y = .90f, z = 4.20f)
-    }
-
-    val worldNode = worldAsset?.let { asset ->
-        rememberNode {
-            ModelNode(
-                modelInstance = modelLoader.createModelInstance(assetFileLocation = asset),
-                autoAnimate = false
-            )
-        }
+        position = Position(x = 0f, y = .90f, z = 4.40f)
     }
 
     val modelNode = rememberNode {
@@ -596,13 +581,10 @@ private fun PokemonCompanionScene(
                 assetFileLocation = Companion3DContract.MODEL_ASSET
             ),
             autoAnimate = false,
-            scaleToUnits = 1.85f,
+            scaleToUnits = 1.70f,
             centerOrigin = null
         ).apply {
-            // SceneView 2.3 applies transforms imperatively on ModelNode.
-            // This translation is derived from the normalized AABB after removing
-            // the broken bottom-origin transform.
-            position = Position(x = -.25f, y = .16f, z = .30f)
+            position = Position(x = -.18f, y = -.46f, z = .10f)
         }
     }
 
@@ -632,7 +614,7 @@ private fun PokemonCompanionScene(
         isOpaque = false,
         cameraNode = cameraNode,
         cameraManipulator = null,
-        childNodes = listOfNotNull(worldNode, modelNode)
+        childNodes = listOf(modelNode)
     )
 }
 
