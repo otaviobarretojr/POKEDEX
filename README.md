@@ -2,9 +2,9 @@
 
 Aplicativo Android pessoal para organizar jornadas Pokémon, acompanhar a coleção por jogo/região e consultar a National Dex com formas, variantes e Shiny.
 
-## Estado atual — v20.13.0
+## Estado atual — v20.13.1
 
-A **v20.13.0 — Stable Foundation** consolida a base atual do aplicativo depois do rework de Jornada, Jogos, Pokédex, Coleção, Box, conteúdo offline e artwork. O objetivo desta versão é funcionar como nova baseline estável para as próximas evoluções, preservando compatibilidade com as instalações anteriores.
+A **v20.13.1 — Companion Worlds** consolida a base atual do aplicativo depois do rework de Jornada, Jogos, Pokédex, Coleção, Box, conteúdo offline e artwork. O objetivo desta versão é funcionar como nova baseline estável para as próximas evoluções, preservando compatibilidade com as instalações anteriores.
 
 ### Navegação principal
 
@@ -55,7 +55,7 @@ O sistema de artwork acompanha revisões do diretório de sprites do PokeAPI e p
 
 ### Estabilidade
 
-A v20.13.0 adiciona:
+A v20.13.1 adiciona:
 
 - preservação do boot concluído em recriações da Activity;
 - áudio protegido contra recriação de configuração;
