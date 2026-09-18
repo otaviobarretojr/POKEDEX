@@ -157,7 +157,6 @@ internal fun PokemonLivingCompanionCard(
 
             if (modelAvailable) {
                 PokemonCompanionScene(
-                    reaction = activeReaction,
                     modifier = sceneModifier
                 )
             } else {
@@ -554,7 +553,6 @@ private fun CompanionAffinityPanel(
 
 @Composable
 private fun PokemonCompanionScene(
-    reaction: CompanionReaction,
     modifier: Modifier = Modifier
 ) {
     val engine = rememberEngine()
@@ -577,25 +575,9 @@ private fun PokemonCompanionScene(
         }
     }
 
-    val animationNames = remember(modelNode) {
-        (0 until modelNode.animationCount).map { modelNode.animator.getAnimationName(it) }
-    }
-    val animationName = remember(reaction, animationNames) {
-        reaction.preferredClips.firstNotNullOfOrNull { candidate ->
-            animationNames.firstOrNull { it.equals(candidate, ignoreCase = true) }
-        } ?: animationNames.firstOrNull()
-    }
-
-    LaunchedEffect(modelNode, animationName, reaction) {
-        modelNode.playingAnimations.keys.toList().forEach(modelNode::stopAnimation)
-        animationName?.let {
-            modelNode.playAnimation(
-                animationName = it,
-                loop = reaction == CompanionReaction.IDLE
-            )
-        }
-    }
-
+    // Diagnostic baseline: do not touch the animator at all.
+    // If the skinned GLB renders correctly in its bind pose on physical hardware,
+    // the corruption seen in v20.13.6 is isolated to animated skinning/clip playback.
     Scene(
         modifier = modifier,
         engine = engine,
