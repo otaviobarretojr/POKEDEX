@@ -114,7 +114,8 @@ supported_version = (
     ('versionCode = 21301' in gradle and 'versionName = "20.13.1"' in gradle) or
     ('versionCode = 21302' in gradle and 'versionName = "20.13.2"' in gradle) or
     ('versionCode = 21303' in gradle and 'versionName = "20.13.3"' in gradle) or
-    ('versionCode = 21304' in gradle and 'versionName = "20.13.4"' in gradle)
+    ('versionCode = 21304' in gradle and 'versionName = "20.13.4"' in gradle) or
+    ('versionCode = 21305' in gradle and 'versionName = "20.13.5"' in gradle)
 )
 if not supported_version:
     errors.append("supported version contract changed unexpectedly")

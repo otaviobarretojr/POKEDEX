@@ -2,9 +2,9 @@
 
 Aplicativo Android pessoal para organizar jornadas Pokémon, acompanhar a coleção por jogo/região e consultar a National Dex com formas, variantes e Shiny.
 
-## Estado atual — v20.13.4
+## Estado atual — v20.13.5
 
-A **v20.13.4 — Companion Stage** consolida a base atual do aplicativo depois do rework de Jornada, Jogos, Pokédex, Coleção, Box, conteúdo offline e artwork. O objetivo desta versão é funcionar como nova baseline estável para as próximas evoluções, preservando compatibilidade com as instalações anteriores.
+A **v20.13.5 — Companion Front View** consolida a base atual do aplicativo depois do rework de Jornada, Jogos, Pokédex, Coleção, Box, conteúdo offline e artwork. O objetivo desta versão é funcionar como nova baseline estável para as próximas evoluções, preservando compatibilidade com as instalações anteriores.
 
 ### Navegação principal
 
@@ -55,7 +55,12 @@ O sistema de artwork acompanha revisões do diretório de sprites do PokeAPI e p
 
 ### Estabilidade
 
-A v20.13.4 adiciona:
+A v20.13.5 adiciona:
+
+- orientação frontal do Pikachu 3D com rotação Y de 180°;
+- escala do companion aumentada para recuperar protagonismo visual sem voltar a cortar o corpo;
+- reposicionamento horizontal e vertical para manter o personagem centralizado acima do painel inferior;
+
 
 - Home Companion independente de jogo/região, com palco visual fixo do aplicativo;
 - remoção da lógica de fundos por Paldea, Lumiose, Galar, Hisui e demais regiões na Home;
