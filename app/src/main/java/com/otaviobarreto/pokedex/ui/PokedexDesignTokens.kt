@@ -89,7 +89,14 @@ object PokedexDesignTokens {
     object Spacing { val Xs=4.dp; val Sm=8.dp; val Md=12.dp; val Lg=16.dp; val Xl=24.dp; val Xxl=32.dp }
     object Radius { val Xs=10.dp; val Sm=14.dp; val Md=18.dp; val Lg=24.dp; val Xl=30.dp; val Pill=999.dp }
     object Elevation { val Flat=0.dp; val Low=2.dp; val Medium=6.dp; val High=12.dp }
-    object Motion { const val Fast=140; const val Standard=220; const val Emphasis=320 }
+    object Motion {
+        const val Instant=90
+        const val Fast=150
+        const val Standard=240
+        const val Emphasis=360
+        const val Screen=300
+        const val Stagger=45
+    }
 
     object Companion {
         const val ContextualBackdropAlpha = 0.12f
