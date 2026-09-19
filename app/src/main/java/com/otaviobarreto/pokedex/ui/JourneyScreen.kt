@@ -40,7 +40,8 @@ fun JourneyScreen(
     onOpenBoxes:(String,String?)->Unit,
     onOpenGameDex:()->Unit={},
     onOpenEvolutionCenter:()->Unit={},
-    onOpenSearch:()->Unit={}
+    onOpenSearch:()->Unit={},
+    onExit:()->Unit={}
 ){
     val activeJourneyGame=remember(startInGames){if(startInGames)null else AppStatePreferences.activeGame.takeIf{active->AppGameCatalog.adventureGames.any{it.label==active}}}
     var selectedGame by rememberSaveable(startInGames){mutableStateOf(activeJourneyGame)}
@@ -54,15 +55,15 @@ fun JourneyScreen(
         if(explicitGameSelectionRevision==0) return@LaunchedEffect
         routeListState.scrollToItem(0)
     }
-    BackHandler(enabled=view!=JourneyView.GAMES){
+    BackHandler(enabled=view!=JourneyView.GAMES || !startInGames){
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
-            JourneyView.ROUTE -> if(startInGames) view=JourneyView.GAME_MENU
+            JourneyView.ROUTE -> if(startInGames) view=JourneyView.GAME_MENU else onExit()
             JourneyView.DETAIL -> {
                 selectedStepId=null
                 view=detailReturnView
             }
-            JourneyView.GAMES -> Unit
+            JourneyView.GAMES -> if(!startInGames) onExit()
         }
     }
     when(view){
@@ -90,8 +91,8 @@ fun JourneyScreen(
             onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
-            game=game,showBack=startInGames,
-            onBack={if(startInGames) view=JourneyView.GAME_MENU},
+            game=game,showBack=true,
+            onBack={if(startInGames) view=JourneyView.GAME_MENU else onExit()},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},
             listState=routeListState,
             onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL},
