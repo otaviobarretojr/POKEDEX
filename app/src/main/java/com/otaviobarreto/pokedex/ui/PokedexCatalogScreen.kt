@@ -1,5 +1,11 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -181,7 +187,12 @@ fun PokedexCatalogScreen(
     }
 
 
-    selectedId?.let{id->
+    AnimatedVisibility(
+        visible = selectedId != null,
+        enter = fadeIn(tween(PokedexDesignTokens.Motion.Fast)) + scaleIn(initialScale = .96f, animationSpec = tween(PokedexDesignTokens.Motion.Standard)),
+        exit = fadeOut(tween(PokedexDesignTokens.Motion.Fast)) + scaleOut(targetScale = .98f, animationSpec = tween(PokedexDesignTokens.Motion.Fast))
+    ) {
+        selectedId?.let{id->
         PokedexFormsDialog(
             pokemonId=id,
             onDismiss={selectedId=null},
@@ -194,6 +205,7 @@ fun PokedexCatalogScreen(
                 onOpenFormDetail(formId,name,shiny)
             }
         )
+        }
     }
 }
 
