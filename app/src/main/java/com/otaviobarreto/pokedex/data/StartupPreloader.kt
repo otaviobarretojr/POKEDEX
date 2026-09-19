@@ -42,6 +42,9 @@ object StartupPreloader {
         val nationalSnapshot = PokedexDataStore.cachedNationalDex().orEmpty()
         val nationalByName = nationalSnapshot.associateBy { it.name.lowercase() }
 
+        progress(.14f, "Preparando sua coleção")
+        runCatching { CollectionAdvisor.warmAllGames() }
+
         val activeGame = AppStatePreferences.activeGame
         val game = AppGameCatalog.games.firstOrNull { it.label == activeGame }
         val journeySteps = JourneyCatalog.steps(activeGame)
@@ -125,6 +128,7 @@ object StartupPreloader {
         }
 
         val activeCoverUrls = GameCoverCatalog.coversFor(activeGame)
+        val activeGameHeroUrls = listOfNotNull(GameCoverCatalog.heroFor(activeGame))
         val activeHeroUrls = JourneyGameVisualCatalog.forGame(activeGame).heroPokemonIds
             .map { id ->
                 "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
@@ -150,31 +154,66 @@ object StartupPreloader {
         }
 
         val activeJourneyArtworkUrls = (
-            activeCoverUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls
+            activeCoverUrls + activeGameHeroUrls + activeHeroUrls + activeRouteArtworkUrls + activeOpponentArtworkUrls
         ).distinct()
+        val ownedShinyIds = VariantCollectionStore.ownedVariants
+            .asSequence().filter { it.shiny }.map { it.speciesId }.distinct().take(12).toList()
+        val collectionArtworkUrls = buildList {
+            listOf(1,4,7,26,157,724).forEach { id ->
+                add("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+id+".png")
+            }
+            (listOf(25,94,448)+ownedShinyIds).distinct().forEach { id ->
+                add("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/"+id+".png")
+            }
+        }
+        val criticalArtworkUrls=(activeJourneyArtworkUrls+collectionArtworkUrls).distinct()
 
         progress(.84f, "Aquecendo sua Jornada")
         val artworkSemaphore = Semaphore(4)
         supervisorScope {
-            activeJourneyArtworkUrls.mapIndexed { index, artwork ->
+            criticalArtworkUrls.mapIndexed { index, artwork ->
+                async {
+                    artworkSemaphore.withPermit {
+                        runCatching {
+                            context.imageLoader.execute(
+                                ImageRequest.Builder(context)
+                                    .data(OfflineLibraryManager.resolveAny(context,artwork) ?: artwork)
+                                    .size(320)
+                                    .build()
+                            )
+                        }
+                    }
+                    val local = .84f + ((index + 1f) / criticalArtworkUrls.size.coerceAtLeast(1)) * .07f
+                    progress(local, "Aquecendo sua Jornada")
+                }
+            }.awaitAll()
+        }
+
+        progress(.91f, "Preparando biblioteca de jogos")
+        val gameLibraryArtworkUrls = AppGameCatalog.adventureGames
+            .flatMap { game ->
+                GameCoverCatalog.coversFor(game.label) + listOfNotNull(GameCoverCatalog.heroFor(game.label))
+            }
+            .distinct()
+        supervisorScope {
+            gameLibraryArtworkUrls.map { artwork ->
                 async {
                     artworkSemaphore.withPermit {
                         runCatching {
                             context.imageLoader.execute(
                                 ImageRequest.Builder(context)
                                     .data(artwork)
-                                    .size(320)
+                                    .size(640)
+                                    .diskCacheKey(artwork)
                                     .build()
                             )
                         }
                     }
-                    val local = .84f + ((index + 1f) / activeJourneyArtworkUrls.size.coerceAtLeast(1)) * .07f
-                    progress(local, "Aquecendo sua Jornada")
                 }
             }.awaitAll()
         }
 
-        progress(.91f, "Preparando imagens")
+        progress(.94f, "Preparando imagens")
         val spriteIds = priorityIds.take(12)
         val spriteSemaphore = Semaphore(4)
         supervisorScope {
@@ -193,7 +232,7 @@ object StartupPreloader {
                             }
                         }
                     }
-                    val local = .91f + ((index + 1f) / spriteIds.size.coerceAtLeast(1)) * .08f
+                    val local = .94f + ((index + 1f) / spriteIds.size.coerceAtLeast(1)) * .05f
                     progress(local, "Preparando imagens")
                 }
             }.awaitAll()
@@ -201,6 +240,14 @@ object StartupPreloader {
 
         progress(1f, "Tudo pronto")
         lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
+    }
+
+    fun launchWarmInBackground(context: Context) {
+        val appContext=context.applicationContext
+        backgroundScope.launch {
+            runCatching { warm(appContext) { } }
+            launchExtendedWarm(appContext)
+        }
     }
 
     fun launchExtendedWarm(context: Context) {

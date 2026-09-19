@@ -137,3 +137,10 @@ For a new chat:
 3. Identify the last completed stage and its green pipeline.
 4. Continue from the first incomplete stage.
 5. Never recreate the project or restart completed stages.
+
+## Companion Home architecture - 2026-09-18
+- HOME is a fixed companion surface; SceneView/Filament must not live inside Journey LazyColumn content.
+- Games owns Journey discovery and continuation.
+- The active game card shows the next objective and continues directly to the Journey route.
+- Companion world context follows active game + active region (Lumiose/Hyperspace, Paldea/Kitakami/Blueberry, Galar/Isle of Armor/Crown Tundra, Hisui, Kanto, Sinnoh).
+- Keep Pikachu as the persistent protagonist; change the world behind it rather than duplicating companion systems.

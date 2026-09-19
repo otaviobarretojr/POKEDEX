@@ -91,6 +91,16 @@ object PokedexDesignTokens {
     object Elevation { val Flat=0.dp; val Low=2.dp; val Medium=6.dp; val High=12.dp }
     object Motion { const val Fast=140; const val Standard=220; const val Emphasis=320 }
 
+    object Companion {
+        const val ContextualBackdropAlpha = 0.12f
+        const val SubtleAccentSurfaceAlpha = 0.10f
+        const val ArtworkFadeAlpha = 0.86f
+        const val DisabledArtworkAlpha = 0.38f
+        val MinimumTouchTarget = 48.dp
+        val SectionGap = Spacing.Lg
+        val HeroRadius = Radius.Xl
+    }
+
     object Journey {
         val CardSurface = Color(0xFFFDFDFE)
         val ArtworkBackdrop = Color(0xFF101820)

@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 
@@ -15,24 +16,56 @@ object ContentBootstrapManager {
     private const val PREFS="content_bootstrap_v2"
     private const val KEY_READY="ready_signature"
     private const val LEGACY_CLEANED="legacy_cleaned"
+    private val bootstrapMutex=Mutex()
+    @Volatile private var lastCompletedAt=0L
+    @Volatile private var lastResult:Result?=null
 
-    suspend fun ensureReady(context:Context,onProgress:(Progress)->Unit):Result=withContext(Dispatchers.IO){
-        runCatching{
+    suspend fun ensureReady(context:Context,onProgress:(Progress)->Unit):Result {
+        val observedCompletion=lastCompletedAt
+        bootstrapMutex.lock()
+        try{
+            if(lastCompletedAt>observedCompletion){
+                return lastResult ?: Result(false,"Bootstrap concorrente sem resultado")
+            }
+            val result=withContext(Dispatchers.IO){
+                runCatching{
             cleanupLegacyOnce(context)
             onProgress(Progress(.02f,"Verificando biblioteca POKEDEX"))
-            val packages=RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}
+            val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
+            val cachedSignature=prefs.getString(KEY_READY,null)
+            val packages=try {
+                RemoteOfflinePackageCatalog.refresh(force=true).filter{it.ready}
+            } catch(e:Exception) {
+                if(!cachedSignature.isNullOrBlank() && auditCachedLibrary(context,cachedSignature)){
+                    onProgress(Progress(1f,"Biblioteca local validada · atualização será verificada depois"))
+                    return@runCatching Result(true)
+                }
+                throw e
+            }
             check(packages.isNotEmpty()){"Servidor de conteúdo indisponível"}
             val general=packages.firstOrNull{it.packageKey=="general"} ?: error("Biblioteca principal indisponível")
-            val gamePackages=packages.filter{it.packageKey!="general"}.distinctBy{it.packageKey}
+            val supportedGameKeys=AppGameCatalog.games
+                .mapTo(linkedSetOf()){RemoteOfflinePackageCatalog.packageKeyForGame(it.label)}
+            val gamePackages=packages
+                .filter{it.packageKey!="general" && it.packageKey in supportedGameKeys}
+                .distinctBy{it.packageKey}
             val signature=packages.sortedBy{it.packageKey}.joinToString("|"){p->p.packageKey+":"+p.version+":"+p.sha256}
+            val previousSignatures=cachedSignature?.split("|")
+                ?.mapNotNull{entry->
+                    val parts=entry.split(':',limit=3)
+                    if(parts.size==3) parts[0] to (parts[1]+":"+parts[2]) else null
+                }?.toMap().orEmpty()
+            fun packageSignature(p:RemoteOfflinePackageCatalog.RemotePackage)=p.version.toString()+":"+(p.sha256 ?: "")
+            fun packageChanged(p:RemoteOfflinePackageCatalog.RemotePackage)=
+                cachedSignature!=null && previousSignatures[p.packageKey]!=packageSignature(p)
             val generalIds=OfflineGamePackManager.generalManifestIds()
-            val generalReady=OfflineLibraryManager.auditGeneral(context,general.version,generalIds)
+            val generalReady=!packageChanged(general) && OfflineLibraryManager.auditGeneral(context,general.version,generalIds)
             fun localGameFor(p:RemoteOfflinePackageCatalog.RemotePackage)=
                 AppGameCatalog.games.firstOrNull{g->RemoteOfflinePackageCatalog.packageKeyForGame(g.label)==p.packageKey}
             fun gameReady(p:RemoteOfflinePackageCatalog.RemotePackage):Boolean {
                 val game=localGameFor(p) ?: return false
                 val status=OfflineGamePackManager.status(game.label)
-                if(!status.downloaded || OfflineGamePackManager.gameServerVersion(game.label)!=p.version) return false
+                if(!status.downloaded || OfflineGamePackManager.gameServerVersion(game.label)!=p.version || packageChanged(p)) return false
                 val resources=OfflineGamePackManager.gameResourceUrls(game.label)
                 val visuals=OfflineGamePackManager.gameVisualUrls(game.label)
                 return OfflineLibraryManager.auditGame(context,p.packageKey,resources,visuals)
@@ -99,7 +132,44 @@ object ContentBootstrapManager {
             context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putString(KEY_READY,signature).commit()
             onProgress(Progress(1f,"POKEDEX pronto",total,total))
             Result(true)
-        }.getOrElse{e->Result(false,e.message ?: e.javaClass.simpleName)}
+                }.getOrElse{e->Result(false,e.message ?: e.javaClass.simpleName)}
+            }
+            lastResult=result
+            lastCompletedAt=System.currentTimeMillis()
+            return result
+        }finally{
+            bootstrapMutex.unlock()
+        }
+    }
+
+    private fun auditCachedLibrary(context:Context,signature:String):Boolean {
+        val versions=signature.split("|")
+            .mapNotNull{entry->
+                val parts=entry.split(':',limit=3)
+                if(parts.size!=3) return@mapNotNull null
+                val version=parts[1].toIntOrNull() ?: return@mapNotNull null
+                parts[0] to version
+            }
+            .toMap()
+        val generalVersion=versions["general"] ?: return false
+        if(!OfflineLibraryManager.auditGeneralDetailed(context,generalVersion).ok) return false
+
+        return versions
+            .filterKeys{it!="general"}
+            .all{(packageKey,version)->
+                val game=AppGameCatalog.games.firstOrNull{
+                    RemoteOfflinePackageCatalog.packageKeyForGame(it.label)==packageKey
+                } ?: return@all true
+                val status=OfflineGamePackManager.status(game.label)
+                status.downloaded &&
+                    OfflineGamePackManager.gameServerVersion(game.label)==version &&
+                    OfflineLibraryManager.auditGame(
+                        context,
+                        packageKey,
+                        OfflineGamePackManager.gameResourceUrls(game.label),
+                        OfflineGamePackManager.gameVisualUrls(game.label)
+                    )
+            }
     }
 
     private fun cleanupLegacyOnce(context:Context){

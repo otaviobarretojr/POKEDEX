@@ -88,7 +88,11 @@ object CollectionStore {
     fun toggleCaptured(id: Int) = setCaptured(id, id !in capturedIds)
     fun setCaptured(id: Int, captured: Boolean) {
         if (captured) {
-            if (id !in capturedIds) { capturedIds = capturedIds + id; persistCaptured() }
+            if (id !in capturedIds) {
+                capturedIds = capturedIds + id
+                persistCaptured()
+                TrainerTodayStore.recordCapture(id)
+            }
             return
         }
         if (id in capturedIds) {

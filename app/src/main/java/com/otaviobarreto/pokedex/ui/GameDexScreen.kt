@@ -80,15 +80,37 @@ private enum class GameDexFilter(val label:String){
         TopAppBar(title={Text("Pokédex do jogo")},navigationIcon={IconButton(onBack){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Voltar")}})
     }){pad->
         Column(Modifier.fillMaxSize().padding(pad)){
-            Text(game,Modifier.padding(horizontal=16.dp),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+            CompanionContextHeader(
+                title=game,
+                eyebrow="Pokédex do jogo",
+                subtitle=source?.let{active->regions.firstOrNull{it.source==active}?.label} ?: "Região ativa",
+                modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+                progress={
+                    val total=dex.size
+                    val done=dex.count{it.nationalId in captured}
+                    Text(
+                        if(total>0) "$done de $total registrados" else "Preparando progresso da região",
+                        style=MaterialTheme.typography.labelLarge,
+                        fontWeight=FontWeight.Bold
+                    )
+                }
+            )
             if(regions.size>1) ScrollableTabRow(selectedTabIndex=regions.indexOfFirst{it.source==source}.coerceAtLeast(0),edgePadding=12.dp){
                 regions.forEach{r->Tab(selected=r.source==source,onClick={source=r.source;AppStatePreferences.setActiveRegionForGame(game,r.source)},text={Text(r.label)})}
             }
-            Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                FilterChip(selected=routeMode,onClick={routeMode=!routeMode},label={Text("Melhor rota")},leadingIcon={Icon(Icons.Default.Route,null)})
-            }
-            if(!routeMode){
-                LazyRow(contentPadding=PaddingValues(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            LazyRow(
+                contentPadding=PaddingValues(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+                horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+            ){
+                item(key="best_route"){
+                    FilterChip(
+                        selected=routeMode,
+                        onClick={routeMode=!routeMode},
+                        label={Text("Melhor rota")},
+                        leadingIcon={Icon(Icons.Default.Route,"Melhor rota")}
+                    )
+                }
+                if(!routeMode){
                     items(GameDexFilter.entries,key={it.name}){item->
                         FilterChip(selected=filter==item,onClick={filter=item},label={Text(item.label)})
                     }
@@ -99,21 +121,18 @@ private enum class GameDexFilter(val label:String){
                 routeMode && routeGroups.isEmpty()->DexStatusPane("Rota concluída","Não há Pokémon faltantes nesta região.",Modifier.fillMaxSize().padding(16.dp),false)
                 routeMode->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(12.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
                     item(key="route_intro",contentType="route_intro"){
-                        Text("Prioridade prática: capture por local, depois evolua e deixe transferências ou métodos especiais para o final.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(start=4.dp,end=4.dp,bottom=4.dp))
+                        CompanionSectionHeader(title="Melhor rota",supporting="Capture por local primeiro, depois evolua. Trocas, transferências e métodos especiais ficam por último.",modifier=Modifier.padding(start=4.dp,end=4.dp,bottom=4.dp))
                     }
                     routeGroups.forEach{group->
                         item(key="route_${group.key}",contentType="route_header"){
-                            Column(Modifier.fillMaxWidth().padding(top=4.dp)){
-                                Text(group.key,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                                Text("${group.value.size} Pokémon",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                            CompanionSectionHeader(title=group.key,supporting="${group.value.size} Pokémon",modifier=Modifier.padding(top=4.dp))
                         }
                         items(group.value,key={it.pokemonId},contentType={"route_item"}){p->
-                            Card(Modifier.fillMaxWidth().clickable{onPokemonClick(p.pokemonId,source)}){
-                                Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically){
-                                    PokemonArtwork(PokemonRepository.byId(p.pokemonId)?.spriteUrl,null,Modifier.size(54.dp),pokemonId=p.pokemonId)
-                                    Column(Modifier.weight(1f).padding(start=10.dp)){Text(p.name,fontWeight=FontWeight.Bold);Text(p.summary,style=MaterialTheme.typography.bodySmall)}
-                                    if(p.method==ObtainMethod.CAPTURE) Icon(Icons.Default.LocationOn,null)
+                            Surface(modifier=Modifier.fillMaxWidth().clickable{onPokemonClick(p.pokemonId,source)},shape=androidx.compose.foundation.shape.RoundedCornerShape(PokedexDesignTokens.Radius.Lg),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.34f)){
+                                Row(Modifier.padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
+                                    PokemonArtwork(PokemonRepository.byId(p.pokemonId)?.spriteUrl,null,Modifier.size(58.dp),pokemonId=p.pokemonId)
+                                    Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){Text(p.name,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleSmall);Text(p.summary,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                                    if(p.method==ObtainMethod.CAPTURE) Icon(Icons.Default.LocationOn,"Captura direta",tint=MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -123,13 +142,20 @@ private enum class GameDexFilter(val label:String){
                 else->LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
                     items(shown,key={it.nationalId},contentType={"dex_item"}){p->
                         val caught=p.nationalId in captured
-                        ListItem(
-                            headlineContent={Text(p.name,fontWeight=FontWeight.Bold)},
-                            supportingContent={Text("#"+p.gameNumber.toString().padStart(3,'0')+" · National #"+p.nationalId)},
-                            leadingContent={PokemonArtwork(PokemonRepository.byId(p.nationalId)?.spriteUrl,null,Modifier.size(52.dp),pokemonId=p.nationalId)},
-                            trailingContent={Text(if(caught)"✓" else "—")},
-                            modifier=Modifier.clickable{onPokemonClick(p.nationalId,source)}
-                        )
+                        Surface(
+                            modifier=Modifier.fillMaxWidth().clickable{onPokemonClick(p.nationalId,source)},
+                            shape=androidx.compose.foundation.shape.RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+                            color=if(caught) MaterialTheme.colorScheme.primaryContainer.copy(alpha=.34f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.26f)
+                        ){
+                            Row(Modifier.padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
+                                PokemonArtwork(PokemonRepository.byId(p.nationalId)?.spriteUrl,null,Modifier.size(58.dp),pokemonId=p.nationalId)
+                                Column(Modifier.weight(1f).padding(start=PokedexDesignTokens.Spacing.Md)){
+                                    Text(p.name,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleSmall)
+                                    Text("#"+p.gameNumber.toString().padStart(3,'0')+" · National #"+p.nationalId,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Text(if(caught)"Registrado" else "Faltando",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold,color=if(caught) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }
