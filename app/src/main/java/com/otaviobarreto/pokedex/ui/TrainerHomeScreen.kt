@@ -1,7 +1,11 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -229,8 +234,15 @@ private fun TrainerJourneyHero(
     onContinue: () -> Unit
 ) {
     val accent = PokedexDesignTokens.Colors.game(game.label)
+    val heroInteraction = remember { MutableInteractionSource() }
+    val heroPressed by heroInteraction.collectIsPressedAsState()
+    val heroScale by animateFloatAsState(
+        if (heroPressed) .988f else 1f,
+        spring(dampingRatio = .78f, stiffness = 520f),
+        label = "journeyHeroScale"
+    )
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().scale(heroScale),
         shape = RoundedCornerShape(28.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -291,6 +303,7 @@ private fun TrainerJourneyHero(
                 }
                 Button(
                     onClick = onContinue,
+                    interactionSource = heroInteraction,
                     modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF17212B))
                 ) {
@@ -333,8 +346,9 @@ private fun DailyPokemonCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Surface(
-        modifier = modifier.height(194.dp).clickable(onClick = onClick),
+        modifier = modifier.height(194.dp).dexInteractiveSurface(interactionSource = interaction).clickable(interactionSource = interaction, indication = null, onClick = onClick),
         shape = RoundedCornerShape(22.dp),
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .58f)
     ) {
@@ -411,7 +425,8 @@ private fun TrainerMetricCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
-    val cardModifier = if (onClick != null) modifier.clickable(onClick = onClick) else modifier
+    val interaction = remember { MutableInteractionSource() }
+    val cardModifier = if (onClick != null) modifier.dexInteractiveSurface(interactionSource = interaction).clickable(interactionSource = interaction, indication = null, onClick = onClick) else modifier
     Surface(
         modifier = cardModifier.height(92.dp),
         shape = RoundedCornerShape(18.dp),
@@ -434,8 +449,9 @@ private fun RecentPokemonCard(
     captured: Boolean,
     onClick: () -> Unit
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Surface(
-        modifier = Modifier.width(112.dp).height(142.dp).clickable(onClick = onClick),
+        modifier = Modifier.width(112.dp).height(142.dp).dexInteractiveSurface(interactionSource = interaction).clickable(interactionSource = interaction, indication = null, onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .56f)
     ) {
@@ -469,8 +485,9 @@ private fun UpcomingJourneyCard(
     current: Boolean,
     onClick: () -> Unit
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().dexInteractiveSurface(interactionSource = interaction).clickable(interactionSource = interaction, indication = null, onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         color = if (current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .62f)
         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .46f)
