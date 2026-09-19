@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 
@@ -94,6 +95,7 @@ fun DexBottomBar(
                 val haptic=LocalHapticFeedback.current
                 Column(
                     Modifier.weight(1f).scale(scale)
+                        .testTag("bottom_nav_${item.route}")
                         .background(background,RoundedCornerShape(PokedexDesignTokens.Radius.Md))
                         .clickable(interactionSource=interaction,indication=null){
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
