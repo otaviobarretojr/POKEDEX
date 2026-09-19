@@ -1,5 +1,11 @@
 package com.otaviobarreto.pokedex.ui
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -278,7 +284,22 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      QBGrid(entries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+      AnimatedContent(
+       targetState=current,
+       transitionSpec={
+        if(targetState>initialState){
+         (slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){it/5}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))) togetherWith
+          (slideOutHorizontally(tween(PokedexDesignTokens.Motion.Standard)){-(it/5)}+fadeOut(tween(PokedexDesignTokens.Motion.Fast)))
+        }else{
+         (slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){-(it/5)}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))) togetherWith
+          (slideOutHorizontally(tween(PokedexDesignTokens.Motion.Standard)){it/5}+fadeOut(tween(PokedexDesignTokens.Motion.Fast)))
+        }
+       },
+       label="boxPageTransition"
+      ){boxPage->
+       val animatedEntries=dex.drop(boxPage*30).take(30)
+       QBGrid(animatedEntries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+      }
      }else{
       EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
      }
