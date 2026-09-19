@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,15 +82,15 @@ fun DexBottomBar(
                 val selected=currentRoute==item.route
                 val interaction=remember{MutableInteractionSource()}
                 val pressed by interaction.collectIsPressedAsState()
-                val scale by animateFloatAsState(if(pressed).975f else 1f,tween(90),label="navScale")
+                val scale by animateFloatAsState(if(pressed).975f else 1f,spring(dampingRatio=.72f,stiffness=620f),label="navScale")
                 val background by animateColorAsState(
                     if(selected)MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                    tween(PokedexDesignTokens.Motion.Fast),
+                    tween(PokedexDesignTokens.Motion.Standard),
                     label="navBackground"
                 )
                 val tint by animateColorAsState(
                     if(selected)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    tween(PokedexDesignTokens.Motion.Fast),
+                    tween(PokedexDesignTokens.Motion.Standard),
                     label="navTint"
                 )
                 val haptic=LocalHapticFeedback.current
@@ -180,12 +181,12 @@ fun Modifier.dexInteractiveSurface(
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         if(enabled&&pressed) pressedScale else 1f,
-        tween(PokedexDesignTokens.Motion.Fast),
+        spring(dampingRatio=.72f,stiffness=620f),
         label="dexSurfaceScale"
     )
     val lift by animateFloatAsState(
         if(enabled&&pressed) pressedLift.value else 0f,
-        tween(PokedexDesignTokens.Motion.Fast),
+        spring(dampingRatio=.78f,stiffness=700f),
         label="dexSurfaceLift"
     )
     return this.graphicsLayer{
