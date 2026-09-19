@@ -151,6 +151,10 @@ adb logcat -c || true
 # and pixel snapshots remain compiled/manual checks, but are not stable gates.
 run_instrumentation_group   "navigation"   "com.otaviobarreto.pokedex.PokedexNavigationInstrumentedTest#primaryRoutes_areReachableAndBottomNavigationSurvives"   300
 
+# Regression gate: a Journey opened from Trainer Today must expose a visible
+# return action and hand control back to the caller instead of trapping ROUTE.
+run_instrumentation_group   "trainer-today-return"   "com.otaviobarreto.pokedex.TrainerTodayJourneyReturnInstrumentedTest#journeyOpenedFromTrainerToday_hasVisibleReturnAction"   180
+
 run_instrumentation_group   "persistence"   "com.otaviobarreto.pokedex.data.CollectionPersistenceInstrumentedTest"   120
 
 run_instrumentation_group   "chrome"   "com.otaviobarreto.pokedex.ui.PokedexChromeInstrumentedTest"   180
