@@ -2,9 +2,9 @@ package com.otaviobarreto.pokedex
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -35,50 +35,52 @@ class PokedexNavigationInstrumentedTest {
             .sendStatus(2,android.os.Bundle().apply{putString("visual_snapshot",file.absolutePath)})
     }
 
+    private fun nav(route:String)=composeRule.onNodeWithTag("bottom_nav_$route")
+
     private fun waitForMainNavigation(){
         composeRule.waitUntil(timeoutMillis=10_000){
-            composeRule.onAllNodesWithText("Início").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithTag("bottom_nav_${PokedexRoutes.HOME}").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText("Início").assertIsDisplayed()
+        nav(PokedexRoutes.HOME).assertIsDisplayed()
     }
 
     @Test fun visualSnapshots_primaryDestinations(){
         waitForMainNavigation()
         composeRule.waitForIdle()
         captureGoldenCandidate("journey")
-        composeRule.onNodeWithText("Jogos").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("games")
-        composeRule.onNodeWithText("Pokédex").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("pokedex")
-        composeRule.onNodeWithText("Coleção").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("collection")
-        composeRule.onNodeWithText("Box").performClick(); composeRule.waitForIdle(); captureGoldenCandidate("box")
-        composeRule.onNodeWithText("Config.").performClick(); composeRule.waitForIdle()
+        nav(PokedexRoutes.GAMES).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("games")
+        nav(PokedexRoutes.POKEDEX).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("pokedex")
+        nav(PokedexRoutes.COLLECTION).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("collection")
+        nav(PokedexRoutes.BOXES).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("box")
+        nav(PokedexRoutes.CENTRAL).performClick(); composeRule.waitForIdle()
         // Runtime cache/timing metrics intentionally remain live in production; exclude Settings from pixel baseline.
 
     }
 
     @Test fun primaryRoutes_areReachableAndBottomNavigationSurvives(){
         waitForMainNavigation()
-        composeRule.onNodeWithText("Jogos").assertIsDisplayed().performClick()
-        composeRule.onNodeWithText("Pokédex").assertIsDisplayed().performClick()
-        composeRule.onNodeWithText("Coleção").assertIsDisplayed().performClick()
-        composeRule.onNodeWithText("Box").assertIsDisplayed().performClick()
-        composeRule.onNodeWithText("Config.").assertIsDisplayed().performClick()
-        composeRule.onNodeWithText("Início").assertIsDisplayed().performClick()
-        composeRule.onNodeWithText("Jogos").assertIsDisplayed()
-        composeRule.onNodeWithText("Pokédex").assertIsDisplayed()
-        composeRule.onNodeWithText("Coleção").assertIsDisplayed()
-        composeRule.onNodeWithText("Box").assertIsDisplayed()
-        composeRule.onNodeWithText("Config.").assertIsDisplayed()
+        nav(PokedexRoutes.GAMES).assertIsDisplayed().performClick()
+        nav(PokedexRoutes.POKEDEX).assertIsDisplayed().performClick()
+        nav(PokedexRoutes.COLLECTION).assertIsDisplayed().performClick()
+        nav(PokedexRoutes.BOXES).assertIsDisplayed().performClick()
+        nav(PokedexRoutes.CENTRAL).assertIsDisplayed().performClick()
+        nav(PokedexRoutes.HOME).assertIsDisplayed().performClick()
+        nav(PokedexRoutes.GAMES).assertIsDisplayed()
+        nav(PokedexRoutes.POKEDEX).assertIsDisplayed()
+        nav(PokedexRoutes.COLLECTION).assertIsDisplayed()
+        nav(PokedexRoutes.BOXES).assertIsDisplayed()
+        nav(PokedexRoutes.CENTRAL).assertIsDisplayed()
     }
 
     @Test fun routeSwitching_doesNotLosePrimaryNavigation(){
         waitForMainNavigation()
         repeat(2){
-            composeRule.onNodeWithText("Box").assertIsDisplayed().performClick()
-            composeRule.onNodeWithText("Jogos").assertIsDisplayed().performClick()
-            composeRule.onNodeWithText("Coleção").assertIsDisplayed().performClick()
-            composeRule.onNodeWithText("Início").assertIsDisplayed().performClick()
+            nav(PokedexRoutes.BOXES).assertIsDisplayed().performClick()
+            nav(PokedexRoutes.GAMES).assertIsDisplayed().performClick()
+            nav(PokedexRoutes.COLLECTION).assertIsDisplayed().performClick()
+            nav(PokedexRoutes.HOME).assertIsDisplayed().performClick()
         }
-        composeRule.onNodeWithText("Pokédex").assertIsDisplayed()
-        composeRule.onNodeWithText("Config.").assertIsDisplayed()
+        nav(PokedexRoutes.POKEDEX).assertIsDisplayed()
+        nav(PokedexRoutes.CENTRAL).assertIsDisplayed()
     }
 }
