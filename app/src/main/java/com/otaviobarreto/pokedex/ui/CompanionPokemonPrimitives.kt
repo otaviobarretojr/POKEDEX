@@ -1,9 +1,11 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,7 +19,9 @@ fun PokemonGridCard(number: Int, name: String, owned: Boolean, onClick: () -> Un
     modifier: Modifier = Modifier, types: List<String> = emptyList(),
     accent: Color = MaterialTheme.colorScheme.primary, shiny: Boolean = false,
     artwork: @Composable BoxScope.() -> Unit) {
-    Card(onClick = onClick, modifier = modifier,
+    val interaction = remember(number, shiny) { MutableInteractionSource() }
+    Card(onClick = onClick, interactionSource = interaction,
+        modifier = modifier.dexInteractiveSurface(interactionSource = interaction, pressedScale = .965f),
         shape = RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
         colors = CardDefaults.cardColors(containerColor = if (owned) accent.copy(alpha=.08f)
         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f))) {
