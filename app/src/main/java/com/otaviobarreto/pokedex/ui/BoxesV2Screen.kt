@@ -284,22 +284,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      AnimatedContent(
-       targetState=current,
-       transitionSpec={
-        if(targetState>initialState){
-         (slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){it/5}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))) togetherWith
-          (slideOutHorizontally(tween(PokedexDesignTokens.Motion.Standard)){-(it/5)}+fadeOut(tween(PokedexDesignTokens.Motion.Fast)))
-        }else{
-         (slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){-(it/5)}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))) togetherWith
-          (slideOutHorizontally(tween(PokedexDesignTokens.Motion.Standard)){it/5}+fadeOut(tween(PokedexDesignTokens.Motion.Fast)))
-        }
-       },
-       label="boxPageTransition"
-      ){boxPage->
-       val animatedEntries=dex.drop(boxPage*30).take(30)
-       QBGrid(animatedEntries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
-      }
+      AnimatedBoxPage(current,dex,capturedIds,region.source,onPokemonClick){pk->captureTarget=pk}
      }else{
       EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
      }
@@ -357,6 +342,16 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    source=region.source,
    dismiss={captureTarget=null}
   )
+ }
+}
+@Composable
+private fun AnimatedBoxPage(page:Int,dex:List<GameDexService.GameDexEntry>,captured:Set<Int>,source:String,open:(Int,String?)->Unit,hold:(GameDexService.GameDexEntry)->Unit){
+ AnimatedContent(targetState=page,transitionSpec={
+  val enter=slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){if(targetState>initialState)it/5 else -it/5}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))
+  val exit=slideOutHorizontally(tween(PokedexDesignTokens.Motion.Standard)){if(targetState>initialState)-it/5 else it/5}+fadeOut(tween(PokedexDesignTokens.Motion.Fast))
+  enter togetherWith exit
+ },label="boxPageTransition"){boxPage->
+  QBGrid(dex.drop(boxPage*30).take(30),captured,source,false,emptySet(),{pk->open(pk.nationalId,source)},hold)
  }
 }
 @Composable private fun BoxCompanionHeader(game:String,region:String,caught:Int,total:Int,accent:Color)=CompanionContextHeader(title="Box",eyebrow="Coleção por jogo",subtitle=game+" · "+region,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs,bottom=PokedexDesignTokens.Spacing.Xs),accent=accent,progress={CompanionProgress(current=caught,total=total,label="Pokédex do jogo",accent=accent)})
