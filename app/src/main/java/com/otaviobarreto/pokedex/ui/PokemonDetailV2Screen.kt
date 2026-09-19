@@ -1,6 +1,12 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -178,9 +184,14 @@ fun PokemonDetailV2Screen(
         if(openPokemon!=null){
             DetailDexNavigator(b.pokemon.id,openPokemon)
         }
-        Crossfade(
+        AnimatedContent(
             targetState=tab,
-            animationSpec=tween(PokedexDesignTokens.Motion.Standard),
+            transitionSpec={
+                val forward=targetState>initialState
+                val enter=slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){if(forward) it/12 else -it/12}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))
+                val exit=slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){if(forward) -it/18 else it/18}+fadeOut(tween(PokedexDesignTokens.Motion.Fast))
+                enter togetherWith exit
+            },
             label="detailTabTransition"
         ){activeTab->
             when(activeTab){
