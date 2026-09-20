@@ -238,12 +238,6 @@ object StartupPreloader {
             }.awaitAll()
         }
 
-        progress(.99f, "Preparando Living Dex")
-        warmLivingDexFilter(context,(1..PokeApiService.MAX_NATIONAL_DEX_ID).toSet()) { done,total ->
-            val pct=if(total==0)1f else done.toFloat()/total
-            progress(.99f + pct*.01f,"Preparando Living Dex · $done / $total")
-        }
-
         progress(1f, "Tudo pronto")
         lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
     }
