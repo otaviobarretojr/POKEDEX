@@ -1,8 +1,6 @@
 package com.otaviobarreto.pokedex.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -26,8 +24,8 @@ internal fun AnimatedBoxGrid(
         targetState=page,
         transitionSpec={
             val forward=targetState>initialState
-            val enter=slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){if(forward) it/5 else -it/5}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))
-            val exit=slideOutHorizontally(tween(PokedexDesignTokens.Motion.Standard)){if(forward) -it/5 else it/5}+fadeOut(tween(PokedexDesignTokens.Motion.Fast))
+            val enter=slideInHorizontally(tween(PokedexDesignTokens.Motion.Fast)){if(forward) it/8 else -it/8}
+            val exit=slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){if(forward) -it/8 else it/8}
             enter togetherWith exit
         },
         label="boxPageTransition"
