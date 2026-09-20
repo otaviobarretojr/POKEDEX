@@ -65,7 +65,8 @@ fun CampaignTeamGuideScreen(
         }else null
     }
     val displaySlots=if(dynamic!=null && phase==dynamic.preset?.phase)dynamic.adjustedSlots else preset?.slots.orEmpty()
-    val national=remember{PokedexDataStore.cachedNationalDex().orEmpty()}\n    val nationalById=remember(national){national.associateBy{it.id}}
+    val national=remember{PokedexDataStore.cachedNationalDex().orEmpty()}
+    val nationalById=remember(national){national.associateBy{it.id}}
     val source=remember(game){AppStatePreferences.activeRegionForGame(game) ?: AppGameCatalog.games.firstOrNull{it.label==game}?.regions?.firstOrNull()?.source}
 
     LazyColumn(
