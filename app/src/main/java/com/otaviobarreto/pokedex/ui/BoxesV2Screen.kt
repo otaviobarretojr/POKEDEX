@@ -547,7 +547,7 @@ private fun QBVariantManager(
                     color=MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier=Modifier.padding(bottom=8.dp)
                 )
-                val isCaptured=CollectionStore.isCapturedIn(source,pk.nationalId)
+                val isCaptured=CollectionStore.isCapturedInGame(source,pk.nationalId)
                 if(isCaptured){
                     OutlinedButton(
                         onClick={
@@ -651,7 +651,7 @@ private fun QBVariantManager(
                         }
                         item{
                             val any=variantsState.any{it.source==source && it.speciesId==pk.nationalId}
-                            if(!any && CollectionStore.isCapturedIn(source,pk.nationalId)){
+                            if(!any && CollectionStore.isCapturedInGame(source,pk.nationalId)){
                                 Text(
                                     "Este Pokémon já estava marcado como capturado em uma versão antiga. Selecione Normal ou Shiny para migrá-lo ao novo sistema de variantes.",
                                     style=MaterialTheme.typography.bodySmall,
