@@ -242,6 +242,39 @@ object StartupPreloader {
         lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
     }
 
+
+    suspend fun warmLivingDexFilter(
+        context:Context,
+        ids:Set<Int>,
+        onProgress:suspend (Int,Int)->Unit = {_,_->}
+    ){
+        if(ids.isEmpty()) return
+        val ordered=ids.filter{it in 1..PokeApiService.MAX_NATIONAL_DEX_ID}.sorted()
+        val semaphore=Semaphore(8)
+        var completed=0
+        ordered.chunked(48).forEach { batch ->
+            supervisorScope {
+                batch.map { id -> async {
+                    semaphore.withPermit {
+                        val url="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
+                        runCatching {
+                            context.imageLoader.execute(
+                                ImageRequest.Builder(context)
+                                    .data(OfflineLibraryManager.resolveAny(context,"pokemon-offline-$id") ?: OfflineLibraryManager.resolveAny(context,url) ?: url)
+                                    .size(160)
+                                    .memoryCacheKey("pokemon-offline-$id")
+                                    .diskCacheKey("pokemon-offline-$id")
+                                    .build()
+                            )
+                        }
+                    }
+                }}.awaitAll()
+            }
+            completed=(completed+batch.size).coerceAtMost(ordered.size)
+            onProgress(completed,ordered.size)
+        }
+    }
+
     suspend fun warmBoxWindow(context:Context,dex:List<GameDexService.GameDexEntry>,page:Int){
         if(dex.isEmpty()) return
         val pages=listOf(page-1,page,page+1).filter{it>=0}.distinct()
