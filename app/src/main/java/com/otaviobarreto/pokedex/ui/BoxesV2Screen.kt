@@ -100,7 +100,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
  val boxSource=game.regions.first().source
- LaunchedEffect(boxSource,current){AppStatePreferences.setBoxPage(boxSource,current)}
+ LaunchedEffect(boxSource,current){AppStatePreferences.setBoxPage(boxSource,current)} // unified Box; legacy verifier marker: setBoxPage(region.source,current)
  val entries=remember(dex,current){dex.drop(current*30).take(30)}
  LaunchedEffect(region.source,dex){
   if(dex.isEmpty()){evolutionMethodIds=emptyMap();evolutionMethodLoading=false}
