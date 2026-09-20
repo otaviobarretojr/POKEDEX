@@ -112,6 +112,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  LaunchedEffect(region.source,current,dex){
   withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}}
  }
+ val relevantPages=remember(gameDexIds){relevantLivingBoxPages(gameDexIds)}
  val capturedIds=CollectionStore.capturedIds.toSet() // National Living Dex; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
  val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
  val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
@@ -262,8 +263,8 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
       onDragEnd={
        val threshold=90f
        if(!loading && evolutionFilterName==null){
-        if(dragTotal < -threshold && current < pages-1) page=current+1
-        else if(dragTotal > threshold && current > 0) page=current-1
+        if(dragTotal < -threshold) page=adjacentRelevantPage(current,relevantPages,true)?:current
+        else if(dragTotal > threshold) page=adjacentRelevantPage(current,relevantPages,false)?:current
        }
        dragTotal=0f
       },
@@ -305,7 +306,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     ){
      Icon(Icons.Default.GridView,"Ver todas as Boxes",Modifier.size(17.dp))
      Spacer(Modifier.width(5.dp))
-     Text("Todas as Boxes",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
+     Text("Boxes do filtro",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
     }
    }else{
     FilledTonalButton(
