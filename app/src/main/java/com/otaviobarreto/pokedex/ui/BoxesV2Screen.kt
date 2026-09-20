@@ -327,8 +327,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   current=current,
   captured=capturedIds,
   accent=game.accent,
-  relevantPages=relevantPages,
-  available=gameDexIds,
+  relevantPages=relevantPages,available=gameDexIds,
   dismiss={allBoxes=false},
   select={targetPage->page=targetPage;allBoxes=false}
  )
@@ -676,8 +675,7 @@ private fun QBAllBoxes(
     current:Int,
     captured:Set<Int>,
     accent:Color,
-    relevantPages:List<Int>,
-    available:Set<Int>,
+    relevantPages:List<Int>,available:Set<Int>,
     dismiss:()->Unit,
     select:(Int)->Unit
 ){
@@ -699,9 +697,7 @@ private fun QBAllBoxes(
                 LazyColumn(verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
                     items(relevantPages,key={it}){index->
                         val entries=dex.drop(index*30).take(30)
-                        val filtered=entries.filter{it.nationalId in available}
-                        val total=filtered.size.coerceAtLeast(1)
-                        val owned=filtered.count{it.nationalId in captured}
+                        val filtered=entries.filter{it.nationalId in available};val total=filtered.size.coerceAtLeast(1);val owned=filtered.count{it.nationalId in captured}
                         val pct=owned.toFloat()/total
                         Card(
                             Modifier.fillMaxWidth().clickable{select(index)},
