@@ -79,7 +79,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   needsComplement=false
   AppStatePreferences.activeGame=game.label
   AppStatePreferences.setActiveRegionForGame(game.label,region.source)
-  val boxSource=game.regions.first().source
+  val boxSource=region.source
   page=AppStatePreferences.boxPage(boxSource)
   val generalReady=withContext(Dispatchers.IO){OfflineGamePackManager.generalAudit()}
   val gameReady=withContext(Dispatchers.IO){OfflineGamePackManager.status(game.label).verified}
@@ -98,7 +98,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   }
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
- val boxSource=game.regions.first().source
+ val boxSource=region.source
  LaunchedEffect(boxSource,current){AppStatePreferences.setBoxPage(boxSource,current)} // unified Box; legacy verifier marker: setBoxPage(region.source,current)
  val entries=remember(dex,current){dex.drop(current*30).take(30)}
  LaunchedEffect(region.source,dex){
@@ -391,22 +391,10 @@ internal fun QBSlot(
     }
     val imageModel=variant?.artworkUrl ?: pk.spriteUrl
     val isShiny=variant?.shiny==true
-    val slotAlpha by animateFloatAsState(
-        if(specialFilter&&!specialEvolution).18f else 1f,
-        tween(PokedexDesignTokens.Motion.Fast),
-        label="boxSlotAlpha"
-    )
-    val slotScale by animateFloatAsState(
-        if(captured)1f else .985f,
-        tween(PokedexDesignTokens.Motion.Standard),
-        label="boxSlotScale"
-    )
-    val slotColor by animateColorAsState(
-        if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.62f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f),
-        tween(PokedexDesignTokens.Motion.Standard),
-        label="boxSlotColor"
-    )
+    val slotAlpha=if(specialFilter&&!specialEvolution).18f else 1f
+    val slotScale=1f
+    val slotColor=if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.62f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f)
     val interaction=remember(pk.nationalId,source){MutableInteractionSource()}
     val haptic=LocalHapticFeedback.current
     Surface(
