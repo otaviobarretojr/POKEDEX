@@ -29,7 +29,7 @@ import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private enum class CollectionArea { HOME, LIVING, NATIONAL, SHINY, FORMS }
+private enum class CollectionArea { HOME, LIVING, SHINY, FORMS }
 
 @Composable
 fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit,onOpenFormDetail:(Int,String,Boolean)->Unit){
