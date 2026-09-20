@@ -184,17 +184,8 @@ fun PokemonDetailV2Screen(
         if(openPokemon!=null){
             DetailDexNavigator(b.pokemon.id,openPokemon)
         }
-        AnimatedContent(
-            targetState=tab,
-            transitionSpec={
-                val forward=targetState>initialState
-                val enter=slideInHorizontally(tween(PokedexDesignTokens.Motion.Standard)){if(forward) it/12 else -it/12}+fadeIn(tween(PokedexDesignTokens.Motion.Fast))
-                val exit=slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){if(forward) -it/18 else it/18}+fadeOut(tween(PokedexDesignTokens.Motion.Fast))
-                enter togetherWith exit
-            },
-            label="detailTabTransition"
-        ){activeTab->
-            when(activeTab){
+        key(tab){
+            when(tab){
                 0->InfoTab(b,accent,context,collectionSource,openRef)
                 1->V2Stats(b.pokemon.stats)
                 2->V2Evolution(b.evolutions,b.evolutionRoutes,b.pokemon.id,openPokemon)
