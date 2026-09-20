@@ -87,7 +87,7 @@ private enum class GameDexFilter(val label:String){
                 modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
                 progress={
                     val total=dex.size
-                    val done=dex.count{it.nationalId in captured}
+                    val done=remember(dex,captured){dex.count{it.nationalId in captured}}
                     Text(
                         if(total>0) "$done de $total registrados" else "Preparando progresso da região",
                         style=MaterialTheme.typography.labelLarge,
