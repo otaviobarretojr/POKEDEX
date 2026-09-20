@@ -181,12 +181,14 @@ private fun GenerationShelf(
     ){
         item{
             CollectionPageHeader(title,subtitle,onBack)
-            CompanionProgress(
-                current=plan.byGeneration.sumOf{if(shiny)it.shiny else it.captured},
-                total=plan.byGeneration.sumOf{it.total},
-                label=if(shiny)"Shiny Dex" else "Living Dex",
-                modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
-            )
+            if(shiny){
+                CompanionProgress(
+                    current=plan.byGeneration.sumOf{it.shiny},
+                    total=plan.byGeneration.sumOf{it.total},
+                    label="Shiny Dex",
+                    modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
+                )
+            }
         }
         if(!shiny){
             item(key="all_generations"){
