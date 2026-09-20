@@ -36,3 +36,9 @@ internal fun nextMissingNationalId(
     after:Int=0
 ):Int? = available.asSequence().filter { it !in captured && it>after }.minOrNull()
     ?: available.asSequence().filter { it !in captured }.minOrNull()
+
+
+internal fun adjacentRelevantPage(current:Int, relevant:List<Int>, forward:Boolean):Int? {
+    if(relevant.isEmpty()) return null
+    return if(forward) relevant.firstOrNull { it>current } else relevant.lastOrNull { it<current }
+}
