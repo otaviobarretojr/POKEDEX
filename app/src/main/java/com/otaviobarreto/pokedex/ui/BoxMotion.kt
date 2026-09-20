@@ -8,6 +8,9 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.weight
+import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.GameDexService
 
 @Composable
