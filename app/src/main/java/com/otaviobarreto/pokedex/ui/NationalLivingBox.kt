@@ -21,3 +21,18 @@ internal fun livingDexGameMask(
     val available=gameEntries.mapTo(linkedSetOf()){it.nationalId}
     return national.asSequence().map{it.nationalId}.filter{it in available}.toSet()
 }
+
+
+internal fun relevantLivingBoxPages(available:Set<Int>, total:Int=PokeApiService.MAX_NATIONAL_DEX_ID):List<Int> =
+    (0 until ((total+29)/30)).filter { page ->
+        val first=page*30+1
+        val last=minOf(first+29,total)
+        (first..last).any { it in available }
+    }
+
+internal fun nextMissingNationalId(
+    available:Set<Int>,
+    captured:Set<Int>,
+    after:Int=0
+):Int? = available.asSequence().filter { it !in captured && it>after }.minOrNull()
+    ?: available.asSequence().filter { it !in captured }.minOrNull()
