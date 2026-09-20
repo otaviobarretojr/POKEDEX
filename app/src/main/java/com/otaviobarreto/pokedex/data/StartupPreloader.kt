@@ -238,6 +238,12 @@ object StartupPreloader {
             }.awaitAll()
         }
 
+        progress(.99f, "Preparando Living Dex")
+        warmLivingDexFilter(context,(1..PokeApiService.MAX_NATIONAL_DEX_ID).toSet()) { done,total ->
+            val pct=if(total==0)1f else done.toFloat()/total
+            progress(.99f + pct*.01f,"Preparando Living Dex · $done / $total")
+        }
+
         progress(1f, "Tudo pronto")
         lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
     }
@@ -261,7 +267,7 @@ object StartupPreloader {
                             context.imageLoader.execute(
                                 ImageRequest.Builder(context)
                                     .data(OfflineLibraryManager.resolveAny(context,"pokemon-offline-$id") ?: OfflineLibraryManager.resolveAny(context,url) ?: url)
-                                    .size(160)
+                                    .size(96)
                                     .memoryCacheKey("pokemon-offline-$id")
                                     .diskCacheKey("pokemon-offline-$id")
                                     .build()
