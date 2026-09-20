@@ -88,10 +88,9 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    needsComplement=true
    loading=false
   }else{
-   val boxCtx=GameContext.fromSource(boxSource)
-   val regionCtx=GameContext.fromSource(region.source)
-   dex=if(boxCtx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(boxCtx)}}.getOrElse{emptyList()}
-   regionalDex=if(regionCtx==null)emptyList()else if(region.source==boxSource)dex else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(regionCtx)}}.getOrElse{emptyList()}
+   val gameDex=withContext(Dispatchers.IO){loadBoxGameDex(AppGameCatalog.games.first{it.label==game.label},region.source)}
+   dex=gameDex.all
+   regionalDex=gameDex.filtered
    val pageCount=((dex.size+29)/30).coerceAtLeast(1)
    if(page>=pageCount) page=pageCount-1
    AppStatePreferences.setBoxPage(boxSource,page)
