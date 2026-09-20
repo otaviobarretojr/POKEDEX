@@ -68,7 +68,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val preferredRegion=AppStatePreferences.activeRegionForGame(game.label)
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var regionalDex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  var evolutionFilterName by rememberSaveable{mutableStateOf<String?>(null)}
  var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
@@ -79,7 +79,8 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   needsComplement=false
   AppStatePreferences.activeGame=game.label
   AppStatePreferences.setActiveRegionForGame(game.label,region.source)
-  page=AppStatePreferences.boxPage(region.source)
+  val boxSource=game.regions.first().source
+  page=AppStatePreferences.boxPage(boxSource)
   val generalReady=withContext(Dispatchers.IO){OfflineGamePackManager.generalAudit()}
   val gameReady=withContext(Dispatchers.IO){OfflineGamePackManager.status(game.label).verified}
   if(generalReady && !gameReady){
@@ -87,18 +88,19 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    needsComplement=true
    loading=false
   }else{
-   val ctx=GameContext.fromSource(region.source)
-   dex=if(ctx==null)emptyList()else runCatching{
-    withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}
-   }.getOrElse{emptyList()}
+   val boxCtx=GameContext.fromSource(boxSource)
+   val regionCtx=GameContext.fromSource(region.source)
+   dex=if(boxCtx==null)emptyList()else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(boxCtx)}}.getOrElse{emptyList()}
+   regionalDex=if(regionCtx==null)emptyList()else if(region.source==boxSource)dex else runCatching{withContext(Dispatchers.IO){GameDexService.loadGameDex(regionCtx)}}.getOrElse{emptyList()}
    val pageCount=((dex.size+29)/30).coerceAtLeast(1)
    if(page>=pageCount) page=pageCount-1
-   AppStatePreferences.setBoxPage(region.source,page)
+   AppStatePreferences.setBoxPage(boxSource,page)
    loading=false
   }
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
- LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
+ val boxSource=game.regions.first().source
+ LaunchedEffect(boxSource,current){AppStatePreferences.setBoxPage(boxSource,current)}
  val entries=remember(dex,current){dex.drop(current*30).take(30)}
  LaunchedEffect(region.source,dex){
   if(dex.isEmpty()){evolutionMethodIds=emptyMap();evolutionMethodLoading=false}
@@ -113,7 +115,8 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  LaunchedEffect(region.source,current,dex){
   withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}}
  }
- val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty()
+ val capturedIds=CollectionStore.capturedForGame(region.source)
+ val regionalCapturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty()
  val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
  val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  val variantsInRegion=remember(region.source,VariantCollectionStore.ownedVariants){VariantCollectionStore.ownedVariants.filter{it.source==region.source}}
@@ -321,7 +324,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    }
   }
  }
- if(search)QBSearch(dex,capturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+ if(search)QBSearch(regionalDex,regionalCapturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
  if(allBoxes)QBAllBoxes(
   dex=dex,
   current=current,
