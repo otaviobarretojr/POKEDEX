@@ -113,7 +113,7 @@ fun PokedexCatalogScreen(
     var selectedId by remember{mutableStateOf<Int?>(null)}
     val all=remember{PokemonRepository.all()}
     val ownedIds=CollectionStore.capturedIds
-    val filtered=remember(query){
+    val filtered=remember(query,all){
         val q=query.trim().removePrefix("#")
         if(q.isBlank()) all
         else all.filter{
