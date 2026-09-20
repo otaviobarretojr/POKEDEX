@@ -70,6 +70,7 @@ var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
  var evolutionMethodLoading by remember(region.source){mutableStateOf(false)}
  var filterPreloading by remember{mutableStateOf(false)};var filterPreloadDone by remember{mutableIntStateOf(0)};var filterPreloadTotal by remember{mutableIntStateOf(0)}
+ val boxContext=LocalContext.current.applicationContext
  LaunchedEffect(region.source,game.label,allGames){
   evolutionFilterName=null
   loading=true
@@ -111,7 +112,6 @@ var evolutionFilterMenu by remember{mutableStateOf(false)}
    }
   }
  }
- val boxContext=LocalContext.current.applicationContext
  LaunchedEffect(region.source,current,dex){withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)};runCatching{StartupPreloader.warmBoxWindow(boxContext,dex,current)}}}
  val relevantPages=remember(gameDexIds){relevantLivingBoxPages(gameDexIds)}
  val capturedIds=CollectionStore.capturedIds.toSet() // National Living Dex; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
