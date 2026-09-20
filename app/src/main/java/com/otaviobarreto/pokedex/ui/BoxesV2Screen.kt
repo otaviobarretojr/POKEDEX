@@ -42,7 +42,7 @@ import com.otaviobarreto.pokedex.data.GameContext
 import com.otaviobarreto.pokedex.data.GameDexService
 import com.otaviobarreto.pokedex.data.EvolutionFilterIndex
 import com.otaviobarreto.pokedex.data.EvolutionRuleCatalog
-import com.otaviobarreto.pokedex.data.PokedexDataStore
+import com.otaviobarreto.pokedex.data.PokedexDataStore; import com.otaviobarreto.pokedex.data.StartupPreloader
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import com.otaviobarreto.pokedex.data.PokeApiService
 import com.otaviobarreto.pokedex.data.PokemonRepository
@@ -108,9 +108,7 @@ var evolutionFilterMenu by remember{mutableStateOf(false)}
   }
  }
  val boxContext=LocalContext.current.applicationContext
- LaunchedEffect(region.source,current,dex){
-  withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)};runCatching{StartupPreloader.warmBoxWindow(boxContext,dex,current)}}
- }
+ LaunchedEffect(region.source,current,dex){withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)};runCatching{StartupPreloader.warmBoxWindow(boxContext,dex,current)}}}
  val relevantPages=remember(gameDexIds){relevantLivingBoxPages(gameDexIds)}
  val capturedIds=CollectionStore.capturedIds.toSet() // National Living Dex; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
  val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}};val missingFiltered=remember(gameDexIds,capturedIds){gameDexIds.count{it !in capturedIds}}
