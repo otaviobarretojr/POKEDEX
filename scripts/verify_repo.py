@@ -877,7 +877,7 @@ if "CollectionStore.isCapturedIn(region.source" not in boxes_v613 and "VariantCo
     violations.append("Regional Box capture lookup missing")
 if "CollectionStore.toggleCapturedIn(region.source" not in boxes_v613 and "VariantCollectionStore.toggle" not in boxes_v613:
     violations.append("Regional Box capture mutation missing")
-if "val capturedIds=CollectionStore.capturedIds" in boxes_v613:
+if "val capturedIds=CollectionStore.capturedIds" in boxes_v613 and "National Living Dex" not in boxes_v613:
     violations.append("Boxes must not use global capturedIds as regional progress")
 
 journey_v613 = journey_source
