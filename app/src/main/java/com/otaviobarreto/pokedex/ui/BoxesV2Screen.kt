@@ -346,8 +346,7 @@ internal fun QBGrid(
     source:String,
     specialFilter:Boolean,
     specialIds:Set<Int>,
-    open:(GameDexService.GameDexEntry)->Unit,
-    hold:(GameDexService.GameDexEntry)->Unit
+    open:(GameDexService.GameDexEntry)->Unit, hold:(GameDexService.GameDexEntry)->Unit
 ){
     Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(2.dp)){
         repeat(5){row->
@@ -794,10 +793,7 @@ private fun QBSearch(
                 items(results,key={it.nationalId}){pk->
                     val haptic=LocalHapticFeedback.current
                     Row(
-                        Modifier.fillMaxWidth().combinedClickable(
-                            onClick={select(pk)},
-                            onLongClick={haptic.performHapticFeedback(HapticFeedbackType.LongPress);hold(pk)}
-                        ).padding(vertical=5.dp),
+                        Modifier.fillMaxWidth().combinedClickable(onClick={select(pk)},onLongClick={haptic.performHapticFeedback(HapticFeedbackType.LongPress);hold(pk)}).padding(vertical=5.dp),
                         verticalAlignment=Alignment.CenterVertically
                     ){
                         PokemonArtwork(pk.spriteUrl,pk.name,Modifier.size(48.dp),pokemonId=pk.nationalId)
