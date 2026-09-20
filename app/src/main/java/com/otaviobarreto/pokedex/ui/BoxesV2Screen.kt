@@ -246,37 +246,29 @@ var evolutionFilterMenu by remember{mutableStateOf(false)}
     }
    }
   }
-  var dragTotal by remember { mutableFloatStateOf(0f) }
-  Box(
-   Modifier
-    .weight(1f)
-    .fillMaxWidth()
-    .pointerInput(current,pages,loading,evolutionFilterName){
-     detectHorizontalDragGestures(
-      onDragStart={dragTotal=0f},
-      onHorizontalDrag={change,dragAmount->
-       change.consume()
-       dragTotal+=dragAmount
-      },
-      onDragEnd={
-       val threshold=90f
-       if(!loading && evolutionFilterName==null){
-        if(dragTotal < -threshold) page=adjacentRelevantPage(current,relevantPages,true)?:current
-        else if(dragTotal > threshold) page=adjacentRelevantPage(current,relevantPages,false)?:current
-       }
-       dragTotal=0f
-      },
-      onDragCancel={dragTotal=0f}
-     )
-    }
-  ){
+  Box(Modifier.weight(1f).fillMaxWidth()){
    when{
     loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
     needsComplement->BoxOfflineComplementRequired(game.label,game.accent)
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      AnimatedBoxGrid(current,dex,capturedIds,boxSource,gameDexIds,{pk->onPokemonClick(pk.nationalId,boxSource)},{pk->captureTarget=pk})
+      LivingDexPager(
+       page=current,
+       pageCount=pages,
+       dex=dex,
+       captured=capturedIds,
+       source=boxSource,
+       available=gameDexIds,
+       relevantPages=relevantPages,
+       onPageSelected={candidate->
+        val target=if(candidate in relevantPages) candidate
+        else relevantPages.minByOrNull{kotlin.math.abs(it-candidate)} ?: current
+        page=target
+       },
+       open={pk->onPokemonClick(pk.nationalId,boxSource)},
+       hold={pk->captureTarget=pk}
+      )
      }else{
       EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
      }
