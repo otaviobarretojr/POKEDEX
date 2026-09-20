@@ -42,3 +42,25 @@ internal fun AnimatedBoxGrid(
         )
     }
 }
+
+
+@Composable
+internal fun LivingDexFilterActions(
+    relevantPages:Int,
+    missing:Int,
+    accent:androidx.compose.ui.graphics.Color,
+    nextMissing:()->Unit,
+    showBoxes:()->Unit
+){
+    androidx.compose.foundation.layout.Row(
+        androidx.compose.ui.Modifier.fillMaxWidth(),
+        horizontalArrangement=androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
+    ){
+        androidx.compose.material3.FilledTonalButton(nextMissing,androidx.compose.ui.Modifier.weight(1f)){
+            androidx.compose.material3.Text("Próximo faltante · $missing")
+        }
+        androidx.compose.material3.FilledTonalButton(showBoxes,androidx.compose.ui.Modifier.weight(1f)){
+            androidx.compose.material3.Text("$relevantPages Boxes")
+        }
+    }
+}
