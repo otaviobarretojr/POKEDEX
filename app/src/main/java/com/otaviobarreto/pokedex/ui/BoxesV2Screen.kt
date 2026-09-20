@@ -69,6 +69,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
 var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
  var evolutionMethodLoading by remember(region.source){mutableStateOf(false)}
+ var filterPreloading by remember{mutableStateOf(false)};var filterPreloadDone by remember{mutableIntStateOf(0)};var filterPreloadTotal by remember{mutableIntStateOf(0)}
  LaunchedEffect(region.source,game.label,allGames){
   evolutionFilterName=null
   loading=true
@@ -91,6 +92,9 @@ var evolutionFilterMenu by remember{mutableStateOf(false)}
    val pageCount=((dex.size+29)/30).coerceAtLeast(1)
    if(page>=pageCount) page=pageCount-1
    AppStatePreferences.setBoxPage(boxSource,page)
+   filterPreloadTotal=gameDexIds.size;filterPreloadDone=0;filterPreloading=true
+   withContext(Dispatchers.IO){StartupPreloader.warmLivingDexFilter(boxContext,gameDexIds){done,total->filterPreloadDone=done;filterPreloadTotal=total}}
+   filterPreloading=false
    loading=false
   }
  }
@@ -271,7 +275,7 @@ var evolutionFilterMenu by remember{mutableStateOf(false)}
     }
   ){
    when{
-    loading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(color=game.accent)}
+    loading||filterPreloading->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){CircularProgressIndicator(color=game.accent);Text(if(filterPreloading)"Preparando artworks · $filterPreloadDone / $filterPreloadTotal" else "Preparando Pokédex…",style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.Bold);if(filterPreloading&&filterPreloadTotal>0)LinearProgressIndicator(progress={filterPreloadDone.toFloat()/filterPreloadTotal},modifier=Modifier.width(220.dp),color=game.accent)}}
     needsComplement->BoxOfflineComplementRequired(game.label,game.accent)
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
