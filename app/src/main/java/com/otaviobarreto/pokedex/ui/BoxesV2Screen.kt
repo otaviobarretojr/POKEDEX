@@ -67,7 +67,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
  var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var gameDexIds by remember{mutableStateOf<Set<Int>>(emptySet())};var regionalDex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  var evolutionFilterName by rememberSaveable{mutableStateOf<String?>(null)}
- var evolutionFilterMenu by remember{mutableStateOf(false)}
+var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
  var evolutionMethodLoading by remember(region.source){mutableStateOf(false)}
  LaunchedEffect(region.source,game.label,allGames){
