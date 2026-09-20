@@ -141,7 +141,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   return
  }
  val activeEvolutionIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}.orEmpty()
- val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
+ val filteredEvolutionEntries=remember(evolutionFilterName,dex,activeEvolutionIds){if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
  Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
   Column(Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Sm)){
@@ -736,7 +736,7 @@ private fun QBSearch(
     var status by remember{mutableStateOf("Todos")}
     var order by remember{mutableStateOf("Regional")}
     val key=q.trim().removePrefix("#")
-    val results=remember(key,status,order,dex,captured){
+    val ownedVariantsSnapshot=VariantCollectionStore.ownedVariants\n val results=remember(key,status,order,dex,captured,ownedVariantsSnapshot){
         dex.asSequence()
             .filter{
                 key.isBlank() || it.name.contains(key,true) ||
@@ -746,9 +746,9 @@ private fun QBSearch(
                 when(status){
                     "Capturados" -> it.nationalId in captured
                     "Faltantes" -> it.nationalId !in captured
-                    "Shiny" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && v.shiny}
-                    "Normal" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && !v.shiny}
-                    "Formas" -> VariantCollectionStore.ownedVariants.any{v->
+                    "Shiny" -> ownedVariantsSnapshot.any{v->v.source==source && v.speciesId==it.nationalId && v.shiny}
+                    "Normal" -> ownedVariantsSnapshot.any{v->v.source==source && v.speciesId==it.nationalId && !v.shiny}
+                    "Formas" -> ownedVariantsSnapshot.any{v->
                         v.source==source && v.speciesId==it.nationalId &&
                             (v.formPokemonId!=it.nationalId || !v.formName.equals(pretty(it.name),true))
                     }
