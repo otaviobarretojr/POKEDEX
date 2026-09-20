@@ -217,7 +217,7 @@ private fun GenerationShelf(
         items(plan.byGeneration,key={it.generation}){gen->
             val value=if(shiny)gen.shiny else gen.captured
             val ratio=if(gen.total==0)0f else value.toFloat()/gen.total
-            val list=NationalDexCatalog.all.filter{it.generation==gen.generation}
+            val list=remember(gen.generation){NationalDexCatalog.all.filter{it.generation==gen.generation}}
             val representatives=if(list.size<3) list.map{it.id} else listOf(list.first().id,list[list.size/2].id,list.last().id)
             Surface(
                 modifier=Modifier.fillMaxWidth().clickable{onGeneration(gen.generation)},
