@@ -166,7 +166,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      qbGames.forEach{g->
       DropdownMenuItem(
        text={Text(g.label,fontWeight=FontWeight.SemiBold)},
-       onClick={gameLabel=g.label;AppStatePreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==AppStatePreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=AppStatePreferences.boxPage(regionSource);AppStatePreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
+       onClick={gameLabel=g.label;AppStatePreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==AppStatePreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=AppStatePreferences.boxPage(g.regions.first().source);AppStatePreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
       )
      }
     }
@@ -175,7 +175,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     OutlinedTextField(
      region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=38.dp),
      readOnly=true,singleLine=true,
-     label={Text(if(game.regions.size>1)"Região / DLC" else "Região",style=MaterialTheme.typography.labelSmall)},
+     label={Text(if(game.regions.size>1)"Filtro Pokédex" else "Região",style=MaterialTheme.typography.labelSmall)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
@@ -281,7 +281,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      AnimatedBoxGrid(current,dex,capturedIds,region.source,{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+      AnimatedBoxGrid(current,dex,capturedIds,boxSource,{pk->onPokemonClick(pk.nationalId,boxSource)},{pk->captureTarget=pk})
      }else{
       EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
      }
@@ -324,7 +324,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    }
   }
  }
- if(search)QBSearch(regionalDex,regionalCapturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+ if(search)QBSearch(regionalDex,capturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
  if(allBoxes)QBAllBoxes(
   dex=dex,
   current=current,
