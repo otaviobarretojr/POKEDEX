@@ -89,7 +89,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    loading=false
   }else{
    val gameDex=withContext(Dispatchers.IO){loadBoxGameDex(AppGameCatalog.games.first{it.label==game.label},region.source)}
-   dex=gameDex.all
+   dex=nationalLivingDex()
    regionalDex=gameDex.filtered
    val pageCount=((dex.size+29)/30).coerceAtLeast(1)
    if(page>=pageCount) page=pageCount-1
@@ -114,7 +114,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  LaunchedEffect(region.source,current,dex){
   withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}}
  }
- val capturedIds=CollectionStore.capturedForGame(region.source) // unified game Box; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
+ val capturedIds=CollectionStore.capturedIds // National Living Dex; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
  val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
  val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  val variantsInRegion=remember(region.source,VariantCollectionStore.ownedVariants){VariantCollectionStore.ownedVariants.filter{it.source==region.source}}
@@ -146,7 +146,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
   Column(Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Sm)){
    Text("Box",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-   Text("Organize e registre sua coleção por jogo.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+   Text("National Living Dex · 30 Pokémon por Box.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
   }
   Row(
    Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Xs),
