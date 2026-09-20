@@ -114,7 +114,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  }
  val relevantPages=remember(gameDexIds){relevantLivingBoxPages(gameDexIds)}
  val capturedIds=CollectionStore.capturedIds.toSet() // National Living Dex; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
- val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
+ val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}};val missingFiltered=remember(gameDexIds,capturedIds){gameDexIds.count{it !in capturedIds}}
  val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  val variantsInRegion=remember(region.source,VariantCollectionStore.ownedVariants){VariantCollectionStore.ownedVariants.filter{it.source==region.source}}
  val shinyCaptured=remember(variantsInRegion){variantsInRegion.count{it.shiny}}
@@ -285,6 +285,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     }
    }
   }
+  if(evolutionFilterName==null) LivingDexFilterActions(relevantPages.size,missingFiltered,game.accent,{nextMissingNationalId(gameDexIds,capturedIds,current*30)?.let{page=(it-1)/30}},{allBoxes=true})
   Row(
    Modifier.fillMaxWidth().height(40.dp).padding(bottom=1.dp),
    horizontalArrangement=Arrangement.spacedBy(4.dp)
