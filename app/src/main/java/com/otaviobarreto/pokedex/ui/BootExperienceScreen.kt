@@ -56,21 +56,9 @@ fun BootExperienceScreen(onReady: () -> Unit) {
             state=BootState((progress.fraction*.72f).coerceIn(.01f,.72f),progress.label)
         }
         if(result.ready){
-            state=BootState(.74f,"Verificando artworks")
-            val artwork=ArtworkOfflineSync.sync(context){progress->
-                withContext(Dispatchers.Main.immediate){
-                    state=BootState(
-                        (.74f+progress.fraction*.24f).coerceIn(.74f,.98f),
-                        progress.label
-                    )
-                }
-            }
-            state=BootState(
-                1f,
-                if(artwork.failed==0)"Tudo pronto" else "Pronto · "+artwork.failed+" artworks pendentes"
-            )
-            finished=true
+            state=BootState(1f,"Tudo pronto")
             onReady()
+            ArtworkOfflineSync.launch(context)
             StartupPreloader.launchWarmInBackground(context)
         }else{
             bootstrapError=result.error ?: "Não foi possível preparar a biblioteca."
