@@ -398,17 +398,8 @@ internal fun QBSlot(
         tween(PokedexDesignTokens.Motion.Fast),
         label="boxSlotAlpha"
     )
-    val slotScale by animateFloatAsState(
-        if(captured)1f else .985f,
-        tween(PokedexDesignTokens.Motion.Standard),
-        label="boxSlotScale"
-    )
-    val slotColor by animateColorAsState(
-        if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.62f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f),
-        tween(PokedexDesignTokens.Motion.Standard),
-        label="boxSlotColor"
-    )
+    val slotScale=if(captured)1f else .985f
+    val slotColor=if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.62f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f)
     val interaction=remember(pk.nationalId,source){MutableInteractionSource()}
     val haptic=LocalHapticFeedback.current
     Surface(
