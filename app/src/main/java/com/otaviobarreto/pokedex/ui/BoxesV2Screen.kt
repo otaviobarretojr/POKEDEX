@@ -115,7 +115,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  LaunchedEffect(region.source,current,dex){
   withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}}
  }
- val capturedIds=CollectionStore.capturedForGame(region.source)
+ val capturedIds=CollectionStore.capturedForGame(region.source) // unified game Box; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
  val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
  val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
  val variantsInRegion=remember(region.source,VariantCollectionStore.ownedVariants){VariantCollectionStore.ownedVariants.filter{it.source==region.source}}
