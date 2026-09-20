@@ -736,7 +736,8 @@ private fun QBSearch(
     var status by remember{mutableStateOf("Todos")}
     var order by remember{mutableStateOf("Regional")}
     val key=q.trim().removePrefix("#")
-    val ownedVariantsSnapshot=VariantCollectionStore.ownedVariants\n val results=remember(key,status,order,dex,captured,ownedVariantsSnapshot){
+    val ownedVariantsSnapshot=VariantCollectionStore.ownedVariants
+ val results=remember(key,status,order,dex,captured,ownedVariantsSnapshot){
         dex.asSequence()
             .filter{
                 key.isBlank() || it.name.contains(key,true) ||
