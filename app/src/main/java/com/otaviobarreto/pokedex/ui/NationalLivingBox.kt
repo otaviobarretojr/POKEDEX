@@ -42,3 +42,7 @@ internal fun adjacentRelevantPage(current:Int, relevant:List<Int>, forward:Boole
     if(relevant.isEmpty()) return null
     return if(forward) relevant.firstOrNull { it>current } else relevant.lastOrNull { it<current }
 }
+
+
+internal const val ALL_GAMES_LABEL="Todos os jogos"
+internal fun allNationalIds():Set<Int>=(1..PokeApiService.MAX_NATIONAL_DEX_ID).toSet()
