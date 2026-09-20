@@ -159,8 +159,10 @@ for marker in [
     if marker not in artwork_sync:
         errors.append(f"startup artwork inventory missing: {marker}")
 
-if "ArtworkOfflineSync.sync(context)" not in boot:
-    errors.append("boot must visibly audit/sync artwork before releasing Home")
+if "ArtworkOfflineSync.launch(context)" not in boot:
+    errors.append("boot must launch serialized artwork maintenance after releasing Home")
+if "onReady()" not in boot or boot.find("onReady()") > boot.find("ArtworkOfflineSync.launch(context)"):
+    errors.append("Home must be released before non-critical artwork maintenance")
 if '"$RAW_ART/shiny/$id.png"' not in artwork_sync:
     errors.append("startup artwork inventory must include official Shiny artwork")
 if "installSupplementalArtwork" not in read("app/src/main/java/com/otaviobarreto/pokedex/data/OfflineLibraryManager.kt"):
