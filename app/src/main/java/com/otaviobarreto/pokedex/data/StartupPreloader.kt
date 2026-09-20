@@ -242,6 +242,21 @@ object StartupPreloader {
         lastWarmDurationMs = SystemClock.elapsedRealtime() - startedAt
     }
 
+    suspend fun warmBoxWindow(context:Context,dex:List<GameDexService.GameDexEntry>,page:Int){
+        if(dex.isEmpty()) return
+        val pages=listOf(page-1,page,page+1).filter{it>=0}.distinct()
+        val ids=pages.flatMap{p->dex.drop(p*30).take(30).map{it.nationalId}}.distinct()
+        val semaphore=Semaphore(6)
+        supervisorScope{
+            ids.map{id->async{
+                semaphore.withPermit{
+                    val url="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
+                    runCatching{context.imageLoader.execute(ImageRequest.Builder(context).data(OfflineLibraryManager.resolveAny(context,"pokemon-offline-$id") ?: OfflineLibraryManager.resolveAny(context,url) ?: url).size(160).memoryCacheKey("pokemon-offline-$id").diskCacheKey("pokemon-offline-$id").build())}
+                }
+            }}.awaitAll()
+        }
+    }
+
     fun launchWarmInBackground(context: Context) {
         val appContext=context.applicationContext
         backgroundScope.launch {
