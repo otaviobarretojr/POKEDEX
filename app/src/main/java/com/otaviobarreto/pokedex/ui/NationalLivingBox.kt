@@ -45,4 +45,4 @@ internal fun adjacentRelevantPage(current:Int, relevant:List<Int>, forward:Boole
 
 
 internal const val ALL_GAMES_LABEL="Todos os jogos"
-internal fun allNationalIds():Set<Int>=(1..PokeApiService.MAX_NATIONAL_DEX_ID).toSet()
+internal fun allNationalIds():Set<Int> = (1..PokeApiService.MAX_NATIONAL_DEX_ID).toSet()
