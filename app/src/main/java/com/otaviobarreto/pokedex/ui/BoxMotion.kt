@@ -16,6 +16,7 @@ internal fun AnimatedBoxGrid(
     dex:List<GameDexService.GameDexEntry>,
     captured:Set<Int>,
     source:String,
+    available:Set<Int>?=null,
     open:(GameDexService.GameDexEntry)->Unit,
     hold:(GameDexService.GameDexEntry)->Unit
 ){
@@ -35,6 +36,7 @@ internal fun AnimatedBoxGrid(
             source=source,
             specialFilter=false,
             specialIds=emptySet(),
+            available=available,
             open=open,
             hold=hold
         )
