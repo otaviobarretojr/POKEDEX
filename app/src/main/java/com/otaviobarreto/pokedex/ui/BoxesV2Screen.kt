@@ -18,7 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalHapticFeedback; import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
@@ -107,8 +107,9 @@ var evolutionFilterMenu by remember{mutableStateOf(false)}
    }
   }
  }
+ val boxContext=LocalContext.current.applicationContext
  LaunchedEffect(region.source,current,dex){
-  withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}}
+  withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)};runCatching{StartupPreloader.warmBoxWindow(boxContext,dex,current)}}
  }
  val relevantPages=remember(gameDexIds){relevantLivingBoxPages(gameDexIds)}
  val capturedIds=CollectionStore.capturedIds.toSet() // National Living Dex; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
