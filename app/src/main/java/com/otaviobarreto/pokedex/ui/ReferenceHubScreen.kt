@@ -238,7 +238,7 @@ private fun GenericReferenceDetailContent(
  ){
   item{
    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-    detail.spriteUrl?.let{AsyncImage(it,detail.name,Modifier.size(72.dp).padding(end=12.dp))}
+    detail.spriteUrl?.let{url->AsyncImage(rememberOfflineArtworkModel(url),detail.name,Modifier.size(72.dp).padding(end=12.dp))}
     Column(Modifier.weight(1f)){
      Text(detail.name,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
      Text(if(detail.kind=="ability")"Habilidade" else "Item",style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -274,12 +274,12 @@ private fun ReferenceDetailSheet(detail:ReferenceDetail,source:String?,onPokemon
   return
  }
  LazyColumn(Modifier.fillMaxWidth().heightIn(max=650.dp),contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
-  item{Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){detail.spriteUrl?.let{AsyncImage(it,detail.name,Modifier.size(72.dp).padding(end=12.dp))};Column(Modifier.weight(1f)){Text(detail.name,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text(if(detail.kind=="ability")"Habilidade" else "Item",style=MaterialTheme.typography.labelLarge)}}}
+  item{Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){detail.spriteUrl?.let{url->AsyncImage(rememberOfflineArtworkModel(url),detail.name,Modifier.size(72.dp).padding(end=12.dp))};Column(Modifier.weight(1f)){Text(detail.name,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text(if(detail.kind=="ability")"Habilidade" else "Item",style=MaterialTheme.typography.labelLarge)}}}
   if(detail.kind=="item"&&detail.category!=null)item{Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){ReferenceLine("Categoria",detail.category,Modifier.padding(14.dp))}}
   detail.description?.takeIf{it.isNotBlank()}?.let{description->item{Text("Efeito",fontWeight=FontWeight.Bold);Text(description,style=MaterialTheme.typography.bodyMedium)}}
   if(detail.pokemonIds.isNotEmpty()){
    item{Text("Pokémon com esta habilidade",fontWeight=FontWeight.Bold);Text("${detail.pokemonIds.size}${if(detail.pokemonIds.size>=80)"+" else ""} listados",style=MaterialTheme.typography.labelSmall)}
-   items(detail.pokemonIds.zip(detail.pokemonNames),key={it.first}){(id,name)->Card(Modifier.fillMaxWidth().then(if(onPokemonClick!=null)Modifier.clickable{onPokemonClick(id,source)}else Modifier)){Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp));Column(Modifier.weight(1f).padding(start=8.dp)){Text(name,fontWeight=FontWeight.SemiBold);Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)};if(onPokemonClick!=null)Icon(Icons.Default.ChevronRight,null)}}}
+   items(detail.pokemonIds.zip(detail.pokemonNames),key={it.first}){(id,name)->Card(Modifier.fillMaxWidth().then(if(onPokemonClick!=null)Modifier.clickable{onPokemonClick(id,source)}else Modifier)){Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){PokemonArtwork("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png",name,Modifier.size(48.dp),pokemonId=id);Column(Modifier.weight(1f).padding(start=8.dp)){Text(name,fontWeight=FontWeight.SemiBold);Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)};if(onPokemonClick!=null)Icon(Icons.Default.ChevronRight,null)}}}
   }
   item{Spacer(Modifier.height(26.dp))}
  }
@@ -328,7 +328,7 @@ private fun MoveReferenceDetailContent(detail:ReferenceDetail,source:String?,onP
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
     ){
      Row(Modifier.fillMaxWidth().padding(8.dp),verticalAlignment=Alignment.CenterVertically){
-      AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp))
+      PokemonArtwork("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png",name,Modifier.size(48.dp),pokemonId=id)
       Column(Modifier.weight(1f).padding(start=8.dp)){
        Text(name,fontWeight=FontWeight.SemiBold)
        Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)
@@ -386,7 +386,7 @@ private fun ReferencePokemonRow(id:Int,name:String,source:String?,onPokemonClick
   shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)
  ){
   Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=Alignment.CenterVertically){
-   AsyncImage("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",name,Modifier.size(48.dp))
+   PokemonArtwork("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png",name,Modifier.size(48.dp),pokemonId=id)
    Column(Modifier.weight(1f).padding(start=8.dp)){
     Text(name,fontWeight=FontWeight.SemiBold)
     Text("#${id.toString().padStart(4,'0')}",style=MaterialTheme.typography.labelSmall)

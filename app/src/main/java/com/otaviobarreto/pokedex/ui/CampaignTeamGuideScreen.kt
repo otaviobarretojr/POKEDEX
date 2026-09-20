@@ -245,9 +245,10 @@ fun CampaignTeamGuideScreen(
                 Card(Modifier.fillMaxWidth().clickable{onPokemonClick(slot.pokemonId,source)},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                     Column(Modifier.fillMaxWidth().padding(12.dp)){
                         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                            AsyncImage(
+                            PokemonArtwork(
                                 model=entry?.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+slot.pokemonId+".png",
                                 contentDescription=entry?.name,
+                                pokemonId=slot.pokemonId,
                                 modifier=Modifier.size(76.dp)
                             )
                             Column(Modifier.weight(1f).padding(start=10.dp)){

@@ -11,12 +11,13 @@ class PokedexRoutesRegressionTest {
     }
 
     @Test fun requiredMainDestinationsRemainStable() {
-        assertEquals(setOf("home","pokedex","collection","boxes","central"), PokedexRoutes.main)
+        assertEquals(setOf("home","games","pokedex","collection","boxes","central"), PokedexRoutes.main)
     }
 
     @Test fun secondaryRoutesRemainRecognized() {
         PokedexRoutes.secondary.forEach { assertTrue(PokedexRoutes.isSecondary(it)) }
         assertFalse(PokedexRoutes.isSecondary(PokedexRoutes.HOME))
+        assertFalse(PokedexRoutes.isSecondary(PokedexRoutes.GAMES))
         assertFalse(PokedexRoutes.isSecondary(null))
     }
 }

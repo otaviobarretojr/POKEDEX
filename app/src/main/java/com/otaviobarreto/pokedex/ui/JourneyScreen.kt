@@ -1,6 +1,5 @@
 package com.otaviobarreto.pokedex.ui
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.Crossfade
+import androidx.activity.compose.BackHandler; import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,8 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyColumn; import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -36,15 +34,18 @@ import com.otaviobarreto.pokedex.data.*
 private enum class JourneyView { GAMES, GAME_MENU, ROUTE, DETAIL }
 @Composable
 fun JourneyScreen(
+    startInGames:Boolean=true,
     onPokemonClick:(Int,String?)->Unit,
     onOpenTeamGuide:(String,String?,String?)->Unit,
     onOpenBoxes:(String,String?)->Unit,
     onOpenGameDex:()->Unit={},
     onOpenEvolutionCenter:()->Unit={},
-    onOpenSearch:()->Unit={}
+    onOpenSearch:()->Unit={},
+    onExit:()->Unit={}
 ){
-    var selectedGame by rememberSaveable { mutableStateOf<String?>(null) }
-    var view by rememberSaveable { mutableStateOf(JourneyView.GAMES) }
+    val activeJourneyGame=remember(startInGames){if(startInGames)null else AppStatePreferences.activeGame.takeIf{active->AppGameCatalog.adventureGames.any{it.label==active}}}
+    var selectedGame by rememberSaveable(startInGames){mutableStateOf(activeJourneyGame)}
+    var view by rememberSaveable(startInGames){mutableStateOf(if(!startInGames&&activeJourneyGame!=null)JourneyView.ROUTE else JourneyView.GAMES)}
     var selectedStepId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailReturnView by rememberSaveable { mutableStateOf(JourneyView.ROUTE) }
     val routeListState=rememberLazyListState()
@@ -54,23 +55,29 @@ fun JourneyScreen(
         if(explicitGameSelectionRevision==0) return@LaunchedEffect
         routeListState.scrollToItem(0)
     }
-    BackHandler(enabled=view!=JourneyView.GAMES){
+    BackHandler(enabled=view!=JourneyView.GAMES || !startInGames){
         when(view){
             JourneyView.GAME_MENU -> { selectedGame=null; view=JourneyView.GAMES }
-            JourneyView.ROUTE -> view=JourneyView.GAME_MENU
+            JourneyView.ROUTE -> if(startInGames) view=JourneyView.GAME_MENU else onExit()
             JourneyView.DETAIL -> {
                 selectedStepId=null
                 view=detailReturnView
             }
-            JourneyView.GAMES -> Unit
+            JourneyView.GAMES -> if(!startInGames) onExit()
         }
     }
     when(view){
         JourneyView.GAMES -> JourneyGamePicker(
+            libraryOnly=startInGames,
             onSelect={
                 explicitGameSelectionRevision++
                 selectedGame=it
                 view=JourneyView.GAME_MENU
+            },
+            onContinue={
+                explicitGameSelectionRevision++
+                selectedGame=it
+                view=JourneyView.ROUTE
             },
             onPokemonClick=onPokemonClick,
             onOpenBoxes=onOpenBoxes
@@ -84,8 +91,8 @@ fun JourneyScreen(
             onRegion={regionSource->onOpenBoxes(game.label,regionSource)}
         ) else { view=JourneyView.GAMES }
         JourneyView.ROUTE -> if(game!=null) JourneyRoute(
-            game=game,
-            onBack={view=JourneyView.GAME_MENU},
+            game=game,showBack=true,
+            onBack={if(startInGames) view=JourneyView.GAME_MENU else onExit()},
             onTeam={onOpenTeamGuide(game.label,JourneySmartProgress.context(game.label).phase.name,null)},
             listState=routeListState,
             onOpenStep={stepId->detailReturnView=JourneyView.ROUTE;selectedStepId=stepId;view=JourneyView.DETAIL},
@@ -114,7 +121,7 @@ private data class JourneyRouteStepUi(
 )
 @Composable
 private fun JourneyRoute(
-    game:AppGame,
+    game:AppGame,showBack:Boolean,
     onBack:()->Unit,
     onTeam:()->Unit,
     listState:LazyListState,
@@ -133,7 +140,6 @@ private fun JourneyRoute(
         if(steps.isEmpty())0f else completedCount.toFloat()/steps.size
     }
     val nextStep=remember(steps,completed){steps.firstOrNull{it.id !in completed}}
-    val smart=remember(game.label,revision){JourneySmartProgress.context(game.label)}
     val national=remember { PokedexDataStore.cachedNationalDex().orEmpty() }
     val nationalByName=remember(national){
         national.associateBy { it.name.lowercase() }
@@ -149,8 +155,12 @@ private fun JourneyRoute(
     var showCompleted by rememberSaveable(game.label){mutableStateOf(false)}
     var showUpcoming by rememberSaveable(game.label){mutableStateOf(false)}
     var confirmReset by rememberSaveable(game.label){mutableStateOf(false)}
+    var routeMenuExpanded by rememberSaveable(game.label){mutableStateOf(false)}
     val hiddenCompletedCount=completedCount
     val currentIndex=remember(steps,nextStep){nextStep?.let(steps::indexOf) ?: -1}
+    val nextAfterCurrent=remember(steps,completed,currentIndex){
+        if(currentIndex<0) null else steps.drop(currentIndex+1).firstOrNull{it.id !in completed}
+    }
     val upcomingSteps=remember(steps,completed,currentIndex){
         if(currentIndex<0) emptyList()
         else steps.drop(currentIndex+1).filterNot{it.id in completed}
@@ -200,7 +210,7 @@ private fun JourneyRoute(
                 Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md),
                 verticalAlignment=Alignment.CenterVertically
             ){
-                IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
+                if(showBack) IconButton(onClick=onBack){Icon(Icons.Default.ArrowBack,"Voltar")}
                 Column(Modifier.weight(1f)){
                     Text("Minha Jornada",fontWeight=FontWeight.Black,style=MaterialTheme.typography.headlineSmall)
                     Text(game.label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -210,6 +220,16 @@ private fun JourneyRoute(
                     Spacer(Modifier.width(5.dp))
                     Text("Meu time")
                 }
+                Box{
+                    IconButton(onClick={routeMenuExpanded=true}){Icon(Icons.Default.MoreVert,"Gerenciar Jornada")}
+                    DropdownMenu(expanded=routeMenuExpanded,onDismissRequest={routeMenuExpanded=false}){
+                        DropdownMenuItem(
+                            text={Text("Reiniciar Jornada")},
+                            leadingIcon={Icon(Icons.Default.RestartAlt,null)},
+                            onClick={routeMenuExpanded=false;confirmReset=true}
+                        )
+                    }
+                }
             }
         }
         item(key="route_progress",contentType="summary"){
@@ -218,14 +238,14 @@ private fun JourneyRoute(
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer),
                 modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
             ){
-                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
+                Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Sm)){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Column(Modifier.weight(1f)){
-                            Text("Progresso da campanha",style=MaterialTheme.typography.labelMedium)
+                            Text("Progresso da campanha",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onPrimaryContainer)
                             Text(
                                 completedCount.toString()+" / "+steps.size+" objetivos",
                                 fontWeight=FontWeight.Black,
-                                style=MaterialTheme.typography.titleLarge
+                                style=MaterialTheme.typography.titleMedium
                             )
                         }
                         Surface(
@@ -234,18 +254,19 @@ private fun JourneyRoute(
                         ){
                             Text(
                                 (progress*100).toInt().toString()+"%",
-                                modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Md,vertical=PokedexDesignTokens.Spacing.Sm),
-                                fontWeight=FontWeight.Bold
+                                modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Sm,vertical=PokedexDesignTokens.Spacing.Xs),
+                                fontWeight=FontWeight.Bold,
+                                style=MaterialTheme.typography.labelLarge
                             )
                         }
                     }
                     LinearProgressIndicator(
                         progress={progress},
-                        modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md).height(8.dp)
+                        modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Xs).height(4.dp)
                     )
                     Row(
-                        Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md).horizontalScroll(rememberScrollState()),
-                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+                        Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Xs).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Xs)
                     ){
                         when(game.label){
                             "Pokémon Legends: Z-A" -> {
@@ -253,7 +274,7 @@ private fun JourneyRoute(
                                 JourneyCountPill(Icons.Default.AutoAwesome,"Rogue Megas")
                                 JourneyCountPill(Icons.Default.Explore,"Mega Dimension")
                             }
-                            "Pokémon Scarlet / Violet" -> {
+                            "Scarlet / Violet" -> {
                                 JourneyCountPill(Icons.Default.EmojiEvents,"8 Ginásios")
                                 JourneyCountPill(Icons.Default.Landscape,"5 Titãs")
                                 JourneyCountPill(Icons.Default.Stars,"5 Team Star")
@@ -290,7 +311,7 @@ private fun JourneyRoute(
         }
         val starterOptions=JourneyStarterCatalog.forGame(game.label)
         val hasChosenStarter=AppStatePreferences.journeyStarterForGame(game.label)!=null
-        if(starterOptions.isNotEmpty() && !hasChosenStarter){
+        if(starterOptions.isNotEmpty() && !hasChosenStarter && completedCount<=2){
             item(key="starter_guide",contentType="guide"){
                 JourneyStarterGuideCard(
                     starters=starterOptions,
@@ -312,8 +333,9 @@ private fun JourneyRoute(
                 if(ui!=null){
                     val step=ui.step
                     Column{
+                        // OBJETIVO ATUAL remains the semantic current-step section.
                         Text(
-                            "OBJETIVO ATUAL · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
+                            "CONTINUE SUA JORNADA · "+(ui.chapter ?: JourneyTeamProgressCatalog.chapterFor(step.id)),
                             fontWeight=FontWeight.Black,
                             style=MaterialTheme.typography.labelMedium,
                             color=MaterialTheme.colorScheme.primary,
@@ -326,7 +348,7 @@ private fun JourneyRoute(
                             opponentPokemonIds=ui.opponentPokemonIds,
                             done=false,
                             isNext=true,
-                            journeyRecommendation=smart.recommendation,
+                            journeyRecommendation=null,
                             displayTitle=journeyDisplayTitle(step),
                             onOpen={onOpenStep(step.id)},
                             onToggle={JourneyProgressStore.toggle(game.label,step.id)}
@@ -348,32 +370,20 @@ private fun JourneyRoute(
             }
         }
         if(currentUi!=null){
-            item(key="journey_context_tools",contentType="tools"){
-                Card(
-                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
-                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
-                ){
-                    Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
-                        Text("Prepare o próximo passo",fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleMedium)
-                        Text(
-                            smart.recommendation ?: "Use a Pokédex do jogo e a Central de evolução para preparar sua próxima etapa.",
-                            style=MaterialTheme.typography.bodySmall,
-                            color=MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs,bottom=PokedexDesignTokens.Spacing.Md)
-                        )
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
-                            FilledTonalButton(onClick=onOpenGameDex,modifier=Modifier.weight(1f)){
-                                Icon(Icons.Default.MenuBook,null,Modifier.size(17.dp))
-                                Spacer(Modifier.width(5.dp))
-                                Text("Dex do jogo")
+            item(key="journey_next_objective",contentType="next_objective"){
+                Column(Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)){
+                    nextAfterCurrent?.let{next->
+                        Surface(
+                            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+                            color=MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier=Modifier.fillMaxWidth().clickable{onOpenStep(next.id)}
+                        ){
+                            Row(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
+                                Text("A seguir",style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.width(PokedexDesignTokens.Spacing.Md))
+                                Text(journeyDisplayTitle(next),style=MaterialTheme.typography.bodyMedium,fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.weight(1f))
+                                Icon(Icons.Default.ArrowForward,"Abrir próximo objetivo",Modifier.size(18.dp))
                             }
-                            FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){
-                                Icon(Icons.Default.AutoAwesome,null,Modifier.size(17.dp))
-                                Spacer(Modifier.width(5.dp))
-                                Text("Evoluções")
-                            }
-                            IconButton(onClick=onOpenSearch){Icon(Icons.Default.Search,"Busca universal")}
                         }
                     }
                 }
@@ -381,7 +391,7 @@ private fun JourneyRoute(
         }
         if(upcomingSteps.isNotEmpty()){
             item(key="upcoming_toggle",contentType="toggle"){
-                FilledTonalButton(
+                OutlinedButton(
                     onClick={showUpcoming=!showUpcoming},
                     modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
                 ){
@@ -396,7 +406,7 @@ private fun JourneyRoute(
         }
         if(hiddenCompletedCount>0){
             item(key="completed_toggle",contentType="toggle"){
-                FilledTonalButton(
+                OutlinedButton(
                     onClick={showCompleted=!showCompleted},
                     modifier=Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Md)
                 ){
@@ -438,16 +448,6 @@ private fun JourneyRoute(
                     onOpen={onOpenStep(step.id)},
                     onToggle={JourneyProgressStore.toggle(game.label,step.id)}
                 )
-            }
-        }
-        item{
-            TextButton(
-                onClick={confirmReset=true},
-                modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)
-            ){
-                Icon(Icons.Default.RestartAlt,null)
-                Spacer(Modifier.width(6.dp))
-                Text("Reiniciar Jornada")
             }
         }
         item{Spacer(Modifier.height(28.dp))}
@@ -532,10 +532,10 @@ private fun JourneyCountPill(icon:ImageVector,label:String){
         color=MaterialTheme.colorScheme.surface.copy(alpha=.72f)
     ){
         Row(
-            Modifier.padding(horizontal=8.dp,vertical=6.dp),
+            Modifier.padding(horizontal=7.dp,vertical=4.dp),
             verticalAlignment=Alignment.CenterVertically
         ){
-            Icon(icon,null,Modifier.size(15.dp))
+            Icon(icon,null,Modifier.size(13.dp))
             Spacer(Modifier.width(4.dp))
             Text(label,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.SemiBold)
         }
@@ -623,7 +623,7 @@ private fun JourneyStepCard(
             colors=CardDefaults.cardColors(
                 containerColor=when{
                     done->MaterialTheme.colorScheme.secondaryContainer
-                    isNext->MaterialTheme.colorScheme.primaryContainer.copy(alpha=.58f)
+                    isNext->MaterialTheme.colorScheme.surfaceContainerHigh
                     else->MaterialTheme.colorScheme.surfaceContainer
                 }
             )
@@ -631,7 +631,7 @@ private fun JourneyStepCard(
             Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(verticalAlignment=Alignment.CenterVertically){
                     visual?.let{
-                        JourneyVisualThumb(it,Modifier.size(62.dp))
+                        JourneyVisualThumb(it,Modifier.size(if(isNext)96.dp else 62.dp))
                         Spacer(Modifier.width(10.dp))
                     }
                     Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=kindColor){
@@ -659,15 +659,17 @@ private fun JourneyStepCard(
                 }
                 Text(
                     displayTitle,
-                    style=MaterialTheme.typography.titleMedium,
+                    style=if(isNext)MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
                     fontWeight=FontWeight.Black,
                     modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
                 )
-                Text(
-                    step.subtitle,
-                    style=MaterialTheme.typography.bodyMedium,
-                    color=MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if(!displayTitle.contains(step.subtitle,ignoreCase=true)){
+                    Text(
+                        step.subtitle,
+                        style=MaterialTheme.typography.bodyMedium,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Row(
                     Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md),
                     horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
@@ -697,7 +699,10 @@ private fun JourneyStepCard(
                         }
                     }
                 }
-                detail?.opponents?.takeIf{it.isNotEmpty()}?.let{members->
+                val resolvedOpponents=detail?.opponents.orEmpty().mapIndexedNotNull{index,member->
+                    opponentPokemonIds.getOrNull(index)?.let{pokemonId->member to pokemonId}
+                }
+                if(resolvedOpponents.isNotEmpty()){
                     HorizontalDivider(Modifier.padding(top=PokedexDesignTokens.Spacing.Md,bottom=PokedexDesignTokens.Spacing.Sm))
                     Text(
                         if(step.kind==JourneyChallengeKind.TITAN)"ALVO" else "EQUIPE",
@@ -710,7 +715,7 @@ private fun JourneyStepCard(
                         horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
                     ){
                         items(
-                            items=members.take(6).mapIndexed { index, member -> member to opponentPokemonIds.getOrNull(index) },
+                            items=resolvedOpponents.take(6),
                             key={it.first.name+"_"+it.first.level},
                             contentType={"opponent"}
                         ){(member,pokemonId)->
@@ -720,6 +725,13 @@ private fun JourneyStepCard(
                                 pokemonId=pokemonId
                             )
                         }
+                    }
+                }
+                if(isNext){
+                    Button(onClick=onOpen,modifier=Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md)){
+                        Icon(Icons.Default.PlayArrow,null,Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Continuar objetivo",fontWeight=FontWeight.Bold)
                     }
                 }
                 Row(
@@ -773,7 +785,7 @@ private fun JourneyInfoChip(
 private fun JourneyOpponentMiniCard(
     name:String,
     level:String,
-    pokemonId:Int?
+    pokemonId:Int
 ){
     Surface(
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
@@ -790,18 +802,12 @@ private fun JourneyOpponentMiniCard(
                 color=MaterialTheme.colorScheme.surfaceContainer,
                 modifier=Modifier.size(58.dp)
             ){
-                if(pokemonId!=null){
-                    PokemonArtwork(
-                        model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
-                        contentDescription=name,
-                        modifier=Modifier.fillMaxSize().padding(4.dp),
-                        pokemonId=pokemonId
-                    )
-                }else{
-                    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
-                        Icon(Icons.Default.CatchingPokemon,null,Modifier.size(24.dp))
-                    }
-                }
+                PokemonArtwork(
+                    model="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+pokemonId+".png",
+                    contentDescription=name,
+                    modifier=Modifier.fillMaxSize().padding(4.dp),
+                    pokemonId=pokemonId
+                )
             }
             Text(
                 name,
@@ -1144,30 +1150,42 @@ private fun JourneyDetailLine(icon:ImageVector,label:String,value:String){
     }
 }
 @Composable
+private fun journeyVisualBackdrop(asset:JourneyVisualAsset)=when(asset.role){
+    JourneyVisualRole.GYM_LEADER,JourneyVisualRole.TOURNAMENT,JourneyVisualRole.PROMOTION,JourneyVisualRole.EPILOGUE->MaterialTheme.colorScheme.primaryContainer
+    JourneyVisualRole.TITAN,JourneyVisualRole.EXPLORATION,JourneyVisualRole.LEGENDARY,JourneyVisualRole.HYPERSPACE->MaterialTheme.colorScheme.secondaryContainer
+    JourneyVisualRole.TEAM_STAR_BOSS,JourneyVisualRole.RAID,JourneyVisualRole.DLC_CHARACTER,JourneyVisualRole.ROGUE_MEGA->MaterialTheme.colorScheme.tertiaryContainer
+    JourneyVisualRole.STORY->MaterialTheme.colorScheme.surfaceContainerHigh
+}
+@Composable
 private fun JourneyVisualThumb(asset:JourneyVisualAsset,modifier:Modifier=Modifier){
-    Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=MaterialTheme.colorScheme.surface){
-        AsyncImage(
-            model=asset.imageUrl,
-            contentDescription=asset.subject,
-            contentScale=ContentScale.Fit,
-            modifier=Modifier.fillMaxSize().padding(4.dp)
-        )
+    val model=rememberOfflineArtworkModel(asset.imageUrl)
+    Surface(modifier=modifier,shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),color=journeyVisualBackdrop(asset),tonalElevation=PokedexDesignTokens.Elevation.Low){
+        AsyncImage(model=model,contentDescription=asset.subject,contentScale=ContentScale.Crop,modifier=Modifier.fillMaxSize())
     }
 }
 @Composable
 private fun JourneyVisualHero(asset:JourneyVisualAsset){
+    val backdrop=journeyVisualBackdrop(asset)
+    val model=rememberOfflineArtworkModel(asset.imageUrl)
     Card(
         Modifier.fillMaxWidth().height(190.dp),
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
-        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.72f))
+        colors=CardDefaults.cardColors(containerColor=backdrop.copy(alpha=.52f))
     ){
         Row(Modifier.fillMaxSize().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
-            AsyncImage(
-                model=asset.imageUrl,
-                contentDescription=asset.subject,
-                contentScale=ContentScale.Fit,
-                modifier=Modifier.weight(1f).fillMaxHeight()
-            )
+            Surface(
+                modifier=Modifier.weight(1f).fillMaxHeight(),
+                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md),
+                color=backdrop,
+                tonalElevation=PokedexDesignTokens.Elevation.Low
+            ){
+                AsyncImage(
+                    model=model,
+                    contentDescription=asset.subject,
+                    contentScale=ContentScale.Crop,
+                    modifier=Modifier.fillMaxSize()
+                )
+            }
             Column(Modifier.weight(.72f).padding(start=10.dp)){
                 Text(asset.subject,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge)
                 Text(asset.emblemLabel,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs))
@@ -1200,7 +1218,7 @@ private fun JourneyTypeChip(typeLabel:String){
         Row(Modifier.padding(horizontal=8.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
             JourneyTypeIconCatalog.iconUrl(typeLabel)?.let{url->
                 AsyncImage(
-                    model=url,
+                    model=rememberOfflineArtworkModel(url),
                     contentDescription=typeLabel,
                     contentScale=ContentScale.Fit,
                     modifier=Modifier.size(18.dp)
@@ -1216,7 +1234,7 @@ private fun JourneyTypeDetailLine(typeLabel:String){
     Row(verticalAlignment=Alignment.CenterVertically){
         JourneyTypeIconCatalog.iconUrl(typeLabel)?.let{url->
             AsyncImage(
-                model=url,
+                model=rememberOfflineArtworkModel(url),
                 contentDescription=typeLabel,
                 contentScale=ContentScale.Fit,
                 modifier=Modifier.size(22.dp)

@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import com.otaviobarreto.pokedex.data.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private data class BootState(val progress: Float, val label: String)
 
@@ -51,15 +53,25 @@ fun BootExperienceScreen(onReady: () -> Unit) {
         bootstrapError=null
         state=BootState(.01f,"Preparando biblioteca POKEDEX")
         val result=ContentBootstrapManager.ensureReady(context){progress->
-            state=BootState(progress.fraction,progress.label)
+            state=BootState((progress.fraction*.72f).coerceIn(.01f,.72f),progress.label)
         }
         if(result.ready){
-            StartupPreloader.warm(context){progress->
-                state=BootState(.96f+progress.fraction*.04f,progress.label)
+            state=BootState(.74f,"Verificando artworks")
+            val artwork=ArtworkOfflineSync.sync(context){progress->
+                withContext(Dispatchers.Main.immediate){
+                    state=BootState(
+                        (.74f+progress.fraction*.24f).coerceIn(.74f,.98f),
+                        progress.label
+                    )
+                }
             }
+            state=BootState(
+                1f,
+                if(artwork.failed==0)"Tudo pronto" else "Pronto · "+artwork.failed+" artworks pendentes"
+            )
             finished=true
-            StartupPreloader.launchExtendedWarm(context)
             onReady()
+            StartupPreloader.launchWarmInBackground(context)
         }else{
             bootstrapError=result.error ?: "Não foi possível preparar a biblioteca."
             state=BootState(state.progress,"Download interrompido")

@@ -77,7 +77,6 @@ object HomeAudioManager {
 
     fun release() {
         releasePlayer()
-        appContext = null
     }
 
     private fun playTrack(track: HomeAudioTrack, restart: Boolean = false) {

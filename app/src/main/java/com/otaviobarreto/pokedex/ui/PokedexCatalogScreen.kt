@@ -1,5 +1,11 @@
 package com.otaviobarreto.pokedex.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -64,6 +70,7 @@ private fun ArtworkWithFallback(
 ){
     var current by remember(model,fallbackModel){mutableStateOf(model)}
     var failed by remember(model,fallbackModel){mutableStateOf(false)}
+    val resolvedCurrent=rememberOfflineArtworkModel(current)
     Surface(
         modifier=modifier,
         shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
@@ -72,7 +79,7 @@ private fun ArtworkWithFallback(
         Box(Modifier.fillMaxSize().padding(6.dp),contentAlignment=Alignment.Center){
         if(!failed){
             AsyncImage(
-                model=current,
+                model=resolvedCurrent,
                 contentDescription=contentDescription,
                 modifier=Modifier.fillMaxSize(),
                 contentScale=ContentScale.Fit,
@@ -105,6 +112,7 @@ fun PokedexCatalogScreen(
     var query by remember{mutableStateOf("")}
     var selectedId by remember{mutableStateOf<Int?>(null)}
     val all=remember{PokemonRepository.all()}
+    val ownedIds=CollectionStore.capturedIds
     val filtered=remember(query){
         val q=query.trim().removePrefix("#")
         if(q.isBlank()) all
@@ -116,49 +124,38 @@ fun PokedexCatalogScreen(
 
     DexAppBackground {
     Column(Modifier.fillMaxSize()){
-        Surface(
-            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
-            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
-            color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),
-            tonalElevation=PokedexDesignTokens.Elevation.Low
-        ){
-            Row(Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md),verticalAlignment=Alignment.CenterVertically){
-                Surface(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),color=MaterialTheme.colorScheme.primaryContainer){
-                    Icon(Icons.Default.MenuBook,null,Modifier.padding(PokedexDesignTokens.Spacing.Md).size(26.dp),tint=MaterialTheme.colorScheme.primary)
-                }
-                Column(Modifier.padding(start=PokedexDesignTokens.Spacing.Md)){
-                    DexSectionEyebrow("National Dex")
-                    Text("Pokédex",style=MaterialTheme.typography.headlineMedium)
-                    Text("#0001–#1025 · formas e Shiny",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+        CompanionContextHeader(
+            title="Pokédex",
+            eyebrow="National Dex",
+            subtitle="#0001–#1025 · formas · Shiny",
+            modifier=Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+            artwork={
+                Icon(
+                    Icons.Default.MenuBook,
+                    contentDescription=null,
+                    modifier=Modifier.align(Alignment.CenterEnd).padding(end=PokedexDesignTokens.Spacing.Xl).size(54.dp),
+                    tint=MaterialTheme.colorScheme.primary.copy(alpha=.28f)
+                )
             }
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
-            horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
-        ){
-            FilledTonalButton(onClick=onOpenSearch,modifier=Modifier.weight(1f)){
-                Icon(Icons.Default.Search,null);Spacer(Modifier.width(6.dp));Text("Busca universal")
-            }
-            FilledTonalButton(onClick=onOpenEvolutionCenter,modifier=Modifier.weight(1f)){
-                Icon(Icons.Default.AutoAwesome,null);Spacer(Modifier.width(6.dp));Text("Evoluções")
-            }
-        }
-        FilledTonalButton(
-            onClick=onOpenGameDex,
-            modifier=Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg)
-        ){
-            Icon(Icons.Default.Map,null);Spacer(Modifier.width(6.dp));Text("Pokédex do jogo · "+AppStatePreferences.activeGame)
-        }
-        Spacer(Modifier.height(PokedexDesignTokens.Spacing.Sm))
+        )
         OutlinedTextField(
             value=query,
-            onValueChange={query=it},
+            onValueChange={value:String->query=value},
             modifier=Modifier.fillMaxWidth().padding(horizontal=PokedexDesignTokens.Spacing.Lg),
             singleLine=true,
+            shape=RoundedCornerShape(PokedexDesignTokens.Radius.Pill),
             leadingIcon={Icon(Icons.Default.Search,null)},
-            placeholder={Text("Nome ou número da National Dex")}
+            trailingIcon={if(query.isNotEmpty()){IconButton(onClick={query=""}){Icon(Icons.Default.Close,contentDescription="Limpar busca")}}},
+            placeholder={Text("Nome, número ou tipo")}
         )
+        LazyRow(
+            modifier=Modifier.fillMaxWidth(),
+            contentPadding=PaddingValues(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Sm),
+            horizontalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)
+        ){
+            item{ContextFilter(label="Evoluções",selected=false,onClick=onOpenEvolutionCenter)}
+            item{ContextFilter(label="Dex · "+AppStatePreferences.activeGame,selected=false,onClick=onOpenGameDex)}
+        }
         LazyVerticalGrid(
             columns=GridCells.Adaptive(112.dp),
             modifier=Modifier.fillMaxSize().padding(top=PokedexDesignTokens.Spacing.Sm),
@@ -168,66 +165,34 @@ fun PokedexCatalogScreen(
         ){
             items(filtered,key={it.id}){pk->
                 val accent=PokedexDesignTokens.Colors.type(pk.types.firstOrNull())
-                Card(
-                    modifier=Modifier,
+                PokemonGridCard(
+                    number=pk.id,
+                    name=pk.name,
+                    owned=pk.id in ownedIds,
                     onClick={haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove);selectedId=pk.id},
-                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
-                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),
-                    elevation=CardDefaults.cardElevation(defaultElevation=PokedexDesignTokens.Elevation.Low)
-                ){
-                    Box(Modifier.fillMaxWidth()){
-                        Box(
-                            Modifier.fillMaxWidth().height(84.dp)
-                                .background(
-                                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                                        listOf(accent.copy(alpha=.18f),Color.Transparent)
-                                    )
-                                )
+                    types=pk.types.map{it.uppercase()},
+                    accent=accent,
+                    artwork={
+                        PokemonArtwork(
+                            model=pk.spriteUrl,
+                            contentDescription=pk.name,
+                            pokemonId=pk.id,
+                            modifier=Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Sm)
                         )
-                        Column(
-                            Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Sm),
-                            horizontalAlignment=Alignment.CenterHorizontally
-                        ){
-                            Surface(
-                                shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm),
-                                color=accent.copy(alpha=.12f),
-                                modifier=Modifier.align(Alignment.Start)
-                            ){
-                                Text(
-                                    "#"+pk.id.toString().padStart(4,'0'),
-                                    Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Sm,vertical=PokedexDesignTokens.Spacing.Xs),
-                                    style=MaterialTheme.typography.labelSmall,
-                                    color=accent
-                                )
-                            }
-                            PokemonArtwork(
-                                model=pk.spriteUrl,
-                                contentDescription=pk.name,
-                                pokemonId=pk.id,
-                                modifier=Modifier.size(94.dp)
-                            )
-                            Text(
-                                pk.name,
-                                style=MaterialTheme.typography.titleSmall,
-                                maxLines=1,
-                                overflow=TextOverflow.Ellipsis
-                            )
-                            Text(
-                                pk.types.take(2).joinToString(" · "){it.uppercase()},
-                                style=MaterialTheme.typography.labelSmall,
-                                color=accent,
-                                maxLines=1
-                            )
-                        }
                     }
-                }
+                )
             }
         }
     }
     }
 
 
-    selectedId?.let{id->
+    AnimatedVisibility(
+        visible = selectedId != null,
+        enter = fadeIn(tween(PokedexDesignTokens.Motion.Fast)) + scaleIn(initialScale = .96f, animationSpec = tween(PokedexDesignTokens.Motion.Standard)),
+        exit = fadeOut(tween(PokedexDesignTokens.Motion.Fast)) + scaleOut(targetScale = .98f, animationSpec = tween(PokedexDesignTokens.Motion.Fast))
+    ) {
+        selectedId?.let{id->
         PokedexFormsDialog(
             pokemonId=id,
             onDismiss={selectedId=null},
@@ -240,6 +205,7 @@ fun PokedexCatalogScreen(
                 onOpenFormDetail(formId,name,shiny)
             }
         )
+        }
     }
 }
 
@@ -291,12 +257,17 @@ private fun PokedexFormsDialog(
             Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
+                        Text("POKÉMON",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Black)
                         Text(base?.name ?: "Pokémon",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-                        Text("Formas e variantes",color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Formas e variantes · "+previews.size.toString()+" disponíveis",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
                     }
                     IconButton(onDismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
-                TextButton(onClick=onOpenBase){Text("Abrir ficha principal")}
+                PrimaryCompanionAction(
+                    label="Abrir ficha principal",
+                    onClick=onOpenBase,
+                    modifier=Modifier.padding(vertical=PokedexDesignTokens.Spacing.Sm)
+                )
                 if(forms!=null){
                     val kinds=previews.map{it.kind}.distinct()
                     if(kinds.size>1){
@@ -306,27 +277,21 @@ private fun PokedexFormsDialog(
                             contentPadding=PaddingValues(vertical=4.dp)
                         ){
                             item{
-                                FilterChip(
-                                    selected=selectedKind==null,
-                                    onClick={selectedKind=null},
-                                    label={Text("Todas")}
-                                )
+                                ContextFilter(label="Todas",selected=selectedKind==null,onClick={selectedKind=null})
                             }
                             items(kinds,key={it.name}){kind->
-                                FilterChip(
+                                ContextFilter(
+                                    label=when(kind){
+                                        PokemonFormKind.DEFAULT -> "Padrão"
+                                        PokemonFormKind.REGIONAL -> "Regionais"
+                                        PokemonFormKind.GENDER -> "Gênero"
+                                        PokemonFormKind.BATTLE -> "Batalha"
+                                        PokemonFormKind.SPECIAL -> "Especiais"
+                                        PokemonFormKind.COSMETIC -> "Cosméticas"
+                                        PokemonFormKind.OTHER -> "Outras"
+                                    },
                                     selected=selectedKind==kind,
-                                    onClick={selectedKind=kind},
-                                    label={Text(
-                                        when(kind){
-                                            PokemonFormKind.DEFAULT -> "Padrão"
-                                            PokemonFormKind.REGIONAL -> "Regionais"
-                                            PokemonFormKind.GENDER -> "Gênero"
-                                            PokemonFormKind.BATTLE -> "Batalha"
-                                            PokemonFormKind.SPECIAL -> "Especiais"
-                                            PokemonFormKind.COSMETIC -> "Cosméticas"
-                                            PokemonFormKind.OTHER -> "Outras"
-                                        }
-                                    )}
+                                    onClick={selectedKind=kind}
                                 )
                             }
                         }

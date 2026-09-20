@@ -11,6 +11,7 @@ import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.CollectionIntegrityService
 import com.otaviobarreto.pokedex.data.JourneyProgressStore
 import com.otaviobarreto.pokedex.data.TeamStore
+import com.otaviobarreto.pokedex.data.TrainerTodayStore
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import com.otaviobarreto.pokedex.data.PersistentApiCache
 import com.otaviobarreto.pokedex.data.RecentActivityStore
@@ -32,6 +33,11 @@ class PokedexApplication : Application(), ImageLoaderFactory {
             VariantCollectionStore.initialize(this)
             TeamStore.initialize(this)
             JourneyProgressStore.initialize(this)
+            TrainerTodayStore.initialize(
+                this,
+                CollectionStore.capturedIds.size,
+                AppGameCatalog.adventureGames.sumOf { JourneyProgressStore.completed(it.label).size }
+            )
             HomeAudioManager.initialize(this)
         }
         AppPerformanceTrace.section("pokedex.app.integrity") {

@@ -16,6 +16,16 @@ journey_source = (
 )
 application_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt").read_text(encoding="utf-8")
 main_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
+boot_source = (ui / "BootExperienceScreen.kt").read_text(encoding="utf-8")
+preloader_source = (root / "app/src/main/java/com/otaviobarreto/pokedex/data/StartupPreloader.kt").read_text(encoding="utf-8")
+if "ContentBootstrapManager.ensureReady" not in boot_source:
+    violations.append("Boot must block on essential content bootstrap")
+if "StartupPreloader.warm(context)" in boot_source or "StartupPreloader.warm(context){" in boot_source:
+    violations.append("Optional cache warmup must not block the boot UI")
+if "StartupPreloader.launchWarmInBackground(context)" not in boot_source:
+    violations.append("Boot must launch optional cache warmup after entering the app")
+if "fun launchWarmInBackground" not in preloader_source or "warm(appContext)" not in preloader_source:
+    violations.append("Background startup warmup architecture missing")
 
 # UI must go through PokedexDataStore instead of bypassing the shared cache layer.
 for path in ui.glob("*.kt"):
@@ -106,15 +116,24 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "21201" not in workflow or "20.12.1" not in workflow:
-    violations.append("CI v20.12.1 version validation missing")
+if "21400" not in workflow or "20.14.0" not in workflow:
+    violations.append("CI v20.14.0 version validation missing")
 
-companion = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
-if 'item(key="living_dex_planner")' in companion or 'item(key="universal_search")' in companion:
+journey_hub = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
+if 'item(key="living_dex_planner")' in journey_hub or 'item(key="universal_search")' in journey_hub:
     violations.append("Living Dex Planner must not return to Journey Home")
-for required in ("COMPANION", "CompanionProgressSection", "Pokédex do jogo", "SEU PROGRESSO", "JourneyObjectivePreviewCard", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
-    if required not in companion:
-        violations.append(f"Companion 20 experience missing {required}")
+for required in ("CompanionProgressSection", "JourneyObjectivePreviewCard", "Começar Jornada", "Configurar Jornada", "Escolha seu inicial", "Conheça seu time sugerido", "Iniciar aventura", "Nenhuma Jornada ativa"):
+    if required not in journey_hub:
+        violations.append(f"Journey experience missing {required}")
+if "CompanionProgressSection(" not in journey_hub:
+    violations.append("Journey progress component integration missing")
+
+trainer_home = (ui / "TrainerHomeScreen.kt").read_text(encoding="utf-8")
+for required in ("TrainerHomeScreen", "Pokémon do dia", "Missão diária", "Seu dia", "A seguir", "Continuar"):
+    if required not in trainer_home:
+        violations.append(f"Trainer Today experience missing {required}")
+if "CompanionHomeScreen" in main_source:
+    violations.append("Cancelled Companion Home must not remain wired")
 
 if violations:
     print("Source verification failed:")
@@ -265,7 +284,7 @@ if "migrateCapturedToBox" in boxes or "migrateLegacyGameBox" in boxes:
     violations.append("Box screen must not mutate fixed game ordering")
 if "sortBox(" in boxes or "moveMany(" in boxes:
     violations.append("Box screen must stay search/browse focused")
-if "padding(horizontal=6.dp)" not in boxes or "height(40.dp)" not in boxes:
+if ("padding(horizontal=6.dp)" not in boxes and "padding(horizontal=PokedexDesignTokens.Spacing.Sm)" not in boxes) or "height(40.dp)" not in boxes:
     violations.append("Compact Box chrome regression")
 
 if violations:
@@ -303,7 +322,12 @@ if violations:
 
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("combinedClickable", "Todas as Boxes", "QBAllBoxes", "GridView"):
+for required in ("combinedClickable", "QBAllBoxes", "GridView"):
+    if required not in boxes:
+        violations.append(f"Box capture/overview missing {required}")
+if "Todas as Boxes" not in boxes and "Boxes do filtro" not in boxes:
+    violations.append("Box capture/overview missing Boxes overview")
+for required in ():
     if required not in boxes:
         violations.append(f"Box capture/overview missing {required}")
 if "Capturar Pokémon?" not in boxes and "QBVariantManager" not in boxes:
@@ -385,20 +409,21 @@ for required in ("Katy", "Klawf", "Giacomo", "Eri", "sv-18"):
 for required in ("completed", "toggle", "clear", "beginConfiguration", "confirmStart", "isConfiguring"):
     if required not in journey_progress:
         violations.append(f"Journey progress persistence missing {required}")
-if "Perfil da coleção" in companion:
-    violations.append("Journey Home must stay campaign-focused without collection profile")
+if "Perfil da coleção" in journey:
+    violations.append("Journey screen must stay campaign-focused without collection profile")
 team_guide_source = (ui / "CampaignTeamGuideScreen.kt").read_text(encoding="utf-8")
 if "AppStatePreferences.activeGame=g" in team_guide_source:
     violations.append("Team guide must not switch the active Journey game")
 for required in ("PLANO DA JORNADA", "Automático", "Editar inicial"):
     if required not in team_guide_source:
         violations.append(f"Journey team guide context missing {required}")
-journey_primary = (
-    'DexNavItem("home","Jornada"' in main or
-    'DexNavItem(PokedexRoutes.HOME,"Jornada"' in main
+trainer_today_primary = (
+    'DexNavItem(PokedexRoutes.HOME,"Início"' in main and
+    'DexNavItem(PokedexRoutes.GAMES,"Jogos"' in main and
+    "TrainerHomeScreen" in main
 )
-if not journey_primary or "JourneyProgressStore.initialize" not in application_source:
-    violations.append("Journey is not wired as the primary tab")
+if not trainer_today_primary or "JourneyProgressStore.initialize" not in application_source:
+    violations.append("Trainer Today / Jogos navigation contract is not wired")
 
 if violations:
     print("Source verification failed:")
@@ -767,7 +792,7 @@ for forbidden in ('"Living Dex"','"Companion"'):
     if forbidden in main_nav:
         violations.append(f"Legacy primary tab still present: {forbidden}")
 nav_contracts = (
-    ('DexNavItem("home","Jornada"', 'DexNavItem(PokedexRoutes.HOME,"Jornada"'),
+    ('DexNavItem("home","Início"', 'DexNavItem(PokedexRoutes.HOME,"Início"'),
     ('DexNavItem("pokedex","Pokédex"', 'DexNavItem(PokedexRoutes.POKEDEX,"Pokédex"'),
     ('DexNavItem("central","Config."', 'DexNavItem(PokedexRoutes.CENTRAL,"Config."'),
     ('DexNavItem("boxes","Boxes"', 'DexNavItem(PokedexRoutes.BOXES,"Boxes"'),
@@ -787,11 +812,21 @@ if "KEY_ACTIVE_REGION" not in prefs_v611:
 
 # Compatibility guard — Android back navigation
 journey_back=journey_source
-for required in ("BackHandler(enabled=view!=JourneyView.GAMES)","detailReturnView","JourneyView.ROUTE","selectedGame=null"):
+for required in (
+    "BackHandler(enabled=view!=JourneyView.GAMES || !startInGames)",
+    "detailReturnView",
+    "JourneyView.ROUTE",
+    "selectedGame=null",
+    "JourneyView.ROUTE -> if(startInGames) view=JourneyView.GAME_MENU else onExit()",
+    "game=game,showBack=true",
+    "onBack={if(startInGames) view=JourneyView.GAME_MENU else onExit()}",
+):
     if required not in journey_back:
         violations.append(f"Android back hierarchy missing {required}")
 if "onBack={selectedStepId=null;view=detailReturnView}" not in journey_back:
     violations.append("Journey toolbar back does not match Android back origin")
+if "onExit={navController.popBackStack()}" not in main_source:
+    violations.append("Trainer Today Journey must return to the previous navigation entry")
 
 if violations:
     print("Source verification failed:")
@@ -847,7 +882,7 @@ if "CollectionStore.isCapturedIn(region.source" not in boxes_v613 and "VariantCo
     violations.append("Regional Box capture lookup missing")
 if "CollectionStore.toggleCapturedIn(region.source" not in boxes_v613 and "VariantCollectionStore.toggle" not in boxes_v613:
     violations.append("Regional Box capture mutation missing")
-if "val capturedIds=CollectionStore.capturedIds" in boxes_v613:
+if "val capturedIds=CollectionStore.capturedIds" in boxes_v613 and "National Living Dex" not in boxes_v613:
     violations.append("Boxes must not use global capturedIds as regional progress")
 
 journey_v613 = journey_source
@@ -1006,7 +1041,10 @@ for legacy_file in legacy_ui_files:
         violations.append(f"Obsolete legacy UI still compiled: {legacy_file}")
 
 main_v618 = (root / "app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt").read_text(encoding="utf-8")
-for forbidden_route in ('composable("livingdex")', 'composable("companion")', 'composable("games")', 'composable("teams")', 'composable("gameDex?source={source}")', 'composable("regionExplorer?source={source}")'):
+routes_v618 = (root / "app/src/main/java/com/otaviobarreto/pokedex/PokedexRoutes.kt").read_text(encoding="utf-8")
+if 'const val GAMES = "games"' not in routes_v618 or 'composable(PokedexRoutes.GAMES)' not in main_v618:
+    violations.append("Games must be declared through the official PokedexRoutes contract")
+for forbidden_route in ('composable("livingdex")', 'composable("companion")', 'composable("teams")', 'composable("gameDex?source={source}")', 'composable("regionExplorer?source={source}")'):
     if forbidden_route in main_v618:
         violations.append(f"Obsolete route still present: {forbidden_route}")
 
@@ -1055,9 +1093,10 @@ if not boot_screen_path.exists():
 else:
     boot_screen = boot_screen_path.read_text(encoding="utf-8")
     for required in (
-        "StartupPreloader.warm",
-        "progress.fraction",
-        "progress.label",
+        "ContentBootstrapManager.ensureReady",
+        "StartupPreloader.launchWarmInBackground",
+        "state.progress",
+        "state.label",
         "packageManager.getPackageInfo",
     ):
         if required not in boot_screen:
@@ -1172,7 +1211,16 @@ local_v2090 = 'versionName = "20.9.0"' in local_gradle and "versionCode = 20900"
 local_v2100 = 'versionName = "20.10.0"' in local_gradle and "versionCode = 21000" in local_gradle
 local_v2110 = 'versionName = "20.12.0"' in local_gradle and "versionCode = 21200" in local_gradle
 local_v2121 = 'versionName = "20.12.1"' in local_gradle and "versionCode = 21201" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110 or local_v2121):
+local_v2130 = 'versionName = "20.13.0"' in local_gradle and "versionCode = 21300" in local_gradle
+local_v2131 = 'versionName = "20.13.1"' in local_gradle and "versionCode = 21301" in local_gradle
+local_v2132 = 'versionName = "20.13.2"' in local_gradle and "versionCode = 21302" in local_gradle
+local_v2133 = 'versionName = "20.13.3"' in local_gradle and "versionCode = 21303" in local_gradle
+local_v2134 = 'versionName = "20.13.4"' in local_gradle and "versionCode = 21304" in local_gradle
+local_v2135 = 'versionName = "20.13.5"' in local_gradle and "versionCode = 21305" in local_gradle
+local_v2136 = 'versionName = "20.13.6"' in local_gradle and "versionCode = 21306" in local_gradle
+local_v2137 = 'versionName = "20.13.7"' in local_gradle and "versionCode = 21307" in local_gradle
+local_v2140 = 'versionName = "20.14.0"' in local_gradle and "versionCode = 21400" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110 or local_v2121 or local_v2130 or local_v2131 or local_v2132 or local_v2133 or local_v2134 or local_v2135 or local_v2136 or local_v2137 or local_v2140):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
@@ -2054,8 +2102,8 @@ if "sameOwnedVariantIdentity" not in variant_v1810:
     violations.append("v18.1 canonical variant regression helper missing")
 
 readme_v1810 = (root / "README.md").read_text(encoding="utf-8")
-if "Estado atual — v18.4.0" not in readme_v1810:
-    violations.append("README current version is not v18.4.0")
+if "Estado atual — v20.14.0" not in readme_v1810:
+    violations.append("README current version is not v20.14.0")
 
 if violations:
     print("Source verification failed:")
