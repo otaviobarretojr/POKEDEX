@@ -51,7 +51,6 @@ import com.otaviobarreto.pokedex.data.PokemonFormVariant
 import com.otaviobarreto.pokedex.data.PokemonFormPresentation
 import com.otaviobarreto.pokedex.data.VariantCollectionStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 private data class QBRegion(val label:String,val source:String,val badge:String)
 private data class QBGame(val label:String,val accent:Color,val regions:List<QBRegion>)
