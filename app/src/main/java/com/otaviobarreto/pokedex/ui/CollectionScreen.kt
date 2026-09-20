@@ -59,6 +59,7 @@ fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->U
             area==CollectionArea.HOME -> CollectionHome(plan,insights,advisorReady,shinyIds,{areaName=it.name},onOpenBoxes,onPokemonClick)
             area==CollectionArea.FORMS -> FormsAlbum(variants,{areaName=CollectionArea.HOME.name},onPokemonClick)
             area==CollectionArea.NATIONAL -> NationalCollectionAlbum(captured,{areaName=CollectionArea.HOME.name},onPokemonClick)
+            generation==0 -> NationalCollectionAlbum(captured,{generation=null},onPokemonClick)
             generation==null -> GenerationShelf(
                 if(area==CollectionArea.LIVING)"Living Dex" else "Shiny Dex",
                 if(area==CollectionArea.LIVING)"Complete cada geração da National Dex." else "Sua coleção Shiny organizada por geração.",
@@ -213,6 +214,34 @@ private fun GenerationShelf(
                 label=if(shiny)"Shiny Dex" else "Living Dex",
                 modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md)
             )
+        }
+        if(!shiny){
+            item(key="all_generations"){
+                val total=plan.byGeneration.sumOf{it.total}
+                val value=plan.byGeneration.sumOf{it.captured}
+                val representatives=listOf(25,448,658)
+                Surface(
+                    modifier=Modifier.fillMaxWidth().clickable{onGeneration(0)},
+                    shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),
+                    color=MaterialTheme.colorScheme.primaryContainer.copy(alpha=.34f)
+                ){
+                    Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                            Column(Modifier.weight(1f)){
+                                DexSectionEyebrow("NATIONAL DEX")
+                                Text("Todas as gerações",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+                                Text("$value de $total registrados",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Row(horizontalArrangement=Arrangement.spacedBy(2.dp)){
+                                representatives.forEach{id->
+                                    PokemonArtwork(model=artwork(id,false),contentDescription=null,pokemonId=id,modifier=Modifier.size(50.dp))
+                                }
+                            }
+                        }
+                        CompanionProgress(current=value,total=total,label="Progresso",modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Md))
+                    }
+                }
+            }
         }
         items(plan.byGeneration,key={it.generation}){gen->
             val value=if(shiny)gen.shiny else gen.captured
