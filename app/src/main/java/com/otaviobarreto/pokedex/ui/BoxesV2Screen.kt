@@ -68,7 +68,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val preferredRegion=AppStatePreferences.activeRegionForGame(game.label)
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var regionalDex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var gameDexIds by remember{mutableStateOf<Set<Int>>(emptySet())};var regionalDex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  var evolutionFilterName by rememberSaveable{mutableStateOf<String?>(null)}
  var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
@@ -90,6 +90,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   }else{
    val gameDex=withContext(Dispatchers.IO){loadBoxGameDex(AppGameCatalog.games.first{it.label==game.label},region.source)}
    dex=nationalLivingDex()
+   gameDexIds=gameDex.all.mapTo(linkedSetOf()){it.nationalId}
    regionalDex=gameDex.filtered
    val pageCount=((dex.size+29)/30).coerceAtLeast(1)
    if(page>=pageCount) page=pageCount-1
@@ -279,7 +280,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      AnimatedBoxGrid(current,dex,capturedIds,boxSource,{pk->onPokemonClick(pk.nationalId,boxSource)},{pk->captureTarget=pk})
+      AnimatedBoxGrid(current,dex,capturedIds,boxSource,gameDexIds,{pk->onPokemonClick(pk.nationalId,boxSource)},{pk->captureTarget=pk})
      }else{
       EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
      }
@@ -347,6 +348,7 @@ internal fun QBGrid(
     source:String,
     specialFilter:Boolean,
     specialIds:Set<Int>,
+    available:Set<Int>?=null,
     open:(GameDexService.GameDexEntry)->Unit, hold:(GameDexService.GameDexEntry)->Unit
 ){
     Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(2.dp)){
@@ -363,6 +365,7 @@ internal fun QBGrid(
                             source=source,
                             specialEvolution=pk.nationalId in specialIds,
                             specialFilter=specialFilter,
+                            available=available==null || pk.nationalId in available,
                             open={open(pk)},
                             hold={hold(pk)},
                             modifier=Modifier.weight(1f).fillMaxHeight()
@@ -381,6 +384,7 @@ internal fun QBSlot(
     source:String,
     specialEvolution:Boolean,
     specialFilter:Boolean,
+    available:Boolean=true,
     open:()->Unit,
     hold:()->Unit,
     modifier:Modifier=Modifier
@@ -392,7 +396,7 @@ internal fun QBSlot(
     val imageModel=variant?.artworkUrl ?: pk.spriteUrl
     val isShiny=variant?.shiny==true
     val slotAlpha by animateFloatAsState(
-        if(specialFilter&&!specialEvolution).18f else 1f,
+        if(!available).28f else if(specialFilter&&!specialEvolution).18f else 1f,
         tween(PokedexDesignTokens.Motion.Fast),
         label="boxSlotAlpha"
     )
@@ -450,9 +454,9 @@ internal fun QBSlot(
                     .fillMaxHeight(.80f)
                     .align(Alignment.TopCenter)
                     .padding(horizontal=2.dp,vertical=2.dp)
-                    .alpha(if(captured)1f else .16f),
+                    .alpha(if(!available).12f else if(captured)1f else .34f),
                 contentScale=ContentScale.Fit,
-                colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)})
+                colorFilter=if(captured&&available)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)})
             )
             if(specialEvolution){
                 Surface(
