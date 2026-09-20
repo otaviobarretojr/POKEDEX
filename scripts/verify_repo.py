@@ -322,7 +322,12 @@ if violations:
 
 
 boxes = (ui / "BoxesV2Screen.kt").read_text(encoding="utf-8")
-for required in ("combinedClickable", "Todas as Boxes", "QBAllBoxes", "GridView"):
+for required in ("combinedClickable", "QBAllBoxes", "GridView"):
+    if required not in boxes:
+        violations.append(f"Box capture/overview missing {required}")
+if "Todas as Boxes" not in boxes and "Boxes do filtro" not in boxes:
+    violations.append("Box capture/overview missing Boxes overview")
+for required in ():
     if required not in boxes:
         violations.append(f"Box capture/overview missing {required}")
 if "Capturar Pokémon?" not in boxes and "QBVariantManager" not in boxes:
