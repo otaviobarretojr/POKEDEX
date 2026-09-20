@@ -28,7 +28,7 @@ import com.otaviobarreto.pokedex.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private enum class CollectionArea { HOME, LIVING, SHINY, FORMS }
+private enum class CollectionArea { HOME, LIVING, NATIONAL, SHINY, FORMS }
 
 @Composable
 fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit,onOpenFormDetail:(Int,String,Boolean)->Unit){
@@ -57,6 +57,7 @@ fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->U
         when{
             area==CollectionArea.HOME -> CollectionHome(plan,insights,advisorReady,shinyIds,{areaName=it.name},onOpenBoxes,onPokemonClick)
             area==CollectionArea.FORMS -> FormsAlbum(variants,{areaName=CollectionArea.HOME.name},onPokemonClick)
+            area==CollectionArea.NATIONAL -> NationalCollectionAlbum(captured,{areaName=CollectionArea.HOME.name},onPokemonClick)
             generation==null -> GenerationShelf(
                 if(area==CollectionArea.LIVING)"Living Dex" else "Shiny Dex",
                 if(area==CollectionArea.LIVING)"Complete cada geração da National Dex." else "Sua coleção Shiny organizada por geração.",
@@ -101,11 +102,52 @@ private fun CollectionHome(
             )
         }
         item{CompanionSectionHeader(title="Álbuns",supporting="Organize sua coleção por objetivo.")}
+        item{AllGenerationsPortalCard(plan,captured=CollectionStore.capturedIds){onOpenArea(CollectionArea.NATIONAL)}}
         item{AlbumPortalCard("Living Dex","${(plan.totalSpecies-plan.capturedSpecies).coerceAtLeast(0)} espécies ainda faltam",plan.speciesRatio,listOf(1,4,7),false,Icons.Default.CatchingPokemon){onOpenArea(CollectionArea.LIVING)}}
         item{AlbumPortalCard("Shiny Dex","${plan.shinySpecies} espécies Shiny registradas",if(plan.totalSpecies==0)0f else plan.shinySpecies.toFloat()/plan.totalSpecies,listOf(25,94,448),true,Icons.Default.AutoAwesome,ownedIds=shinyIds){onOpenArea(CollectionArea.SHINY)}}
         item{AlbumPortalCard("Form Dex","${plan.formRegistrations} formas alternativas registradas",null,listOf(26,157,724),false,Icons.Default.Extension){onOpenArea(CollectionArea.FORMS)}}
         if(insights.gamesWithProgress>0){
             item{Text("Progresso registrado em ${insights.gamesWithProgress} jogo${if(insights.gamesWithProgress==1) "" else "s"}",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        }
+    }
+}
+
+@Composable
+private fun AllGenerationsPortalCard(plan:LivingDexPlan,captured:Set<Int>,onClick:()->Unit){
+    val representatives=listOf(25,155,258,393,495,650,722,810,906)
+    val grayscale=remember{ColorMatrix().apply{setToSaturation(0f)}}
+    Surface(modifier=Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.30f)){
+        Column(Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg)){
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                Icon(Icons.Default.Public,null,tint=MaterialTheme.colorScheme.primary); Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)){
+                    Text("Todas as gerações",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+                    Text("#0001–#"+plan.totalSpecies.toString().padStart(4,'0')+" · "+plan.capturedSpecies+" capturados",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(Icons.Default.ChevronRight,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            LazyRow(Modifier.fillMaxWidth().padding(top=PokedexDesignTokens.Spacing.Md),horizontalArrangement=Arrangement.spacedBy(2.dp)){
+                items(representatives,key={it}){id->
+                    val owned=id in captured
+                    PokemonArtwork(model=artwork(id,false),contentDescription=null,pokemonId=id,modifier=Modifier.size(54.dp).alpha(if(owned)1f else .22f),colorFilter=if(owned)null else ColorFilter.colorMatrix(grayscale))
+                }
+            }
+            LinearProgressIndicator(progress={plan.speciesRatio.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(top=8.dp))
+        }
+    }
+}
+
+@Composable
+private fun NationalCollectionAlbum(captured:Set<Int>,onBack:()->Unit,onPokemonClick:(Int)->Unit){
+    val species=remember{NationalDexCatalog.all.sortedBy{it.id}}
+    val ownedCount=remember(species,captured){species.count{it.id in captured}}
+    Column(Modifier.fillMaxSize()){
+        CollectionPageHeader("Todas as gerações",ownedCount.toString()+" de "+species.size+" capturados · National Dex",onBack,Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md))
+        LazyVerticalGrid(columns=GridCells.Fixed(4),modifier=Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Md),contentPadding=PaddingValues(bottom=PokedexDesignTokens.Spacing.Xxl),verticalArrangement=Arrangement.spacedBy(8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            gridItems(species,key={it.id}){pk->
+                val owned=pk.id in captured
+                PokemonAlbumTile(pk.id,pk.displayName,owned,false){onPokemonClick(pk.id)}
+            }
         }
     }
 }
