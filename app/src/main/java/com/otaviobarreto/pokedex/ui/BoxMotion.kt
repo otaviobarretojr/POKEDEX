@@ -1,10 +1,5 @@
 package com.otaviobarreto.pokedex.ui
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
@@ -20,27 +15,19 @@ internal fun AnimatedBoxGrid(
     open:(GameDexService.GameDexEntry)->Unit,
     hold:(GameDexService.GameDexEntry)->Unit
 ){
-    AnimatedContent(
-        targetState=page,
-        transitionSpec={
-            val forward=targetState>initialState
-            val enter=slideInHorizontally(tween(PokedexDesignTokens.Motion.Fast)){if(forward) it/8 else -it/8}
-            val exit=slideOutHorizontally(tween(PokedexDesignTokens.Motion.Fast)){if(forward) -it/8 else it/8}
-            enter togetherWith exit
-        },
-        label="boxPageTransition"
-    ){boxPage->
-        QBGrid(
-            entries=dex.drop(boxPage*30).take(30),
-            captured=captured,
-            source=source,
-            specialFilter=false,
-            specialIds=emptySet(),
-            available=available,
-            open=open,
-            hold=hold
-        )
-    }
+    // Living Dex pages are intentionally swapped without AnimatedContent.
+    // The grid is already local/cached; animating old + new pages together
+    // doubled composition/image work and made a Box change look like reload.
+    QBGrid(
+        entries=dex.drop(page*30).take(30),
+        captured=captured,
+        source=source,
+        specialFilter=false,
+        specialIds=emptySet(),
+        available=available,
+        open=open,
+        hold=hold
+    )
 }
 
 
