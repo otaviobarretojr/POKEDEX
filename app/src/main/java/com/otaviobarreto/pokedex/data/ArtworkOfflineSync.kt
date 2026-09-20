@@ -94,7 +94,7 @@ object ArtworkOfflineSync {
         val queue=(missing+changed)
             .distinct()
             .sortedWith(compareBy<String>(
-                {if("/official-artwork/shiny/" in it)0 else 1},
+                {if("/official-artwork/shiny/" in it)1 else 0},
                 {if("/official-artwork/" in it)0 else 1},
                 {it}
             ))
