@@ -327,6 +327,8 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   current=current,
   captured=capturedIds,
   accent=game.accent,
+  relevantPages=relevantPages,
+  available=gameDexIds,
   dismiss={allBoxes=false},
   select={targetPage->page=targetPage;allBoxes=false}
  )
@@ -674,10 +676,11 @@ private fun QBAllBoxes(
     current:Int,
     captured:Set<Int>,
     accent:Color,
+    relevantPages:List<Int>,
+    available:Set<Int>,
     dismiss:()->Unit,
     select:(Int)->Unit
 ){
-    val pages=((dex.size+29)/30).coerceAtLeast(1)
     Dialog(onDismissRequest=dismiss,properties=DialogProperties(usePlatformDefaultWidth=false)){
         Surface(
             Modifier.fillMaxWidth(.96f).fillMaxHeight(.90f),
@@ -687,17 +690,18 @@ private fun QBAllBoxes(
             Column(Modifier.fillMaxSize().padding(PokedexDesignTokens.Spacing.Lg)){
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
-                        Text("Todas as Boxes",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurface)
-                        Text("Toque em uma Box para abrir",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Boxes do filtro",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.onSurface)
+                        Text(relevantPages.size.toString()+" Boxes com Pokémon · toque para abrir",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(dismiss){Icon(Icons.Default.Close,"Fechar")}
                 }
                 Spacer(Modifier.height(8.dp))
                 LazyColumn(verticalArrangement=Arrangement.spacedBy(PokedexDesignTokens.Spacing.Sm)){
-                    items((0 until pages).toList(),key={it}){index->
+                    items(relevantPages,key={it}){index->
                         val entries=dex.drop(index*30).take(30)
-                        val total=entries.size.coerceAtLeast(1)
-                        val owned=entries.count{it.nationalId in captured}
+                        val filtered=entries.filter{it.nationalId in available}
+                        val total=filtered.size.coerceAtLeast(1)
+                        val owned=filtered.count{it.nationalId in captured}
                         val pct=owned.toFloat()/total
                         Card(
                             Modifier.fillMaxWidth().clickable{select(index)},
@@ -723,7 +727,7 @@ private fun QBAllBoxes(
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)){
                                     Text("Box "+(index+1),fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium,color=MaterialTheme.colorScheme.onSurface)
-                                    Text(owned.toString()+" / "+entries.size+" capturados",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(owned.toString()+" / "+filtered.size+" do filtro capturados",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 if(index==current)AssistChip(onClick={},label={Text("Atual",style=MaterialTheme.typography.labelSmall)})
                                 else Icon(Icons.Default.ArrowForwardIos,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)
