@@ -321,7 +321,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    }
   }
  }
- if(search)QBSearch(dex,capturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
+ if(search)QBSearch(dex,capturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
  if(allBoxes)QBAllBoxes(
   dex=dex,
   current=current,
@@ -740,7 +740,8 @@ private fun QBSearch(
     source:String,
     dismiss:()->Unit,
     select:(GameDexService.GameDexEntry)->Unit,
-    open:(GameDexService.GameDexEntry)->Unit
+    open:(GameDexService.GameDexEntry)->Unit,
+    hold:(GameDexService.GameDexEntry)->Unit
 ){
     var q by remember{mutableStateOf("")}
     var status by remember{mutableStateOf("Todos")}
@@ -790,8 +791,12 @@ private fun QBSearch(
             Text(results.size.toString()+" resultado(s)",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             LazyColumn(Modifier.heightIn(max=360.dp)){
                 items(results,key={it.nationalId}){pk->
+                    val haptic=LocalHapticFeedback.current
                     Row(
-                        Modifier.fillMaxWidth().clickable{select(pk)}.padding(vertical=5.dp),
+                        Modifier.fillMaxWidth().combinedClickable(
+                            onClick={select(pk)},
+                            onLongClick={haptic.performHapticFeedback(HapticFeedbackType.LongPress);hold(pk)}
+                        ).padding(vertical=5.dp),
                         verticalAlignment=Alignment.CenterVertically
                     ){
                         PokemonArtwork(pk.spriteUrl,pk.name,Modifier.size(48.dp),pokemonId=pk.nationalId)
