@@ -9,7 +9,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.weight
 import androidx.compose.ui.unit.dp
 import com.otaviobarreto.pokedex.data.GameDexService
 
@@ -59,10 +58,10 @@ internal fun LivingDexFilterActions(
         androidx.compose.ui.Modifier.fillMaxWidth(),
         horizontalArrangement=androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
     ){
-        androidx.compose.material3.FilledTonalButton(nextMissing,androidx.compose.ui.Modifier.weight(1f)){
+        androidx.compose.material3.FilledTonalButton(nextMissing){
             androidx.compose.material3.Text("Próximo faltante · $missing")
         }
-        androidx.compose.material3.FilledTonalButton(showBoxes,androidx.compose.ui.Modifier.weight(1f)){
+        androidx.compose.material3.FilledTonalButton(showBoxes){
             androidx.compose.material3.Text("$relevantPages Boxes")
         }
     }
