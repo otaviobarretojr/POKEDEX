@@ -141,7 +141,7 @@ private fun JourneyRoute(
     }
     val nextStep=remember(steps,completed){steps.firstOrNull{it.id !in completed}}
     val national=remember { PokedexDataStore.cachedNationalDex().orEmpty() }
-    val nationalByName=remember(national){
+    val nationalById=remember(national){national.associateBy{it.id}}\n    val nationalByName=remember(national){
         national.associateBy { it.name.lowercase() }
     }
     var selectedStarterId by rememberSaveable(game.label){
