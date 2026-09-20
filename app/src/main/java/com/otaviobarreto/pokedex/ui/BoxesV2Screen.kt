@@ -733,6 +733,7 @@ private fun QBAllBoxes(
         }
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun QBSearch(
     dex:List<GameDexService.GameDexEntry>,
