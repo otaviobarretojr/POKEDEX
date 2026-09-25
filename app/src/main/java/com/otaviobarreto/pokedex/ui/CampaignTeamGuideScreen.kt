@@ -65,7 +65,8 @@ fun CampaignTeamGuideScreen(
         }else null
     }
     val displaySlots=if(dynamic!=null && phase==dynamic.preset?.phase)dynamic.adjustedSlots else preset?.slots.orEmpty()
-    val national=PokedexDataStore.cachedNationalDex().orEmpty()
+    val national=remember{PokedexDataStore.cachedNationalDex().orEmpty()}
+    val nationalById=remember(national){national.associateBy{it.id}}
     val source=remember(game){AppStatePreferences.activeRegionForGame(game) ?: AppGameCatalog.games.firstOrNull{it.label==game}?.regions?.firstOrNull()?.source}
 
     LazyColumn(
@@ -211,8 +212,8 @@ fun CampaignTeamGuideScreen(
                                 HorizontalDivider(Modifier.padding(vertical=10.dp))
                                 Text("RECOMENDAÇÕES",fontWeight=FontWeight.Black,style=MaterialTheme.typography.labelSmall)
                                 smart.actions.forEach{action->
-                                    val outName=action.fromPokemonId?.let{id->national.firstOrNull{it.id==id}?.name ?: "#"+id}
-                                    val inName=national.firstOrNull{it.id==action.toPokemonId}?.name ?: "#"+action.toPokemonId
+                                    val outName=action.fromPokemonId?.let{id->nationalById[id]?.name ?: "#"+id}
+                                    val inName=nationalById[action.toPokemonId]?.name ?: "#"+action.toPokemonId
                                     val headline=when(action.type){
                                         JourneyTeamActionType.EVOLVE -> "Evolua: "+(outName ?: "Inicial")+" → "+inName
                                         JourneyTeamActionType.CATCH -> "Capture: "+inName
@@ -231,7 +232,7 @@ fun CampaignTeamGuideScreen(
                 Card(shape=RoundedCornerShape(PokedexDesignTokens.Radius.Lg),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer)){
                     Column(Modifier.fillMaxWidth().padding(14.dp)){
                         val expectedStarterId=JourneyTeamProgressCatalog.starterMemberForProgress(starterId,dynamic?.focusStep)
-                        val expectedStarterName=national.firstOrNull{it.id==expectedStarterId}?.name ?: team.starter
+                        val expectedStarterName=nationalById[expectedStarterId]?.name ?: team.starter
                         val contextualPhase=dynamic?.focusStep?.let{"Antes de "+it.title} ?: team.phase.label
                         Text(expectedStarterName+" · "+contextualPhase,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
                         Text(team.rationale,style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(top=4.dp))
@@ -240,21 +241,22 @@ fun CampaignTeamGuideScreen(
                 }
             }
             itemsIndexed(displaySlots,key={index,slot->index.toString()+"-"+slot.pokemonId}){index,slot->
-                val entry=national.firstOrNull{it.id==slot.pokemonId}
+                val entry=nationalById[slot.pokemonId]
                 val build=TeamCampaignCatalog.buildFor(slot.pokemonId,game)
                 Card(Modifier.fillMaxWidth().clickable{onPokemonClick(slot.pokemonId,source)},shape=RoundedCornerShape(PokedexDesignTokens.Radius.Md)){
                     Column(Modifier.fillMaxWidth().padding(12.dp)){
                         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                            AsyncImage(
+                            PokemonArtwork(
                                 model=entry?.spriteUrl ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+slot.pokemonId+".png",
                                 contentDescription=entry?.name,
+                                pokemonId=slot.pokemonId,
                                 modifier=Modifier.size(76.dp)
                             )
                             Column(Modifier.weight(1f).padding(start=10.dp)){
                                 Text((index+1).toString()+". "+(entry?.name ?: "#"+slot.pokemonId),fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium,maxLines=1,overflow=TextOverflow.Ellipsis)
                                 Text(build.role,style=MaterialTheme.typography.bodySmall)
                                 if(slot.alternatives.isNotEmpty()){
-                                    val names=slot.alternatives.map{id->national.firstOrNull{it.id==id}?.name ?: "#"+id}
+                                    val names=slot.alternatives.map{id->nationalById[id]?.name ?: "#"+id}
                                     Text("Alternativas: "+names.joinToString(" / "),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                                 }
                             }

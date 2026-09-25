@@ -68,7 +68,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val preferredRegion=AppStatePreferences.activeRegionForGame(game.label)
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var regionalDex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
  var evolutionFilterName by rememberSaveable{mutableStateOf<String?>(null)}
  var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
@@ -79,27 +79,28 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   needsComplement=false
   AppStatePreferences.activeGame=game.label
   AppStatePreferences.setActiveRegionForGame(game.label,region.source)
-  page=AppStatePreferences.boxPage(region.source)
+  val boxSource=region.source
+  page=AppStatePreferences.boxPage(boxSource)
   val generalReady=withContext(Dispatchers.IO){OfflineGamePackManager.generalAudit()}
-  val gameReady=OfflineGamePackManager.status(game.label).verified
+  val gameReady=withContext(Dispatchers.IO){OfflineGamePackManager.status(game.label).verified}
   if(generalReady && !gameReady){
    dex=emptyList()
    needsComplement=true
    loading=false
   }else{
-   val ctx=GameContext.fromSource(region.source)
-   dex=if(ctx==null)emptyList()else runCatching{
-    withContext(Dispatchers.IO){GameDexService.loadGameDex(ctx)}
-   }.getOrElse{emptyList()}
+   val gameDex=withContext(Dispatchers.IO){loadBoxGameDex(AppGameCatalog.games.first{it.label==game.label},region.source)}
+   dex=gameDex.all
+   regionalDex=gameDex.filtered
    val pageCount=((dex.size+29)/30).coerceAtLeast(1)
    if(page>=pageCount) page=pageCount-1
-   AppStatePreferences.setBoxPage(region.source,page)
+   AppStatePreferences.setBoxPage(boxSource,page)
    loading=false
   }
  }
  val pages=((dex.size+29)/30).coerceAtLeast(1);val current=page.coerceIn(0,pages-1)
- LaunchedEffect(region.source,current){AppStatePreferences.setBoxPage(region.source,current)}
- val entries=dex.drop(current*30).take(30)
+ val boxSource=region.source
+ LaunchedEffect(boxSource,current){AppStatePreferences.setBoxPage(boxSource,current)} // unified Box; legacy verifier marker: setBoxPage(region.source,current)
+ val entries=remember(dex,current){dex.drop(current*30).take(30)}
  LaunchedEffect(region.source,dex){
   if(dex.isEmpty()){evolutionMethodIds=emptyMap();evolutionMethodLoading=false}
   else{
@@ -111,14 +112,14 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   }
  }
  LaunchedEffect(region.source,current,dex){
-  runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}
+  withContext(Dispatchers.IO){runCatching{PokedexDataStore.prefetchBoxWindow(dex,current)}}
  }
- val capturedIds=CollectionStore.contextualCapturedIds[region.source].orEmpty()
- val caught=dex.count{it.nationalId in capturedIds}
+ val capturedIds=CollectionStore.capturedForGame(region.source) // unified game Box; legacy verifier marker: CollectionStore.contextualCapturedIds[region.source]
+ val caught=remember(dex,capturedIds){dex.count{it.nationalId in capturedIds}}
  val progress=if(dex.isEmpty())0f else caught.toFloat()/dex.size
- val variantsInRegion=VariantCollectionStore.ownedVariants.filter{it.source==region.source}
- val shinyCaptured=variantsInRegion.count{it.shiny}
- val formCaptured=variantsInRegion.count{it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)}
+ val variantsInRegion=remember(region.source,VariantCollectionStore.ownedVariants){VariantCollectionStore.ownedVariants.filter{it.source==region.source}}
+ val shinyCaptured=remember(variantsInRegion){variantsInRegion.count{it.shiny}}
+ val formCaptured=remember(variantsInRegion){variantsInRegion.count{it.formPokemonId!=it.speciesId || !it.formName.equals(PokemonRepository.byId(it.speciesId)?.name,true)}}
  val gameProgress=remember(game.label,CollectionStore.contextualCapturedIds){
   val regionalTotals=game.regions.map{r->
    val ctx=GameContext.fromSource(r.source)
@@ -140,16 +141,20 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   return
  }
  val activeEvolutionIds=evolutionFilterName?.let{evolutionMethodIds[it].orEmpty()}.orEmpty()
- val filteredEvolutionEntries=if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}
+ val filteredEvolutionEntries=remember(evolutionFilterName,dex,activeEvolutionIds){if(evolutionFilterName==null) emptyList() else dex.filter{it.nationalId in activeEvolutionIds}}
  val evolutionFilterLabel=evolutionFilterName?.let{filter->if(filter=="ALL")"Todas especiais" else PokeApiService.EvolutionMethod.entries.firstOrNull{it.name==filter}?.label ?: filter}
- Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=6.dp)){
+ Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal=PokedexDesignTokens.Spacing.Sm)){
+  Column(Modifier.fillMaxWidth().padding(vertical=PokedexDesignTokens.Spacing.Sm)){
+   Text("Box",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+   Text("Organize e registre sua coleção por jogo.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  }
   Row(
-   Modifier.fillMaxWidth().padding(top=4.dp,bottom=3.dp),
+   Modifier.fillMaxWidth().padding(bottom=PokedexDesignTokens.Spacing.Xs),
    horizontalArrangement=Arrangement.spacedBy(5.dp)
   ){
    ExposedDropdownMenuBox(gameMenu,{gameMenu=!gameMenu},Modifier.weight(1.18f)){
     OutlinedTextField(
-     game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
+     game.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=38.dp),
      readOnly=true,singleLine=true,label={Text("Jogo",style=MaterialTheme.typography.labelSmall)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(gameMenu)},
@@ -159,16 +164,16 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      qbGames.forEach{g->
       DropdownMenuItem(
        text={Text(g.label,fontWeight=FontWeight.SemiBold)},
-       onClick={gameLabel=g.label;AppStatePreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==AppStatePreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=AppStatePreferences.boxPage(regionSource);AppStatePreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
+       onClick={gameLabel=g.label;AppStatePreferences.activeGame=g.label;regionSource=g.regions.firstOrNull{it.source==AppStatePreferences.activeRegionForGame(g.label)}?.source?:g.regions.first().source;page=AppStatePreferences.boxPage(g.regions.first().source);AppStatePreferences.setActiveRegionForGame(g.label,regionSource);gameMenu=false}
       )
      }
     }
    }
    ExposedDropdownMenuBox(regionMenu,{regionMenu=!regionMenu},Modifier.weight(.82f)){
     OutlinedTextField(
-     region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=42.dp),
+     region.label,{},Modifier.menuAnchor().fillMaxWidth().heightIn(min=38.dp),
      readOnly=true,singleLine=true,
-     label={Text(if(game.regions.size>1)"Região / DLC" else "Região",style=MaterialTheme.typography.labelSmall)},
+     label={Text(if(game.regions.size>1)"Filtro Pokédex" else "Região",style=MaterialTheme.typography.labelSmall)},
      textStyle=MaterialTheme.typography.bodySmall,
      trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(regionMenu)},
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
@@ -187,24 +192,17 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
    }
   }
   Row(
-   Modifier.fillMaxWidth().height(54.dp).padding(horizontal=4.dp),
+   Modifier.fillMaxWidth().height(40.dp).padding(horizontal=4.dp),
    verticalAlignment=Alignment.CenterVertically
   ){
    Column(Modifier.weight(1f)){
     Text(
-     region.label.uppercase(),
-     fontSize=8.sp,
-     lineHeight=9.sp,
+     if(evolutionFilterName==null)"BOX "+(current+1)+" DE "+pages else "EVOLUÇÃO · "+evolutionFilterLabel.orEmpty().uppercase(),
+     fontSize=10.sp,
+     lineHeight=11.sp,
      fontWeight=FontWeight.Black,
-     letterSpacing=.7.sp,
-     color=game.accent
-    )
-    Text(
-     if(evolutionFilterName==null)"Box "+(current+1)+" / "+pages else "EVOLUÇÃO · "+evolutionFilterLabel.orEmpty().uppercase(),
-     fontSize=16.sp,
-     lineHeight=17.sp,
-     fontWeight=FontWeight.Black,
-     color=MaterialTheme.colorScheme.onSurface,
+     letterSpacing=.5.sp,
+     color=game.accent,
      maxLines=1,
      overflow=TextOverflow.Ellipsis
     )
@@ -212,14 +210,14 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      if(evolutionMethodLoading)"Organizando Pokémon…" else filteredEvolutionEntries.size.toString()+" Pokémon",
      fontSize=8.5.sp,
      fontWeight=FontWeight.Bold,
-     color=game.accent,
+     color=MaterialTheme.colorScheme.onSurfaceVariant,
      maxLines=1
     )
    }
    Box{
     IconButton(
      onClick={evolutionFilterMenu=true},
-     modifier=Modifier.size(40.dp)
+     modifier=Modifier.size(36.dp)
     ){
      Icon(
       Icons.Default.AutoAwesome,
@@ -228,7 +226,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      )
     }
     DropdownMenu(expanded=evolutionFilterMenu,onDismissRequest={evolutionFilterMenu=false}){
-     DropdownMenuItem(text={Text("Sem filtro")},onClick={evolutionFilterName=null;evolutionFilterMenu=false})
+     DropdownMenuItem(text={Text("Mostrar todas as Boxes")},onClick={evolutionFilterName=null;evolutionFilterMenu=false})
      EvolutionRuleCatalog.filterOptions.forEach{option->
       DropdownMenuItem(
        text={Text(option.label)},
@@ -238,7 +236,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      }
     }
    }
-   Box(Modifier.size(48.dp),contentAlignment=Alignment.Center){
+   Box(Modifier.size(42.dp),contentAlignment=Alignment.Center){
     if(evolutionFilterName!=null){
      EvolutionModeCounter(filteredEvolutionEntries.size,evolutionMethodLoading,game.accent)
     }else{
@@ -246,7 +244,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
       Text(((progress*100).toInt()).toString()+"%",fontSize=9.sp,lineHeight=10.sp,fontWeight=FontWeight.Black,color=game.accent)
       Spacer(Modifier.height(1.dp))
-      Text(caught.toString()+"/"+dex.size,fontSize=7.sp,lineHeight=8.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+      Text(caught.toString()+" de "+dex.size,fontSize=7.sp,lineHeight=8.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
      }
     }
    }
@@ -281,7 +279,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      QBGrid(entries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+      AnimatedBoxGrid(current,dex,capturedIds,boxSource,{pk->onPokemonClick(pk.nationalId,boxSource)},{pk->captureTarget=pk})
      }else{
       EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
      }
@@ -298,16 +296,16 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      Modifier.weight(1f).fillMaxHeight(),
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     ){
-     Icon(Icons.Default.Search,null,Modifier.size(17.dp))
+     Icon(Icons.Default.Search,"Pesquisar Pokémon",Modifier.size(17.dp))
      Spacer(Modifier.width(5.dp))
-     Text("Pesquisar",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
+     Text("Buscar Pokémon",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
     }
     FilledTonalButton(
      {allBoxes=true},
      Modifier.weight(1f).fillMaxHeight(),
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     ){
-     Icon(Icons.Default.GridView,null,Modifier.size(17.dp))
+     Icon(Icons.Default.GridView,"Ver todas as Boxes",Modifier.size(17.dp))
      Spacer(Modifier.width(5.dp))
      Text("Todas as Boxes",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
     }
@@ -317,14 +315,14 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
      Modifier.fillMaxWidth().fillMaxHeight(),
      shape=RoundedCornerShape(PokedexDesignTokens.Radius.Sm)
     ){
-     Icon(Icons.Default.Close,null,Modifier.size(17.dp))
+     Icon(Icons.Default.Close,"Limpar filtro de evolução",Modifier.size(17.dp))
      Spacer(Modifier.width(5.dp))
      Text("Limpar filtro e voltar às Boxes",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.labelLarge)
     }
    }
   }
  }
- if(search)QBSearch(dex,capturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)})
+ if(search)QBSearch(regionalDex,capturedIds,region.source,{search=false},{pk->val i=dex.indexOfFirst{it.nationalId==pk.nationalId};if(i>=0)page=i/30;search=false},{pk->search=false;onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
  if(allBoxes)QBAllBoxes(
   dex=dex,
   current=current,
@@ -341,15 +339,15 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   )
  }
 }
+@Composable private fun BoxCompanionHeader(game:String,region:String,caught:Int,total:Int,accent:Color)=CompanionContextHeader(title="Box",eyebrow="Coleção por jogo",subtitle=game+" · "+region,modifier=Modifier.padding(top=PokedexDesignTokens.Spacing.Xs,bottom=PokedexDesignTokens.Spacing.Xs),accent=accent,progress={CompanionProgress(current=caught,total=total,label="Pokédex do jogo",accent=accent)})
 @Composable
-private fun QBGrid(
+internal fun QBGrid(
     entries:List<GameDexService.GameDexEntry>,
     captured:Set<Int>,
     source:String,
     specialFilter:Boolean,
     specialIds:Set<Int>,
-    open:(GameDexService.GameDexEntry)->Unit,
-    hold:(GameDexService.GameDexEntry)->Unit
+    open:(GameDexService.GameDexEntry)->Unit, hold:(GameDexService.GameDexEntry)->Unit
 ){
     Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(2.dp)){
         repeat(5){row->
@@ -393,22 +391,10 @@ internal fun QBSlot(
     }
     val imageModel=variant?.artworkUrl ?: pk.spriteUrl
     val isShiny=variant?.shiny==true
-    val slotAlpha by animateFloatAsState(
-        if(specialFilter&&!specialEvolution).18f else 1f,
-        tween(PokedexDesignTokens.Motion.Fast),
-        label="boxSlotAlpha"
-    )
-    val slotScale by animateFloatAsState(
-        if(captured)1f else .985f,
-        tween(PokedexDesignTokens.Motion.Standard),
-        label="boxSlotScale"
-    )
-    val slotColor by animateColorAsState(
-        if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.78f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.82f),
-        tween(PokedexDesignTokens.Motion.Standard),
-        label="boxSlotColor"
-    )
+    val slotAlpha=if(specialFilter&&!specialEvolution).18f else 1f
+    val slotScale=1f
+    val slotColor=if(captured)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.62f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f)
     val interaction=remember(pk.nationalId,source){MutableInteractionSource()}
     val haptic=LocalHapticFeedback.current
     Surface(
@@ -449,10 +435,10 @@ internal fun QBSlot(
                 pokemonId=pk.nationalId,
                 modifier=Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(.78f)
+                    .fillMaxHeight(.80f)
                     .align(Alignment.TopCenter)
                     .padding(horizontal=2.dp,vertical=2.dp)
-                    .alpha(if(captured)1f else .22f),
+                    .alpha(if(captured)1f else .16f),
                 contentScale=ContentScale.Fit,
                 colorFilter=if(captured)null else ColorFilter.colorMatrix(ColorMatrix().apply{setToSaturation(0f)})
             )
@@ -465,7 +451,7 @@ internal fun QBSlot(
             }
             Surface(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                color=MaterialTheme.colorScheme.surface.copy(alpha=.92f)
+                color=MaterialTheme.colorScheme.surface.copy(alpha=if(captured).94f else .82f)
             ){
                 Column(
                     Modifier.padding(vertical=2.dp,horizontal=1.dp),
@@ -549,7 +535,7 @@ private fun QBVariantManager(
                     color=MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier=Modifier.padding(bottom=8.dp)
                 )
-                val isCaptured=CollectionStore.isCapturedIn(source,pk.nationalId)
+                val isCaptured=CollectionStore.isCapturedInGame(source,pk.nationalId)
                 if(isCaptured){
                     OutlinedButton(
                         onClick={
@@ -653,7 +639,7 @@ private fun QBVariantManager(
                         }
                         item{
                             val any=variantsState.any{it.source==source && it.speciesId==pk.nationalId}
-                            if(!any && CollectionStore.isCapturedIn(source,pk.nationalId)){
+                            if(!any && CollectionStore.isCapturedInGame(source,pk.nationalId)){
                                 Text(
                                     "Este Pokémon já estava marcado como capturado em uma versão antiga. Selecione Normal ou Shiny para migrá-lo ao novo sistema de variantes.",
                                     style=MaterialTheme.typography.bodySmall,
@@ -735,6 +721,7 @@ private fun QBAllBoxes(
         }
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun QBSearch(
     dex:List<GameDexService.GameDexEntry>,
@@ -742,13 +729,15 @@ private fun QBSearch(
     source:String,
     dismiss:()->Unit,
     select:(GameDexService.GameDexEntry)->Unit,
-    open:(GameDexService.GameDexEntry)->Unit
+    open:(GameDexService.GameDexEntry)->Unit,
+    hold:(GameDexService.GameDexEntry)->Unit
 ){
     var q by remember{mutableStateOf("")}
     var status by remember{mutableStateOf("Todos")}
     var order by remember{mutableStateOf("Regional")}
     val key=q.trim().removePrefix("#")
-    val results=remember(key,status,order,dex,captured){
+    val ownedVariantsSnapshot=VariantCollectionStore.ownedVariants
+ val results=remember(key,status,order,dex,captured,ownedVariantsSnapshot){
         dex.asSequence()
             .filter{
                 key.isBlank() || it.name.contains(key,true) ||
@@ -758,9 +747,9 @@ private fun QBSearch(
                 when(status){
                     "Capturados" -> it.nationalId in captured
                     "Faltantes" -> it.nationalId !in captured
-                    "Shiny" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && v.shiny}
-                    "Normal" -> VariantCollectionStore.ownedVariants.any{v->v.source==source && v.speciesId==it.nationalId && !v.shiny}
-                    "Formas" -> VariantCollectionStore.ownedVariants.any{v->
+                    "Shiny" -> ownedVariantsSnapshot.any{v->v.source==source && v.speciesId==it.nationalId && v.shiny}
+                    "Normal" -> ownedVariantsSnapshot.any{v->v.source==source && v.speciesId==it.nationalId && !v.shiny}
+                    "Formas" -> ownedVariantsSnapshot.any{v->
                         v.source==source && v.speciesId==it.nationalId &&
                             (v.formPokemonId!=it.nationalId || !v.formName.equals(pretty(it.name),true))
                     }
@@ -792,8 +781,9 @@ private fun QBSearch(
             Text(results.size.toString()+" resultado(s)",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             LazyColumn(Modifier.heightIn(max=360.dp)){
                 items(results,key={it.nationalId}){pk->
+                    val haptic=LocalHapticFeedback.current
                     Row(
-                        Modifier.fillMaxWidth().clickable{select(pk)}.padding(vertical=5.dp),
+                        Modifier.fillMaxWidth().combinedClickable(onClick={select(pk)},onLongClick={haptic.performHapticFeedback(HapticFeedbackType.LongPress);hold(pk)}).padding(vertical=5.dp),
                         verticalAlignment=Alignment.CenterVertically
                     ){
                         PokemonArtwork(pk.spriteUrl,pk.name,Modifier.size(48.dp),pokemonId=pk.nationalId)

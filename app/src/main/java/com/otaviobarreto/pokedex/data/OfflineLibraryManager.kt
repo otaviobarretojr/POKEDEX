@@ -12,6 +12,8 @@ import java.io.File
 object OfflineLibraryManager {
     private const val ROOT="offline-library"
     private const val GENERAL="general"
+    private const val SUPPLEMENTAL_ARTWORK="artwork-supplemental"
+    private const val SUPPLEMENTAL_INDEX="artwork-supplemental-index"
 
     fun root(context:Context)=File(context.filesDir,ROOT).apply{mkdirs()}
     fun general(context:Context)=File(root(context),GENERAL)
@@ -177,7 +179,33 @@ object OfflineLibraryManager {
         return target
     }
 
+    fun installSupplementalArtwork(
+        context:Context,
+        sourceUrl:String,
+        bytes:ByteArray,
+        cacheKeys:Set<String> = emptySet()
+    ):File {
+        val dir=File(root(context),SUPPLEMENTAL_ARTWORK).apply{mkdirs()}
+        val target=File(dir,safe(sourceUrl)+".img")
+        val tmp=File(dir,target.name+".tmp")
+        tmp.outputStream().buffered().use{it.write(bytes)}
+        if(target.exists()) target.delete()
+        if(!tmp.renameTo(target)){
+            tmp.copyTo(target,overwrite=true)
+            tmp.delete()
+        }
+        val index=File(root(context),SUPPLEMENTAL_INDEX).apply{mkdirs()}
+        (cacheKeys+sourceUrl).forEach{key->File(index,safe(key)+".path").writeText(target.absolutePath)}
+        return target
+    }
+
+    private fun resolveSupplementalArtwork(context:Context,key:String):File? {
+        val pointer=File(File(root(context),SUPPLEMENTAL_INDEX),safe(key)+".path")
+        return pointer.takeIf{it.exists()}?.readText()?.let{File(it)}?.takeIf{it.exists()}
+    }
+
     fun resolveAny(context:Context,key:String):File? {
+        resolveSupplementalArtwork(context,key)?.let{return it}
         resolve(context,key)?.let{return it}
         val pointer=File(File(root(context),"game-index"),safe(key)+".path")
         return pointer.takeIf{it.exists()}?.readText()?.let{File(it)}?.takeIf{it.exists()}

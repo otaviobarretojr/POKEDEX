@@ -68,8 +68,14 @@ object VariantCollectionStore {
         ownedVariants=decode(raw)
     }
 
-    fun variantsFor(source:String,speciesId:Int):List<OwnedPokemonVariant> =
-        ownedVariants.filter{it.source==source && it.speciesId==speciesId}
+    private fun gameSources(source:String):Set<String> =
+        AppGameCatalog.games.firstOrNull{game->game.regions.any{it.source==source}}
+            ?.regions?.mapTo(linkedSetOf()){it.source} ?: linkedSetOf(source)
+
+    fun variantsFor(source:String,speciesId:Int):List<OwnedPokemonVariant> {
+        val sources=gameSources(source)
+        return ownedVariants.filter{it.source in sources && it.speciesId==speciesId}
+    }
 
     fun isOwned(source:String,speciesId:Int,formPokemonId:Int,formName:String?=null,shiny:Boolean):Boolean =
         ownedVariants.any{
@@ -152,10 +158,11 @@ object VariantCollectionStore {
     }
 
     fun removeAll(source:String,speciesId:Int){
+        val sources=gameSources(source)
         val before=ownedVariants.size
-        ownedVariants=ownedVariants.filterNot{it.source==source && it.speciesId==speciesId}
+        ownedVariants=ownedVariants.filterNot{it.source in sources && it.speciesId==speciesId}
         if(ownedVariants.size!=before) persist()
-        CollectionStore.setCapturedIn(source,speciesId,false)
+        sources.forEach{CollectionStore.setCapturedIn(it,speciesId,false)}
     }
 
     fun shinyCount():Int = ownedVariants.count{it.shiny}

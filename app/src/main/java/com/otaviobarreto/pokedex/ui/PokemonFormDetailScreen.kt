@@ -72,9 +72,10 @@ fun PokemonFormDetailScreen(
                                 Modifier.fillMaxWidth().padding(PokedexDesignTokens.Spacing.Lg),
                                 horizontalAlignment=Alignment.CenterHorizontally
                             ){
-                                AsyncImage(
+                                PokemonArtwork(
                                     model=imageUrl,
                                     contentDescription=formName,
+                                    pokemonId=formId,
                                     modifier=Modifier.fillMaxWidth().height(280.dp),
                                     contentScale=ContentScale.Fit
                                 )
