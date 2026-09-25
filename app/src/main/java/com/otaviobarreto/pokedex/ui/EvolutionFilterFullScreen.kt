@@ -35,11 +35,6 @@ private data class EvolutionFilterLoadResult(
     val novelFormIdentities:Set<Pair<Int,String>>
 )
 
-private enum class MissingSortMode(val label:String){
-    DEX("Ordem da Pokédex"),
-    ROUTE("Melhor rota")
-}
-
 @Composable
 internal fun EvolutionFilterFullScreen(
     gameLabel:String,
@@ -61,7 +56,7 @@ internal fun EvolutionFilterFullScreen(
     var novelFormIdentities by remember(selectedSource){mutableStateOf<Set<Pair<Int,String>>>(emptySet())}
     var loading by remember(selectedSource){mutableStateOf(true)}
     var failed by remember(selectedSource){mutableStateOf(false)}
-    var sortMode by rememberSaveable(gameLabel){mutableStateOf(MissingSortMode.DEX.name)}
+    var exclusiveVersionFilter by rememberSaveable(gameLabel){mutableStateOf<String?>(null)}
     var canonicalById by remember(selectedSource){mutableStateOf<Map<Int,CanonicalAvailability>>(emptyMap())}
     var canonicalLoading by remember(selectedSource){mutableStateOf(false)}
 
@@ -228,13 +223,19 @@ internal fun EvolutionFilterFullScreen(
             )
         }
     }
-    val displayedPending=remember(pending,sortMode,adviceById,filterKey){
-        if(filterKey!="ALL" || sortMode==MissingSortMode.DEX.name) pending
-        else pending.sortedWith(
-            compareBy<GameDexService.GameDexEntry>{
-                CompletionAdviceResolver.priority(adviceById.getValue(it.nationalId))
-            }.thenBy{it.gameNumber}
-        )
+    val versionFilterOptions=remember(context){
+        VersionAvailabilityCatalog.versionsForGame(context?.label.orEmpty())
+            .filter{it=="Scarlet" || it=="Violet"}
+    }
+    val displayedPending=remember(pending,exclusiveVersionFilter,context,filterKey){
+        val versionFiltered=if(filterKey=="ALL" && exclusiveVersionFilter!=null){
+            pending.filter{entry->
+                VersionAvailabilityCatalog.forPokemon(entry.nationalId,context,true)
+                    ?.takeIf{it.kind==VersionAvailabilityKind.EXCLUSIVE}
+                    ?.exclusiveVersion==exclusiveVersionFilter
+            }
+        }else pending
+        versionFiltered.sortedWith(compareBy<GameDexService.GameDexEntry>{it.gameNumber}.thenBy{it.nationalId})
     }
 
     val filterLabel=if(filterKey=="ALL"){
@@ -277,16 +278,20 @@ internal fun EvolutionFilterFullScreen(
 
         if(filterKey=="ALL"){
             Column(Modifier.fillMaxWidth().padding(vertical=8.dp)){
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement=Arrangement.spacedBy(8.dp)
-                ){
-                    MissingSortMode.entries.forEach{mode->
-                        FilterChip(
-                            selected=sortMode==mode.name,
-                            onClick={sortMode=mode.name},
-                            label={Text(if(mode==MissingSortMode.ROUTE)"Mais fáceis primeiro" else mode.label)}
-                        )
+                if(versionFilterOptions.isNotEmpty()){
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                    ){
+                        versionFilterOptions.forEach{version->
+                            FilterChip(
+                                selected=exclusiveVersionFilter==version,
+                                onClick={
+                                    exclusiveVersionFilter=if(exclusiveVersionFilter==version)null else version
+                                },
+                                label={Text(version)}
+                            )
+                        }
                     }
                 }
                 if(canonicalLoading){
