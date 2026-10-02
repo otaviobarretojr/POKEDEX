@@ -16,21 +16,11 @@ android {
         versionName = "20.12.1"
     }
 
-    signingConfigs {
-        create("stableDebug") {
-            storeFile = rootProject.file("signing/pokedex-release.jks")
-            storePassword = "pokedex-local-2026"
-            keyAlias = "pokedex"
-            keyPassword = "pokedex-local-2026"
-        }
-    }
-
     buildTypes {
         getByName("debug") {
-            signingConfig = signingConfigs.getByName("stableDebug")
+            // Personal sideload build: use Android's standard debug signing.
         }
         getByName("release") {
-            signingConfig = signingConfigs.getByName("stableDebug")
             isMinifyEnabled = false
         }
     }
