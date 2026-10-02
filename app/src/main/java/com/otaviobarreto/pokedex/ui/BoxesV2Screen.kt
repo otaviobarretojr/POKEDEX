@@ -68,7 +68,7 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
  val preferredRegion=AppStatePreferences.activeRegionForGame(game.label)
  var regionSource by rememberSaveable{mutableStateOf(game.regions.firstOrNull{it.source==preferredRegion}?.source ?: game.regions.first().source)}
  val region=remember(game.label,regionSource){game.regions.firstOrNull{it.source==regionSource}?:game.regions.first()}
- var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)};var captureTarget by remember{mutableStateOf<GameDexService.GameDexEntry?>(null)}
+ var dex by remember{mutableStateOf<List<GameDexService.GameDexEntry>>(emptyList())};var loading by remember{mutableStateOf(true)};var needsComplement by remember{mutableStateOf(false)};var page by rememberSaveable{mutableIntStateOf(AppStatePreferences.boxPage(regionSource))};var gameMenu by remember{mutableStateOf(false)};var regionMenu by remember{mutableStateOf(false)};var search by remember{mutableStateOf(false)};var allBoxes by remember{mutableStateOf(false)}
  var evolutionFilterName by rememberSaveable{mutableStateOf<String?>(null)}
  var evolutionFilterMenu by remember{mutableStateOf(false)}
  var evolutionMethodIds by remember(region.source){mutableStateOf<Map<String,Set<Int>>>(emptyMap())}
@@ -281,9 +281,27 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      QBGrid(entries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->captureTarget=pk})
+      QBGrid(entries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->
+       if(!CollectionStore.isCapturedIn(region.source,pk.nationalId)){
+        VariantCollectionStore.setOwned(
+         region.source,pk.nationalId,pk.nationalId,pk.name,false,
+         formKey=pk.name.lowercase(),
+         normalArtworkUrl=pk.spriteUrl,
+         isDefault=true
+        )
+       }
+      })
      }else{
-      EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->captureTarget=pk}
+      EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->
+       if(!CollectionStore.isCapturedIn(region.source,pk.nationalId)){
+        VariantCollectionStore.setOwned(
+         region.source,pk.nationalId,pk.nationalId,pk.name,false,
+         formKey=pk.name.lowercase(),
+         normalArtworkUrl=pk.spriteUrl,
+         isDefault=true
+        )
+       }
+      }
      }
     }
    }
@@ -333,13 +351,6 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
   dismiss={allBoxes=false},
   select={targetPage->page=targetPage;allBoxes=false}
  )
- captureTarget?.let{pk->
-  QBVariantManager(
-   pk=pk,
-   source=region.source,
-   dismiss={captureTarget=null}
-  )
- }
 }
 @Composable
 private fun QBGrid(
