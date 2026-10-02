@@ -281,9 +281,9 @@ private val qbGames=AppGameCatalog.games.map{game->QBGame(game.label,qbAccent(ga
     dex.isEmpty()->Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Text("Não foi possível carregar esta Pokédex regional.")}
     else->{
      if(evolutionFilterName==null){
-      QBGrid(entries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->if(!CollectionStore.isCapturedIn(region.source,pk.nationalId))VariantCollectionStore.setOwned(region.source,pk.nationalId,pk.nationalId,pk.name,false,formKey=pk.name.lowercase(),normalArtworkUrl=pk.spriteUrl,isDefault=true)})
+      QBGrid(entries,capturedIds,region.source,false,emptySet(),{pk->onPokemonClick(pk.nationalId,region.source)},{pk->if(!CollectionStore.isCapturedIn(region.source,pk.nationalId))VariantCollectionStore.setOwned(region.source,pk.nationalId,pk.nationalId,pk.name,false,formKey=pk.name.lowercase(),normalArtworkUrl=pk.spriteUrl,isDefault=true,owned=true)})
      }else{
-      EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->if(!CollectionStore.isCapturedIn(region.source,pk.nationalId))VariantCollectionStore.setOwned(region.source,pk.nationalId,pk.nationalId,pk.name,false,formKey=pk.name.lowercase(),normalArtworkUrl=pk.spriteUrl,isDefault=true)}
+      EvolutionVirtualBox(filteredEvolutionEntries,capturedIds,region.source,evolutionMethodLoading,game.accent,onPokemonClick){pk->if(!CollectionStore.isCapturedIn(region.source,pk.nationalId))VariantCollectionStore.setOwned(region.source,pk.nationalId,pk.nationalId,pk.name,false,formKey=pk.name.lowercase(),normalArtworkUrl=pk.spriteUrl,isDefault=true,owned=true)}
      }
     }
    }
