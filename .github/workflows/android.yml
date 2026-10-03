@@ -36,7 +36,7 @@ jobs:
         run: |
           grep -q 'versionCode = 21201' app/build.gradle.kts
           grep -q 'versionName = "20.12.1"' app/build.gradle.kts
-          grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
+          grep -q 'applicationId = "com.otaviobarreto.pokedex.personal"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
       - name: Verify source architecture
@@ -76,5 +76,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: POKEDEX-v20.12.1-Personal-Universal
+          name: POKEDEX-v20.12.1-Personal-Clean
           path: app/build/outputs/apk/debug/app-debug.apk
