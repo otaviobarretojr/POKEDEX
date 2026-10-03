@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.otaviobarreto.pokedex"
+        applicationId = "com.otaviobarreto.pokedex.personal"
         minSdk = 26
         targetSdk = 35
         versionCode = 21201
