@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.core.content.FileProvider
-import com.otaviobarreto.pokedex.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -27,9 +26,10 @@ object AppUpdateManager {
             }
             val json=JSONObject(body)
             AppUpdate(json.getInt("versionCode"),json.getString("versionName"),json.getString("apkUrl"),json.optString("changelog","Melhorias e correções."),json.optBoolean("mandatory",false))
-                .takeIf{it.versionCode>BuildConfig.VERSION_CODE}
+                .takeIf{it.versionCode>installedVersionCode()}
         }.getOrNull()
     }
+    private fun installedVersionCode():Int = com.otaviobarreto.pokedex.BuildConfig.VERSION_CODE
     suspend fun download(context:Context,update:AppUpdate):File=withContext(Dispatchers.IO){
         val request=Request.Builder().url(update.apkUrl).build()
         val targetDir=File(context.cacheDir,"updates").apply{mkdirs()}
