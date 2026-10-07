@@ -1,6 +1,5 @@
 package com.otaviobarreto.pokedex.update
 
-import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
@@ -10,7 +9,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
-fun AutomaticUpdatePrompt(content:@Composable()->Unit){
+fun AutomaticUpdatePrompt(content: @Composable () -> Unit) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var update by remember{mutableStateOf<AppUpdate?>(null)}
