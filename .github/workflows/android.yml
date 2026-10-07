@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -125,3 +125,27 @@ jobs:
           name: instrumentation-test-reports
           path: stable-smoke-results/
           if-no-files-found: ignore
+
+
+  publish-update:
+    name: Publish in-app update
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [build, android-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Download signed APK
+        uses: actions/download-artifact@v7
+        with:
+          name: POKEDEX-v20.14.0-Trainer-Today
+          path: release-apk
+      - name: Stage stable release filename
+        run: mv release-apk/app-debug.apk release-apk/pokedex.apk
+      - name: Publish GitHub release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pokedex-v20.14.0
+          name: POKEDEX v20.14.0
+          files: release-apk/pokedex.apk
+          body: "POKEDEX v20.14.0 — atualização assinada para instalação por cima."
