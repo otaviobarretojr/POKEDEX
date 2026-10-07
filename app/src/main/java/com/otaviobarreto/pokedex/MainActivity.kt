@@ -30,12 +30,13 @@ import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.RecentActivityStore
 import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import com.otaviobarreto.pokedex.ui.*
+import com.otaviobarreto.pokedex.update.AutomaticUpdatePrompt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) HomeAudioManager.playBoot()
-        setContent { PokedexTheme { PokedexRoot() } }
+        setContent { PokedexTheme { AutomaticUpdatePrompt { PokedexRoot() } } }
     }
     override fun onStart() { super.onStart(); HomeAudioManager.onAppForegrounded() }
     override fun onStop() { HomeAudioManager.onAppBackgrounded(); super.onStop() }
