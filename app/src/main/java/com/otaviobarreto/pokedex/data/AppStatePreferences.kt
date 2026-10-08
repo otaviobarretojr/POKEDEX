@@ -10,7 +10,6 @@ object AppStatePreferences {
     private const val KEY_ACTIVE_REGION = "active_region"
     private const val KEY_GAME_REGION_PREFIX = "game_region_"
     private const val KEY_BOX_PAGE_PREFIX = "box_page_"
-    private const val KEY_STARTER_PREFIX = "journey_starter_"
     private const val KEY_GAME_VERSION_PREFIX = "game_version_"
     private var context: Context? = null
 
@@ -75,33 +74,13 @@ object AppStatePreferences {
             ?.putInt(KEY_BOX_PAGE_PREFIX + key(source), page.coerceAtLeast(0))?.apply()
     }
 
-    fun journeyStarterForGame(gameLabel: String): Int? {
-        val valid = TeamCampaignCatalog.starters(gameLabel).map { it.second }.toSet()
-        val stored = context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            ?.getInt(KEY_STARTER_PREFIX + key(gameLabel), -1) ?: -1
-        return stored.takeIf { it in valid }
-    }
-
-    fun setJourneyStarterForGame(gameLabel: String, pokemonId: Int) {
-        if (TeamCampaignCatalog.starters(gameLabel).none { it.second == pokemonId }) return
-        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()
-            ?.putInt(KEY_STARTER_PREFIX + key(gameLabel), pokemonId)?.apply()
-    }
-
-    fun clearJourneyStarterForGame(gameLabel: String) {
-        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()
-            ?.remove(KEY_STARTER_PREFIX + key(gameLabel))?.apply()
-    }
-
     fun exportSnapshot(): JSONObject {
         val regions = JSONObject()
         val pages = JSONObject()
-        val starters = JSONObject()
         val versions = JSONObject()
         AppGameCatalog.games.forEach { game ->
             activeRegionForGame(game.label)?.let { regions.put(game.label, it) }
             game.regions.forEach { region -> pages.put(region.source, boxPage(region.source)) }
-            journeyStarterForGame(game.label)?.let { starters.put(game.label, it) }
             selectedVersionForGame(game.label)?.let { versions.put(game.label, it) }
         }
         return JSONObject()
@@ -109,7 +88,6 @@ object AppStatePreferences {
             .put("activeRegion", activeRegionSource)
             .put("regions", regions)
             .put("boxPages", pages)
-            .put("journeyStarters", starters)
             .put("gameVersions", versions)
     }
 
@@ -122,12 +100,6 @@ object AppStatePreferences {
         val pages = snapshot.optJSONObject("boxPages")
         AppGameCatalog.games.flatMap { it.regions }.forEach { region ->
             if (pages?.has(region.source) == true) setBoxPage(region.source, pages.optInt(region.source, 0))
-        }
-        val starters = snapshot.optJSONObject("journeyStarters")
-        AppGameCatalog.games.forEach { game ->
-            if (starters?.has(game.label) == true) {
-                setJourneyStarterForGame(game.label, starters.optInt(game.label, -1))
-            }
         }
         val versions=snapshot.optJSONObject("gameVersions")
         AppGameCatalog.games.forEach{game->
