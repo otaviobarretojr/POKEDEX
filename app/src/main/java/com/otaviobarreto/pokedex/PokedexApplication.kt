@@ -27,11 +27,6 @@ class PokedexApplication : Application(), ImageLoaderFactory {
         AppPerformanceTrace.section("pokedex.app.init.user_state") {
             CollectionStore.initialize(this)
             VariantCollectionStore.initialize(this)
-            TrainerTodayStore.initialize(
-                this,
-                CollectionStore.capturedIds.size,
-                AppGameCatalog.adventureGames.sumOf { JourneyProgressStore.completed(it.label).size }
-            )
         }
         AppPerformanceTrace.section("pokedex.app.integrity") {
             val legacySource = AppStatePreferences.activeRegionSource
