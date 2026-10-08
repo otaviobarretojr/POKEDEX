@@ -91,7 +91,6 @@ object CollectionStore {
             if (id !in capturedIds) {
                 capturedIds = capturedIds + id
                 persistCaptured()
-                TrainerTodayStore.recordCapture(id)
             }
             return
         }
