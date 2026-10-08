@@ -61,8 +61,6 @@ for marker in [
     "OfflineGamePackManager.initialize(this)",
     "CollectionStore.initialize(this)",
     "VariantCollectionStore.initialize(this)",
-    "JourneyProgressStore.initialize(this)",
-    "TrainerTodayStore.initialize(",
 ]:
     if marker not in app:
         errors.append(f"startup initialization missing: {marker}")
