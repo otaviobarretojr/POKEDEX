@@ -3,6 +3,7 @@ set -euo pipefail
 
 APP_APK="${1:-stable-smoke-apks/app.apk}"
 TEST_APK="${2:-stable-smoke-apks/test.apk}"
+BASELINE_APK="${3:-stable-smoke-apks/baseline.apk}"
 OUT_DIR="stable-smoke-results"
 LAUNCH_LOG="$OUT_DIR/launch-logcat.txt"
 TEST_LOG="$OUT_DIR/emulator-logcat.txt"
@@ -63,6 +64,19 @@ install_apk_with_retry() {
 }
 
 wait_for_android_ready
+
+# Upgrade-in-place gate: install a same-signature baseline, seed private app state,
+# then replace it with the candidate APK without uninstalling or clearing data.
+install_apk_with_retry "$BASELINE_APK" "BASELINE"
+adb shell run-as "$PACKAGE" mkdir -p shared_prefs
+adb shell run-as "$PACKAGE" sh -c 'echo preserve-me > shared_prefs/update_upgrade_probe.txt'
+install_apk_with_retry "$APP_APK" "UPGRADE"
+if ! adb shell run-as "$PACKAGE" cat shared_prefs/update_upgrade_probe.txt | grep -q "preserve-me"; then
+  echo "Upgrade-in-place did not preserve private app data." >&2
+  exit 1
+fi
+echo "UPDATE_IN_PLACE_DATA_PRESERVATION=OK"
+
 install_apk_with_retry "$APP_APK" "APP"
 install_apk_with_retry "$TEST_APK" "TEST"
 
