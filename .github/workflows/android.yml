@@ -35,10 +35,10 @@ jobs:
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
       - name: Apply release metadata
         run: python3 scripts/apply_release_version.py
-      - name: Validate v20.14.0 Trainer Today
+      - name: Validate v20.15.0 In-App Update Bootstrap
         run: |
-          grep -q 'versionCode = 21400' app/build.gradle.kts
-          grep -q 'versionName = "20.14.0"' app/build.gradle.kts
+          grep -q 'versionCode = 21500' app/build.gradle.kts
+          grep -q 'versionName = "20.15.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
