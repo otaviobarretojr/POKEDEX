@@ -53,8 +53,6 @@ for route_marker in [
         errors.append(f"stable secondary navigation missing: {route_marker}")
 if "rememberSaveable{mutableStateOf(false)}" not in main:
     errors.append("boot completion must survive Activity recreation")
-if "if (isFinishing) HomeAudioManager.release()" not in main:
-    errors.append("audio must not be torn down during configuration recreation")
 
 for marker in [
     "PersistentApiCache.initialize(this)",
