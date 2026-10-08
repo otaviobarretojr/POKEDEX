@@ -75,7 +75,8 @@ jobs:
         run: gradle lintDebug
       - name: Build upgrade baseline from pre-updater revision
         run: |
-          git worktree add /tmp/pokedex-baseline fa76dd411e8f00278b19e5e2810b40a8418b170e
+          git fetch --no-tags --depth=1 origin fa76dd411e8f00278b19e5e2810b40a8418b170e
+          git worktree add /tmp/pokedex-baseline FETCH_HEAD
           mkdir -p /tmp/pokedex-baseline/signing /tmp/pokedex-baseline/app/src/main/res/drawable
           base64 -d /tmp/pokedex-baseline/ci/pokedex-release.jks.b64 > /tmp/pokedex-baseline/signing/pokedex-release.jks
           base64 -d /tmp/pokedex-baseline/ci/app_icon_256.webp.b64 > /tmp/pokedex-baseline/app/src/main/res/drawable/app_icon.webp
