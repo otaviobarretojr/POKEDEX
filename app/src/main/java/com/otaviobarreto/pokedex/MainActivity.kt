@@ -59,7 +59,6 @@ private fun PokedexRoot(){
 // DexNavItem("central","Config."
 private val mainDestinations=listOf(
  DexNavItem(PokedexRoutes.HOME,"Início",Icons.Default.Home),
- DexNavItem(PokedexRoutes.GAMES,"Jogos",Icons.Default.SportsEsports),
  DexNavItem(PokedexRoutes.POKEDEX,"Pokédex",Icons.Default.MenuBook),
  DexNavItem(PokedexRoutes.COLLECTION,"Coleção",Icons.Default.AutoAwesome),
  DexNavItem(PokedexRoutes.BOXES,"Box",Icons.Default.GridView),
@@ -81,27 +80,15 @@ private val mainDestinations=listOf(
   if(resolvedSource!=null)AppStatePreferences.setActiveRegionForGame(resolvedGame,resolvedSource)
   navController.navigate(PokedexRoutes.BOXES){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}
  }
- fun openCampaignGuide(game:String,phase:String?=null,step:String?=null){navController.navigate("campaignGuide?game=${Uri.encode(game)}"+(phase?.let{"&phase=${Uri.encode(it)}"}?:"")+(step?.let{"&step=${Uri.encode(it)}"}?:""))}
  fun openReference(kind:String?=null,name:String?=null,source:String?=null){navController.navigate(if(kind.isNullOrBlank()||name.isNullOrBlank())"reference" else "reference?kind=${Uri.encode(kind)}&name=${Uri.encode(name)}"+(source?.let{"&source=${Uri.encode(it)}"}?:""))}
  fun openUniversalSearch(){navController.navigate(PokedexRoutes.SEARCH)}
  fun openEvolutionCenter(){navController.navigate(PokedexRoutes.EVOLUTION_CENTER)}
  fun openGameDex(){navController.navigate(PokedexRoutes.GAME_DEX)}
- fun openGames(){navController.navigate(PokedexRoutes.GAMES){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}}
  fun openCollection(){navController.navigate(PokedexRoutes.COLLECTION){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}}
- fun continueJourney(game:String){AppStatePreferences.activeGame=game;navController.navigate(PokedexRoutes.JOURNEY_CONTINUE){launchSingleTop=true}}
  LaunchedEffect(currentRoute){currentRoute?.let(RecentActivityStore::recordRoute)}
  Scaffold(containerColor=MaterialTheme.colorScheme.background,bottomBar={if(!isSecondaryScreen){DexBottomBar(mainDestinations,currentRoute){d->if(d.route!=currentRoute)haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove);navController.navigate(d.route){popUpTo(PokedexRoutes.HOME){saveState=true};launchSingleTop=true;restoreState=true}}}}){innerPadding->
   NavHost(navController,PokedexRoutes.HOME,Modifier.padding(innerPadding),enterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Fast))},exitTransition={fadeOut(tween(PokedexDesignTokens.Motion.Fast))},popEnterTransition={fadeIn(tween(PokedexDesignTokens.Motion.Fast))},popExitTransition={fadeOut(tween(PokedexDesignTokens.Motion.Fast))}){
-   composable(PokedexRoutes.HOME){TrainerHomeScreen(onContinueJourney=::continueJourney,onOpenGames=::openGames,onPokemonClick={id->openPokemon(id,null)},onOpenCollection=::openCollection)}
-   composable(PokedexRoutes.GAMES){JourneyScreen(startInGames=true,onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase,step->openCampaignGuide(game,phase,step)},onOpenBoxes=::openBoxes,onOpenGameDex=::openGameDex,onOpenEvolutionCenter=::openEvolutionCenter,onOpenSearch=::openUniversalSearch)}
-   composable(PokedexRoutes.JOURNEY_CONTINUE){JourneyScreen(startInGames=false,onPokemonClick={id,source->openPokemon(id,source)},onOpenTeamGuide={game,phase,step->openCampaignGuide(game,phase,step)},onOpenBoxes=::openBoxes,onOpenGameDex=::openGameDex,onOpenEvolutionCenter=::openEvolutionCenter,onOpenSearch=::openUniversalSearch,onExit={navController.popBackStack()})}
-   composable("campaignGuide?game={game}&phase={phase}&step={step}",arguments=listOf(navArgument("game"){type=NavType.StringType;nullable=false},navArgument("phase"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("step"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val game=entry.arguments?.getString("game")?.let(Uri::decode);val phase=entry.arguments?.getString("phase")?.let(Uri::decode);val step=entry.arguments?.getString("step")?.let(Uri::decode);CampaignTeamGuideScreen(onBackToMyTeams={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)},initialGame=game,initialPhase=phase,initialStepId=step)}
-   composable("reference?kind={kind}&name={name}&source={source}",arguments=listOf(navArgument("kind"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("name"){type=NavType.StringType;nullable=true;defaultValue=null},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val kind=entry.arguments?.getString("kind")?.let(Uri::decode);val name=entry.arguments?.getString("name")?.let(Uri::decode);val source=entry.arguments?.getString("source")?.let(Uri::decode);ReferenceHubScreen(onBack={navController.popBackStack()},initialKind=kind,initialName=name,source=source,onPokemonClick={id,pokemonSource->openPokemon(id,pokemonSource)})}
-   composable("pokemon/{id}?source={source}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("source"){type=NavType.StringType;nullable=true;defaultValue=null})){entry->val id=entry.arguments?.getInt("id")?:-1;val source=entry.arguments?.getString("source")?.let(Uri::decode);PokemonDetailV2Screen(id=id,source=source,onBack={navController.popBackStack()},onOpenReference={kind,name->openReference(kind,name,source)},onOpenPokemon={nextId->replacePokemonDetail(nextId,source)})}
-   composable("formDetail/{id}?name={name}&shiny={shiny}",arguments=listOf(navArgument("id"){type=NavType.IntType},navArgument("name"){type=NavType.StringType;nullable=false},navArgument("shiny"){type=NavType.BoolType;defaultValue=false})){entry->val id=entry.arguments?.getInt("id")?:-1;val name=entry.arguments?.getString("name")?.let(Uri::decode).orEmpty();val shiny=entry.arguments?.getBoolean("shiny")?:false;PokemonFormDetailScreen(id,name,shiny){navController.popBackStack()}}
-   composable(PokedexRoutes.SEARCH){UniversalSearchScreen(onBack={navController.popBackStack()},onPokemonClick={id->openPokemon(id,null)},onOpenReference={kind,name->openReference(kind,name,AppStatePreferences.activeRegionForGame(AppStatePreferences.activeGame))})}
-   composable(PokedexRoutes.EVOLUTION_CENTER){EvolutionCenterScreen(onBack={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)})}
-   composable(PokedexRoutes.GAME_DEX){GameDexScreen(onBack={navController.popBackStack()},onPokemonClick={id,source->openPokemon(id,source)})}
+   composable(PokedexRoutes.HOME){PokedexHomeScreen(onPokemonClick={id->openPokemon(id,null)},onOpenPokedex={navController.navigate(PokedexRoutes.POKEDEX)},onOpenCollection=::openCollection,onOpenBoxes={openBoxes(null,null)},onOpenGameDex=::openGameDex,onOpenSearch=::openUniversalSearch)}
    composable(PokedexRoutes.POKEDEX){PokedexCatalogScreen(onPokemonClick={id->openPokemon(id,null)},onOpenFormDetail=::openFormDetail,onOpenSearch=::openUniversalSearch,onOpenEvolutionCenter=::openEvolutionCenter,onOpenGameDex=::openGameDex)}
    composable(PokedexRoutes.COLLECTION){CollectionScreen(onPokemonClick={id->openPokemon(id,null)},onOpenBoxes=::openBoxes,onOpenFormDetail=::openFormDetail)}
    composable(PokedexRoutes.BOXES){BoxesV2Screen(onPokemonClick={id,source->openPokemon(id,source)})}
