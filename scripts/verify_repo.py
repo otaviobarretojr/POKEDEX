@@ -116,8 +116,8 @@ if "resolveSaveLocation" not in detail or "saveLocation.saved" not in detail:
     violations.append("Pokemon detail save-location integration missing")
 
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
-if "21400" not in workflow or "20.14.0" not in workflow:
-    violations.append("CI v20.14.0 version validation missing")
+if "21500" not in workflow or "20.15.0" not in workflow:
+    violations.append("CI v20.15.0 version validation missing")
 
 journey_hub = (ui / "JourneyHubComponents.kt").read_text(encoding="utf-8")
 if 'item(key="living_dex_planner")' in journey_hub or 'item(key="universal_search")' in journey_hub:
