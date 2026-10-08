@@ -68,10 +68,11 @@ wait_for_android_ready
 # Upgrade-in-place gate: install a same-signature baseline, seed private app state,
 # then replace it with the candidate APK without uninstalling or clearing data.
 install_apk_with_retry "$BASELINE_APK" "BASELINE"
-adb shell run-as "$PACKAGE" mkdir -p shared_prefs
-adb shell run-as "$PACKAGE" sh -c 'echo preserve-me > shared_prefs/update_upgrade_probe.txt'
+APP_DATA_DIR="$(adb shell run-as "$PACKAGE" pwd | tr -d '\r')"
+adb shell run-as "$PACKAGE" mkdir -p "$APP_DATA_DIR/shared_prefs"
+printf '%s\n' 'preserve-me' | adb shell run-as "$PACKAGE" sh -c "cat > '$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt'"
 install_apk_with_retry "$APP_APK" "UPGRADE"
-if ! adb shell run-as "$PACKAGE" cat shared_prefs/update_upgrade_probe.txt | grep -q "preserve-me"; then
+if ! adb shell run-as "$PACKAGE" cat "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" | grep -q "preserve-me"; then
   echo "Upgrade-in-place did not preserve private app data." >&2
   exit 1
 fi
