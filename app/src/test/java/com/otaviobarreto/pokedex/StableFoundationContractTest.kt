@@ -9,26 +9,24 @@ import org.junit.Test
 
 class StableFoundationContractTest {
     @Test
-    fun secondaryToolsStayOutsideBottomNavigation() {
+    fun pokedexToolsStayOutsideBottomNavigation() {
         listOf(
             PokedexRoutes.SEARCH,
             PokedexRoutes.EVOLUTION_CENTER,
             PokedexRoutes.GAME_DEX,
             PokedexRoutes.POKEMON,
             PokedexRoutes.FORM_DETAIL,
-            PokedexRoutes.REFERENCE,
-            PokedexRoutes.CAMPAIGN_GUIDE
+            PokedexRoutes.REFERENCE
         ).forEach { route ->
             assertTrue(route, PokedexRoutes.isSecondary(route))
         }
     }
 
     @Test
-    fun mainNavigationContractHasSixDestinations() {
+    fun mainNavigationContractHasFivePokedexDestinations() {
         assertEquals(
             setOf(
                 PokedexRoutes.HOME,
-                PokedexRoutes.GAMES,
                 PokedexRoutes.POKEDEX,
                 PokedexRoutes.COLLECTION,
                 PokedexRoutes.BOXES,
@@ -39,7 +37,7 @@ class StableFoundationContractTest {
     }
 
     @Test
-    fun adventurePackageKeysStayUniqueAndChampionsStaysOut() {
+    fun gameDexPackageKeysStayUniqueAndChampionsStaysOut() {
         val games=AppGameCatalog.adventureGames
         val keys=games.map{RemoteOfflinePackageCatalog.packageKeyForGame(it.label)}
         assertEquals(keys.size,keys.distinct().size)
