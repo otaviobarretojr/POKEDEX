@@ -55,9 +55,6 @@ fun BootExperienceScreen(onReady: () -> Unit) {
         state=BootState(1f,"Abrindo sua Pokédex")
         onReady()
 
-        // Content preparation continues safely after Home is released.
-        // A failure here must not make the application unusable.
-        ContentBootstrapManager.ensureReady(context){ _ -> }
         ArtworkOfflineSync.launch(context)
         StartupPreloader.launchWarmInBackground(context)
     }
@@ -102,7 +99,7 @@ fun BootExperienceScreen(onReady: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(42.dp))
-            Text("SUA JORNADA, ORGANIZADA.", fontWeight=FontWeight.Bold, color=teal, letterSpacing=1.4.sp, fontSize=13.sp)
+            Text("SUA POKÉDEX, ORGANIZADA.", fontWeight=FontWeight.Bold, color=teal, letterSpacing=1.4.sp, fontSize=13.sp)
             Spacer(Modifier.weight(.28f))
             Text(state.label, style=MaterialTheme.typography.titleMedium, fontWeight=FontWeight.SemiBold, color=scheme.onBackground, textAlign=TextAlign.Center)
             Spacer(Modifier.height(13.dp))
