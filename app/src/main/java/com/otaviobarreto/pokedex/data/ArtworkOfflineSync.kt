@@ -233,17 +233,12 @@ object ArtworkOfflineSync {
 
     private fun artworkInventory(context:Context):LinkedHashSet<String> = linkedSetOf<String>().apply{
         addAll(officialArtworkUrls())
-        addAll(JourneyTypeIconCatalog.allUrls())
         addAll(generalManifestArtworkUrls(context))
         VariantCollectionStore.ownedVariants.mapTo(this){it.artworkUrl}
         AppGameCatalog.adventureGames.forEach{game->
             addAll(OfflineGamePackManager.gameVisualUrls(game.label))
             addAll(GameCoverCatalog.coversFor(game.label))
-            GameCoverCatalog.heroFor(game.label)?.let(::add)
-            JourneyCatalog.steps(game.label).forEach{step->
-                JourneyVisualAssetCatalog.forStep(step.id)?.imageUrl?.let(::add)
-            }
-        }
+            GameCoverCatalog.heroFor(game.label)?.let(::add)        }
     }
 
     private fun officialArtworkUrls():List<String> = buildList{
