@@ -73,6 +73,18 @@ jobs:
         run: gradle testDebugUnitTest
       - name: Android lint
         run: gradle lintDebug
+      - name: Build upgrade baseline from pre-updater revision
+        run: |
+          git worktree add /tmp/pokedex-baseline fa76dd411e8f00278b19e5e2810b40a8418b170e
+          mkdir -p /tmp/pokedex-baseline/signing /tmp/pokedex-baseline/app/src/main/res/drawable
+          base64 -d /tmp/pokedex-baseline/ci/pokedex-release.jks.b64 > /tmp/pokedex-baseline/signing/pokedex-release.jks
+          base64 -d /tmp/pokedex-baseline/ci/app_icon_256.webp.b64 > /tmp/pokedex-baseline/app/src/main/res/drawable/app_icon.webp
+          cd /tmp/pokedex-baseline
+          python3 scripts/apply_release_version.py
+          gradle assembleDebug
+          mkdir -p "$GITHUB_WORKSPACE/upgrade-apks"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/upgrade-apks/baseline.apk"
+          cd "$GITHUB_WORKSPACE"
       - name: Compile app and instrumentation tests
         run: gradle assembleDebug assembleDebugAndroidTest
       - name: Verify update package and signature
@@ -82,6 +94,7 @@ jobs:
           mkdir -p stable-smoke-apks
           cp app/build/outputs/apk/debug/app-debug.apk stable-smoke-apks/app.apk
           cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk stable-smoke-apks/test.apk
+          cp upgrade-apks/baseline.apk stable-smoke-apks/baseline.apk
       - name: Upload stable smoke APKs
         uses: actions/upload-artifact@v7
         with:
