@@ -9,9 +9,6 @@ import com.otaviobarreto.pokedex.data.AppGameCatalog
 import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.CollectionStore
 import com.otaviobarreto.pokedex.data.CollectionIntegrityService
-import com.otaviobarreto.pokedex.data.JourneyProgressStore
-import com.otaviobarreto.pokedex.data.TeamStore
-import com.otaviobarreto.pokedex.data.TrainerTodayStore
 import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import com.otaviobarreto.pokedex.data.PersistentApiCache
 import com.otaviobarreto.pokedex.data.RecentActivityStore
@@ -31,8 +28,6 @@ class PokedexApplication : Application(), ImageLoaderFactory {
         AppPerformanceTrace.section("pokedex.app.init.user_state") {
             CollectionStore.initialize(this)
             VariantCollectionStore.initialize(this)
-            TeamStore.initialize(this)
-            JourneyProgressStore.initialize(this)
             TrainerTodayStore.initialize(
                 this,
                 CollectionStore.capturedIds.size,
