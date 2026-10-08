@@ -42,8 +42,8 @@ jobs:
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
-      - name: Verify source architecture
-        run: python3 scripts/verify_repo.py
+      - name: Verify Pokedex-only architecture
+        run: python3 scripts/verify_pokedex_only.py
       - name: Product hardening audit
         run: python3 scripts/audit_hardening.py
       - name: Accessibility audit
