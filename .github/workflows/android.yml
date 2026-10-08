@@ -132,7 +132,7 @@ jobs:
           heap-size: 384M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
-          script: bash scripts/run_android_smoke.sh stable-smoke-apks/app.apk stable-smoke-apks/test.apk
+          script: bash scripts/run_android_smoke.sh stable-smoke-apks/app.apk stable-smoke-apks/test.apk stable-smoke-apks/baseline.apk
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v7
