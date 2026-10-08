@@ -28,20 +28,15 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.otaviobarreto.pokedex.data.AppStatePreferences
 import com.otaviobarreto.pokedex.data.RecentActivityStore
-import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import com.otaviobarreto.pokedex.ui.*
 import com.otaviobarreto.pokedex.update.AutomaticUpdatePrompt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) HomeAudioManager.playBoot()
         setContent { PokedexTheme { AutomaticUpdatePrompt { PokedexRoot() } } }
     }
-    override fun onStart() { super.onStart(); HomeAudioManager.onAppForegrounded() }
-    override fun onStop() { HomeAudioManager.onAppBackgrounded(); super.onStop() }
     override fun onDestroy() {
-        if (isFinishing) HomeAudioManager.release()
         super.onDestroy()
     }
 }
@@ -49,7 +44,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun PokedexRoot(){
     var bootReady by rememberSaveable{mutableStateOf(false)}
-    LaunchedEffect(bootReady){if(bootReady)HomeAudioManager.playMainTrack()}
     if(!bootReady) BootExperienceScreen{bootReady=true} else PokedexApp()
 }
 // Compatibility markers for legacy source guards; implementation uses PokedexRoutes.
