@@ -47,8 +47,7 @@ class PokedexNavigationInstrumentedTest {
     @Test fun visualSnapshots_primaryDestinations(){
         waitForMainNavigation()
         composeRule.waitForIdle()
-        captureGoldenCandidate("journey")
-        nav(PokedexRoutes.GAMES).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("games")
+        captureGoldenCandidate("home")
         nav(PokedexRoutes.POKEDEX).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("pokedex")
         nav(PokedexRoutes.COLLECTION).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("collection")
         nav(PokedexRoutes.BOXES).performClick(); composeRule.waitForIdle(); captureGoldenCandidate("box")
@@ -59,13 +58,11 @@ class PokedexNavigationInstrumentedTest {
 
     @Test fun primaryRoutes_areReachableAndBottomNavigationSurvives(){
         waitForMainNavigation()
-        nav(PokedexRoutes.GAMES).assertIsDisplayed().performClick()
         nav(PokedexRoutes.POKEDEX).assertIsDisplayed().performClick()
         nav(PokedexRoutes.COLLECTION).assertIsDisplayed().performClick()
         nav(PokedexRoutes.BOXES).assertIsDisplayed().performClick()
         nav(PokedexRoutes.CENTRAL).assertIsDisplayed().performClick()
         nav(PokedexRoutes.HOME).assertIsDisplayed().performClick()
-        nav(PokedexRoutes.GAMES).assertIsDisplayed()
         nav(PokedexRoutes.POKEDEX).assertIsDisplayed()
         nav(PokedexRoutes.COLLECTION).assertIsDisplayed()
         nav(PokedexRoutes.BOXES).assertIsDisplayed()
@@ -76,8 +73,7 @@ class PokedexNavigationInstrumentedTest {
         waitForMainNavigation()
         repeat(2){
             nav(PokedexRoutes.BOXES).assertIsDisplayed().performClick()
-            nav(PokedexRoutes.GAMES).assertIsDisplayed().performClick()
-            nav(PokedexRoutes.COLLECTION).assertIsDisplayed().performClick()
+                nav(PokedexRoutes.COLLECTION).assertIsDisplayed().performClick()
             nav(PokedexRoutes.HOME).assertIsDisplayed().performClick()
         }
         nav(PokedexRoutes.POKEDEX).assertIsDisplayed()
