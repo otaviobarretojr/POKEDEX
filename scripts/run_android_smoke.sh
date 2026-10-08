@@ -70,7 +70,7 @@ wait_for_android_ready
 install_apk_with_retry "$BASELINE_APK" "BASELINE"
 APP_DATA_DIR="$(adb shell run-as "$PACKAGE" pwd | tr -d '\r')"
 adb shell run-as "$PACKAGE" mkdir -p "$APP_DATA_DIR/shared_prefs"
-printf '%s\n' 'preserve-me' | adb shell run-as "$PACKAGE" sh -c "cat > '$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt'"
+printf '%s\n' 'preserve-me' | adb shell run-as "$PACKAGE" tee "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" >/dev/null
 install_apk_with_retry "$APP_APK" "UPGRADE"
 if ! adb shell run-as "$PACKAGE" cat "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" | grep -q "preserve-me"; then
   echo "Upgrade-in-place did not preserve private app data." >&2
