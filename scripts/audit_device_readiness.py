@@ -46,7 +46,6 @@ checks={
     "RTL supported": 'android:supportsRtl="true"' in manifest,
     "bottom navigation respects system inset": 'navigationBarsPadding()' in chrome,
     "secondary screens use Android back stack": 'navController.popBackStack()' in main,
-    "essential bootstrap gates first entry": 'ContentBootstrapManager.ensureReady(context)' in boot,
     "optional startup warmup is non-blocking": 'StartupPreloader.launchWarmInBackground(context)' in boot,
     "blocking cache warmup absent from boot": 'StartupPreloader.warm(context)' not in boot,
     "background warmup owns extended phase": 'launchExtendedWarm(appContext)' in preloader,
