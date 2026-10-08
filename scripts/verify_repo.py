@@ -1215,7 +1215,8 @@ local_v2135 = 'versionName = "20.13.5"' in local_gradle and "versionCode = 21305
 local_v2136 = 'versionName = "20.13.6"' in local_gradle and "versionCode = 21306" in local_gradle
 local_v2137 = 'versionName = "20.13.7"' in local_gradle and "versionCode = 21307" in local_gradle
 local_v2140 = 'versionName = "20.14.0"' in local_gradle and "versionCode = 21400" in local_gradle
-if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110 or local_v2121 or local_v2130 or local_v2131 or local_v2132 or local_v2133 or local_v2134 or local_v2135 or local_v2136 or local_v2137 or local_v2140):
+local_v2150 = 'versionName = "20.15.0"' in local_gradle and "versionCode = 21500" in local_gradle
+if not (local_v1610 or local_v1611 or local_v1612 or local_v1613 or local_v1614 or local_v1615 or local_v1620 or local_v1700 or local_v1800 or local_v1810 or local_v1820 or local_v1830 or local_v1840 or local_v1841 or local_v1842 or local_v1850 or local_v1851 or local_v1900 or local_v1901 or local_v1910 or local_v1920 or local_v2000 or local_v2030 or local_v2040 or local_v2050 or local_v2060 or local_v2070 or local_v2071 or local_v2080 or local_v2090 or local_v2100 or local_v2110 or local_v2121 or local_v2130 or local_v2131 or local_v2132 or local_v2133 or local_v2134 or local_v2135 or local_v2136 or local_v2137 or local_v2140 or local_v2150):
     violations.append("Local build version is not aligned with supported releases")
 
 if (root / ".github/workflows/import-home-audio.yml").exists():
