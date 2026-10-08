@@ -49,21 +49,17 @@ fun BootExperienceScreen(onReady: () -> Unit) {
     val pulse by infinite.animateFloat(.96f, 1.04f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
     val glow by infinite.animateFloat(.18f, .42f, infiniteRepeatable(tween(1900), RepeatMode.Reverse), label = "glow")
 
-    LaunchedEffect(retryToken) {
-        bootstrapError=null
-        state=BootState(.01f,"Preparando biblioteca POKEDEX")
-        val result=ContentBootstrapManager.ensureReady(context){progress->
-            state=BootState((progress.fraction*.72f).coerceIn(.01f,.72f),progress.label)
-        }
-        if(result.ready){
-            state=BootState(1f,"Tudo pronto")
-            onReady()
-            ArtworkOfflineSync.launch(context)
-            StartupPreloader.launchWarmInBackground(context)
-        }else{
-            bootstrapError=result.error ?: "Não foi possível preparar a biblioteca."
-            state=BootState(state.progress,"Download interrompido")
-        }
+    LaunchedEffect(Unit) {
+        // Remote/offline content is optional at boot. Never hold the user on
+        // the splash screen while a large package is downloaded or repaired.
+        state=BootState(1f,"Abrindo sua Pokédex")
+        onReady()
+
+        // Content preparation continues safely after Home is released.
+        // A failure here must not make the application unusable.
+        ContentBootstrapManager.ensureReady(context){ _ -> }
+        ArtworkOfflineSync.launch(context)
+        StartupPreloader.launchWarmInBackground(context)
     }
 
     val scheme = MaterialTheme.colorScheme
