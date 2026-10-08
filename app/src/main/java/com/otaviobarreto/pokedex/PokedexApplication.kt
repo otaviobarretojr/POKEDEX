@@ -13,7 +13,6 @@ import com.otaviobarreto.pokedex.data.OfflineGamePackManager
 import com.otaviobarreto.pokedex.data.PersistentApiCache
 import com.otaviobarreto.pokedex.data.RecentActivityStore
 import com.otaviobarreto.pokedex.data.VariantCollectionStore
-import com.otaviobarreto.pokedex.audio.HomeAudioManager
 import java.io.File
 
 class PokedexApplication : Application(), ImageLoaderFactory {
@@ -33,7 +32,6 @@ class PokedexApplication : Application(), ImageLoaderFactory {
                 CollectionStore.capturedIds.size,
                 AppGameCatalog.adventureGames.sumOf { JourneyProgressStore.completed(it.label).size }
             )
-            HomeAudioManager.initialize(this)
         }
         AppPerformanceTrace.section("pokedex.app.integrity") {
             val legacySource = AppStatePreferences.activeRegionSource
