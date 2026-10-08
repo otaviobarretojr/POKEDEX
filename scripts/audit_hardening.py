@@ -19,17 +19,13 @@ app = read("app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt")
 routes = read("app/src/main/java/com/otaviobarreto/pokedex/PokedexRoutes.kt")
 boxes = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Screen.kt")
 detail = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonDetailV2Screen.kt")
-journey = read("app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyScreen.kt")
 offline = read("app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt")
 cache = read("app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt")
 collection = read("app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt")
 variants = read("app/src/main/java/com/otaviobarreto/pokedex/data/VariantCollectionStore.kt")
 pokedex_ui = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexCatalogScreen.kt")
 collection_ui = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt")
-journey_hub = read("app/src/main/java/com/otaviobarreto/pokedex/ui/JourneyHubComponents.kt")
 form_detail = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonFormDetailScreen.kt")
-campaign_guide = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CampaignTeamGuideScreen.kt")
-trainer_home = read("app/src/main/java/com/otaviobarreto/pokedex/ui/TrainerHomeScreen.kt")
 artwork_sync = read("app/src/main/java/com/otaviobarreto/pokedex/data/ArtworkOfflineSync.kt")
 bootstrap = read("app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt")
 boot = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt")
@@ -127,7 +123,6 @@ if not supported_version:
     errors.append("supported version contract changed unexpectedly")
 
 for path, content in [
-    ("JourneyScreen.kt", journey),
     ("BoxesV2Screen.kt", boxes),
     ("PokemonDetailV2Screen.kt", detail),
 ]:
@@ -141,12 +136,8 @@ for name, source in [
     ("PokedexCatalogScreen.kt", pokedex_ui),
     ("CollectionScreen.kt", collection_ui),
     ("BoxesV2Screen.kt", boxes),
-    ("JourneyScreen.kt", journey),
-    ("JourneyHubComponents.kt", journey_hub),
     ("PokemonDetailV2Screen.kt", detail),
     ("PokemonFormDetailScreen.kt", form_detail),
-    ("CampaignTeamGuideScreen.kt", campaign_guide),
-    ("TrainerHomeScreen.kt", trainer_home),
 ]:
     if remote_async.search(source):
         errors.append(f"{name} contains raw remote AsyncImage outside offline artwork resolver")
@@ -183,7 +174,6 @@ if "syncMutex=Mutex()" not in artwork_sync:
 
 # Hardening budget: prevent the largest screens from growing further before extraction.
 budgets = {
-    "JourneyScreen.kt": (journey, 1250),
     "BoxesV2Screen.kt": (boxes, 820),
     "PokemonDetailV2Screen.kt": (detail, 660),
 }
