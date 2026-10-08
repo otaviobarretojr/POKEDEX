@@ -412,13 +412,15 @@ if "AppStatePreferences.activeGame=g" in team_guide_source:
 for required in ("PLANO DA JORNADA", "Automático", "Editar inicial"):
     if required not in team_guide_source:
         violations.append(f"Journey team guide context missing {required}")
-trainer_today_primary = (
+pokedex_first_primary = (
     'DexNavItem(PokedexRoutes.HOME,"Início"' in main and
-    'DexNavItem(PokedexRoutes.GAMES,"Jogos"' in main and
-    "TrainerHomeScreen" in main
+    'DexNavItem(PokedexRoutes.POKEDEX,"Pokédex"' in main and
+    "PokedexHomeScreen" in main and
+    "PokedexRoutes.GAMES" not in main and
+    "TrainerHomeScreen" not in main
 )
-if not trainer_today_primary or "JourneyProgressStore.initialize" not in application_source:
-    violations.append("Trainer Today / Jogos navigation contract is not wired")
+if not pokedex_first_primary:
+    violations.append("Pokedex-first navigation contract is not wired")
 
 if violations:
     print("Source verification failed:")
