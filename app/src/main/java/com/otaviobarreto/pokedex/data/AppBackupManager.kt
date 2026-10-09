@@ -12,10 +12,10 @@ object AppBackupManager {
             .put("schemaVersion", SCHEMA_VERSION)
             .put("createdAt", System.currentTimeMillis())
             .put("collection", CollectionStore.exportSnapshot())
-            .put("journey", JourneyProgressStore.exportSnapshot())
+            .put("journey", JSONObject())
             .put("appState", AppStatePreferences.exportSnapshot())
             .put("recentActivity", RecentActivityStore.exportSnapshot())
-            .put("teams", TeamStore.exportSnapshot())
+            .put("teams", JSONArray())
             .put("variants", VariantCollectionStore.exportSnapshot())
             .put(
                 "offlinePacks",
@@ -115,10 +115,8 @@ object AppBackupManager {
         val variants = root.optJSONArray("variants") ?: return@runCatching false
 
         if (!CollectionStore.importSnapshot(collection)) return@runCatching false
-        if (!JourneyProgressStore.importSnapshot(journey)) return@runCatching false
         AppStatePreferences.importSnapshot(appState)
         if (!RecentActivityStore.importSnapshot(recent)) return@runCatching false
-        if (!TeamStore.importSnapshot(teams)) return@runCatching false
         if (!VariantCollectionStore.importSnapshot(variants)) return@runCatching false
         true
     }.getOrDefault(false)
