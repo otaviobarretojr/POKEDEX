@@ -174,7 +174,7 @@ object OfflineGamePackManager {
         val regionUrls=game.regions.mapNotNull { region ->
             GameContext.fromSource(region.source)?.let(GameDexService::cacheUrl)
         }
-        return (regionUrls + JourneyReadinessAudit.referenceCatalogUrls()).toSet()
+        return regionUrls.toSet()
     }
 
     fun audit(gameLabel: String): PackAudit {
@@ -481,7 +481,6 @@ object OfflineGamePackManager {
         }
 
         listOf("move","ability","item").forEach{ReferenceCatalogService.load(it)}
-        PersistentApiCache.pinAll(JourneyReadinessAudit.referenceCatalogUrls())
 
         val sortedIds=ids.sorted()
         prefs().edit()
@@ -554,7 +553,7 @@ object OfflineGamePackManager {
 
         val generalResources=sortedIds.flatMapTo(linkedSetOf()){id->
             prefs().getStringSet(sharedKey(id,"resource_urls"), emptySet()).orEmpty()
-        } + JourneyReadinessAudit.referenceCatalogUrls()
+        }
 
         prefs().edit()
             .putBoolean("general_ready",true)
@@ -587,10 +586,6 @@ object OfflineGamePackManager {
                 .apply()
         }
 
-        val generalOnlyRefs=JourneyReadinessAudit.referenceCatalogUrls().filter{url->
-            AppGameCatalog.games.none{game->url in resourceUrls(game.label)}
-        }
-        PersistentApiCache.unpinAll(generalOnlyRefs,deleteFiles=true)
 
         prefs().edit()
             .remove("general_ready")
@@ -618,8 +613,6 @@ object OfflineGamePackManager {
                 .remove(sharedKey(id,"form_artwork_keys"))
                 .apply()
         }
-        val generalRefs=JourneyReadinessAudit.referenceCatalogUrls()
-        PersistentApiCache.unpinAll(generalRefs,deleteFiles=true)
         check(
             prefs().edit()
                 .remove("general_ready")
@@ -673,25 +666,7 @@ object OfflineGamePackManager {
             .apply()
 
         val ids = regionalDexes.flatten().map { it.nationalId }.distinct().sorted()
-        val visualUrls = JourneyReadinessAudit.journeyVisualUrls(game.label)
-        prefs().edit()
-            .putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet())
-            .putStringSet(key(game.label, "visual_urls"), visualUrls.toSet())
-            .apply()
-
-        onProgress(Progress(0, visualUrls.size.coerceAtLeast(1), "Salvando visuais da Jornada"))
-        visualUrls.forEachIndexed { index, url ->
-            val request = ImageRequest.Builder(appContext)
-                .data(url)
-                .diskCacheKey(journeyVisualKey(url))
-                .memoryCacheKey(journeyVisualKey(url))
-                .build()
-            check(appContext.imageLoader.execute(request) is SuccessResult) {
-                "Falha ao armazenar visual da Jornada"
-            }
-            onProgress(Progress(index + 1, visualUrls.size.coerceAtLeast(1), "Salvando visuais da Jornada"))
-        }
-        val total = ids.size.coerceAtLeast(1)
+        prefs().edit()\n            .putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet())\n            .remove(key(game.label, "visual_urls"))\n            .apply()\n\n        val total = ids.size.coerceAtLeast(1)
         val completedKey = key(game.label, "completed_ids")
         val storedCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
             .mapNotNull { it.toIntOrNull() }
