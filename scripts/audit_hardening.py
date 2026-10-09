@@ -140,7 +140,6 @@ for name, source in [
 
 for marker in [
     "addAll(officialArtworkUrls())",
-    "addAll(JourneyTypeIconCatalog.allUrls())",
     "addAll(generalManifestArtworkUrls(context))",
     "VariantCollectionStore.ownedVariants.mapTo(this){it.artworkUrl}",
     "GameCoverCatalog.coversFor(game.label)",
