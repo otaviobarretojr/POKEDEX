@@ -666,7 +666,12 @@ object OfflineGamePackManager {
             .apply()
 
         val ids = regionalDexes.flatten().map { it.nationalId }.distinct().sorted()
-        prefs().edit()\n            .putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet())\n            .remove(key(game.label, "visual_urls"))\n            .apply()\n\n        val total = ids.size.coerceAtLeast(1)
+        prefs().edit()
+            .putStringSet(key(game.label, "manifest_ids"), ids.map(Int::toString).toSet())
+            .remove(key(game.label, "visual_urls"))
+            .apply()
+
+        val total = ids.size.coerceAtLeast(1)
         val completedKey = key(game.label, "completed_ids")
         val storedCompleted = prefs().getStringSet(completedKey, emptySet()).orEmpty()
             .mapNotNull { it.toIntOrNull() }
