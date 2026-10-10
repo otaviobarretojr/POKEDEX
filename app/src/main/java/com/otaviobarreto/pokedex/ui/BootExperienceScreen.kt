@@ -50,13 +50,12 @@ fun BootExperienceScreen(onReady: () -> Unit) {
     val glow by infinite.animateFloat(.18f, .42f, infiniteRepeatable(tween(1900), RepeatMode.Reverse), label = "glow")
 
     LaunchedEffect(Unit) {
-        // Remote/offline content is optional at boot. Never hold the user on
-        // the splash screen while a large package is downloaded or repaired.
-        state=BootState(1f,"Abrindo sua Pokédex")
-        onReady()
-
+        // Start optional maintenance in application-owned background scopes,
+        // then release Home immediately. These calls do not await downloads.
         ArtworkOfflineSync.launch(context)
         StartupPreloader.launchWarmInBackground(context)
+        state=BootState(1f,"Abrindo sua Pokédex")
+        onReady()
     }
 
     val scheme = MaterialTheme.colorScheme
