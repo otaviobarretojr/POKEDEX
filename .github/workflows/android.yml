@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: android-build-${{ github.ref }}
@@ -92,10 +93,16 @@ jobs:
         run: gradle lintRelease
       - name: Compile Macrobenchmark / Baseline Profile module
         run: gradle :baselineprofile:assemble
-      - name: Download v21.0.0 upgrade baseline
-        run: |
-          mkdir -p upgrade-apks
-          curl -fL --retry 4 --retry-delay 3             "https://github.com/otaviobarretojr/POKEDEX/releases/download/pokedex-v21.0.0/pokedex.apk"             -o upgrade-apks/baseline.apk
+      - name: Download v21.0.0 debuggable upgrade baseline
+        uses: actions/download-artifact@v7
+        with:
+          name: POKEDEX-v21.0.0-Pokedex-Only
+          path: upgrade-apks
+          repository: otaviobarretojr/POKEDEX
+          run-id: 38056465174
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Stage v21.0.0 baseline
+        run: mv upgrade-apks/app-debug.apk upgrade-apks/baseline.apk
       - name: Compile production, debug and instrumentation APKs
         run: gradle assembleRelease assembleDebug assembleDebugAndroidTest
       - name: Verify production update package and signature
@@ -161,7 +168,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [26, 35, 37]
+        include:
+          - api: 26
+            system_api: 26
+            target: default
+            channel: stable
+          - api: 35
+            system_api: 35
+            target: default
+            channel: stable
+          - api: 37
+            system_api: "37.0"
+            target: google_apis
+            channel: canary
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -173,7 +192,10 @@ jobs:
       - name: Launch smoke
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ matrix.api }}
+          api-level: ${{ matrix.system_api }}
+          system-image-api-level: ${{ matrix.system_api }}
+          target: ${{ matrix.target }}
+          channel: ${{ matrix.channel }}
           arch: x86_64
           profile: pixel_2
           cores: 2
