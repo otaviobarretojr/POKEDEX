@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private enum class CollectionArea { HOME, LIVING, SHINY, FORMS }
+private enum class CollectionOwnershipFilter(val label:String){ ALL("Todos"), OWNED("Capturados"), MISSING("Faltando") }
 
 @Composable
 fun CollectionScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String?)->Unit,onOpenFormDetail:(Int,String,Boolean)->Unit){
@@ -262,6 +263,18 @@ private fun PokemonAlbumGrid(
     val ids=remember(generation){NationalDexCatalog.all.filter{it.generation==generation}}
     val shinyIds=remember(variants){variants.asSequence().filter{it.shiny}.map{it.speciesId}.toSet()}
     val ownedCount=remember(ids,shiny,shinyIds,captured){ids.count{if(shiny)it.id in shinyIds else it.id in captured}}
+    var ownershipName by rememberSaveable(generation,shiny){mutableStateOf(CollectionOwnershipFilter.ALL.name)}
+    val ownership=CollectionOwnershipFilter.valueOf(ownershipName)
+    val visibleIds=remember(ids,ownership,shiny,shinyIds,captured){
+        ids.filter{species->
+            val owned=if(shiny)species.id in shinyIds else species.id in captured
+            when(ownership){
+                CollectionOwnershipFilter.ALL->true
+                CollectionOwnershipFilter.OWNED->owned
+                CollectionOwnershipFilter.MISSING->!owned
+            }
+        }
+    }
     Column(Modifier.fillMaxSize()){
         CollectionPageHeader(
             if(shiny)"${generationRegion(generation)} Shiny" else generationRegion(generation),
@@ -269,6 +282,19 @@ private fun PokemonAlbumGrid(
             onBack,
             Modifier.padding(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=PokedexDesignTokens.Spacing.Md)
         )
+        LazyRow(
+            modifier=Modifier.fillMaxWidth(),
+            contentPadding=PaddingValues(horizontal=PokedexDesignTokens.Spacing.Lg,vertical=4.dp),
+            horizontalArrangement=Arrangement.spacedBy(8.dp)
+        ){
+            items(CollectionOwnershipFilter.entries,key={it.name}){filter->
+                FilterChip(
+                    selected=ownership==filter,
+                    onClick={ownershipName=filter.name},
+                    label={Text(filter.label)}
+                )
+            }
+        }
         LazyVerticalGrid(
             columns=GridCells.Fixed(4),
             modifier=Modifier.fillMaxSize().padding(horizontal=PokedexDesignTokens.Spacing.Md),
@@ -276,7 +302,7 @@ private fun PokemonAlbumGrid(
             verticalArrangement=Arrangement.spacedBy(8.dp),
             horizontalArrangement=Arrangement.spacedBy(8.dp)
         ){
-            gridItems(ids,key={it.id}){species->
+            gridItems(visibleIds,key={it.id}){species->
                 val owned=if(shiny)species.id in shinyIds else species.id in captured
                 PokemonAlbumTile(species.id,species.displayName,owned,shiny){if(shiny)onOpenFormDetail(species.id,species.displayName+" · Shiny",true) else onPokemonClick(species.id)}
             }
