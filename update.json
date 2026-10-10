@@ -1,7 +1,7 @@
 {
-  "versionCode": 21400,
-  "versionName": "20.14.0",
+  "versionCode": 22000,
+  "versionName": "21.0.0",
   "apkUrl": "https://github.com/otaviobarretojr/POKEDEX/releases/latest/download/pokedex.apk",
-  "changelog": "Versão atual da POKÉDEX.",
+  "changelog": "POKEDEX v21.0.0 — reestruturação Pokédex-only, mantendo coleção, Boxes, formas e preferências na atualização.",
   "mandatory": false
 }
