@@ -86,7 +86,7 @@ cat > "$OUT_DIR/upgrade-pokedex_collection.xml" <<'EOF'
 EOF
 cat "$OUT_DIR/upgrade-pokedex_collection.xml" | adb shell run-as "$PACKAGE" tee "$APP_DATA_DIR/shared_prefs/pokedex_collection.xml" >/dev/null
 
-install_apk_with_retry "$APP_APK" "UPGRADE"
+install_apk_with_retry "$RELEASE_APK" "UPGRADE"
 if ! adb shell run-as "$PACKAGE" cat "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" | grep -q "preserve-me"; then
   echo "Upgrade-in-place did not preserve private app data." >&2
   exit 1
