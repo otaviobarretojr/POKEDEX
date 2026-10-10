@@ -43,14 +43,39 @@ fun AutomaticUpdatePrompt(content: @Composable () -> Unit) {
 
 @Composable
 fun ManualUpdateButton(onStatus:(String)->Unit){
+    val context=LocalContext.current
     val scope=rememberCoroutineScope()
-    var checking by remember{mutableStateOf(false)}
-    TextButton(enabled=!checking,onClick={
-        checking=true;onStatus("Verificando atualização…")
+    var working by remember{mutableStateOf(false)}
+    var downloadedApk by remember{mutableStateOf<File?>(null)}
+    val permissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){
+        downloadedApk?.let{apk->
+            if(AppUpdateManager.canInstallPackages(context)) AppUpdateManager.install(context,apk)
+            else onStatus("Autorize a instalação de apps desta fonte para concluir a atualização.")
+        }
+    }
+    TextButton(enabled=!working,onClick={
+        working=true
+        onStatus("Verificando atualização…")
         scope.launch{
             val available=AppUpdateManager.check()
-            checking=false
-            onStatus(if(available==null)"Você já está na versão mais recente." else "Nova versão disponível: v"+available.versionName+". Reabra o app para atualizar.")
+            if(available==null){
+                working=false
+                onStatus("Você já está na versão mais recente.")
+                return@launch
+            }
+            onStatus("Baixando POKEDEX v"+available.versionName+"…")
+            runCatching{AppUpdateManager.download(context,available)}
+                .onSuccess{apk->
+                    downloadedApk=apk
+                    working=false
+                    onStatus("Atualização pronta para instalar.")
+                    if(AppUpdateManager.canInstallPackages(context)) AppUpdateManager.install(context,apk)
+                    else permissionLauncher.launch(AppUpdateManager.unknownSourcesIntent(context))
+                }
+                .onFailure{error->
+                    working=false
+                    onStatus("Falha na atualização: "+(error.message?:"tente novamente."))
+                }
         }
-    }){Text(if(checking)"Verificando…" else "Verificar atualização")}
+    }){Text(if(working)"Atualizando…" else "Verificar atualização")}
 }
