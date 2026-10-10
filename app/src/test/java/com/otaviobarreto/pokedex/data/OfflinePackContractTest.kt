@@ -35,8 +35,8 @@ class OfflinePackContractTest {
             expectedResources=2,
             cachedImages=10,
             expectedImages=10,
-            cachedJourneyVisuals=1,
-            expectedJourneyVisuals=1,
+            cachedVisuals=1,
+            expectedVisuals=1,
             cachedFormArtworks=1,
             expectedFormArtworks=1
         )
