@@ -43,14 +43,14 @@ class PokedexApplication : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .memoryCache {
             MemoryCache.Builder(this)
-                .maxSizePercent(0.30)
+                .maxSizePercent(0.20)
                 .strongReferencesEnabled(true)
                 .build()
         }
         .diskCache {
             DiskCache.Builder()
                 .directory(File(filesDir, "pokemon-images-offline"))
-                .maxSizeBytes(1536L * 1024L * 1024L)
+                .maxSizeBytes(512L * 1024L * 1024L)
                 .build()
         }
         .respectCacheHeaders(false)
