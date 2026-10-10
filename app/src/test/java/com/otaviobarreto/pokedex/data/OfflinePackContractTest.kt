@@ -42,14 +42,14 @@ class OfflinePackContractTest {
         )
         assertTrue(audit.summary.contains("1 Pokémon"))
     }
-    @Test fun everyGameDeclaresRegionalAndReferenceBaseResources() {
+    @Test fun everyGameDeclaresRegionalDexBaseResources() {
         AppGameCatalog.adventureGames.forEach { game ->
             val urls = OfflineGamePackManager.requiredBaseResourceUrls(game)
             val expectedRegionUrls = game.regions.mapNotNull { region ->
                 GameContext.fromSource(region.source)?.let(GameDexService::cacheUrl)
             }.toSet()
             assertTrue(game.label, urls.containsAll(expectedRegionUrls))
-            assertTrue(game.label, urls.containsAll(JourneyReadinessAudit.referenceCatalogUrls()))
+            assertEquals(game.label, expectedRegionUrls, urls)
         }
     }
 
