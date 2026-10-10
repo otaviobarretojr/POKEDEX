@@ -40,7 +40,14 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Install Android 17 preview SDK
         run: |
-          sdkmanager --channel=3 "platforms;android-37" "build-tools;37.0.0"
+          android sdk list --all --all-versions --canary "platforms/android-37*" | tee /tmp/android17-platforms.txt
+          android sdk list --all --all-versions --canary "build-tools/37*" | tee /tmp/android17-build-tools.txt
+          PLATFORM_PACKAGE="$(grep -Eo 'platforms/android-37(\\.[0-9]+)?' /tmp/android17-platforms.txt | head -1)"
+          BUILD_TOOLS_PACKAGE="$(grep -Eo 'build-tools/37\\.[0-9]+\\.[0-9]+' /tmp/android17-build-tools.txt | head -1)"
+          test -n "$PLATFORM_PACKAGE"
+          test -n "$BUILD_TOOLS_PACKAGE"
+          echo "Installing $PLATFORM_PACKAGE and $BUILD_TOOLS_PACKAGE"
+          android sdk install --canary "$PLATFORM_PACKAGE" "$BUILD_TOOLS_PACKAGE"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
