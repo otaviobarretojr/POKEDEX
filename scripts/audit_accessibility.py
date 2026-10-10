@@ -13,7 +13,8 @@ def read(path):
     return p.read_text(encoding="utf-8")
 
 chrome=read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt")
-boxes=read("app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Screen.kt")
+boxes=read("app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Screen.kt") + "\n" + read("app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Components.kt")
+instrumented=read("app/src/androidTest/java/com/otaviobarreto/pokedex/ui/PokedexAccessibilityInstrumentedTest.kt")
 manifest=read("app/src/main/AndroidManifest.xml")
 
 checks=[
@@ -21,6 +22,7 @@ checks=[
     ("Box slot TalkBack semantics", '.semantics {' in boxes and 'contentDescription = buildString' in boxes),
     ("RTL support", 'android:supportsRtl="true"' in manifest),
     ("system navigation inset", 'navigationBarsPadding()' in chrome),
+    ("real accessibility instrumentation", 'largeFont_keepsPrimaryLabelsDiscoverable' in instrumented and 'assertHeightIsAtLeast(48.dp)' in instrumented),
 ]
 for label, ok in checks:
     if not ok:
