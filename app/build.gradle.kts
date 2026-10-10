@@ -6,15 +6,15 @@ plugins {
 
 android {
     namespace = "com.otaviobarreto.pokedex"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.otaviobarreto.pokedex"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 22000
-        versionName = "21.0.0"
+        versionCode = 22100
+        versionName = "21.1.0"
     }
 
     signingConfigs {
@@ -29,6 +29,16 @@ android {
     buildTypes {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("stableDebug")
+        }
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("stableDebug")
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -51,6 +61,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
     androidTestImplementation("androidx.test:runner:1.6.2")
