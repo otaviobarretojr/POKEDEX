@@ -196,6 +196,11 @@ run_instrumentation_group   "persistence"   "com.otaviobarreto.pokedex.data.Coll
 
 run_instrumentation_group   "chrome"   "com.otaviobarreto.pokedex.ui.PokedexChromeInstrumentedTest"   180
 
+run_instrumentation_group \
+  "accessibility" \
+  "com.otaviobarreto.pokedex.ui.PokedexAccessibilityInstrumentedTest" \
+  180
+
 adb logcat -d -v threadtime > "$TEST_LOG" || true
 
 echo "STABLE_DEVICE_SMOKE=OK"
