@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 import shutil
 import zipfile
 from pathlib import Path
@@ -83,7 +82,6 @@ COVERS = {
 }
 
 ART = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"
-DLC_OFFICIAL = "https://www.pokemon.co.jp/ex/sv_dlc/assets/img/character/"
 TYPE_BASE = "https://pokesprite.tootaio.com/sprites/types/generation-ix/scarlet-violet/"
 
 session = requests.Session()
@@ -124,49 +122,7 @@ def ext_from_response(url: str, response: requests.Response) -> str:
     return ".png"
 
 
-def parse_visual_catalog() -> dict[str, list[str]]:
-    path = ROOT / "app/src/main/java/com/otaviobarreto/pokedex/data/JourneyVisualAssetCatalog.kt"
-    text = path.read_text(encoding="utf-8")
-    result = {k: [] for k in GAMES}
-
-    prefix_map = {
-        "za-": "legends-za",
-        "sv-": "scarlet-violet",
-        "swsh-": "sword-shield",
-        "lgpe-": "lets-go",
-        "la-": "legends-arceus",
-        "bdsp-": "bdsp",
-        "frlg-": "firered-leafgreen",
-    }
-
-    for line in text.splitlines():
-        m = re.search(r'"([^"]+)"\s+to\s+JourneyVisualAsset\(', line)
-        if not m:
-            continue
-        step_id = m.group(1)
-        key = next((game for prefix, game in prefix_map.items() if step_id.startswith(prefix)), None)
-        if not key:
-            continue
-
-        literal_urls = re.findall(r'"(https://[^"]+)"', line)
-        if literal_urls:
-            result[key].append(literal_urls[0])
-            continue
-
-        art = re.search(r'ART\+"([^"]+)"', line)
-        if art:
-            result[key].append(ART + art.group(1))
-            continue
-
-        dlc = re.search(r'DLC_OFFICIAL\+"([^"]+)"', line)
-        if dlc:
-            result[key].append(DLC_OFFICIAL + dlc.group(1))
-            continue
-
-    return result
-
-
-def build_game(package_key: str, cfg: dict[str, Any], catalog_visuals: dict[str, list[str]]) -> dict[str, Any]:
+def build_game(package_key: str, cfg: dict[str, Any]) -> dict[str, Any]:
     root = BUILD_ROOT / package_key
     if root.exists():
         shutil.rmtree(root)
@@ -195,7 +151,6 @@ def build_game(package_key: str, cfg: dict[str, Any], catalog_visuals: dict[str,
     visual_urls = []
     visual_urls.extend(COVERS.get(package_key, []))
     visual_urls.extend(ART + f"{pid}.png" for pid in cfg.get("hero_ids", []))
-    visual_urls.extend(catalog_visuals.get(package_key, []))
     if package_key == "scarlet-violet":
         visual_urls.extend(TYPE_BASE + f"{i}.png" for i in range(1, 19))
 
@@ -262,14 +217,13 @@ def main() -> None:
     BUILD_ROOT.mkdir(parents=True, exist_ok=True)
     DIST.mkdir(parents=True, exist_ok=True)
 
-    catalog_visuals = parse_visual_catalog()
     metadata = []
     failures = []
 
     for package_key, cfg in GAMES.items():
         print(f"Construindo {package_key}...", flush=True)
         try:
-            meta = build_game(package_key, cfg, catalog_visuals)
+            meta = build_game(package_key, cfg)
             metadata.append(meta)
             print(json.dumps(meta, ensure_ascii=False), flush=True)
         except Exception as exc:
