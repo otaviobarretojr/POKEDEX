@@ -296,12 +296,34 @@ object CollectionStore {
         }
     }
     private fun sanitizeBoxName(name: String) = name.trim().replace(Regex("\\s+"), " ").take(48)
-    private fun persistCaptured() { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putStringSet(KEY_CAPTURED, capturedIds.map(Int::toString).toSet())?.apply() }
-    private fun persistContextualCaptured() {
-        val root = JSONObject()
-        contextualCapturedIds.toSortedMap().forEach { (source, ids) -> root.put(source, JSONArray(ids.sorted())) }
-        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putString(KEY_CONTEXTUAL_CAPTURED, root.toString())?.apply()
+    /**
+     * Persists the complete collection state in one SharedPreferences transaction.
+     * This keeps captured IDs, contextual registrations, Box order and Box contents
+     * mutually consistent even if the process is interrupted between user actions.
+     */
+    private fun persistAllState() {
+        val prefs=context?.getSharedPreferences(PREFS,Context.MODE_PRIVATE) ?: return
+        val contextual=JSONObject().also{root->
+            contextualCapturedIds.toSortedMap().forEach{(source,ids)->
+                root.put(source,JSONArray(ids.sorted()))
+            }
+        }
+        prefs.edit().apply{
+            putStringSet(KEY_CAPTURED,capturedIds.map(Int::toString).toSet())
+            putString(KEY_CONTEXTUAL_CAPTURED,contextual.toString())
+            putString(KEY_BOX_ORDER,JSONArray(boxNames).toString())
+            prefs.all.keys
+                .filter{it.startsWith(KEY_BOX_PREFIX) && it!=KEY_BOX_ORDER}
+                .filterNot{key->boxNames.any{name->key==KEY_BOX_PREFIX+name}}
+                .forEach(::remove)
+            boxNames.forEach{name->
+                putStringSet(KEY_BOX_PREFIX+name,boxes[name].orEmpty().map(Int::toString).toSet())
+            }
+            apply()
+        }
     }
+    private fun persistCaptured() = persistAllState()
+    private fun persistContextualCaptured() = persistAllState()
     private fun decodeContextualCaptured(raw: String?): Map<String, Set<Int>> = runCatching {
         if (raw.isNullOrBlank()) return@runCatching emptyMap()
         val root = JSONObject(raw)
@@ -319,7 +341,7 @@ object CollectionStore {
             }
         }
     }.getOrDefault(emptyMap())
-    private fun persistBox(box: String) { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putStringSet(KEY_BOX_PREFIX + box, boxes[box].orEmpty().map(Int::toString).toSet())?.apply() }
-    private fun persistBoxOrder() { context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.putString(KEY_BOX_ORDER, JSONArray(boxNames).toString())?.apply() }
+    private fun persistBox(box: String) = persistAllState()
+    private fun persistBoxOrder() = persistAllState()
     private fun decodeBoxOrder(raw: String): List<String> = runCatching { val a = JSONArray(raw); buildList { for (i in 0 until a.length()) a.optString(i).takeIf { it.isNotBlank() }?.let(::add) } }.getOrDefault(emptyList())
 }
