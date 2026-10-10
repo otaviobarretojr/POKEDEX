@@ -4,7 +4,7 @@ package com.otaviobarreto.pokedex.data
  * Curated official artwork for the game-first navigation.
  *
  * HERO is intentionally independent from COVER:
- * - heroArtwork: wide/key art used by the active Journey home.
+ * - heroArtwork: wide/key art used by game-aware Pokédex surfaces.
  * - libraryCover: portrait/packshot used by the Games library.
  *
  * Keeping both roles separate prevents a portrait box from being shrunk into
