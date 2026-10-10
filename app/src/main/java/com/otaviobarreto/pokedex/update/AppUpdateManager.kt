@@ -41,14 +41,18 @@ object AppUpdateManager {
             }
             val json=JSONObject(body)
             val apkUrl=json.getString("apkUrl")
-            check(Uri.parse(apkUrl).scheme.equals("https",true)){"URL de atualização insegura"}
+            val parsedApkUrl=Uri.parse(apkUrl)
+            check(parsedApkUrl.scheme.equals("https",true)){"URL de atualização insegura"}
+            check(parsedApkUrl.host.equals("github.com",true)){"Host de atualização não autorizado"}
             AppUpdate(
                 versionCode=json.getInt("versionCode"),
                 versionName=json.getString("versionName"),
                 apkUrl=apkUrl,
                 changelog=json.optString("changelog","Melhorias e correções."),
                 mandatory=json.optBoolean("mandatory",false),
-                sha256=json.optString("sha256").trim().takeIf{it.isNotBlank()}
+                sha256=json.getString("sha256").trim().lowercase().also { digest ->
+                    check(digest.matches(Regex("^[0-9a-f]{64}$"))) { "SHA-256 de atualização inválido" }
+                }
             ).takeIf{it.versionCode>installedVersionCode()}
         }.getOrNull()
     }
