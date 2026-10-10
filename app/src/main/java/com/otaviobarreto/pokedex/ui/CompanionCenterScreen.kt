@@ -36,7 +36,7 @@ fun CompanionCenterScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String
     val scope=rememberCoroutineScope()
 
     LaunchedEffect(Unit){
-        performanceSnapshot=withContext(Dispatchers.IO){loadSettingsPerformanceSnapshot()}
+        performanceSnapshot=withContext(Dispatchers.IO){loadSettingsPerformanceSnapshot(context)}
         withContext(Dispatchers.IO){runCatching{RemoteOfflinePackageCatalog.refresh()}}
         remoteManifestRevision++
         val remote=RemoteOfflinePackageCatalog.general()
@@ -69,9 +69,20 @@ fun CompanionCenterScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String
             }
         }
         item{
-            CompanionSectionHeader(title="Armazenamento");LaunchedEffect(storageRevision){performanceSnapshot=withContext(Dispatchers.IO){loadSettingsPerformanceSnapshot()}};val snapshot=performanceSnapshot;val cache=snapshot?.cache?:PokedexDataStore.cacheStats();val apiCacheMb=(snapshot?.apiCacheBytes?:0L)/1024f/1024f;val downloadedPacks=snapshot?.downloadedPacks?:0;val startupMs=snapshot?.startupMs?:StartupPreloader.lastWarmDurationMs
+            CompanionSectionHeader(title="Armazenamento")
+            LaunchedEffect(storageRevision){performanceSnapshot=withContext(Dispatchers.IO){loadSettingsPerformanceSnapshot(context)}}
+            val snapshot=performanceSnapshot
+            val cache=snapshot?.cache?:PokedexDataStore.cacheStats()
+            val downloadedPacks=snapshot?.downloadedPacks?:0
+            val apiMb=(snapshot?.apiCacheBytes?:0L)/1024f/1024f
+            val offlineMb=(snapshot?.offlineBytes?:0L)/1024f/1024f
+            val imageMb=(snapshot?.imageCacheBytes?:0L)/1024f/1024f
+            val totalMb=apiMb+offlineMb+imageMb
             CompanionSettingsGroup{
-                CompanionSettingsRow("Uso local",downloadedPacks.toString()+" pacotes offline · cache "+String.format("%.1f MB",apiCacheMb),Icons.Default.Storage);CompanionSettingsDivider()
+                CompanionSettingsRow("Uso local",String.format("%.1f MB no total · %d pacote(s)",totalMb,downloadedPacks),Icons.Default.Storage);CompanionSettingsDivider()
+                CompanionSettingsRow("Biblioteca offline",String.format("%.1f MB · conteúdo permanente",offlineMb),Icons.Default.CloudDone);CompanionSettingsDivider()
+                CompanionSettingsRow("Imagens em cache",String.format("%.1f MB · limite 512 MB",imageMb),Icons.Default.Image);CompanionSettingsDivider()
+                CompanionSettingsRow("Cache da API",String.format("%.1f MB · %d entradas na sessão",apiMb,cache.total),Icons.Default.DataObject);CompanionSettingsDivider()
                 CompanionSettingsRow("Limpar cache da sessão","Preserva seus pacotes offline e dados da coleção.",Icons.Default.CleaningServices,trailing={TextButton(onClick={PokedexDataStore.clearSessionCache();PersistentApiCache.pruneUnpinned();storageRevision++;statusText="Cache da sessão limpo. Pacotes offline foram preservados."}){Text("Limpar")}});CompanionSettingsDivider()
                 CompanionSettingsRow("Verificar integridade","Confere coleção e pacotes instalados.",Icons.Default.VerifiedUser,trailing={TextButton(onClick={scope.launch{statusText="Verificando integridade…";val result=withContext(Dispatchers.IO){val downloaded=AppGameCatalog.adventureGames.filter{OfflineGamePackManager.status(it.label).downloaded};val invalid=downloaded.filterNot{OfflineGamePackManager.audit(it.label).valid};val collection=CollectionIntegrityService.repair();invalid to collection};val (invalid,collection)=result;storageRevision++;statusText=when{invalid.isNotEmpty()->"Integridade: "+invalid.size+" pacote(s) precisam de reparo.";!collection.clean->"Coleção reparada; verifique novamente.";else->"Integridade verificada: coleção e pacotes offline estão consistentes."}}}){Text("Verificar")}})
             }
@@ -84,5 +95,22 @@ fun CompanionCenterScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String
 }
 
 @Composable private fun SettingsSectionTitle(text:String)=CompanionSectionHeader(title=text)
-private data class SettingsPerformanceSnapshot(val cache:PokedexDataStore.CacheStats,val apiCacheBytes:Long,val downloadedPacks:Int,val startupMs:Long)
-private fun loadSettingsPerformanceSnapshot()=SettingsPerformanceSnapshot(cache=PokedexDataStore.cacheStats(),apiCacheBytes=PersistentApiCache.sizeBytes(),downloadedPacks=AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded},startupMs=StartupPreloader.lastWarmDurationMs)
+private data class SettingsPerformanceSnapshot(
+    val cache:PokedexDataStore.CacheStats,
+    val apiCacheBytes:Long,
+    val offlineBytes:Long,
+    val imageCacheBytes:Long,
+    val downloadedPacks:Int,
+    val startupMs:Long
+)
+private fun loadSettingsPerformanceSnapshot(context:android.content.Context):SettingsPerformanceSnapshot{
+    fun sizeOf(dir:java.io.File):Long=if(!dir.exists())0L else dir.walkTopDown().filter{it.isFile}.sumOf{it.length()}
+    return SettingsPerformanceSnapshot(
+        cache=PokedexDataStore.cacheStats(),
+        apiCacheBytes=PersistentApiCache.sizeBytes(),
+        offlineBytes=sizeOf(OfflineLibraryManager.root(context)),
+        imageCacheBytes=sizeOf(java.io.File(context.filesDir,"pokemon-images-offline")),
+        downloadedPacks=AppGameCatalog.adventureGames.count{OfflineGamePackManager.status(it.label).downloaded},
+        startupMs=StartupPreloader.lastWarmDurationMs
+    )
+}

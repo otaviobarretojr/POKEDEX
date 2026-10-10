@@ -65,10 +65,33 @@ install_apk_with_retry() {
 
 wait_for_android_ready
 
-# Upgrade-in-place gate: install a same-signature baseline, seed private app state,
-# then replace it with the candidate APK without uninstalling or clearing data.
+wait_for_debuggable_package() {
+  local package="$1"
+  local attempt
+  for attempt in $(seq 1 30); do
+    if adb shell pm path "$package" 2>/dev/null | grep -q '^package:'; then
+      local data_dir
+      data_dir="$(adb shell run-as "$package" pwd 2>/dev/null | tr -d '\r' || true)"
+      if [ -n "$data_dir" ]; then
+        echo "DEBUGGABLE_PACKAGE_READY_AFTER_ATTEMPT=$attempt"
+        printf '%s' "$data_dir"
+        return 0
+      fi
+    fi
+    sleep 2
+  done
+
+  echo "Baseline package did not become visible/debuggable: $package" >&2
+  adb shell pm path "$package" || true
+  adb shell dumpsys package "$package" | grep -E 'codePath=|dataDir=|DEBUGGABLE|versionCode=' || true
+  return 1
+}
+
+# Upgrade-in-place gate: install a same-signature debuggable v21.0 baseline,
+# wait until PackageManager/run-as can see it, seed private app state, then
+# replace it with the production Release APK without uninstalling or clearing data.
 install_apk_with_retry "$BASELINE_APK" "BASELINE"
-APP_DATA_DIR="$(adb shell run-as "$PACKAGE" pwd | tr -d '\r')"
+APP_DATA_DIR="$(wait_for_debuggable_package "$PACKAGE")"
 adb shell run-as "$PACKAGE" mkdir -p "$APP_DATA_DIR/shared_prefs"
 printf '%s\n' 'preserve-me' | adb shell run-as "$PACKAGE" tee "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" >/dev/null
 
@@ -86,7 +109,7 @@ cat > "$OUT_DIR/upgrade-pokedex_collection.xml" <<'EOF'
 EOF
 cat "$OUT_DIR/upgrade-pokedex_collection.xml" | adb shell run-as "$PACKAGE" tee "$APP_DATA_DIR/shared_prefs/pokedex_collection.xml" >/dev/null
 
-install_apk_with_retry "$APP_APK" "UPGRADE"
+install_apk_with_retry "$RELEASE_APK" "UPGRADE"
 if ! adb shell run-as "$PACKAGE" cat "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" | grep -q "preserve-me"; then
   echo "Upgrade-in-place did not preserve private app data." >&2
   exit 1
@@ -195,6 +218,11 @@ run_instrumentation_group   "navigation"   "com.otaviobarreto.pokedex.PokedexNav
 run_instrumentation_group   "persistence"   "com.otaviobarreto.pokedex.data.CollectionPersistenceInstrumentedTest"   120
 
 run_instrumentation_group   "chrome"   "com.otaviobarreto.pokedex.ui.PokedexChromeInstrumentedTest"   180
+
+run_instrumentation_group \
+  "accessibility" \
+  "com.otaviobarreto.pokedex.ui.PokedexAccessibilityInstrumentedTest" \
+  180
 
 adb logcat -d -v threadtime > "$TEST_LOG" || true
 

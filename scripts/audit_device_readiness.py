@@ -26,9 +26,9 @@ workflow=read(".github/workflows/android.yml")
 
 checks={
     "stable package id": 'applicationId = "com.otaviobarreto.pokedex"' in gradle,
-    "update-safe version code": ('versionCode = 19200' in gradle) or ('versionCode = 20000' in gradle) or ('versionCode = 20300' in gradle) or ('versionCode = 20400' in gradle) or ('versionCode = 20500' in gradle) or ('versionCode = 20600' in gradle) or ('versionCode = 20700' in gradle) or ('versionCode = 20701' in gradle) or ('versionCode = 20800' in gradle) or ('versionCode = 20900' in gradle) or ('versionCode = 21000' in gradle) or ('versionCode = 21100' in gradle) or ('versionCode = 21200' in gradle) or ('versionCode = 21201' in gradle) or ('versionCode = 21300' in gradle) or ('versionCode = 21301' in gradle) or ('versionCode = 21302' in gradle) or ('versionCode = 21303' in gradle) or ('versionCode = 21304' in gradle) or ('versionCode = 21305' in gradle) or ('versionCode = 21306' in gradle) or ('versionCode = 21307' in gradle) or ('versionCode = 21400' in gradle) or ('versionCode = 21500' in gradle) or ('versionCode = 21501' in gradle) or ('versionCode = 22000' in gradle),
+    "update-safe version code": ('versionCode = 19200' in gradle) or ('versionCode = 20000' in gradle) or ('versionCode = 20300' in gradle) or ('versionCode = 20400' in gradle) or ('versionCode = 20500' in gradle) or ('versionCode = 20600' in gradle) or ('versionCode = 20700' in gradle) or ('versionCode = 20701' in gradle) or ('versionCode = 20800' in gradle) or ('versionCode = 20900' in gradle) or ('versionCode = 21000' in gradle) or ('versionCode = 21100' in gradle) or ('versionCode = 21200' in gradle) or ('versionCode = 21201' in gradle) or ('versionCode = 21300' in gradle) or ('versionCode = 21301' in gradle) or ('versionCode = 21302' in gradle) or ('versionCode = 21303' in gradle) or ('versionCode = 21304' in gradle) or ('versionCode = 21305' in gradle) or ('versionCode = 21306' in gradle) or ('versionCode = 21307' in gradle) or ('versionCode = 21400' in gradle) or ('versionCode = 21500' in gradle) or ('versionCode = 21501' in gradle) or ('versionCode = 22000' in gradle) or ('versionCode = 22100' in gradle),
     "minimum supported Android": 'minSdk = 26' in gradle,
-    "current target SDK": 'targetSdk = 35' in gradle,
+    "current target SDK": 'targetSdk = 37' in gradle and 'compileSdk = 37' in gradle,
     "stable signing config": 'stableDebug' in gradle and 'pokedex-release.jks' in gradle,
     "CI restores stable signing key": 'Restore stable signing key' in workflow,
     "CI uses current Node 24 actions": all(marker in workflow for marker in (
@@ -39,6 +39,8 @@ checks={
     )),
     "CI uses read-only repository permission": "contents: read" in workflow,
     "instrumentation tests compile in CI": 'assembleDebugAndroidTest' in workflow,
+    "production Release is built": 'assembleRelease' in workflow and 'app-release.apk' in workflow,
+    "Android compatibility matrix includes API 26/35/37": all(marker in workflow for marker in ('api: 26', 'api: 35', 'api: 37', 'system_api: "37.0"', 'channel: canary')),
     "Android backup enabled": 'android:allowBackup="true"' in manifest,
     "Android backup rules wired": 'android:fullBackupContent="@xml/backup_rules"' in manifest and 'android:dataExtractionRules="@xml/data_extraction_rules"' in manifest,
     "offline cache excluded from backup": 'offline_game_packs_v2.xml' in backup_rules and 'offline_game_packs_v2.xml' in data_rules,
@@ -51,6 +53,7 @@ checks={
     "background warmup owns extended phase": 'launchExtendedWarm(appContext)' in preloader,
     "background warmup isolated from UI scope": 'SupervisorJob() + Dispatchers.IO' in preloader,
     "backup integrity checksum": 'integritySha256' in backup and 'MessageDigest.getInstance("SHA-256")' in backup,
+    "Pokedex-only backup schema": 'SCHEMA_VERSION = 7' in backup and '"journey"' not in backup and '"teams"' not in backup,
     "offline resume manifest": 'completed_ids' in offline and 'pendingIds' in offline,
     "offline concurrency bounded": 'DOWNLOAD_CONCURRENCY = 10' in offline and 'FORM_DOWNLOAD_CONCURRENCY = 4' in offline,
 }

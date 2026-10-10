@@ -70,3 +70,22 @@ class NationalDexRegressionTest {
         }
     }
 }
+
+
+class CompletePokemonMetadataRegressionTest {
+    @org.junit.Test
+    fun localMetadataCoversEntireNationalDex() {
+        val all = PokemonRepository.all()
+        org.junit.Assert.assertEquals(1025, all.size)
+        org.junit.Assert.assertTrue(all.all { it.types.isNotEmpty() })
+        org.junit.Assert.assertTrue(all.all { it.hp > 0 && it.attack > 0 && it.defense > 0 })
+        org.junit.Assert.assertEquals(listOf("Electric"), PokemonRepository.byId(25)?.types)
+        org.junit.Assert.assertTrue(PokemonRepository.byId(1000)?.abilities?.isNotEmpty() == true)
+    }
+
+    @org.junit.Test
+    fun repositoryCanSearchAllSpeciesByTypeAndAbility() {
+        org.junit.Assert.assertTrue(PokemonRepository.search(PokemonFilter(query = "Dragon")).isNotEmpty())
+        org.junit.Assert.assertTrue(PokemonRepository.search(PokemonFilter(query = "Levitate")).isNotEmpty())
+    }
+}

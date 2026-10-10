@@ -7,22 +7,21 @@ data class PokemonFilter(
 )
 
 object PokemonRepository {
-    private val detailedById = PokemonCatalog.all.associateBy { it.id }
-
     private val nationalDex: List<PokemonSummary> by lazy {
         NationalDexCatalog.all.map { species ->
-            detailedById[species.id] ?: PokemonSummary(
+            val metadata = PokemonMetadataCatalog.byId(species.id)
+            PokemonSummary(
                 id = species.id,
                 name = species.displayName,
                 generation = species.generation,
-                types = emptyList(),
-                hp = 0,
-                attack = 0,
-                defense = 0,
-                specialAttack = 0,
-                specialDefense = 0,
-                speed = 0,
-                abilities = emptyList()
+                types = metadata?.types.orEmpty(),
+                hp = metadata?.hp ?: 0,
+                attack = metadata?.attack ?: 0,
+                defense = metadata?.defense ?: 0,
+                specialAttack = metadata?.specialAttack ?: 0,
+                specialDefense = metadata?.specialDefense ?: 0,
+                speed = metadata?.speed ?: 0,
+                abilities = metadata?.abilities.orEmpty()
             )
         }
     }
@@ -39,7 +38,8 @@ object PokemonRepository {
             val matchesQuery = normalizedQuery.isBlank() ||
                 pokemon.name.contains(normalizedQuery, ignoreCase = true) ||
                 pokemon.id.toString() == normalizedQuery ||
-                pokemon.types.any { it.contains(normalizedQuery, ignoreCase = true) }
+                pokemon.types.any { it.contains(normalizedQuery, ignoreCase = true) } ||
+                pokemon.abilities.any { it.contains(normalizedQuery, ignoreCase = true) }
 
             val matchesGeneration = filter.generation == null ||
                 pokemon.generation == filter.generation
@@ -55,5 +55,5 @@ object PokemonRepository {
         nationalDex.map { it.generation }.distinct().sorted()
 
     fun types(): List<String> =
-        PokemonCatalog.all.flatMap { it.types }.distinct().sorted()
+        nationalDex.flatMap { it.types }.distinct().sorted()
 }

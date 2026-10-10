@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "POKEDEX"
 include(":app")
+include(":baselineprofile")

@@ -1,8 +1,10 @@
 package com.otaviobarreto.pokedex.ui
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CatchingPokemon
-import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -16,19 +18,21 @@ class PokedexChromeInstrumentedTest {
     @get:Rule val composeRule=createComposeRule()
 
     @Test fun primaryNavigation_rendersAndDispatchesSelection(){
-        var selected="journey"
+        var selected="home"
         val items=listOf(
-            DexNavItem("journey","Jornada",Icons.Default.Explore),
-            DexNavItem("box","Box",Icons.Default.CatchingPokemon),
-            DexNavItem("settings","Configurações",Icons.Default.Settings)
+            DexNavItem("home","Início",Icons.Default.Home),
+            DexNavItem("pokedex","Pokédex",Icons.Default.MenuBook),
+            DexNavItem("collection","Coleção",Icons.Default.AutoAwesome),
+            DexNavItem("boxes","Box",Icons.Default.GridView),
+            DexNavItem("central","Config.",Icons.Default.Settings)
         )
         composeRule.setContent{
             PokedexTheme{DexBottomBar(items,selected){selected=it.route}}
         }
-        composeRule.onNodeWithText("Jornada").assertIsDisplayed()
+        composeRule.onNodeWithText("Início").assertIsDisplayed()
         composeRule.onNodeWithText("Box").assertIsDisplayed().performClick()
-        composeRule.runOnIdle{assertEquals("box",selected)}
-        composeRule.onNodeWithText("Configurações").assertIsDisplayed()
+        composeRule.runOnIdle{assertEquals("boxes",selected)}
+        composeRule.onNodeWithText("Config.").assertIsDisplayed()
     }
 
     @Test fun statusPane_exposesLoadingState(){
