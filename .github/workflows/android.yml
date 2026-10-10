@@ -85,7 +85,7 @@ jobs:
       - name: Compile app and instrumentation tests
         run: gradle assembleDebug assembleDebugAndroidTest
       - name: Verify update package and signature
-        run: bash scripts/verify_update_contract.sh app/build/outputs/apk/debug/app-debug.apk
+        run: bash scripts/verify_update_contract.sh app/build/outputs/apk/debug/app-debug.apk upgrade-apks/baseline.apk
       - name: Stage stable smoke APKs
         run: |
           mkdir -p stable-smoke-apks
