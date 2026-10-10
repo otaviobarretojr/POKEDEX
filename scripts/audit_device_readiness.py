@@ -40,7 +40,7 @@ checks={
     "CI uses read-only repository permission": "contents: read" in workflow,
     "instrumentation tests compile in CI": 'assembleDebugAndroidTest' in workflow,
     "production Release is built": 'assembleRelease' in workflow and 'app-release.apk' in workflow,
-    "Android compatibility matrix includes API 26/35/37": 'api: [26, 35, 37]' in workflow,
+    "Android compatibility matrix includes API 26/35/37": all(marker in workflow for marker in ('api: 26', 'api: 35', 'api: 37', 'system_api: "37.0"', 'channel: canary')),
     "Android backup enabled": 'android:allowBackup="true"' in manifest,
     "Android backup rules wired": 'android:fullBackupContent="@xml/backup_rules"' in manifest and 'android:dataExtractionRules="@xml/data_extraction_rules"' in manifest,
     "offline cache excluded from backup": 'offline_game_packs_v2.xml' in backup_rules and 'offline_game_packs_v2.xml' in data_rules,
