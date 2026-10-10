@@ -5,17 +5,15 @@ import org.json.JSONObject
 import java.security.MessageDigest
 
 object AppBackupManager {
-    private const val SCHEMA_VERSION = 6
+    private const val SCHEMA_VERSION = 7
 
     fun exportJson(): String {
         val payload = JSONObject()
             .put("schemaVersion", SCHEMA_VERSION)
             .put("createdAt", System.currentTimeMillis())
             .put("collection", CollectionStore.exportSnapshot())
-            .put("journey", JSONObject())
             .put("appState", AppStatePreferences.exportSnapshot())
             .put("recentActivity", RecentActivityStore.exportSnapshot())
-            .put("teams", JSONArray())
             .put("variants", VariantCollectionStore.exportSnapshot())
             .put(
                 "offlinePacks",
@@ -54,15 +52,15 @@ object AppBackupManager {
         val schema = root.optInt("schemaVersion", 0)
         if (schema !in 1..SCHEMA_VERSION) return null
         val collection = root.optJSONObject("collection") ?: return null
-        val journey = root.optJSONObject("journey") ?: return null
-        if (schema >= 3 && root.has("teams") && root.optJSONArray("teams") == null) return null
+
+        // Schemas 1-6 may contain retired journey/team fields. They are accepted
+        // for backwards compatibility but are intentionally not carried into v7.
         if (schema >= 4 && root.has("variants") && root.optJSONArray("variants") == null) return null
 
-        val normalized = JSONObject()
+        return JSONObject()
             .put("schemaVersion", SCHEMA_VERSION)
             .put("createdAt", root.optLong("createdAt", 0L))
             .put("collection", collection)
-            .put("journey", journey)
             .put("appState", root.optJSONObject("appState") ?: JSONObject())
             .put(
                 "recentActivity",
@@ -73,11 +71,8 @@ object AppBackupManager {
                     JSONObject().put("pokemon", JSONArray()).put("lastRoute", "pokedex")
                 }
             )
-            .put("teams", if (schema >= 3) root.optJSONArray("teams") ?: JSONArray() else JSONArray())
             .put("variants", if (schema >= 4) root.optJSONArray("variants") ?: JSONArray() else JSONArray())
             .put("offlinePacks", if (schema >= 6) root.optJSONArray("offlinePacks") ?: JSONArray() else JSONArray())
-
-        return normalized
     }
 
     internal fun integrityValid(root: JSONObject): Boolean {
@@ -108,10 +103,8 @@ object AppBackupManager {
 
     private fun applySnapshot(root: JSONObject): Boolean = runCatching {
         val collection = root.optJSONObject("collection") ?: return@runCatching false
-        val journey = root.optJSONObject("journey") ?: return@runCatching false
         val appState = root.optJSONObject("appState") ?: JSONObject()
         val recent = root.optJSONObject("recentActivity") ?: return@runCatching false
-        val teams = root.optJSONArray("teams") ?: return@runCatching false
         val variants = root.optJSONArray("variants") ?: return@runCatching false
 
         if (!CollectionStore.importSnapshot(collection)) return@runCatching false
