@@ -17,8 +17,12 @@ def read(path):
 main = read("app/src/main/java/com/otaviobarreto/pokedex/MainActivity.kt")
 app = read("app/src/main/java/com/otaviobarreto/pokedex/PokedexApplication.kt")
 routes = read("app/src/main/java/com/otaviobarreto/pokedex/PokedexRoutes.kt")
-boxes = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Screen.kt")
-detail = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonDetailV2Screen.kt")
+boxes_main = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Screen.kt")
+boxes_components = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BoxesV2Components.kt")
+boxes = boxes_main + "\n" + boxes_components
+detail_main = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonDetailV2Screen.kt")
+detail_components = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonDetailComponents.kt")
+detail = detail_main + "\n" + detail_components
 offline = read("app/src/main/java/com/otaviobarreto/pokedex/data/OfflineGamePackManager.kt")
 cache = read("app/src/main/java/com/otaviobarreto/pokedex/data/PersistentApiCache.kt")
 collection = read("app/src/main/java/com/otaviobarreto/pokedex/data/CollectionStore.kt")
@@ -162,8 +166,10 @@ if "syncMutex=Mutex()" not in artwork_sync:
 
 # Hardening budget: prevent the largest screens from growing further before extraction.
 budgets = {
-    "BoxesV2Screen.kt": (boxes, 820),
-    "PokemonDetailV2Screen.kt": (detail, 660),
+    "BoxesV2Screen.kt": (boxes_main, 380),
+    "BoxesV2Components.kt": (boxes_components, 560),
+    "PokemonDetailV2Screen.kt": (detail_main, 240),
+    "PokemonDetailComponents.kt": (detail_components, 520),
 }
 for name, (content, limit) in budgets.items():
     lines = len(content.splitlines())
