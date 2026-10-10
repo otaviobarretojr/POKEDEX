@@ -41,7 +41,7 @@ A v21.1.0 consolida o rework **Pokedex-only** e endurece a distribuição, compa
 - biblioteca offline separada do cache descartável;
 - preload assíncrono e não bloqueante;
 - prefetch limitado de detalhes e Boxes;
-- ProfileInstaller incluído e baseline profile do fluxo principal;
+- ProfileInstaller incluído, com gerador de Baseline Profile e Macrobenchmark configurados;
 - downloads concorrentes com limites definidos.
 
 ### Qualidade
