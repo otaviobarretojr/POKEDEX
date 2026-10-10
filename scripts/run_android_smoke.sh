@@ -84,7 +84,7 @@ cat > "$OUT_DIR/upgrade-pokedex_collection.xml" <<'EOF'
     </set>
 </map>
 EOF
-adb shell run-as "$PACKAGE" sh -c 'cat > shared_prefs/pokedex_collection.xml' < "$OUT_DIR/upgrade-pokedex_collection.xml"
+cat "$OUT_DIR/upgrade-pokedex_collection.xml" | adb shell run-as "$PACKAGE" tee "$APP_DATA_DIR/shared_prefs/pokedex_collection.xml" >/dev/null
 
 install_apk_with_retry "$APP_APK" "UPGRADE"
 if ! adb shell run-as "$PACKAGE" cat "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" | grep -q "preserve-me"; then
