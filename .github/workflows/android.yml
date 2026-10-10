@@ -16,6 +16,11 @@ concurrency:
   group: android-build-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  RELEASE_VERSION: "21.1.0"
+  RELEASE_CODE: "22100"
+  RELEASE_ARTIFACT: "POKEDEX-v21.1.0-Release"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,10 +32,14 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Set up Android 17 SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-37" "build-tools;36.0.0"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: '8.7'
+          gradle-version: '9.3.1'
       - name: Restore stable signing key
         run: |
           mkdir -p signing
@@ -41,13 +50,15 @@ jobs:
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
       - name: Apply release metadata
         run: python3 scripts/apply_release_version.py
-      - name: Validate v21 Pokedex-only release
+      - name: Validate v21.1 Pokedex-only release
         run: |
-          grep -q 'versionCode = 22000' app/build.gradle.kts
-          grep -q 'versionName = "21.0.0"' app/build.gradle.kts
+          grep -q 'versionCode = 22100' app/build.gradle.kts
+          grep -q 'versionName = "21.1.0"' app/build.gradle.kts
+          grep -q 'compileSdk = 37' app/build.gradle.kts
+          grep -q 'targetSdk = 37' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
-          grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
-          grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
+          grep -q 'isDebuggable = false' app/build.gradle.kts
+          grep -q 'isMinifyEnabled = true' app/build.gradle.kts
       - name: Verify Pokedex-only architecture
         run: python3 scripts/verify_pokedex_only.py
       - name: Product hardening audit
@@ -74,28 +85,20 @@ jobs:
       - name: Unit tests
         run: gradle testDebugUnitTest
       - name: Android lint
-        run: gradle lintDebug
-      - name: Build upgrade baseline from v20.15.1
+        run: gradle lintRelease
+      - name: Download v21.0.0 upgrade baseline
         run: |
-          git fetch --no-tags --depth=1 origin 26d7f1117d784b7867555f1e2b817b1259e40cbe
-          git worktree add /tmp/pokedex-baseline FETCH_HEAD
-          mkdir -p /tmp/pokedex-baseline/signing /tmp/pokedex-baseline/app/src/main/res/drawable
-          base64 -d /tmp/pokedex-baseline/ci/pokedex-release.jks.b64 > /tmp/pokedex-baseline/signing/pokedex-release.jks
-          base64 -d /tmp/pokedex-baseline/ci/app_icon_256.webp.b64 > /tmp/pokedex-baseline/app/src/main/res/drawable/app_icon.webp
-          cd /tmp/pokedex-baseline
-          python3 scripts/apply_release_version.py
-          gradle assembleDebug
-          mkdir -p "$GITHUB_WORKSPACE/upgrade-apks"
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/upgrade-apks/baseline.apk"
-          cd "$GITHUB_WORKSPACE"
-      - name: Compile app and instrumentation tests
-        run: gradle assembleDebug assembleDebugAndroidTest
-      - name: Verify update package and signature
-        run: bash scripts/verify_update_contract.sh app/build/outputs/apk/debug/app-debug.apk upgrade-apks/baseline.apk
+          mkdir -p upgrade-apks
+          curl -fL --retry 4 --retry-delay 3             "https://github.com/otaviobarretojr/POKEDEX/releases/download/pokedex-v21.0.0/pokedex.apk"             -o upgrade-apks/baseline.apk
+      - name: Compile production, debug and instrumentation APKs
+        run: gradle assembleRelease assembleDebug assembleDebugAndroidTest
+      - name: Verify production update package and signature
+        run: bash scripts/verify_update_contract.sh app/build/outputs/apk/release/app-release.apk upgrade-apks/baseline.apk
       - name: Stage stable smoke APKs
         run: |
           mkdir -p stable-smoke-apks
-          cp app/build/outputs/apk/debug/app-debug.apk stable-smoke-apks/app.apk
+          cp app/build/outputs/apk/release/app-release.apk stable-smoke-apks/release.apk
+          cp app/build/outputs/apk/debug/app-debug.apk stable-smoke-apks/debug.apk
           cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk stable-smoke-apks/test.apk
           cp upgrade-apks/baseline.apk stable-smoke-apks/baseline.apk
       - name: Upload stable smoke APKs
@@ -104,18 +107,18 @@ jobs:
           name: stable-smoke-apks
           path: stable-smoke-apks/
           if-no-files-found: error
-      - name: Upload APK
+      - name: Upload Release APK
         uses: actions/upload-artifact@v7
         with:
-          name: POKEDEX-v21.0.0-Pokedex-Only
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: POKEDEX-v21.1.0-Release
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
   android-smoke:
     name: Android stable smoke
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -124,7 +127,7 @@ jobs:
         with:
           name: stable-smoke-apks
           path: stable-smoke-apks
-      - name: Run stable smoke tests on lightweight Android emulator
+      - name: Run full smoke on Android 11
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
@@ -135,7 +138,7 @@ jobs:
           heap-size: 384M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
-          script: bash scripts/run_android_smoke.sh stable-smoke-apks/app.apk stable-smoke-apks/test.apk stable-smoke-apks/baseline.apk
+          script: bash scripts/run_android_smoke.sh stable-smoke-apks/release.apk stable-smoke-apks/debug.apk stable-smoke-apks/test.apk stable-smoke-apks/baseline.apk
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -144,28 +147,84 @@ jobs:
           path: stable-smoke-results/
           if-no-files-found: ignore
 
+  android-compat:
+    name: Android compatibility API ${{ matrix.api }}
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [26, 35, 37]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Download production APK
+        uses: actions/download-artifact@v7
+        with:
+          name: POKEDEX-v21.1.0-Release
+          path: release-apk
+      - name: Launch smoke
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 1536M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: bash scripts/run_android_compat_smoke.sh release-apk/app-release.apk
 
   publish-update:
     name: Publish in-app update
     permissions:
       contents: write
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !contains(github.event.head_commit.message, '[manifest-only]')
-    needs: [build, android-smoke]
+    needs: [build, android-smoke, android-compat]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Download signed APK
+        with:
+          fetch-depth: 0
+      - name: Download signed Release APK
         uses: actions/download-artifact@v7
         with:
-          name: POKEDEX-v21.0.0-Pokedex-Only
+          name: POKEDEX-v21.1.0-Release
           path: release-apk
-      - name: Stage stable release filename
-        run: mv release-apk/app-debug.apk release-apk/pokedex.apk
-      - name: Publish GitHub release asset
+      - name: Stage release files and manifest
+        run: |
+          mv release-apk/app-release.apk release-apk/pokedex.apk
+          SHA256="$(sha256sum release-apk/pokedex.apk | awk '{print $1}')"
+          cat > release-apk/update.json <<EOF
+          {
+            "versionCode": 22100,
+            "versionName": "21.1.0",
+            "apkUrl": "https://github.com/otaviobarretojr/POKEDEX/releases/download/pokedex-v21.1.0/pokedex.apk",
+            "changelog": "POKEDEX v21.1.0 — Release otimizada, Android 17, National Dex completa, busca e coleção aprimoradas, testes ampliados e melhorias de performance.",
+            "mandatory": false,
+            "sha256": "$SHA256"
+          }
+          EOF
+      - name: Publish GitHub release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: pokedex-v21.0.0
-          name: POKEDEX v21.0.0
-          files: release-apk/pokedex.apk
-          body: "POKEDEX v21.0.0 — reestruturação Pokédex-only, mantendo coleção, Boxes, formas, preferências e atualização por cima da v20.15.1."
+          tag_name: pokedex-v21.1.0
+          name: POKEDEX v21.1.0
+          files: |
+            release-apk/pokedex.apk
+            release-apk/update.json
+          body: "POKEDEX v21.1.0 — pacote de auditoria geral: build Release, Android 17/API 37, metadados completos da National Dex, UX e qualidade ampliadas. A chave de assinatura permanece inalterada nesta etapa."
+      - name: Publish in-app manifest to main
+        run: |
+          cp release-apk/update.json update.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "release: publish v21.1 update manifest [manifest-only]"
+          git pull --rebase origin main
+          git push origin HEAD:main
