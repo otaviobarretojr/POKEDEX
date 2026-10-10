@@ -3,6 +3,8 @@ name: Android Build
 on:
   push:
     branches: [ "main", "feature/in-app-updater" ]
+    paths-ignore:
+      - "update.json"
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
