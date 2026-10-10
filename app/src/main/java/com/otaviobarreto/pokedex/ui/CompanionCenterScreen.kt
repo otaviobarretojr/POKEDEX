@@ -43,10 +43,7 @@ fun CompanionCenterScreen(onPokemonClick:(Int)->Unit,onOpenBoxes:(String?,String
         val state=OfflinePackageInstallState.read(context)
         val zipRecoverable=remote?.ready==true && OfflinePackageInstallState.generalZip(context,remote.version).let{it.exists()&&it.length()==(remote.sizeBytes?:-1L)}
         if(remote?.ready==true&&(state.active||state.stage==OfflinePackageInstallState.Stage.FAILED||zipRecoverable)){
-            activeDownload="__general__";statusText="Retomando instalação da biblioteca…"
-            val recovered=withContext(Dispatchers.IO){ServerOfflinePackageInstaller.recoverGeneralIfNeeded(context,remote){p->serverProgress=p}}
-            statusText=if(recovered)"Biblioteca geral recuperada e instalada." else "Instalação não concluída · "+OfflinePackageInstallState.diagnose(context,remote.version,remote.sizeBytes?:0L)
-            activeDownload=null;serverProgress=null;installStateRevision++
+            statusText="Há uma instalação offline interrompida. Use Reparar biblioteca para continuar quando quiser."
         }
     }
 
