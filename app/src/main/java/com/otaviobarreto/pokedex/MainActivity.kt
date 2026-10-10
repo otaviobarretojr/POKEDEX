@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
@@ -46,11 +45,6 @@ private fun PokedexRoot(){
     var bootReady by rememberSaveable{mutableStateOf(false)}
     if(!bootReady) BootExperienceScreen{bootReady=true} else PokedexApp()
 }
-// Compatibility markers for legacy source guards; implementation uses PokedexRoutes.
-// DexNavItem("home","Jornada"
-// DexNavItem("pokedex","Pokédex"
-// DexNavItem("boxes","Boxes"
-// DexNavItem("central","Config."
 private val mainDestinations=listOf(
  DexNavItem(PokedexRoutes.HOME,"Início",Icons.Default.Home),
  DexNavItem(PokedexRoutes.POKEDEX,"Pokédex",Icons.Default.MenuBook),
