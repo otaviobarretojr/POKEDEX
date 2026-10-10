@@ -86,6 +86,8 @@ jobs:
         run: gradle testDebugUnitTest
       - name: Android lint
         run: gradle lintRelease
+      - name: Compile Macrobenchmark / Baseline Profile module
+        run: gradle :baselineprofile:assemble
       - name: Download v21.0.0 upgrade baseline
         run: |
           mkdir -p upgrade-apks
