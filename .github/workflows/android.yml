@@ -35,10 +35,10 @@ jobs:
           base64 -d ci/app_icon_256.webp.b64 > app/src/main/res/drawable/app_icon.webp
       - name: Apply release metadata
         run: python3 scripts/apply_release_version.py
-      - name: Validate v20.15.1 Non-Blocking Bootstrap Fix
+      - name: Validate v21 Pokedex-only release
         run: |
-          grep -q 'versionCode = 21501' app/build.gradle.kts
-          grep -q 'versionName = "20.15.1"' app/build.gradle.kts
+          grep -q 'versionCode = 22000' app/build.gradle.kts
+          grep -q 'versionName = "21.0.0"' app/build.gradle.kts
           grep -q 'applicationId = "com.otaviobarreto.pokedex"' app/build.gradle.kts
           grep -q 'navigationBarsPadding()' app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexChrome.kt
           grep -q 'DexStatusPane' app/src/main/java/com/otaviobarreto/pokedex/ui/ReferenceHubScreen.kt
@@ -69,9 +69,9 @@ jobs:
         run: gradle testDebugUnitTest
       - name: Android lint
         run: gradle lintDebug
-      - name: Build upgrade baseline from pre-updater revision
+      - name: Build upgrade baseline from v20.15.1
         run: |
-          git fetch --no-tags --depth=1 origin fa76dd411e8f00278b19e5e2810b40a8418b170e
+          git fetch --no-tags --depth=1 origin 26d7f1117d784b7867555f1e2b817b1259e40cbe
           git worktree add /tmp/pokedex-baseline FETCH_HEAD
           mkdir -p /tmp/pokedex-baseline/signing /tmp/pokedex-baseline/app/src/main/res/drawable
           base64 -d /tmp/pokedex-baseline/ci/pokedex-release.jks.b64 > /tmp/pokedex-baseline/signing/pokedex-release.jks
@@ -101,7 +101,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: POKEDEX-v20.15.1-Non-Blocking-Bootstrap-Fix
+          name: POKEDEX-v21.0.0-Pokedex-Only
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -143,7 +143,7 @@ jobs:
     name: Publish in-app update
     permissions:
       contents: write
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !contains(github.event.head_commit.message, '[manifest-only]')
     needs: [build, android-smoke]
     runs-on: ubuntu-latest
     steps:
@@ -152,14 +152,14 @@ jobs:
       - name: Download signed APK
         uses: actions/download-artifact@v7
         with:
-          name: POKEDEX-v20.15.1-Non-Blocking-Bootstrap-Fix
+          name: POKEDEX-v21.0.0-Pokedex-Only
           path: release-apk
       - name: Stage stable release filename
         run: mv release-apk/app-debug.apk release-apk/pokedex.apk
       - name: Publish GitHub release asset
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: pokedex-v20.15.1
-          name: POKEDEX v20.15.1
+          tag_name: pokedex-v21.0.0
+          name: POKEDEX v21.0.0
           files: release-apk/pokedex.apk
-          body: "POKEDEX v20.15.1 — primeiro ciclo real do atualizador interno, assinado para instalação por cima."
+          body: "POKEDEX v21.0.0 — reestruturação Pokédex-only, mantendo coleção, Boxes, formas, preferências e atualização por cima da v20.15.1."
