@@ -10,7 +10,10 @@ done
 adb install -r "$APK"
 adb logcat -c || true
 adb shell am force-stop "$PACKAGE" || true
-adb shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
+START_OUTPUT="$(adb shell am start -W -n "$PACKAGE/.MainActivity")"
+echo "$START_OUTPUT"
+TOTAL_TIME="$(printf '%s\n' "$START_OUTPUT" | sed -n 's/^TotalTime: //p' | tail -1)"
+echo "ANDROID_COMPAT_TOTAL_TIME_MS=${TOTAL_TIME:-unknown}"
 sleep 8
 adb logcat -d -v threadtime > compat-logcat.txt || true
 adb shell pidof "$PACKAGE" | grep -Eq '[0-9]'
