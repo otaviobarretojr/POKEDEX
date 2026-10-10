@@ -71,9 +71,28 @@ install_apk_with_retry "$BASELINE_APK" "BASELINE"
 APP_DATA_DIR="$(adb shell run-as "$PACKAGE" pwd | tr -d '\r')"
 adb shell run-as "$PACKAGE" mkdir -p "$APP_DATA_DIR/shared_prefs"
 printf '%s\n' 'preserve-me' | adb shell run-as "$PACKAGE" tee "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" >/dev/null
+
+cat > "$OUT_DIR/upgrade-pokedex_collection.xml" <<'EOF'
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <set name="captured_ids">
+        <string>25</string>
+        <string>133</string>
+    </set>
+    <set name="box_Pokémon HOME">
+        <string>25</string>
+    </set>
+</map>
+EOF
+adb shell run-as "$PACKAGE" sh -c 'cat > shared_prefs/pokedex_collection.xml' < "$OUT_DIR/upgrade-pokedex_collection.xml"
+
 install_apk_with_retry "$APP_APK" "UPGRADE"
 if ! adb shell run-as "$PACKAGE" cat "$APP_DATA_DIR/shared_prefs/update_upgrade_probe.txt" | grep -q "preserve-me"; then
   echo "Upgrade-in-place did not preserve private app data." >&2
+  exit 1
+fi
+if ! adb shell run-as "$PACKAGE" cat "$APP_DATA_DIR/shared_prefs/pokedex_collection.xml" | grep -q "<string>25</string>"; then
+  echo "Upgrade-in-place did not preserve seeded collection data." >&2
   exit 1
 fi
 echo "UPDATE_IN_PLACE_DATA_PRESERVATION=OK"
@@ -164,6 +183,13 @@ adb logcat -c || true
 # One full traversal validates every primary destination and that bottom
 # navigation remains available after route changes. The repetitive stress test
 # and pixel snapshots remain compiled/manual checks, but are not stable gates.
+# Verify the real collection/Box state seeded into the v20.15.1 baseline
+# before other instrumentation tests mutate collection state.
+run_instrumentation_group \
+  "upgrade-persistence" \
+  "com.otaviobarreto.pokedex.data.UpgradePersistenceInstrumentedTest" \
+  120
+
 run_instrumentation_group   "navigation"   "com.otaviobarreto.pokedex.PokedexNavigationInstrumentedTest#primaryRoutes_areReachableAndBottomNavigationSurvives"   300
 
 run_instrumentation_group   "persistence"   "com.otaviobarreto.pokedex.data.CollectionPersistenceInstrumentedTest"   120
