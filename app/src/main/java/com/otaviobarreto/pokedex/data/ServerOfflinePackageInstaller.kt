@@ -314,7 +314,7 @@ object ServerOfflinePackageInstaller {
                     gameKey=remote.packageKey,
                     source=file,
                     sourceUrl=visualUrl,
-                    cacheKey=OfflineGamePackManager.journeyVisualCacheKey(visualUrl)
+                    cacheKey=OfflineGamePackManager.gameVisualCacheKey(visualUrl)
                 )
                 visualUrls += visualUrl
                 onProgress(
