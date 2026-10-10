@@ -26,9 +26,11 @@ version_name() {
   "$AAPT" dump badging "$1" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p" | head -1
 }
 cert_sha256() {
-  "$APKSIGNER" verify --print-certs "$1" |
-    sed -n 's/^Signer #1 certificate SHA-256 digest: //p' |
-    head -1 | tr '[:upper:]' '[:lower:]'
+  local output
+  output="$("$APKSIGNER" verify --print-certs "$1" 2>&1)"
+  printf '%s\n' "$output" |
+    awk 'BEGIN { IGNORECASE=1 } /certificate SHA-256 digest:/ { print $NF; exit }' |
+    tr '[:upper:]' '[:lower:]'
 }
 
 "$APKSIGNER" verify --verbose --print-certs "$NEW_APK" >/dev/null
