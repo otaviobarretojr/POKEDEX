@@ -24,9 +24,9 @@ for path in (home, collection, backup, boxes, detail):
         errors.append("missing core file: " + path.name)
 for forbidden in ("PokedexRoutes.GAMES", "PokedexRoutes.JOURNEY_CONTINUE", "PokedexRoutes.CAMPAIGN_GUIDE"):
     if forbidden in main:
-        errors.append("retired Journey route still wired: " + forbidden)
+        errors.append("retired navigation route still wired: " + forbidden)
 if 'const val GAMES = "games"' in routes or 'const val JOURNEY_CONTINUE' in routes or 'const val CAMPAIGN_GUIDE' in routes:
-    errors.append("retired Journey route still declared")
+    errors.append("retired navigation route still declared")
 if "com.otaviobarreto.pokedex" not in (root / "app/build.gradle.kts").read_text():
     errors.append("application identity guard missing")
 if errors:
