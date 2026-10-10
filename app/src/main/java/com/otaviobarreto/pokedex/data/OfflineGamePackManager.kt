@@ -44,8 +44,8 @@ object OfflineGamePackManager {
         val expectedResources: Int,
         val cachedImages: Int,
         val expectedImages: Int,
-        val cachedJourneyVisuals: Int,
-        val expectedJourneyVisuals: Int,
+        val cachedVisuals: Int,
+        val expectedVisuals: Int,
         val cachedFormArtworks: Int,
         val expectedFormArtworks: Int
     ) {
@@ -58,7 +58,7 @@ object OfflineGamePackManager {
                 !hasRegionManifest -> "Manifesto regional incompleto"
                 pinnedResources < expectedResources -> "Recursos locais incompletos"
                 cachedImages < expectedImages -> "Imagens offline incompletas"
-                cachedJourneyVisuals < expectedJourneyVisuals -> "Visuais da Jornada incompletos"
+                cachedVisuals < expectedVisuals -> "Visuais offline incompletos"
                 cachedFormArtworks < expectedFormArtworks -> "Artes de formas/Shiny incompletas"
                 else -> "Pacote precisa de reparo"
             }
@@ -193,7 +193,7 @@ object OfflineGamePackManager {
         val ids = manifestIds(gameLabel)
         val cachedImages = ids.count(::hasOfflineArtwork)
         val visualUrls = prefs().getStringSet(key(gameLabel, "visual_urls"), emptySet()).orEmpty()
-        val cachedJourneyVisuals = visualUrls.count(::hasOfflineVisual)
+        val cachedVisuals = visualUrls.count(::hasOfflineVisual)
         val formArtworkKeys = p.getStringSet(key(gameLabel, "form_artwork_keys"), emptySet()).orEmpty()
         val cachedFormArtworks = formArtworkKeys.count(::hasOfflineCacheKey)
         val valid = expected > 0 &&
@@ -204,7 +204,7 @@ object OfflineGamePackManager {
             pinned == resources.size &&
             ids.size == expected &&
             cachedImages == ids.size &&
-            cachedJourneyVisuals == visualUrls.size &&
+            cachedVisuals == visualUrls.size &&
             cachedFormArtworks == formArtworkKeys.size
         return PackAudit(
             valid,
@@ -216,7 +216,7 @@ object OfflineGamePackManager {
             resources.size,
             cachedImages,
             ids.size,
-            cachedJourneyVisuals,
+            cachedVisuals,
             visualUrls.size,
             cachedFormArtworks,
             formArtworkKeys.size
@@ -340,7 +340,7 @@ object OfflineGamePackManager {
     fun gameVisualUrls(gameLabel:String):Set<String> =
         prefs().getStringSet(key(gameLabel,"visual_urls"),emptySet()).orEmpty()
 
-    fun journeyVisualCacheKey(url:String):String = journeyVisualKey(url)
+    fun gameVisualCacheKey(url:String):String = gameVisualKey(url)
 
     fun auditImportedGameFast(gameLabel:String):Boolean {
         val p=prefs()
@@ -836,7 +836,7 @@ object OfflineGamePackManager {
     }
 
     private fun hasOfflineVisual(url: String): Boolean =
-        hasOfflineCacheKey(journeyVisualKey(url))
+        hasOfflineCacheKey(gameVisualKey(url))
 
     private fun hasOfflineCacheKey(cacheKey: String): Boolean {
         val disk = context?.imageLoader?.diskCache ?: return false
@@ -845,7 +845,7 @@ object OfflineGamePackManager {
         }.getOrDefault(false)
     }
 
-    private fun journeyVisualKey(url: String): String = "journey-offline-" + url.hashCode()
+    private fun gameVisualKey(url: String): String = "game-visual-offline-" + url.hashCode()
 
     fun remove(gameLabel: String) {
         val urls = resourceUrls(gameLabel)
@@ -887,7 +887,7 @@ object OfflineGamePackManager {
                     .remove(sharedKey(id,"form_artwork_keys"))
                     .apply()
             }
-            (visualUrls - sharedVisualUrls).forEach { url -> runCatching { disk.remove(journeyVisualKey(url)) } }
+            (visualUrls - sharedVisualUrls).forEach { url -> runCatching { disk.remove(gameVisualKey(url)) } }
             (artworkKeys - sharedArtworkKeys).forEach { cacheKey -> runCatching { disk.remove(cacheKey) } }
         }
         prefs().edit()
