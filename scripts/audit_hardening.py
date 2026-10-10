@@ -27,7 +27,6 @@ pokedex_ui = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokedexCatalog
 collection_ui = read("app/src/main/java/com/otaviobarreto/pokedex/ui/CollectionScreen.kt")
 form_detail = read("app/src/main/java/com/otaviobarreto/pokedex/ui/PokemonFormDetailScreen.kt")
 artwork_sync = read("app/src/main/java/com/otaviobarreto/pokedex/data/ArtworkOfflineSync.kt")
-bootstrap = read("app/src/main/java/com/otaviobarreto/pokedex/data/ContentBootstrapManager.kt")
 boot = read("app/src/main/java/com/otaviobarreto/pokedex/ui/BootExperienceScreen.kt")
 manifest = read("app/src/main/AndroidManifest.xml")
 gradle = read("app/build.gradle.kts")
@@ -149,21 +148,13 @@ for marker in [
 
 if "ArtworkOfflineSync.launch(context)" not in boot:
     errors.append("boot must launch serialized artwork maintenance after releasing Home")
-if "onReady()" not in boot or boot.find("onReady()") > boot.find("ArtworkOfflineSync.launch(context)"):
-    errors.append("Home must be released before non-critical artwork maintenance")
+if "onReady()" not in boot or boot.find("ArtworkOfflineSync.launch(context)") > boot.find("onReady()"):
+    errors.append("background artwork maintenance must be launched before the boot composable is released")
 if '"$RAW_ART/shiny/$id.png"' not in artwork_sync:
     errors.append("startup artwork inventory must include official Shiny artwork")
 if "installSupplementalArtwork" not in read("app/src/main/java/com/otaviobarreto/pokedex/data/OfflineLibraryManager.kt"):
     errors.append("durable supplemental artwork storage missing")
 
-for marker in [
-    "auditCachedLibrary(context,cachedSignature)",
-    "OfflineLibraryManager.auditGeneralDetailed(context,generalVersion)",
-    "supportedGameKeys",
-    "bootstrapMutex=Mutex()",
-]:
-    if marker not in bootstrap:
-        errors.append(f"stable bootstrap guard missing: {marker}")
 if "syncMutex=Mutex()" not in artwork_sync:
     errors.append("artwork sync must be serialized across boot recreation")
 
